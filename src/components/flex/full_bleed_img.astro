@@ -1,0 +1,150 @@
+---
+import CFVideo from "../ui/CFVideo.astro";
+
+const vars = { ...Astro.props };
+const v = vars.video;
+
+// --- 1. Data Processing --- //
+const rawContent = vars.content || [];
+const hasContent = rawContent.length > 0;
+
+const processedContent = rawContent.map((item) => ({
+  title: item.title || "",
+  text: item.text || "",
+  twoColList: item.two_col_list || false, 
+  listItems: item.list ? item.list.split(/\r?\n/).filter((li) => li.trim()) : []
+}));
+
+// --- 2. Generate Content HTML (Columns) --- //
+const contentColumnsHTML = processedContent.map((item, index) => {
+  
+  let cssClass = "col-4";
+  
+  if (processedContent.length === 1) {
+    cssClass = "col-5";
+  } else if (index === 1) {
+    cssClass = "col-4 push-2";
+  }
+  
+  const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
+  
+  return `
+    <div class="${cssClass}">
+      ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ''}
+      ${item.text ? `<div class='section-text'>${item.text}</div>` : ''}
+      ${item.listItems.length > 0 ? `
+        <ul class='${ulClass}'>
+          ${item.listItems.map(li => `<li>${li}</li>`).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
+}).join('');
+
+// --- 3. CSS Class Generation --- //
+const caption = vars.caption || "";
+const captionPos = vars.caption_pos || "left";
+const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
+const captionAlignClass = alignMap[captionPos] || "text-left";
+
+/* ⭐ UPDATED: caption wrapper gets hw-contain when bleed === true */
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "mt-5",
+  captionAlignClass,
+  vars.bleed === true ? "hw-contain" : null
+].filter(Boolean).join(" ");
+
+let colClass = null;
+if (vars.width === "11 columns") colClass = "min-[700px]:col-11";
+if (vars.width === "10 columns") colClass = "min-[700px]:col-10";
+if (vars.width === "9 columns")  colClass = "min-[700px]:col-9";
+
+// Static push map
+const PUSH_MAP = {
+  '1': 'min-[700px]:push-1',
+  '2': 'min-[700px]:push-2',
+  '3': 'min-[700px]:push-3',
+  '4': 'min-[700px]:push-4',
+  '5': 'min-[700px]:push-5'
+};
+
+let pushClass = null;
+if (vars.width === "9 columns" && vars.push) {
+  pushClass = PUSH_MAP[vars.push] || null;
+}
+
+let bleedClass = null;
+if (vars.width !== "full" && vars.bleed === true) {
+  if (vars.align === "left") bleedClass = "bleed-left";
+  else if (vars.align === "right") bleedClass = "bleed-right";
+  else bleedClass = "bleed-x";
+}
+
+const layoutClasses = [
+  colClass,
+  pushClass,
+  bleedClass,
+  vars.width !== "full" ? `align-${vars.align}` : null
+];
+
+const videoClasses = [
+  "hw-bg-vid",
+  "hw-player-parent",
+  "img-load-par",
+  "pr",
+  "full-bleed-img-inner",
+  vars.round_corner && "round-corner",
+  `corner-pos-${vars.corner_pos}`,
+];
+---
+
+{vars.width !== "full" ? (
+  /* --- LAYOUT: BOXED --- */
+  <div class="hw-contain">
+    <div class="row">
+      <div class:list={layoutClasses}>
+        
+        <div class:list={videoClasses}>
+          {v && <CFVideo video={v} />}
+        </div>
+
+        {caption && <div class={captionWrapperClass}>{caption}</div>}
+
+        {/* Content Wrap */}
+        {hasContent && (
+          <div class="full-bleed-content-wrap mt-16">
+            <div class="row" set:html={contentColumnsHTML} />
+          </div>
+        )}
+
+      </div>
+    </div>
+  </div>
+) : (
+  /* --- LAYOUT: FULL WIDTH --- */
+  <>
+    <div class:list={videoClasses}>
+      {v && <CFVideo video={v} />}
+    </div>
+    
+    {(caption || hasContent) && (
+       <div class={`hw-contain ${captionWrapperClass}`}>
+         <div class="row">
+           <div class="push-1 col-12">
+             
+             {caption && <div>{caption}</div>}
+             
+             {/* Content Wrap */}
+             {hasContent && (
+                <div class="full-bleed-content-wrap mt-16">
+                  <div class="row" set:html={contentColumnsHTML} />
+                </div>
+             )}
+
+           </div>
+         </div>
+       </div>
+    )}
+  </>
+)}

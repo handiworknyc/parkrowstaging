@@ -1,0 +1,156 @@
+---
+import { ClientRouter } from "astro:transitions";
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteNav from "../components/SiteNav.astro";
+import VideoPrefetch from "../components/global/VideoPrefetch.astro";
+
+// Critical CSS
+import "../styles/global.scss";
+
+// Below-the-fold CSS
+import belowCssUrl from "@/styles/below.scss?url";
+
+// URL for critical script
+import headerCriticalUrl from "@/scripts/header-critical.js?url";
+
+const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+
+/* ---------------- Props Interface ---------------- */
+interface Props {
+  title?: string;
+  description?: string;
+  lcp?: {
+    href: string;
+    imagesrcset?: string;
+    imagesizes?: string;
+  } | null;
+  lcpVideo?: {
+    href: string;
+  } | null;
+}
+
+const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    {description && <meta name="description" content={description} />}
+
+	<VideoPrefetch />
+	
+    {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
+    {lcp && lcp.href && (
+      <link 
+        rel="preload"
+        as="image"
+        href={lcp.href}
+        imagesrcset={lcp.imagesrcset}
+        imagesizes={lcp.imagesizes}
+        fetchpriority="high"
+      />
+    )}
+
+    {/* 🚀 NEW: Cloudflare Stream video manifest preload */}
+    {lcpVideo && lcpVideo.href && (
+      <link
+        rel="preload"
+        as="fetch"
+        href={lcpVideo.href}
+        crossorigin="anonymous"
+      />
+    )}
+
+    <link rel="preload" href={belowCssUrl} as="style" />
+
+    <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
+      :root {
+        --wp-base-url: var(--wpBaseUrl);
+      }
+    </style>
+
+    <script src={headerCriticalUrl} defer></script>
+    <ClientRouter prefetch="viewport" />
+
+	
+	<script>		
+		document.addEventListener('astro:before-swap', (ev) => {
+			ev.newDocument.body.classList.remove('first-load');
+		});
+	</script>
+
+	<script>
+	const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+	if (isSafari) document.documentElement.classList.add("disable-vt");
+	</script>
+  </head>
+
+  <body class="first-load">
+    <main>
+      <SiteNav />
+      <div class="switcher" style="view-transition-name: main-content">
+        <slot />
+      </div>
+    </main>
+
+    <SiteFooter />
+
+    {/* below-the-fold CSS */}
+    <link
+      rel="stylesheet"
+      href={belowCssUrl}
+      media="print"
+      onload="this.media='all'"
+    />
+
+    <script>
+      import "../scripts/smart-image";
+      import "../scripts/gsap-global";
+    </script>
+
+	<script is:client>
+	const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+	if (isSafari) {
+		// Kill all view transition effects completely
+		document.documentElement.classList.add("disable-vt");
+
+		// Intercept all internal <a> clicks and force real navigation
+		document.addEventListener("click", (e) => {
+			const a = e.target.closest("a[href]");
+			if (!a) return;
+
+			const url = a.getAttribute("href");
+
+			// Skip external links, mailto, #hash, javascript:void(0)
+			if (
+				url.startsWith("http") && !url.startsWith(location.origin)
+				|| url.startsWith("#")
+				|| url.startsWith("mailto:")
+				|| url.startsWith("tel:")
+				|| url.startsWith("javascript:")
+			) {
+				return;
+			}
+
+			// STOP Astro ClientRouter
+			e.preventDefault();
+
+			// Hard navigation — NO FLASH, NO TRANSITION, NO FLICKER
+			window.location.href = url;
+		});
+	}
+
+	// Keep your first-load reset
+	document.addEventListener("astro:before-swap", (ev) => {
+		ev.newDocument.body.classList.remove("first-load");
+	});
+	</script>
+
+  </body>
+</html>

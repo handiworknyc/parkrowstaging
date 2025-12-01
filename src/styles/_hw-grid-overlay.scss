@@ -1,0 +1,22 @@
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999999;
+
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+
+  padding-left: var(--containerPadding);
+  padding-right: var(--containerPadding);
+
+  background: rgba(255, 0, 255, 0.03);
+}
+
+.grid-overlay .col {
+  background: rgba(255, 0, 255, 0.12);
+  mix-blend-mode: multiply;
+  border-left: 1px solid rgba(255, 0, 255, 0.25);
+  border-right: 1px solid rgba(255, 0, 255, 0.25);
+}

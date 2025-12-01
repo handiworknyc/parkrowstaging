@@ -1,0 +1,12 @@
+node_modules/
+dist/
+clbr.local-key.pem
+*.pem
+*.key
+*.crt
+
+# Local Netlify folder
+.netlify
+.env
+.env.*
+!.env.example

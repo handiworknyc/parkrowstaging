@@ -1,0 +1,94 @@
+---
+/**
+ * src/components/GFForm.astro
+ * Gravity Forms wrapper:
+ *  - SSR: tries to fetch rendered GF HTML (server sends Basic Auth).
+ *  - Client: initializes handlers; can still enhance/submit even if SSR failed.
+ */
+import { fetchRenderedHTML } from "@/lib/gf/api";
+
+type Props = {
+  formId: number | string;
+  showTitle?: boolean;
+  showDescription?: boolean;
+  ajax?: boolean;
+  tabindex?: number;
+  theme?: string;
+  /** submit via /api/gf/submit proxy if true (recommended in browser) */
+  viaProxy?: boolean;
+  class?: string;
+  id?: string;
+};
+
+const {
+  formId: rawId,
+  showTitle = false,
+  showDescription = true,
+  ajax = false, // keep GF ajax OFF by default; SSR handles markup
+  tabindex = 0,
+  theme = "gravity-theme",
+  viaProxy = true, // proxy submit by default (avoids CORS/auth issues)
+  class: className = "",
+  id: hostId = undefined,
+} = Astro.props as Props;
+
+// Parse and validate formId safely (never throw during SSR)
+const parsed = typeof rawId === "string" ? parseInt(rawId, 10) : Number(rawId);
+const validFormId = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+if (!validFormId) {
+  console.warn("[GFForm] missing/invalid formId:", rawId);
+}
+
+// Public base is optional; DO NOT put secrets here.
+// If you set PUBLIC_WP_BASE_URL, client-side fallback renders can use it (not recommended with Basic Auth).
+const PUBLIC_WP_BASE =
+  (import.meta.env.WP_BASE_URL as string | undefined) || "";
+
+// Try to SSR the form HTML (returns null on failure; never throws)
+let html: string | null = null;
+if (validFormId) {
+  html = await fetchRenderedHTML(validFormId, {
+    title: showTitle,
+    description: showDescription,
+    ajax,
+    tabindex,
+    theme,
+  });
+}
+const hadSSR = !!html;
+---
+
+<div
+  class={`gf-host ${className}`}
+  id={hostId}
+  data-gf-form-id={validFormId ?? ""}
+  data-gf-proxy={viaProxy ? "1" : "0"}
+  data-wp-base={PUBLIC_WP_BASE}
+  data-gf-theme={theme}
+  data-gf-had-ssr={hadSSR ? "1" : "0"}
+>
+  {
+    hadSSR ? (
+      <Fragment set:html={html!} />
+    ) : (
+      <div class="gf-skeleton" aria-busy="true">
+        Form temporarily unavailable.
+      </div>
+    )
+  }
+</div>
+
+<script>
+  // Astro will bundle this import (works in dev & build)
+  import initGFClient from "@/components/GFForm.client.ts";
+
+  // Run once on initial load
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => initGFClient());
+  } else {
+    initGFClient();
+  }
+
+  // If your site uses view transitions / SPA-style nav, run after each navigation too
+  addEventListener("astro:page-load", () => initGFClient());
+</script>

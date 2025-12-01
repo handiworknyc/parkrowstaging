@@ -1,0 +1,338 @@
+---
+/**
+ * src/lib/wp/LayoutRenderer.astro
+ * - Resolves content from WP for pages (by route slug or explicit override)
+ *   and for taxonomy terms (when taxContext + route slug are provided).
+ * - Falls back cleanly when layouts are passed directly as props.
+ */
+
+import { normalizeLayouts, type NormRow } from "./normalize";
+import { getEnv, toBase64 } from "../env.ts";
+
+/* ---------------- Props ---------------- */
+interface Props {
+  layouts?: any[];
+  /** Optional taxonomy context, e.g. "service" | "service-area" */
+  taxContext?: string | null;
+
+  /** NEW: allow resolving a page when there's no route slug (e.g., homepage) */
+  pageId?: number | null;
+  pageSlug?: string | null;
+}
+
+let {
+  layouts = [],
+  taxContext = null,
+  pageId = null,
+  pageSlug = null,
+} = Astro.props as Props;
+
+/* ---------------- Env ---------------- */
+const WP_BASE = import.meta.env.WP_BASE_URL || "";
+const WP_AUTH_BASIC = getEnv("WP_AUTH_BASIC") || ""; // "user:pass"
+const ROUTE_SLUG = Astro.params?.slug as string | undefined;
+
+const authHeaders = WP_AUTH_BASIC
+  ? { Authorization: `Basic ${toBase64(WP_AUTH_BASIC)}` }
+  : {};
+
+/* ---------------- Debug state (page) ---------------- */
+let currentPost: any = null;
+let fetchStatus: number | null = null;
+let fetchUrl = "";
+let fetchPeek = "";
+let fetchError: string | null = null;
+
+/* ---------------- Debug state (term) ---------------- */
+let currentTerm: any = null;
+let termFetchStatus: number | null = null;
+let termFetchUrl = "";
+let termFetchPeek = "";
+let termFetchError: string | null = null;
+
+/** Fallback set of taxonomies to probe if a route slug isn’t a page */
+const TAX_CANDIDATES = ["service", "service-area", "category", "post_tag"];
+
+/* ---------------- Helpers ---------------- */
+async function fetchJson(url: string) {
+  const res = await fetch(url, { headers: { Accept: "application/json", ...authHeaders } });
+  const status = res.status;
+  if (!res.ok) {
+    const text = (await res.text().catch(() => ""))?.slice(0, 300) || "";
+    return { ok: false, status, peek: text, json: null as any };
+  }
+  const json = await res.json();
+  return { ok: true, status, peek: "", json };
+}
+
+/** NEW: Resolve a page without a route slug (e.g., homepage). */
+async function resolvePageByOverride(): Promise<void> {
+  // 1) Explicit pageId wins
+  if (pageId) {
+    const url = `${WP_BASE}/wp-json/wp/v2/pages/${pageId}`;
+    const r = await fetchJson(url);
+    fetchUrl = url; fetchStatus = r.status;
+    if (r.ok) {
+      currentPost = r.json;
+      console.log("[layoutrenderer] page (by id) ok", { pageId, url });
+      return;
+    }
+    fetchPeek = r.peek;
+    console.warn("[layoutrenderer] page (by id) miss", { pageId, url, status: r.status, peek: r.peek });
+  }
+
+  // 2) Then pageSlug, or PUBLIC_HOME_SLUG env, or "home"
+  const effSlug = pageSlug || import.meta.env.PUBLIC_HOME_SLUG || "home";
+  if (effSlug) {
+    const url = `${WP_BASE}/wp-json/wp/v2/pages?slug=${encodeURIComponent(effSlug)}`;
+    const r = await fetchJson(url);
+    fetchUrl = url; fetchStatus = r.status;
+    if (r.ok) {
+      const arr = Array.isArray(r.json) ? r.json : [];
+      currentPost = arr?.[0] ?? null;
+      console.log("[layoutrenderer] page (by slug) result", { effSlug, url, foundId: currentPost?.id ?? null });
+    } else {
+      fetchPeek = r.peek;
+      console.warn("[layoutrenderer] page (by slug) miss", { effSlug, url, status: r.status, peek: r.peek });
+    }
+  }
+}
+
+/* ---------------- Main fetch logic ---------------- */
+if (!WP_BASE) {
+  console.error("[layoutrenderer] Missing WP_BASE_URL");
+} else {
+  if (taxContext && ROUTE_SLUG) {
+    // -------- TERM MODE (explicit taxonomy + route slug) --------
+    try {
+      termFetchUrl = `${WP_BASE}/wp-json/wp/v2/${encodeURIComponent(taxContext)}?slug=${encodeURIComponent(ROUTE_SLUG)}`;
+      const r = await fetchJson(termFetchUrl);
+      termFetchStatus = r.status;
+      if (r.ok) {
+        const terms = Array.isArray(r.json) ? r.json : [];
+        currentTerm = terms?.[0] ?? null;
+        console.log("[layoutrenderer] fetched TERM", {
+          taxContext,
+          slug: ROUTE_SLUG,
+          url: termFetchUrl,
+          status: termFetchStatus,
+          foundId: currentTerm?.id ?? null,
+        });
+      } else {
+        termFetchPeek = r.peek;
+        console.error("[layoutrenderer] TERM HTTP", termFetchStatus, termFetchUrl, termFetchPeek);
+      }
+    } catch (e: any) {
+      termFetchError = e?.message || String(e);
+      console.error("[layoutrenderer] TERM fetch error", termFetchError, { url: termFetchUrl });
+    }
+  } else if (ROUTE_SLUG) {
+    // -------- PAGE MODE (route slug) --------
+    try {
+      fetchUrl = `${WP_BASE}/wp-json/wp/v2/pages?slug=${encodeURIComponent(ROUTE_SLUG)}`;
+      const r = await fetchJson(fetchUrl);
+      fetchStatus = r.status;
+      if (r.ok) {
+        const posts = Array.isArray(r.json) ? r.json : [];
+        currentPost = posts?.[0] ?? null;
+        console.log("[layoutrenderer] fetched PAGE", {
+          slug: ROUTE_SLUG,
+          url: fetchUrl,
+          status: fetchStatus,
+          foundId: currentPost?.id ?? null,
+        });
+      } else {
+        fetchPeek = r.peek;
+        console.error("[layoutrenderer] PAGE HTTP", fetchStatus, fetchUrl, fetchPeek);
+      }
+    } catch (e: any) {
+      fetchError = e?.message || String(e);
+      console.error("[layoutrenderer] PAGE fetch error", fetchError, { url: fetchUrl });
+    }
+
+    // If not a page (or page missing), probe known taxonomies for a term with this slug
+    if (!currentPost) {
+      for (const candTax of TAX_CANDIDATES) {
+        try {
+          const url = `${WP_BASE}/wp-json/wp/v2/${encodeURIComponent(candTax)}?slug=${encodeURIComponent(ROUTE_SLUG)}`;
+          const r = await fetchJson(url);
+          console.log("[layoutrenderer] probe TERM", { candTax, status: r.status, url });
+
+          if (r.ok) {
+            const arr = Array.isArray(r.json) ? r.json : [];
+            if (arr[0]?.id) {
+              currentTerm = arr[0];
+              termFetchUrl = url;
+              termFetchStatus = r.status;
+              // we keep incoming `taxContext` unchanged; child modules can read taxonomy off currentTerm
+              console.log("[layoutrenderer] detected TERM", {
+                slug: ROUTE_SLUG,
+                taxonomy: currentTerm?.taxonomy || candTax,
+                foundId: currentTerm.id,
+              });
+              break;
+            }
+          }
+        } catch (e: any) {
+          console.error("[layoutrenderer] probe TERM error", e?.message || String(e));
+        }
+      }
+    }
+  } else {
+    // -------- HOMEPAGE / ROUTE WITHOUT SLUG --------
+    await resolvePageByOverride();
+  }
+}
+
+/* ---------------- Derived IDs ---------------- */
+const postId = currentPost?.id ?? null;
+const termId = currentTerm?.id ?? null;
+
+/* ---------------- Choose layouts ---------------- */
+const fetchedLayouts = currentPost?.acf?.layouts ?? null;
+const effectiveLayouts = Array.isArray(fetchedLayouts) && fetchedLayouts.length > 0
+  ? fetchedLayouts
+  : layouts;
+
+const rows: NormRow[] = normalizeLayouts(effectiveLayouts);
+
+/* ---------------- Auto-register flex modules ---------------- */
+const modules = import.meta.glob("/src/components/flex/*.astro", { eager: true });
+const REGISTRY: Record<string, any> = {};
+for (const [p, mod] of Object.entries(modules)) {
+  const file = p.split("/").pop() || "";
+  const key = file.replace(/\.astro$/i, "");
+  // @ts-expect-error default is the astro component
+  REGISTRY[key] = (mod as any).default;
+}
+
+/* ---------------- Resolve component name variants ---------------- */
+function toKebab(s: string) {
+  return s.replace(/[_\s]+/g, "-").replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+}
+function toSnake(s: string) {
+  return s.replace(/[-\s]+/g, "_").replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+}
+function toCamel(s: string) {
+  const base = s.replace(/[-_ ]+(\w)/g, (_, c) => (c ? c.toUpperCase() : ""));
+  return base.charAt(0).toLowerCase() + base.slice(1);
+}
+function resolveComponent(layoutName: string) {
+  if (REGISTRY[layoutName]) return REGISTRY[layoutName];
+  const cands = [toKebab(layoutName), toSnake(layoutName), toCamel(layoutName)];
+  for (const k of cands) if (REGISTRY[k]) return REGISTRY[k];
+  return null;
+}
+
+/* ---------------- Background helpers ---------------- */
+const firstLayout = rows[0]?.name ?? "";
+
+function isAltBgContext(): boolean {
+  // Respect incoming taxContext if provided; otherwise infer from first layout
+  return (taxContext === "service" || taxContext === "service-area") || firstLayout === "service_area_banner";
+}
+
+function computeBgWrapClass(row: NormRow, rowindex: number): string | null {
+  const ls = (row as any)?.data?.layout_settings ?? {};
+  const bgColor: string = typeof ls?.bg_color === "string" ? ls.bg_color.trim() : "";
+  const toBgClass = (val: string) => {
+    const v = val.toLowerCase();
+    if (!v || v === "none") return null;
+    if (/\bbg-1\b/.test(v)) return v;
+    return `${v}bg-1`;
+  };
+  const explicit = toBgClass(bgColor);
+  if (explicit) return explicit;
+  if (isAltBgContext() && rowindex >= 2) {
+    return rowindex % 2 === 0 ? "whitebg-1" : "mintbg-1";
+  }
+  return null;
+}
+
+/* ---------------- Common context for child modules ---------------- */
+const commonCtxBase = {
+  postId,
+  currentPost,
+  termId,
+  taxonomy: (taxContext || (typeof currentTerm?.taxonomy === "string" ? currentTerm.taxonomy : null)) as string | null,
+  currentTerm,
+};
+---
+
+{rows.length === 0 && (
+  <div class="prose mx-auto my-12 text-center opacity-70">
+    <p>No content yet.</p>
+  </div>
+)}
+
+{rows.map((row, idx) => {
+  const Comp = resolveComponent(row.name);
+  const rowindex = idx + 1; // 1-based index
+
+  const idAttr = row.meta.id ? { id: row.meta.id } : {};
+  const sectionClass = ["flex-bg", ...row.meta.classes].join(" ").trim();
+
+  const bgWrapClass = computeBgWrapClass(row, rowindex);
+  const innerWrapClasses = [
+    "flex-bg-inner",
+    "z-[100]",
+    "pr",
+    ...(row.meta?.ofh ? ["ofh"] : []),
+  ].join(" ");
+
+  const commonCtx = { ...commonCtxBase, rowIndex: rowindex };
+
+  return (
+    <section {...idAttr} class={sectionClass}>
+      {row.meta.preHtml && <div set:html={row.meta.preHtml} />}
+
+      {bgWrapClass ? (
+        <div class={bgWrapClass}>
+          <div class={innerWrapClasses}>
+            {Comp ? (
+              <Comp {...row.data} {...commonCtx} />
+            ) : (
+              <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
+                <p class="font-semibold">
+                  Unknown layout: <code>{row.name}</code>
+                </p>
+                <p class="text-sm mt-1">
+                  Create <code>src/lib/wp/components/flex/{toSnake(row.name)}.astro</code> (or{" "}
+                  <code>{toKebab(row.name)}.astro</code>) to handle this layout.
+                </p>
+                <details class="mt-2">
+                  <summary class="cursor-pointer">Inspect data</summary>
+                  <pre class="mt-2 overflow-auto text-sm">
+                    {JSON.stringify(row.data, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {Comp ? (
+            <Comp {...row.data} {...commonCtx} />
+          ) : (
+            <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
+              <p class="font-semibold">
+                Unknown layout: <code>{row.name}</code>
+              </p>
+              <p class="text-sm mt-1">
+                Create <code>src/lib/wp/components/flex/{toSnake(row.name)}.astro</code> (or{" "}
+                <code>{toKebab(row.name)}.astro</code>) to handle this layout.
+              </p>
+              <details class="mt-2">
+                <summary class="cursor-pointer">Inspect data</summary>
+                <pre class="mt-2 overflow-auto text-sm">
+                  {JSON.stringify(row.data, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+})}

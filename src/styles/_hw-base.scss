@@ -1,0 +1,71 @@
+$colors: (
+  brown: #3A2A22,
+  white: #fff,
+  green: #173928,
+  pink: #C8A2C7
+);
+
+:root {
+  @each $name, $value in $colors {
+    --#{"" + $name}: #{$value};
+  }
+}
+
+@mixin generate-color-classes($map) {
+  @each $name, $value in $map {
+    .c-#{"" + $name} { color: var(--#{"" + $name}) !important; }
+    .bg-#{"" + $name} { background-color: var(--#{"" + $name}) !important; }
+  }
+}
+
+@include generate-color-classes($colors);
+
+html {
+    --cubicBez: cubic-bezier(.36,.01,.1,1.01);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+	position: relative;
+	background: var(--mint);
+	letter-spacing: -.025em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    line-height: 1em;
+}
+
+html,
+body,
+button,
+a {
+	color: var(--darkbluetext)
+}
+
+[class*='icon-']:after,
+[class*='icon-']:before {
+	font-weight: normal !important
+}

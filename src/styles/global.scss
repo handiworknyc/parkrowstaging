@@ -1,0 +1,288 @@
+@use "hw-reset";
+@use "hw-utils";
+@use "hw-defaults";
+@use "hw-type";
+@use "hw-iconvars" as *;
+@use "hw-iconfont";
+@use "hw-gform";
+@use "hw-marquee";
+@use "hw-post-content";
+@use "hw-cfstream";
+@use "hw-nav-modal";
+@use "_hw-grid-overlay";
+
+
+/* 2. Custom fonts */
+@use "fonts";
+
+@use "hw-base";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* Row wrapper */
+  .row {
+    @apply flex flex-wrap;
+    margin-left: -10px;   /* 20px total gutter */
+    margin-right: -10px;
+  }
+
+  /* Column wrapper */
+  [class*="col-"] {
+    padding-left: 10px;   /* 20px total gutter */
+    padding-right: 10px;
+    box-sizing: border-box;
+  }
+  /* FULL BLEED LEFT */
+  .bleed-left {
+    margin-left: calc(var(--containerPadding) * -1);
+  }
+
+  /* FULL BLEED RIGHT */
+  .bleed-right {
+    margin-right: calc(var(--containerPadding) * -1);
+  }
+
+  /* FULL BLEED BOTH SIDES */
+  .bleed-x {
+    margin-left: calc(var(--containerPadding) * -1);
+    margin-right: calc(var(--containerPadding) * -1);
+  }
+}
+
+
+
+
+
+html {
+	--headerHeight: 8rem;
+	font-family: 'Hanken Grotesk';
+	color: var(--brown);
+}
+
+.antiga {
+	font-family: "Antiga";
+	text-shadow: 0 0 .25px rgba(58, 42, 34, .05);
+}
+
+html:not(.ua-safari) .antiga {
+	filter: blur(.15px);
+}
+
+.figure {
+	font-family: 'Figure';
+}
+
+.logo {
+	z-index: 9999;
+}
+
+#logo-svg {
+	height: 5.5rem;
+}
+
+
+
+
+
+
+
+
+
+/* GROUP WRAPPER */
+::view-transition-group(main-content) {
+  animation-duration: 0.8s;
+  mix-blend-mode: normal;
+  isolation: isolate;
+}
+
+/* FADE OUT OLD CONTENT */
+::view-transition-old(main-content) {
+  animation-name: fade-out-overlay;
+  animation-duration: 0.8s;
+  animation-timing-function: var(--cubicBez);
+  animation-fill-mode: both;
+  opacity: 1;
+  z-index: 1;
+  mix-blend-mode: normal;
+}
+
+/* FADE IN NEW CONTENT */
+::view-transition-new(main-content) {
+  animation-name: fade-in-overlay;
+  animation-duration: 0.8s;
+  animation-timing-function: var(--cubicBez);
+  animation-fill-mode: both;
+  z-index: 2;
+  mix-blend-mode: normal;
+}
+
+/* NEW FADES IN */
+@keyframes fade-in-overlay {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* OLD FADES OUT */
+@keyframes fade-out-overlay {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ROOT MUST NOT ANIMATE (required) */
+::view-transition-group(root) {
+  animation-duration: 0s;
+}
+
+
+
+
+
+
+
+
+.flex-section-content {
+	padding-top: 8.5rem;
+	padding-bottom: 8.5rem;
+
+	&.title-only {
+		padding-top: 6.5rem;
+		padding-bottom: 4rem;
+	}
+}
+
+.flex-module:not(.rowindex-1) {
+	padding: 4rem 0;
+}
+
+.full_bleed_img-module + .full_bleed_img-module.no-section-content {
+	padding-top: 0;
+}
+
+.section-title.antiga {
+	font-size: 4.5rem;
+	line-height: 1em;
+}
+
+.figure-h3 {
+	padding-bottom: 1.75rem;
+	font-size: 2rem;
+	line-height: 2.5rem;
+}
+
+.section-text-wrap {
+	max-width: 550px;
+}
+
+.section-text {
+	font-weight: 300;
+	font-size: 1.3rem;
+	line-height: 2rem;
+	letter-spacing: -.02em;
+
+	p {
+		margin-bottom: 1.75rem;
+	}
+}
+
+ul.section-text {
+    /* 1. Remove the default browser bullet */
+    list-style: none;
+    padding-left: 0;
+}
+
+ul.section-text li {
+    position: relative;
+    /* 2. Make room for your new bullet */
+    padding-left: .9em; 
+    margin-bottom: 0.25rem;
+}
+
+ul.section-text li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    
+    /* 3. CENTER IT VERTICALLY */
+    /* Adjust this based on your line-height to align it optically */
+    top: 0.65em; 
+    
+    /* 4. EXACT SIZE CONTROL */
+    width: 4px; 
+    height: 4px;
+    
+    /* 5. COLOR */
+    background-color: currentColor; /* Uses the text color */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+.full_bleed_img-module {
+	position: relative;
+	overflow: hidden;
+}
+
+.flex-module:not(.rowindex-1) {
+	background-color: #fff;
+}
+.flex-module:not(.rowindex-1) .hw-vid-wrap,
+.full-bleed-img-inner  {
+	position: relative;
+	min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
+}
+
+.rowindex-1 .full-bleed-img-inner {
+	margin-top: var(--headerHeight);
+	min-height: calc(var(--jsVhUnits100) - var(--headerHeight));
+}
+
+.rowindex-1 .hw-vid-wrap {
+	height: 100%;
+	width: 100%;
+	position: absolute;
+}
+
+.round-corner.corner-pos-left img:first-child:last-child,
+.round-corner.corner-pos-left .hw-vid-wrap,
+.round-corner.align-right .hw-vid-wrap {
+	border-top-left-radius: calc(var(--jsVhUnits100)/2);
+	overflow: hidden;
+}
+
+
+.round-corner.corner-pos-right img:first-child:last-child,
+.round-corner.corner-pos-right .hw-vid-wrap,
+.round-corner.align-left .hw-vid-wrap {
+	border-top-right-radius: calc(var(--jsVhUnits100)/2);
+	overflow: hidden;
+}
+
+
+.align-center {
+	margin: 0 auto;
+}
+
+.full-bleed-caption {
+	font-size: 1.16rem
+}
+
+
+ul.two-col-list {
+  columns: 2;
+  column-gap: 20px;
+}
+
+.full_bleed_img-module .col-5 {
+	max-width: 560px;
+}

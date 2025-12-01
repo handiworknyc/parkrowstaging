@@ -1,0 +1,234 @@
+#header {
+	top: 0;
+	width: 100%;
+	background-color: var(--white);
+
+	.hw-contain {
+		padding-top: 1.25rem;
+		padding-bottom: 1.25rem;
+	}
+}
+
+#main-nav[data-nav-modal],
+#bofa {
+	transition: all .45s var(--cubicBez);
+}
+
+#main-nav[data-nav-modal] {
+	opacity: 0;
+	pointer-events: none;
+
+	&,
+	.main-nav-inner {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	&,
+	ul,
+	.main-nav-inner {
+		height: var(--jsVhUnits100);
+		width: 100vw;
+	}
+
+	ul {
+		position: relative;
+		flex-direction: column;
+	}
+
+  inset: 0;
+  z-index: 9998;
+  background: var(--green);
+  pointer-events: none;
+}
+
+#main-nav[data-nav-modal].open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+
+body.modal-open {
+  overflow: hidden;
+}
+
+body.modal-open {
+	#bofa  {
+		opacity: 0;
+	}
+
+	#main-logo path {
+		fill: var(--pink) !important
+	}
+}
+
+
+
+
+
+	.modal-closing #main-nav[data-nav-modal] li,
+	#main-nav[data-nav-modal] .sal-animate li {
+		transition: all 1.35s var(--cubicBez);
+		opacity: 1;
+		transform: translateY(0) scale(1) translateZ(0);
+	}
+
+
+	#main-nav[data-nav-modal] {
+		li {
+			backface-visibility: hidden;
+			will-change: transform, opacity;
+			font-size: calc(1.15rem + 3.5vh);
+			opacity: 0;
+			transform: scale(.985) translateY(6px) translateZ(0);
+			width: 100%;
+
+		}
+
+		a {
+			display: inline-block;
+			padding: .6vh 0;
+			color: var(--white)
+		}
+		
+		.sal-animate {
+			@for $i from 1 through 15 {
+				li:nth-child(#{$i}) {
+					transition-delay: #{(0.07s * $i) + .08s};
+				}
+			}	
+		}
+	}
+
+	html:not(.ua-safari) #main-nav[data-nav-modal] li {
+		filter: blur(.15px);
+	}
+
+
+
+
+
+
+
+
+
+
+.modal-opening,
+.modal-closing {
+	.nav-toggle {
+		pointer-events: none;
+	}
+}
+
+
+
+
+
+
+
+/* ---------------------------------------------------
+   NAV TOGGLE STYLES
+   --------------------------------------------------- */
+@keyframes nav-elastic {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.17); } /* Slight overshoot (1.03 feels a bit stiff, 1.06 feels elastic) */
+    75% { transform: scale(0.98); } /* Subtle recoil/undershoot */
+    100% { transform: scale(1); }
+}
+
+:root {
+  --ease-elastic: cubic-bezier(0.19, 1, 0.22, 1);
+  /* Added specific duration for the bounce to feel weighted */
+  --bounce-duration: 0.5s; 
+}
+
+
+.nav-toggle-wrap {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: var(--containerPadding);
+    z-index: 9999;
+    cursor: pointer; 
+}
+
+.nav-toggle,
+.nav-toggle-wrap {
+  will-change: transform;
+  transition: transform 0.2s var(--ease-elastic);
+}
+
+.nav-toggle {
+  display: block;
+  position: relative;
+  width: 53px;
+  height: 44px;
+  padding: 10px;
+  margin-left: -10px;
+}
+
+.nav-toggle,
+.nav-toggle span {
+	backface-visibility: hidden;
+}
+
+.nav-toggle span {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 33px;
+  height: 1.25px;
+  background: var(--brown);
+  border-radius: 3px;
+  will-change: transform, opacity, background, top;
+  transform-origin: 50% 50%;
+  
+  /* CLOSING SEQUENCE (Default) */
+  transition: 
+    top 0.3s 0.1s var(--ease-elastic),
+    transform 0.3s var(--ease-elastic),
+    opacity 0.2s var(--ease-elastic),
+    background 0.2s;
+}
+
+.nav-toggle span:nth-child(1) { top: 10px; }
+.nav-toggle span:nth-child(2) { top: 20px; }
+.nav-toggle span:nth-child(3) { top: 30px; }
+
+
+/* ---------------------------------------------------
+   ACTIVE (X) STATE + ELASTIC POP
+   --------------------------------------------------- */
+
+.nav-toggle.active {
+    /* Trigger the bounce animation once when class is added.
+       This overrides the 'transition' on transform for this duration.
+    */
+    animation: nav-elastic var(--bounce-duration) var(--ease-elastic);
+}
+
+.nav-toggle.active span {
+  background: var(--white);
+  
+  /* OPENING SEQUENCE */
+  transition: 
+    top 0.3s var(--ease-elastic),
+    transform 0.3s 0.1s var(--ease-elastic),
+    opacity 0.2s var(--ease-elastic),
+    background 0.2s;
+}
+
+.nav-toggle.active span:nth-child(1) {
+  top: 20px;
+  transform: rotate(45deg);
+}
+
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+  top: 20px;
+  transform: rotate(-45deg);
+}

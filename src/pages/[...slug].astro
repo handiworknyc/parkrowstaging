@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../layouts/MainLayout.astro";
+import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
+import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
+
+// ✅ IMPORT LCP HELPERS
+import { normalizeLayouts } from "../lib/wp/normalize";
+import { getLcpImage } from "../lib/wp/lcp"; 
+
+export async function getStaticPaths() {
+  return getAllFlexiblePagePaths();
+}
+
+const { slug = [] } = Astro.params;
+const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
+const page = getFlexiblePageByUri(uri);
+
+if (!page) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+}
+
+/* ---------------------------------------------------------
+   LCP CALCULATION
+   We must normalize the first row here (on the server/build)
+   to pass the image URL to the <head> of MainLayout.
+--------------------------------------------------------- */
+let lcpData = null;
+
+if (page && page.layouts) {
+  // Normalize raw WP layouts into a format our helper understands
+  const rows = normalizeLayouts(page.layouts);
+  // Extract the LCP image data
+  lcpData = getLcpImage(rows);
+}
+---
+
+{
+  page ? (
+    <BaseLayout 
+      title={page.title} 
+      lcp={lcpData} /* ✅ Pass the calculated image data to the Head */
+    >
+      <LayoutRenderer layouts={page.layouts || []} />
+    </BaseLayout>
+  ) : (
+    "Page Not found"
+  )
+}

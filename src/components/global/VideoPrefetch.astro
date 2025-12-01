@@ -1,0 +1,78 @@
+---
+// src/components/global/VideoPrefetch.astro
+---
+<script>
+  // Helper to normalize paths
+  const norm = (p) => p.replace(/\/+$/, "").replace(/^\/+/, "/") || "/";
+
+  const initPrefetch = async () => {
+    try {
+      const req = await fetch("/prefetch-map.json");
+      if (!req.ok) return;
+      
+      const assetMap = await req.json();
+      const currentPath = norm(window.location.pathname);
+
+      // Filter out the current page
+      const others = assetMap.filter((entry) => norm(entry.path) !== currentPath);
+
+      const inject = () => {
+        let vCount = 0;
+        let iCount = 0;
+
+        others.forEach((entry) => {
+          // A. Video Prefetch
+          if (entry.video) {
+            if (!document.querySelector(`link[href="${entry.video}"]`)) {
+              const link = document.createElement("link");
+              link.rel = "prefetch"; 
+              link.as = "video";    
+              link.href = entry.video;
+              document.head.appendChild(link);
+              vCount++;
+            }
+          }
+
+          // B. Image Prefetch (Responsive)
+          if (entry.lcp && entry.lcp.href) {
+             // We use the href as the key to check for duplicates
+             if (!document.querySelector(`link[href="${entry.lcp.href}"]`)) {
+              const link = document.createElement("link");
+              link.rel = "prefetch"; 
+              link.as = "image";
+              link.href = entry.lcp.href;
+              
+              // Apply Responsive Attributes using setAttribute
+              // This is necessary because element.imagesrcset is not always
+              // reliably mapped in JS DOM APIs compared to standard src/href
+              if (entry.lcp.imagesrcset) {
+                  link.setAttribute("imagesrcset", entry.lcp.imagesrcset);
+              }
+              if (entry.lcp.imagesizes) {
+                  link.setAttribute("imagesizes", entry.lcp.imagesizes);
+              }
+              
+              document.head.appendChild(link);
+              iCount++;
+            }
+          }
+        });
+        
+        if (vCount + iCount > 0) {
+           console.log(`⚡ [AssetPrefetch] Queued ${vCount} videos and ${iCount} images.`);
+        }
+      };
+
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(inject);
+      } else {
+        setTimeout(inject, 2000);
+      }
+
+    } catch (e) {
+      console.debug("❌ [AssetPrefetch] Error:", e);
+    }
+  };
+
+window.addEventListener("load", initPrefetch, { once: true });
+</script>

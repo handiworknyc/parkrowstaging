@@ -1,0 +1,40 @@
+---
+// src/pages/index.astro
+export const prerender = false;
+
+import BaseLayout from "../layouts/MainLayout.astro";
+import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
+import { getFlexiblePageByUri } from "../lib/api";
+
+// ✅ IMPORT HELPER FUNCTIONS
+import { normalizeLayouts } from "../lib/wp/normalize";
+import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
+
+let page = null;
+try {
+  page = await getFlexiblePageByUri("/");
+} catch (e) {
+  page = null;
+}
+
+const title = page?.title ?? "Park Row";
+const layouts = page?.layouts ?? [];
+
+// existing
+let lcpData = null;
+
+// NEW
+let lcpVideo = null;
+
+if (layouts.length > 0) {
+  const rows = normalizeLayouts(layouts);
+  lcpData = getLcpImage(rows);
+  lcpVideo = getLcpVideo(rows);   // <-- ADD THIS
+}
+
+---
+
+{/* ✅ PASS lcp={lcpData} TO LAYOUT */}
+<BaseLayout title={title} lcp={lcpData} lcpVideo={lcpVideo}>
+  {layouts.length ? <LayoutRenderer layouts={layouts} /> : <p>WP unavailable right now.</p>}
+</BaseLayout>

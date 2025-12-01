@@ -1,0 +1,232 @@
+---
+import { getHeaderMenu } from "../lib/wp/getHeaderMenu";
+
+// -----------------------------------------------------------------------------
+// SETTINGS
+// -----------------------------------------------------------------------------
+// Ensure WP_BASE_URL does NOT end with a slash for cleaner replacement
+const WP_BASE_URL = (import.meta.env.WP_BASE_URL || "").trim().replace(/\/$/, "");
+
+// -----------------------------------------------------------------------------
+// ⚡ GLOBAL NAV CACHE
+// -----------------------------------------------------------------------------
+// Define outside the component function so it persists in Node/Server memory
+let _cachedHeaderMenu = null;
+
+// -----------------------------------------------------------------------------
+// 🚀 FAST URL REWRITE (String Replacement > Regex)
+// -----------------------------------------------------------------------------
+function fastRewrite(html, baseUrl) {
+  if (!html || !baseUrl) return html;
+  
+  // 1. Simple String Replace: Much faster than parsing new URL() objects
+  // We replace "https://my-wp.com" with "" (making it relative)
+  let processed = html.replaceAll(baseUrl, "");
+
+  // 2. Safety cleanup: Ensure we didn't leave double slashes
+  // e.g. href="//about" -> href="/about"
+  processed = processed.replaceAll('href="//', 'href="/');
+  
+  return processed;
+}
+
+// -----------------------------------------------------------------------------
+// FETCH & PROCESS
+// -----------------------------------------------------------------------------
+if (!_cachedHeaderMenu) {
+  try {
+    const raw = await getHeaderMenu();
+    
+    // Handle JSON-stringified HTML (common in some WP endpoints)
+    let html = raw;
+    // Check if it looks like a JSON string wrapping HTML
+    if (raw && raw.trim().startsWith('"') && raw.includes('<li')) {
+       try { html = JSON.parse(raw); } catch {}
+    }
+
+    _cachedHeaderMenu = fastRewrite(html, WP_BASE_URL);
+  } catch (err) {
+    console.error("[SiteNav] Error:", err);
+    _cachedHeaderMenu = ""; // Fallback to empty to prevent crash
+  }
+}
+
+const headerMenu = _cachedHeaderMenu;
+---
+
+<header id="header" class="group mob-menu-abs">
+  <div class="header-inner">
+    <div class="hw-contain pr flex-wrap tal align-items-center">
+      
+      <a class="logo pr" id="header-logo-a" href="/" aria-label="Home">
+		<svg id="logo-svg" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50">
+		<g id="main-logo">
+			<path d="M22.33,18.55h-6.12c.11-.66,2.75-15.87,2.99-17.21l3.13,17.21ZM26.91,30.6L21.58,1.79c-.16-.84-.85-1.46-1.64-1.46h-2.1v.02c.34.73.42,1.64.24,2.76l-5.27,29.51v.02h1.23l2.04-13.42h6.41l2.14,11.38c.15.68.09,1.36-.18,2.02v.02s3.22,0,3.22,0l-.02-.03c-.34-.49-.58-1.17-.74-2.02" style="fill: #3a2a22;"/>
+			<path d="M40.56,9.76c0,2.76-.56,4.93-1.67,6.42-1.14,1.54-2.84,2.32-5.04,2.32h-.77V1.03h.77c1.21,0,2.26.19,3.12.56.86.37,1.56.94,2.07,1.68,1.01,1.51,1.53,3.69,1.53,6.49M42.62,30.47v-4.79c0-1.82-.45-3.35-1.33-4.55-.9-1.23-2.22-2.04-3.91-2.41,1.68-.59,3.05-1.67,4.07-3.23,1.03-1.55,1.56-3.48,1.56-5.73,0-2.88-.77-5.21-2.28-6.9-.76-.84-1.68-1.48-2.73-1.9-1.04-.42-2.25-.63-3.59-.63h-4.06v.02c.32.6.48,1.26.48,1.97v30.31h2.24v-13.46h1.69c1.86,0,3.28.52,4.21,1.53.93,1.02,1.4,2.57,1.4,4.62v5.18c0,1.49,1.18,2.45,3.01,2.45h.04l-.03-.03c-.52-.54-.78-1.37-.78-2.46" style="fill: #3a2a22;"/>
+			<path d="M10.21,9.76c0,2.76-.56,4.93-1.67,6.42-1.14,1.54-2.84,2.32-5.04,2.32h-.77V1.02h.77c1.21,0,2.26.19,3.12.56.86.37,1.56.94,2.07,1.68,1.01,1.51,1.53,3.69,1.53,6.49M7.65.97c-1.04-.42-2.25-.63-3.59-.63H0v.02c.32.6.48,1.26.48,1.97v30.31h2.24v-13.46h1.69c1.67,0,3.14-.42,4.36-1.26.86-.59,1.62-1.39,2.31-2.44,1.03-1.55,1.56-3.48,1.56-5.73,0-2.88-.77-5.21-2.28-6.9-.76-.84-1.68-1.48-2.73-1.9" style="fill: #3a2a22;"/>
+			<path d="M60.35,30.64l-7.94-13.47L60.9.36v-.02s-.87,0-.87,0l-9.82,18.55V.34h-2.72v.02c.32.6.48,1.26.48,1.97v30.31h2.24v-11.71l.9-1.52,6.8,11.24c.41.8.63,1.46.65,1.97v.02h3.14l-.02-.03c-.64-.83-1.06-1.46-1.33-1.98" style="fill: #3a2a22;"/>
+			<path d="M93.05,4.36c1.89-2.48,4.55-3.71,7.97-3.71s6.05,1.24,7.95,3.71c1.89,2.5,2.84,5.43,2.84,8.8s-.94,6.33-2.84,8.82c-1.89,2.5-4.54,3.74-7.95,3.74s-6.08-1.24-7.97-3.74c-1.89-2.5-2.84-5.43-2.84-8.82s.94-6.3,2.84-8.8ZM101.02,26.35c3.62,0,6.71-1.28,9.29-3.87,2.59-2.59,3.87-5.69,3.87-9.32s-1.28-6.71-3.87-9.29c-2.59-2.59-5.67-3.87-9.29-3.87s-6.73,1.28-9.32,3.87c-2.59,2.59-3.87,5.67-3.87,9.29s1.28,6.73,3.87,9.32c2.59,2.59,5.69,3.87,9.32,3.87Z" style="fill: #3a2a22;"/>
+			<path d="M72.88,18.52V1.01h.79c2.43,0,4.17.74,5.2,2.25,1.01,1.51,1.53,3.69,1.53,6.51,0,5.47-2.23,8.75-6.73,8.75h-.79,0ZM102.3,32.54c-2.5,0-4.97-.74-7.47-2.2-1.42-.81-3.76-2.59-7.05-5.31-2.45-2-4.43-3.47-5.9-4.39-1.48-.92-3.15-1.53-5-1.82,1.78-.56,3.22-1.62,4.3-3.2,1.08-1.55,1.62-3.51,1.62-5.85,0-2.9-.76-5.2-2.27-6.89-1.53-1.69-3.63-2.52-6.3-2.52h-4.03c.32.61.47,1.28.47,1.98v30.29h2.2v-13.46h.79c1.33,0,2.56.22,3.71.65,1.15.45,2.02.9,2.63,1.37.61.47,1.6,1.35,2.99,2.63,1.4,1.28,2.5,2.25,3.28,2.91,2.92,2.41,5.54,4.07,7.83,5.02,2.3.97,4.91,1.44,7.83,1.44,5.02-.02,9.14-1.35,12.4-4.03l-.4-.5c-3.17,2.59-7.05,3.87-11.66,3.87" style="fill: #3a2a22;"/>
+			<path d="M139.3.36l-5.58,31.44c0,.07-.09.07-.09,0L127.82.36h-2.25l-2.23,31.44c0,.07-.09.07-.09,0l-5.43-29.39c-.16-.72-.09-1.4.18-2.05h-3.17c.34.52.56,1.19.72,2.05l5.36,29.03c.18.92.72,1.37,1.62,1.37s1.4-.4,1.55-1.19l1.97-26.83,5.24,26.65c.18.92.72,1.37,1.62,1.37s1.4-.4,1.55-1.19L140,.36h-.7Z" style="fill: #3a2a22;"/>
+		</g>
+		<g id="bofa">
+			<path d="M25.02,45.05h1.66c.95,0,1.52.46,1.52,1.22,0,.46-.2.83-.56,1.02.54.18.82.6.82,1.21,0,.88-.58,1.4-1.58,1.4h-1.86v-4.85h0ZM26.74,47.04c.41,0,.66-.24.66-.64s-.26-.6-.72-.6h-.85v1.25h.91ZM26.82,49.17c.56,0,.84-.24.84-.7s-.28-.7-.76-.7h-1.07v1.4h.99Z" style="fill: #3a2a22;"/>
+			<path d="M30.93,48.01l-1.71-2.96h.92l1.17,2.16,1.2-2.16h.92l-1.69,2.96v1.89h-.8v-1.89Z" style="fill: #3a2a22;"/>
+			<path d="M37.16,45.05h1.66c.95,0,1.52.46,1.52,1.22,0,.46-.2.83-.56,1.02.54.18.82.6.82,1.21,0,.88-.58,1.4-1.58,1.4h-1.86v-4.85h0ZM38.87,47.04c.41,0,.66-.24.66-.64s-.26-.6-.72-.6h-.85v1.25h.91ZM38.96,49.17c.56,0,.84-.24.84-.7s-.28-.7-.76-.7h-1.07v1.4h.99Z" style="fill: #3a2a22;"/>
+			<path d="M41.89,47.48c0-1.52.93-2.53,2.29-2.53s2.31,1,2.31,2.53-.94,2.52-2.31,2.52-2.29-1.01-2.29-2.52ZM44.19,49.24c.92,0,1.5-.68,1.5-1.75s-.58-1.76-1.5-1.76-1.49.67-1.49,1.76.58,1.75,1.49,1.75Z" style="fill: #3a2a22;"/>
+			<path d="M47.68,48.54l.79-.2c.1.62.51.93,1.08.93.46,0,.82-.28.82-.7s-.36-.6-1-.85c-.88-.34-1.37-.72-1.37-1.46s.6-1.31,1.5-1.31c.64,0,1.14.3,1.44.87l-.64.39c-.2-.35-.48-.55-.83-.55-.39,0-.67.24-.67.58,0,.36.3.55.99.81.88.33,1.38.71,1.38,1.47,0,.85-.67,1.46-1.65,1.46s-1.7-.57-1.84-1.45h0Z" style="fill: #3a2a22;"/>
+			<path d="M54.13,45.05h.61l1.92,4.85h-.88l-.37-1.01h-1.95l-.37,1.01h-.88l1.92-4.85ZM55.15,48.17l-.71-1.94-.71,1.94h1.42Z" style="fill: #3a2a22;"/>
+			<path d="M60.44,45.05h1.39c1.6,0,2.52.9,2.52,2.46s-.9,2.39-2.52,2.39h-1.38v-4.85h0ZM61.74,49.17c1.14,0,1.8-.42,1.8-1.68s-.65-1.7-1.72-1.7h-.57v3.37h.5,0Z" style="fill: #3a2a22;"/>
+			<path d="M65.84,45.05h3.22v.72h-2.41v1.29h2.23v.72h-2.23v1.4h2.41v.72h-3.22v-4.85Z" style="fill: #3a2a22;"/>
+			<path d="M70.15,45.05h.89l1.36,3.54,1.34-3.54h.89l-1.93,4.85h-.6l-1.94-4.85h0Z" style="fill: #3a2a22;"/>
+			<path d="M75.9,45.05h3.22v.72h-2.41v1.29h2.23v.72h-2.23v1.4h2.41v.72h-3.22v-4.85Z" style="fill: #3a2a22;"/>
+			<path d="M80.63,45.05h.8v4.13h2.1v.72h-2.9v-4.85Z" style="fill: #3a2a22;"/>
+			<path d="M84.41,47.48c0-1.52.93-2.53,2.29-2.53s2.31,1,2.31,2.53-.94,2.52-2.31,2.52-2.29-1.01-2.29-2.52ZM86.7,49.24c.92,0,1.5-.68,1.5-1.75s-.58-1.76-1.5-1.76-1.49.67-1.49,1.76.58,1.75,1.49,1.75Z" style="fill: #3a2a22;"/>
+			<path d="M90.5,45.05h1.55c1.07,0,1.64.47,1.64,1.39s-.58,1.43-1.64,1.43h-.76v2.03h-.8v-4.85h0ZM91.96,47.15c.58,0,.92-.2.92-.7s-.31-.68-.92-.68h-.67v1.38h.67Z" style="fill: #3a2a22;"/>
+			<path d="M95.08,45.05h1.18l1.29,3.43,1.29-3.43h1.18v4.85h-.8v-3.72l-1.27,3.3h-.78l-1.27-3.3v3.72h-.8v-4.85Z" style="fill: #3a2a22;"/>
+			<path d="M101.7,45.05h3.22v.72h-2.41v1.29h2.23v.72h-2.23v1.4h2.41v.72h-3.22v-4.85Z" style="fill: #3a2a22;"/>
+			<path d="M106.43,45.05h.84l2.14,3.48v-3.48h.81v4.85h-.85l-2.13-3.49v3.49h-.81v-4.85h0Z" style="fill: #3a2a22;"/>
+			<path d="M113.03,45.77h-1.54v-.72h3.9v.72h-1.54v4.13h-.81v-4.13h0Z" style="fill: #3a2a22;"/>
+		</g>
+		</svg>
+      </a>
+
+      <nav id="main-nav" class="pr tac resp-header-menu header-nav" data-nav-modal>
+        <div class="main-nav-inner flex-wrap align-items-center pr">
+          <ul class="flex-wrap align-items-center antiga">
+            <Fragment set:html={headerMenu} />
+          </ul>
+        </div>
+      </nav>
+
+      <div class="nav-toggle-wrap flex-wrap align-items-center">
+        <button
+          class="nav-toggle"
+          aria-label="Click to view the main menu"
+          data-target="#main-nav">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<script>
+  // Import global sticky header logic (assumes this handles its own lifecycle)
+  import initStickyHeader from "/src/scripts/sticky-header.ts";
+  // Import 'animate' only. We don't need 'spring' causing errors.
+  import { animate } from "motion";
+
+  // -------------------------------------------------------------------------
+  // INIT NAV LOGIC
+  // -------------------------------------------------------------------------
+  function initNav() {
+    // Re-initialize sticky header on every page load
+    initStickyHeader();
+
+    const toggle = document.querySelector(".nav-toggle");
+    const wrapper = document.querySelector(".nav-toggle-wrap") || toggle;
+    const modal = document.querySelector("#main-nav[data-nav-modal]");
+    const body = document.body;
+    
+    if (!toggle || !modal) return;
+
+    // Safety: If header persists (transition:persist), don't add listeners twice
+    if ((toggle as any)._navBound) return;
+    (toggle as any)._navBound = true;
+
+    const ul = modal.querySelector("ul");
+
+    // -----------------------------------------------------------------------
+    // MOTION INTERACTIONS
+    // -----------------------------------------------------------------------
+    if (wrapper) {
+      const wrapEl = wrapper as HTMLElement;
+
+      // "Back Out" Bezier: roughly equivalent to a spring with subtle bounce
+      // [x1, y1, x2, y2]
+      const elasticEase = [0.175, 0.885, 0.32, 1.275];
+
+      // Hover In: Scale down + Maintain Center
+      wrapEl.addEventListener("mouseenter", () => {
+        animate(
+          wrapEl, 
+          { scale: 0.95, y: "-50%" }, 
+          { duration: 0.05, easing: elasticEase } 
+        );
+      });
+
+      // Hover Out: Scale back + Maintain Center
+      wrapEl.addEventListener("mouseleave", () => {
+        animate(
+          wrapEl, 
+          { scale: 1, y: "-50%" }, 
+          { duration: 0.05, easing: elasticEase } // Slightly longer for the "return" bounce
+        );
+      });
+
+      // Click: Clear inline styles
+      wrapEl.addEventListener("click", () => {
+        // This removes the inline 'transform: scale(...) translateY(...)'
+        // allowing your CSS classes (and original CSS positioning) to take over
+        wrapEl.style.transform = ""; 
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // MENU LOGIC
+    // -----------------------------------------------------------------------
+    const clearStates = () => {
+      body.classList.remove("modal-opening", "modal-opened", "modal-closing", "modal-closed");
+    };
+
+    const openMenu = () => {
+      clearStates();
+      body.classList.add("modal-opening");
+      toggle.classList.add("active");
+      modal.classList.add("open");
+      body.classList.add("modal-open"); // Lock scroll
+      if (ul) ul.classList.add("sal-animate");
+    };
+
+    const closeMenu = () => {
+      clearStates();
+      body.classList.add("modal-closing");
+      toggle.classList.remove("active");
+      modal.classList.remove("open");
+      body.classList.remove("modal-open"); // Unlock scroll
+      if (ul) ul.classList.remove("sal-animate");
+    };
+
+    // Listeners
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modal.classList.contains("open") ? closeMenu() : openMenu();
+    });
+
+    // Close on link click
+    modal.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("a")) closeMenu();
+    });
+
+    // Handle CSS transition cleanup
+    modal.addEventListener("transitionend", () => {
+      if (modal.classList.contains("open")) {
+        body.classList.remove("modal-opening");
+        body.classList.add("modal-opened");
+      } else {
+        body.classList.remove("modal-closing");
+        body.classList.add("modal-closed");
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // ASTRO LIFECYCLE
+  // -------------------------------------------------------------------------
+  document.addEventListener("astro:page-load", initNav);
+</script>
