@@ -9,7 +9,9 @@
       "layout_settings": {
         "section_title": "",
         "section_h2": "",
-        "section_text": ""
+        "section_text": "",
+        "green_bg": false,
+        "section_text_below": false
       },
       "video": [
         {
@@ -149,9 +151,8 @@
           "cf_lb": "",
           "yt_start": "",
           "yt_end": "",
-          "align_top": false,
-          "align_bottom": false,
-          "yt_aspect": ""
+          "yt_aspect": "",
+          "image_align": "center"
         }
       ],
       "caption": "",
@@ -165,5 +166,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2025-12-01 05:35:19"
+  "_syncedAt": "2025-12-01 19:18:46"
 }

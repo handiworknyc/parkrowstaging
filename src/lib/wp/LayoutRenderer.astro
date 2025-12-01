@@ -47,9 +47,13 @@ function safeHtml(val: any): string {
 }
 
 async function fetchJson(url: string) {
-  const finalUrl = url.includes('?') ? `${url}&${WP_FIELDS}` : `${url}?${WP_FIELDS}`;
+  const finalUrl = url.includes("?")
+    ? `${url}&${WP_FIELDS}`
+    : `${url}?${WP_FIELDS}`;
   try {
-    const res = await fetch(finalUrl, { headers: { Accept: "application/json", ...authHeaders } });
+    const res = await fetch(finalUrl, {
+      headers: { Accept: "application/json", ...authHeaders },
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {
@@ -68,9 +72,15 @@ if (!WP_BASE) {
     const data = await fetchJson(`${WP_BASE}/wp-json/wp/v2/pages/${pageId}`);
     if (data) currentPost = data;
   } else {
-    const effSlug = pageSlug || ROUTE_SLUG || import.meta.env.PUBLIC_HOME_SLUG || "home";
+    const effSlug =
+      pageSlug ||
+      ROUTE_SLUG ||
+      import.meta.env.PUBLIC_HOME_SLUG ||
+      "home";
     if (effSlug) {
-      const data = await fetchJson(`${WP_BASE}/wp-json/wp/v2/pages?slug=${encodeURIComponent(effSlug)}`);
+      const data = await fetchJson(
+        `${WP_BASE}/wp-json/wp/v2/pages?slug=${encodeURIComponent(effSlug)}`
+      );
       if (Array.isArray(data) && data[0]) {
         currentPost = data[0];
       }
@@ -81,20 +91,31 @@ if (!WP_BASE) {
 /* ---------------- Data Prep ---------------- */
 const postId = currentPost?.id ?? null;
 const fetchedLayouts = currentPost?.acf?.layouts ?? null;
-const effectiveLayouts = Array.isArray(fetchedLayouts) && fetchedLayouts.length > 0
-  ? fetchedLayouts
-  : layouts;
+const effectiveLayouts =
+  Array.isArray(fetchedLayouts) && fetchedLayouts.length > 0
+    ? fetchedLayouts
+    : layouts;
 
 const rows: NormRow[] = normalizeLayouts(effectiveLayouts);
 
 /* ---------------- Component Map ---------------- */
-const modules = import.meta.glob("/src/components/flex/*.astro", { eager: true });
+const modules = import.meta.glob("/src/components/flex/*.astro", {
+  eager: true,
+});
 const COMPONENT_MAP: Record<string, any> = {};
 
-const toKebab = (s: string) => s.replace(/[_\s]+/g, "-").replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-const toSnake = (s: string) => s.replace(/[-\s]+/g, "_").replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+const toKebab = (s: string) =>
+  s.replace(/[_\s]+/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase();
+const toSnake = (s: string) =>
+  s.replace(/[-\s]+/g, "_")
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toLowerCase();
 const toCamel = (s: string) => {
-  const base = s.replace(/[-_ ]+(\w)/g, (_, c) => (c ? c.toUpperCase() : ""));
+  const base = s.replace(/[-_ ]+(\w)/g, (_, c) =>
+    c ? c.toUpperCase() : ""
+  );
   return base.charAt(0).toLowerCase() + base.slice(1);
 };
 
@@ -108,23 +129,33 @@ for (const [p, mod] of Object.entries(modules)) {
 }
 
 function getComponent(name: string) {
-  return COMPONENT_MAP[name] || COMPONENT_MAP[toKebab(name)] || COMPONENT_MAP[toSnake(name)] || null;
+  return (
+    COMPONENT_MAP[name] ||
+    COMPONENT_MAP[toKebab(name)] ||
+    COMPONENT_MAP[toSnake(name)] ||
+    null
+  );
 }
 
 /* ---------------- Render Helpers ---------------- */
 const firstLayout = rows[0]?.name ?? "";
 
 function isAltBgContext(): boolean {
-  return (taxContext === "service" || taxContext === "service-area") || firstLayout === "service_area_banner";
+  return (
+    taxContext === "service" ||
+    taxContext === "service-area" ||
+    firstLayout === "service_area_banner"
+  );
 }
 
 function computeBgWrapClass(row: NormRow, rowindex: number): string | null {
   const ls = (row as any)?.data?.layout_settings ?? {};
-  const bgColor: string = typeof ls?.bg_color === "string" ? ls.bg_color.trim() : "";
-  
+  const bgColor: string =
+    typeof ls?.bg_color === "string" ? ls.bg_color.trim() : "";
+
   if (bgColor && bgColor !== "none") {
-     if (/\bbg-1\b/.test(bgColor.toLowerCase())) return bgColor;
-     return `${bgColor}bg-1`;
+    if (/\bbg-1\b/.test(bgColor.toLowerCase())) return bgColor;
+    return `${bgColor}bg-1`;
   }
 
   if (isAltBgContext() && rowindex >= 2) {
@@ -153,88 +184,125 @@ const commonCtxBase = {
   const rowindex = idx + 1;
   const commonCtx = { ...commonCtxBase, rowIndex: rowindex };
   const preHtmlString = safeHtml(row.meta.preHtml);
-  
-  // ---------------------------------------------------------
-  // 1. Extract Layout Settings
-  // ---------------------------------------------------------
+
+  /* ---------------------------------------------------------
+   * 1. Extract Layout Settings
+   * --------------------------------------------------------- */
   const ls = row.data?.layout_settings || {};
-  const { section_title, section_h2, section_text } = ls;
-  
-  // ---------------------------------------------------------
-  // 2. Determine Classes (Header Content Status)
-  // ---------------------------------------------------------
+  const {
+    section_title,
+    section_h2,
+    section_text,
+    green_bg,
+    section_text_below
+  } = ls;
+
+  const placeHeaderBelow = section_text_below === true;
+
+  /* ---------------------------------------------------------
+   * 2. Determine Classes
+   * --------------------------------------------------------- */
   const hasHeaderContent = !!(section_title || section_h2 || section_text);
-  const contentStatusClass = hasHeaderContent ? "has-section-content" : "no-section-content";
-  
-  const sectionClass = `flex-bg ${row.meta.classes.join(" ")} ${contentStatusClass}`.trim();
+  const contentStatusClass = hasHeaderContent
+    ? "has-section-content"
+    : "no-section-content";
+
+  const bgColorClass = green_bg ? "bg-green c-white" : "";
+
+	// Detect image-only full_bleed_image module
+	const isFullBleedImage = row.name === "full_bleed_img";
+	const rawContent = row.data?.content || [];
+	const hasContent = rawContent.length > 0;
+
+	// Add image-only class when applicable
+	const imageOnlyClass = isFullBleedImage && !hasContent ? "image-only" : "";
+
+	const sectionClass = `flex-bg ${row.meta.classes.join(" ")} ${contentStatusClass} ${imageOnlyClass}`.trim();
+
+
   const bgWrapClass = computeBgWrapClass(row, rowindex);
 
-  // ---------------------------------------------------------
-  // 3. Prepare Header HTML
-  // ---------------------------------------------------------
+  /* ---------------------------------------------------------
+   * 3. Header HTML
+   * --------------------------------------------------------- */
   const hasTextContent = section_h2 || section_text;
-  const headerWrapperClass = `flex-section-content hw-contain ${!hasTextContent ? "title-only" : ""}`.trim();
+  const headerWrapperClass = `flex-section-content hw-contain ${bgColorClass} ${
+    !hasTextContent ? "title-only" : ""
+  }`.trim();
 
   const headerContent = hasHeaderContent ? (
     <div class={headerWrapperClass}>
-        <div class="row">
-            <div class="push-1 col-10 flex">
-                {/* 1. Section Title (Eyebrow) */}
-                {section_title && (
-                    <h2 class="antiga section-title" set:html={section_title} />
-                )}
-                
-                {/* Wrapper for H3 and Text */}
-                <div class="section-text-wrap ml-auto">
-                    {/* 2. Main Heading */}
-                    {section_h2 && (
-                        <h3 class="figure figure-h3" set:html={section_h2} />
-                    )}
-                    
-                    {/* 3. Description Text */}
-                    {section_text && (
-                        <div class="section-text" set:html={section_text} />
-                    )}
-                </div>
-            </div>
+      <div class="row">
+        <div class="push-1 col-10 flex">
+			<div class="row">
+          {section_title && (
+            <h2 class="antiga section-title col-5" set:html={section_title} />
+          )}
+
+          <div class="section-text-wrap ml-auto col-5">
+            {section_h2 && <h3 class="figure figure-h3" set:html={section_h2} />}
+            {section_text && (
+              <div class="section-text" set:html={section_text} />
+            )}
+			</div>
+          </div>
         </div>
+      </div>
     </div>
   ) : null;
 
+  /* ---------------------------------------------------------
+   * 4. Render
+   * --------------------------------------------------------- */
   return (
     <section id={row.meta.id || undefined} class={sectionClass}>
-      
       {preHtmlString && <div set:html={preHtmlString} />}
 
       {bgWrapClass ? (
         <div class={bgWrapClass}>
-          <div class={`flex-bg-inner z-[100] pr ${row.meta?.ofh ? "ofh" : ""}`}>
-             {/* Inject Header Here (Inside BG wrapper) */}
-             {headerContent}
-             
-             {Comp ? (
-              <Comp {...row.data} {...commonCtx} />
-            ) : (
-              <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
-                <p class="font-semibold">Unknown layout: <code>{row.name}</code></p>
-                <p class="text-sm mt-1">Create <code>src/components/flex/{toSnake(row.name)}.astro</code></p>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <>
-            {/* Inject Header Here (No BG wrapper) */}
-            {headerContent}
+          <div
+            class={`flex-bg-inner z-[100] pr ${
+              row.meta?.ofh ? "ofh" : ""
+            }`}
+          >
+            {/* If NOT below → header goes first */}
+            {!placeHeaderBelow && headerContent}
 
             {Comp ? (
               <Comp {...row.data} {...commonCtx} />
             ) : (
               <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
-                <p class="font-semibold">Unknown layout: <code>{row.name}</code></p>
-                 <p class="text-sm mt-1">Create <code>src/components/flex/{toSnake(row.name)}.astro</code></p>
+                <p class="font-semibold">
+                  Unknown layout: <code>{row.name}</code>
+                </p>
+                <p class="text-sm mt-1">
+                  Create <code>src/components/flex/{toSnake(row.name)}.astro</code>
+                </p>
               </div>
             )}
+
+            {/* If below → header goes last */}
+            {placeHeaderBelow && headerContent}
+          </div>
+        </div>
+      ) : (
+        <>
+          {!placeHeaderBelow && headerContent}
+
+          {Comp ? (
+            <Comp {...row.data} {...commonCtx} />
+          ) : (
+            <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
+              <p class="font-semibold">
+                Unknown layout: <code>{row.name}</code>
+              </p>
+              <p class="text-sm mt-1">
+                Create <code>src/components/flex/{toSnake(row.name)}.astro</code>
+              </p>
+            </div>
+          )}
+
+          {placeHeaderBelow && headerContent}
         </>
       )}
     </section>

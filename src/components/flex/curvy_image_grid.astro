@@ -1,0 +1,117 @@
+---
+import CFVideo from "../ui/CFVideo.astro";
+
+const vars = { ...Astro.props };
+
+// ---------------------------------------------
+// 1. ORDER IMAGES
+// ---------------------------------------------
+const images = Array.isArray(vars.images) ? vars.images : [];
+
+const orderedImages =
+  images.length === 4
+    ? [images[0], images[1], images[2], images[3]]
+    : images;
+
+// ---------------------------------------------
+// 2. SIMPLE CONTENT
+// ---------------------------------------------
+const title = vars.title || "";
+const text = vars.text || "";
+const listItems = (vars.list || "")
+  .split(/\r?\n/)
+  .filter((li) => li.trim());
+
+// ---------------------------------------------
+// 3. CAPTION
+// ---------------------------------------------
+const caption = vars.caption || "";
+const captionPos = vars.caption_pos || "left";
+const alignMap = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+const captionAlignClass = alignMap[captionPos] || "text-left";
+
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "mt-5",
+  captionAlignClass,
+  vars.bleed === true ? "hw-contain" : null,
+].filter(Boolean).join(" ");
+
+// ⭐ NEW — ROW ALIGN CLASS
+const rowAlignClass =
+  vars.align === "right"
+    ? "align-right"
+    : "align-left";
+---
+
+<div class="hw-contain">
+  <div
+    class:list={[
+      "row",
+      "flex",
+      "curvy-image-row",
+      rowAlignClass
+    ]}
+  >
+
+    <!-- ---------------- GRID (LEFT) ---------------- -->
+    <div class="curvy-image-grid min-[700px]:col-6 min-[700px]:push-1">
+      <div class="grid-container hw-player-parent">
+
+        {orderedImages.map((img) => {
+          const video = img.video?.[0];
+          if (!video) return null;
+
+          // ⭐ NEW: Single-image mode
+          const isSingle = orderedImages.length === 1;
+
+          return (
+            <div class={`grid-item ${
+              isSingle
+                ? "grid-span-4"
+                : img.large
+                ? "grid-span-2"
+                : "grid-span-1"
+            }`}>
+              <div class="hw-bg-vid img-load-par pr">
+                <CFVideo video={[video]} />
+              </div>
+            </div>
+          );
+        })}
+
+      </div>
+
+      {caption && <div class={captionWrapperClass}>{caption}</div>}
+    </div>
+
+    <!-- ---------------- CONTENT (RIGHT) ---------------- -->
+    <div
+      class:list={[
+        "curvy-image-content",
+        `text-align-${vars.text_align}`,
+        "min-[700px]:col-3",
+        "min-[700px]:push-1",
+      ]}
+    >
+
+      {title && <h3 class="figure-h3 mb-5" set:html={title} />}
+
+      {text && (
+        <div class="section-text mb-6" set:html={text} />
+      )}
+
+      {listItems.length > 0 && (
+        <ul class="section-text two-col-list">
+          {listItems.map((li) => <li>{li}</li>)}
+        </ul>
+      )}
+
+    </div>
+
+  </div>
+</div>

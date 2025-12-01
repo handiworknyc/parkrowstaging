@@ -1,20 +1,24 @@
 ---
-// CFVideo.astro
-
 import SmartImage from "../ui/SmartImage.astro";
 
-const v = Astro.props.video?.[0] ?? {};
+// Accept array or object
+const raw = Astro.props.video;
+const v = Array.isArray(raw) ? raw[0] : raw || {};
 
 const src = v.cf_stream_video || "";
 const playOnHover = v.yt_hover === true;
 
-// 1. Get the value from props (default to false if missing)
+// Player settings
 const showControls = v.show_controls ?? false; 
 const playOnScroll = true;
 const threshold = 0.6;
 
 // Generate safe ID
-let rawId = (v.id || v.cf_stream_video || "") + "-" + Math.random().toString(36).slice(2, 8);
+let rawId =
+  (v.id || v.cf_stream_video || "") +
+  "-" +
+  Math.random().toString(36).slice(2, 8);
+
 const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
 
 // WordPress image / poster
@@ -30,40 +34,50 @@ const smartImg = ytImg
   : null;
 
 const ytAlt = ytImg?.alt || "";
+
+// ⭐ NEW: Image alignment field
+const imageAlign = v.image_align || "center";
+
+const imageAlignClass =
+  {
+    top: "image-align-top",
+    center: "image-align-center",
+    bottom: "image-align-bottom",
+  }[imageAlign] || "image-align-center";
 ---
 
-{/* Fallback: Render image if NO video source exists */}
+{/* ------------------ FALLBACK IMAGE ------------------ */}
 {!src && smartImg && (
   <SmartImage
     images={smartImg}
     alt={ytAlt}
-    imgClass="abs-full of-cover hw-vid-poster-img"
+    imgClass={`abs-full of-cover hw-vid-poster-img ${imageAlignClass}`}
     sizes="(max-width: 1200px) 60vw, 100vw"
   />
 )}
 
+{/* ------------------ VIDEO PLAYER ------------------ */}
 {src && (
   <>
     <div
       id={`cfvideo-${videoId}`}
-      class="hw-vid-wrap loading"
+      class={`hw-vid-wrap loading ${imageAlignClass}`}
       data-id={videoId}
       data-src={`${src}?clientBandwidthHint=1000`}
       data-hover={playOnHover}
       data-scroll={playOnScroll}
       data-threshold={threshold}
     >
-      {/* 2. LOGIC UPDATE: Only show custom poster if controls are FALSE */}
+      {/* Show poster only when controls are OFF */}
       {smartImg && !showControls && (
         <SmartImage
           images={smartImg}
           alt={ytAlt}
-          imgClass="abs-full hw-vid-poster-img"
+          imgClass={`abs-full hw-vid-poster-img ${imageAlignClass}`}
           sizes="(max-width: 1200px) 60vw, 100vw"
         />
       )}
 
-      {/* Video Player */}
       <video
         class={`abs-full video-js hw-vid-player vjs-default-skin show-controls-${showControls}`}
         muted
@@ -75,59 +89,39 @@ const ytAlt = ytImg?.alt || "";
       ></video>
     </div>
 
-<script>
-    import { body } from "motion/react-client";
-import { initCFVideo } from "/src/scripts/videojs.js";
-import type { contains } from "cheerio";
+    <script>
+      import { body } from "motion/react-client";
+      import { initCFVideo } from "/src/scripts/videojs.js";
 
-    const isInViewport = (el) => {
-        const rect = el.getBoundingClientRect();
-        const windowHeight = (window.innerHeight || document.documentElement.clientHeight);
-        const windowWidth = (window.innerWidth || document.documentElement.clientWidth);
-        return (
-            (rect.top <= windowHeight) && ((rect.top + rect.height) >= 0) &&
-            (rect.left <= windowWidth) && ((rect.left + rect.width) >= 0)
-        );
-    };
-
-    const init = () => {
-        // 1. Session Logic
+      const init = () => {
         const isFirstLoad = !window.hwSessionLoaded;
         window.hwSessionLoaded = true;
 
-        const videos = document.querySelectorAll('.hw-vid-wrap');
-        
+        const videos = document.querySelectorAll(".hw-vid-wrap");
+
         videos.forEach((vid) => {
-            const id = vid.getAttribute('data-id');
-            
-            // 2. The Decision
-            const shouldAnimate = document.body.classList.contains('first-load');
-            
-            if (shouldAnimate) {
-                // PATH A: Use the CSS Transition
-                    // Cleanup Listener: Fires once when opacity reaches 1
-                    const onTransitionEnd = (e) => {
-                        // Ensure we are listening to the opacity transition of the wrapper itself
-                        if (e.propertyName === 'opacity' && e.target === vid) {
-                            vid.classList.remove('loading');
-							document.body.classList.remove('first-load');
-                            vid.removeEventListener('transitionend', onTransitionEnd);
-                        }
-                    };
+          const id = vid.getAttribute("data-id");
+          const shouldAnimate = document.body.classList.contains("first-load");
 
-                    vid.addEventListener('transitionend', onTransitionEnd);
-            } else {
-                vid.classList.remove('loading'); 
-            }
+          if (shouldAnimate) {
+            const onTransitionEnd = (e) => {
+              if (e.propertyName === "opacity" && e.target === vid) {
+                vid.classList.remove("loading");
+                document.body.classList.remove("first-load");
+                vid.removeEventListener("transitionend", onTransitionEnd);
+              }
+            };
 
-            // 3. Init Player
-            if (id) {
-                initCFVideo(id);
-            }
+            vid.addEventListener("transitionend", onTransitionEnd);
+          } else {
+            vid.classList.remove("loading");
+          }
+
+          if (id) initCFVideo(id);
         });
-    };
+      };
 
-    document.addEventListener('astro:page-load', init);
-</script>
+      document.addEventListener("astro:page-load", init);
+    </script>
   </>
 )}

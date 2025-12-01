@@ -52,21 +52,46 @@
     &.playing:not(.is-buffering) .hw-vid-poster-img {
         opacity: 0;
     }
-
-    &.align-top-1 {
-        .hw-vid-poster-img,
-        .vjs-tech {
-            object-position: center top;
-        }
-    }
-
-    &.align-bottom-1 {
-        .hw-vid-poster-img,
-        .vjs-tech {
-            object-position: center bottom;
-        }
-    }
 }
+
+
+.hw-vid-poster-img {
+	&.image-align-top {
+		object-position: top center !important;
+	}
+
+	&.image-align-center {
+		object-position: center center !important;
+	}
+
+	&.image-align-bottom {
+		object-position: bottom center !important;
+	}
+}
+
+.hw-vid-wrap {
+	&.image-align-top video,
+	&.image-align-top img {
+		object-position: top center !important;
+	}
+
+	&.image-align-center video,
+	&.image-align-center img {
+		object-position: center center !important;
+	}
+
+	&.image-align-bottom video,
+	&.image-align-bottom img {
+		object-position: bottom center !important;
+	}
+}
+
+
+
+
+
+
+
 
 body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
 	opacity: 0 !important;
@@ -126,4 +151,69 @@ body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
     visibility: hidden !important;
     pointer-events: none !important;
     }
+}
+
+.show-controls-true {
+	.vjs-slider,
+	.vjs-control-bar {
+		background: none !important;
+	}
+
+	.vjs-control-bar {
+		height: 5rem !important;
+	}
+
+	.vjs-remaining-time,
+	.vjs-button > .vjs-icon-placeholder:before {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.vjs-progress-holder,
+	.vjs-play-progress,
+	.vjs-load-progress {
+		height: .72rem !important;
+		border-radius: 2rem;
+	}
+
+	.vjs-load-progress {
+		overflow: hidden;
+	}
+
+	.vjs-progress-holder {
+		overflow: visible !important;
+	}
+
+	.vjs-play-progress {
+		background-color: transparent !important;
+		overflow: visible;
+		
+		&:after {
+			content: '';
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			left: 0;
+			top: 0;
+			overflow: hidden;
+			background-color: #C8A2C7;
+			border-radius: 2rem;
+		}
+
+		&:before {
+			height: 2.75rem;
+			width: 2.75rem;
+			content: '' !important;
+			background: url(/images/tracking-btn.svg);
+			background-repeat: no-repeat;
+			background-size: contain;
+			top: 50%;
+			right: -1.375rem !important;
+			z-index: 1;
+			transform: translateY(-50%);
+		}
+	}
+
+	
 }

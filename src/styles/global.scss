@@ -144,8 +144,8 @@ html:not(.ua-safari) .antiga {
 
 
 .flex-section-content {
-	padding-top: 8.5rem;
-	padding-bottom: 8.5rem;
+	padding-top: 7.5rem;
+	padding-bottom: 7.5rem;
 
 	&.title-only {
 		padding-top: 6.5rem;
@@ -153,16 +153,17 @@ html:not(.ua-safari) .antiga {
 	}
 }
 
-.flex-module:not(.rowindex-1) {
+.flex-module:not(.rowindex-1):not(.full_bleed_img-module + .full_bleed_img-module.rowindex-2) {
 	padding: 4rem 0;
 }
 
-.full_bleed_img-module + .full_bleed_img-module.no-section-content {
-	padding-top: 0;
+.full_bleed_img-module.image-only + .txt_img-module,
+.full_bleed_img-module.image-only + .full_bleed_img-module.no-section-content {
+	padding-top: 0 !important;
 }
 
 .section-title.antiga {
-	font-size: 4.5rem;
+	font-size: 5rem;
 	line-height: 1em;
 }
 
@@ -182,9 +183,13 @@ html:not(.ua-safari) .antiga {
 	line-height: 2rem;
 	letter-spacing: -.02em;
 
-	p {
+	p:not(:last-child) {
 		margin-bottom: 1.75rem;
 	}
+}
+
+.section-text + ul.section-text {
+	margin-top: 1.75rem;
 }
 
 ul.section-text {
@@ -236,7 +241,7 @@ ul.section-text li::before {
 .flex-module:not(.rowindex-1) {
 	background-color: #fff;
 }
-.flex-module:not(.rowindex-1) .hw-vid-wrap,
+.full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
 .full-bleed-img-inner  {
 	position: relative;
 	min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
@@ -283,6 +288,76 @@ ul.two-col-list {
   column-gap: 20px;
 }
 
-.full_bleed_img-module .col-5 {
+.full-bleed-content-wrap .col-5 {
 	max-width: 560px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.grid-container {
+  border-top-left-radius: round(nearest, calc(var(--jsVhUnits100) * .185), 1rem);
+  border-bottom-right-radius: round(nearest, calc(var(--jsVhUnits100) * .185), 1rem);
+  overflow: hidden;
+  min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;
+  gap: .75rem;
+
+  .hw-bg-vid {
+	height: 100%;
+  }
+}
+
+
+
+.curvy-image-row {
+	align-items: stretch;
+
+	.grid-item.grid-span-2 {
+		grid-column: span 2;
+	}
+
+	.grid-span-4 {
+		grid-column: span 2;
+		grid-row: span 2;
+		position: relative;
+
+		&:after {
+			content: '';
+			position: absolute;
+			height: .75rem;
+			width: 100%;
+			top: 50%;
+			background-color: #fff;
+			transform: translateY(-50%);
+			z-index: 2;
+		}
+	}
+
+}
+
+
+.curvy-image-content.text-align-bottom {
+	align-self: flex-end;
+}
+
+.curvy-image-content.text-align-center {
+	align-self: center;
+}
+
+.curvy-image-row.align-right {
+  flex-direction: row-reverse;
+  justify-content: flex-end
 }
