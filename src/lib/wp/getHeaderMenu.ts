@@ -1,5 +1,4 @@
 // src/lib/wp/getHeaderMenu.ts
-import { navQuery } from "@/lib/api";
 import { getEnv, toBase64 } from "@/lib/env";
 
 /* -----------------------------------------------------
