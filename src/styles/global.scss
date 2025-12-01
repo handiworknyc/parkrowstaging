@@ -93,7 +93,7 @@ html:not(.ua-safari) .antiga {
 
 /* GROUP WRAPPER */
 ::view-transition-group(main-content) {
-  animation-duration: 0.8s;
+  animation-duration: 1.1s;
   mix-blend-mode: normal;
   isolation: isolate;
 }
@@ -101,7 +101,7 @@ html:not(.ua-safari) .antiga {
 /* FADE OUT OLD CONTENT */
 ::view-transition-old(main-content) {
   animation-name: fade-out-overlay;
-  animation-duration: 0.8s;
+  animation-duration: 1.1s;
   animation-timing-function: var(--cubicBez);
   animation-fill-mode: both;
   opacity: 1;
@@ -112,7 +112,7 @@ html:not(.ua-safari) .antiga {
 /* FADE IN NEW CONTENT */
 ::view-transition-new(main-content) {
   animation-name: fade-in-overlay;
-  animation-duration: 0.8s;
+  animation-duration: 1.1s;
   animation-timing-function: var(--cubicBez);
   animation-fill-mode: both;
   z-index: 2;
