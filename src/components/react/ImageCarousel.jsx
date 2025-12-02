@@ -133,7 +133,8 @@ function Stylesheet() {
                 overflow: hidden; 
                 position: relative; 
                 /* Border radius for the image container */
-                border-radius: 2px; 
+                border-radius: 1.333rem; 
+				corner-shape: squircle;
             }
             
             .photo {
