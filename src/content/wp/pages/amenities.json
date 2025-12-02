@@ -963,12 +963,12 @@
             "alt": "",
             "author": "1",
             "description": "",
-            "caption": "RECENT SPACES",
+            "caption": "windows with apartment",
             "name": "recent-spaces-5",
             "status": "inherit",
             "uploaded_to": 39,
             "date": "2025-12-01 05:24:19",
-            "modified": "2025-12-01 05:24:19",
+            "modified": "2025-12-02 01:22:10",
             "menu_order": 0,
             "mime_type": "image/jpeg",
             "type": "image",
@@ -1451,5 +1451,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2025-12-01 23:54:21"
+  "_syncedAt": "2025-12-02 01:41:37"
 }

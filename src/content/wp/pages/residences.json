@@ -352,12 +352,12 @@
             "alt": "",
             "author": "1",
             "description": "",
-            "caption": "RECENT SPACES",
+            "caption": "couch in living room",
             "name": "recent-spaces-11",
             "status": "inherit",
             "uploaded_to": 35,
             "date": "2025-12-01 15:11:28",
-            "modified": "2025-12-01 15:11:28",
+            "modified": "2025-12-02 01:22:03",
             "menu_order": 0,
             "mime_type": "image/jpeg",
             "type": "image",
@@ -503,7 +503,33 @@
           "list": "Living\r\nDining\r\nPorcelain\r\nChina\r\nTea cups"
         }
       ]
+    },
+    {
+      "acf_fc_layout": "carousel",
+      "layout_settings": {
+        "section_title": "",
+        "section_h2": "",
+        "section_text": "",
+        "green_bg": false,
+        "section_text_below": false
+      },
+      "images": false,
+      "caption": "",
+      "content": [
+        {
+          "title": "Kitchens",
+          "text": "<p>Thoughtfully composed around daily rituals. Integrated appliances, sculpted stone, and generous storage create spaces both functional and artful.</p>\n",
+          "two_col_list": false,
+          "list": ""
+        },
+        {
+          "title": "",
+          "text": "",
+          "two_col_list": false,
+          "list": "Sink\r\nDishwasher\r\nCabinets\r\nKnives\r\nForks\r\nNapkins\r\nBowls\r\nSpoons\r\nPlates"
+        }
+      ]
     }
   ],
-  "_syncedAt": "2025-12-01 23:54:22"
+  "_syncedAt": "2025-12-02 01:41:38"
 }

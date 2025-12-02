@@ -14,88 +14,69 @@ const processedContent = rawContent.map((item) => ({
   listItems: item.list ? item.list.split(/\r?\n/).filter((li) => li.trim()) : []
 }));
 
-// --- 2. Data Processing: Images for Carousel --- //
-const rawImages = vars.images || [];
+// --- 2. Data Processing: Images --- //
+const rawData = vars.images || [];
 
-
-const carouselImages = rawImages.map(img => {
-  // 1. Check if the specific size string exists
-  const mediumUrl = img.sizes && img.sizes.intch_med;
+const carouselImages = rawData.map((item, index) => {
+  // ⚠️ CRITICAL FIX: The actual image data is inside item.image
+  const imgData = item.image || {}; 
+  
+  // 1. Get the intch_med URL string safely
+  // We check imgData.sizes because that's where the WP data lives
+  const mediumUrl = imgData.sizes ? imgData.sizes.intch_med : null;
   
   return {
-    id: img.ID || img.id,
-    // 2. Use the mediumUrl string if it exists, otherwise fallback to the main img.url
-    src: mediumUrl || img.url,
-    alt: img.alt || img.title || "",
-    aspectRatio: (img.width && img.height) ? (img.width / img.height) : (4/3) 
+    id: imgData.ID || imgData.id || index, // Fallback to index if ID missing
+    // 2. Use mediumUrl if found, else fallback to full URL
+    src: mediumUrl || imgData.url,
+    alt: imgData.alt || imgData.title || "",
+    // 3. Extract the caption from the wrapper object (item.caption), not the inner image object
+    caption: item.caption || "", 
+    aspectRatio: (imgData.width && imgData.height) ? (imgData.width / imgData.height) : (4/3) 
   };
 });
 
-// --- 3. Generate Content HTML (Columns) --- //
+// --- 3. HTML Generation --- //
 const contentColumnsHTML = processedContent.map((item, index) => {
   let cssClass = "col-4";
-  
-  if (processedContent.length === 1) {
-    cssClass = "col-5";
-  } else if (index === 1) {
-    cssClass = "col-4 push-2";
-  }
+  if (processedContent.length === 1) cssClass = "col-5";
+  else if (index === 1) cssClass = "col-4 push-2";
   
   const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
-  
   return `
     <div class="${cssClass}">
       ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ''}
       ${item.text ? `<div class='section-text'>${item.text}</div>` : ''}
-      ${item.listItems.length > 0 ? `
-        <ul class='${ulClass}'>
-          ${item.listItems.map(li => `<li>${li}</li>`).join('')}
-        </ul>
-      ` : ''}
+      ${item.listItems.length > 0 ? `<ul class='${ulClass}'>${item.listItems.map(li => `<li>${li}</li>`).join('')}</ul>` : ''}
     </div>
   `;
 }).join('');
 
-// --- 4. CSS Class Generation --- //
-const caption = vars.caption || "";
+// --- 4. CSS Classes --- //
+const globalCaption = vars.caption || "";
 const captionPos = vars.caption_pos || "left";
 const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
-const captionAlignClass = alignMap[captionPos] || "text-left";
-
-const captionWrapperClass = [
-  "full-bleed-caption",
-  "mt-5",
-  captionAlignClass,
-  vars.bleed === true ? "hw-contain" : null
-].filter(Boolean).join(" ");
-
-// Note: Removed colClass, pushClass, layoutClasses logic that was wrapping the video
-// because the prompt requested the carousel be full width/bleed without column classes.
-
+const captionWrapperClass = ["full-bleed-caption", "mt-5", alignMap[captionPos] || "text-left", vars.bleed === true ? "hw-contain" : null].filter(Boolean).join(" ");
 ---
 
-{/* --- CAROUSEL SECTION (Full Bleed) --- */}
+{/* --- CAROUSEL SECTION --- */}
 <div class="w-full relative block">
   {carouselImages.length > 0 && (
     <ImageCarousel client:visible images={carouselImages} />
   )}
 </div>
 
-{/* --- TEXT CONTENT SECTION (Maintains original layout format) --- */}
-{(caption || hasContent) && (
+{/* --- TEXT CONTENT --- */}
+{(globalCaption || hasContent) && (
    <div class={`hw-contain ${captionWrapperClass}`}>
      <div class="row">
        <div class="push-1 col-12">
-         
-         {caption && <div>{caption}</div>}
-         
-         {/* Content Wrap */}
+         {globalCaption && <div>{globalCaption}</div>}
          {hasContent && (
             <div class="full-bleed-content-wrap mt-16">
               <div class="row" set:html={contentColumnsHTML} />
             </div>
          )}
-
        </div>
      </div>
    </div>
