@@ -1,0 +1,102 @@
+---
+import ImageCarousel from "../react/ImageCarousel.jsx";
+
+const vars = { ...Astro.props };
+
+// --- 1. Data Processing: Content --- //
+const rawContent = vars.content || [];
+const hasContent = rawContent.length > 0;
+
+const processedContent = rawContent.map((item) => ({
+  title: item.title || "",
+  text: item.text || "",
+  twoColList: item.two_col_list || false, 
+  listItems: item.list ? item.list.split(/\r?\n/).filter((li) => li.trim()) : []
+}));
+
+// --- 2. Data Processing: Images for Carousel --- //
+const rawImages = vars.images || [];
+
+
+const carouselImages = rawImages.map(img => {
+  // 1. Check if the specific size string exists
+  const mediumUrl = img.sizes && img.sizes.intch_med;
+  
+  return {
+    id: img.ID || img.id,
+    // 2. Use the mediumUrl string if it exists, otherwise fallback to the main img.url
+    src: mediumUrl || img.url,
+    alt: img.alt || img.title || "",
+    aspectRatio: (img.width && img.height) ? (img.width / img.height) : (4/3) 
+  };
+});
+
+// --- 3. Generate Content HTML (Columns) --- //
+const contentColumnsHTML = processedContent.map((item, index) => {
+  let cssClass = "col-4";
+  
+  if (processedContent.length === 1) {
+    cssClass = "col-5";
+  } else if (index === 1) {
+    cssClass = "col-4 push-2";
+  }
+  
+  const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
+  
+  return `
+    <div class="${cssClass}">
+      ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ''}
+      ${item.text ? `<div class='section-text'>${item.text}</div>` : ''}
+      ${item.listItems.length > 0 ? `
+        <ul class='${ulClass}'>
+          ${item.listItems.map(li => `<li>${li}</li>`).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
+}).join('');
+
+// --- 4. CSS Class Generation --- //
+const caption = vars.caption || "";
+const captionPos = vars.caption_pos || "left";
+const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
+const captionAlignClass = alignMap[captionPos] || "text-left";
+
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "mt-5",
+  captionAlignClass,
+  vars.bleed === true ? "hw-contain" : null
+].filter(Boolean).join(" ");
+
+// Note: Removed colClass, pushClass, layoutClasses logic that was wrapping the video
+// because the prompt requested the carousel be full width/bleed without column classes.
+
+---
+
+{/* --- CAROUSEL SECTION (Full Bleed) --- */}
+<div class="w-full relative block">
+  {carouselImages.length > 0 && (
+    <ImageCarousel client:visible images={carouselImages} />
+  )}
+</div>
+
+{/* --- TEXT CONTENT SECTION (Maintains original layout format) --- */}
+{(caption || hasContent) && (
+   <div class={`hw-contain ${captionWrapperClass}`}>
+     <div class="row">
+       <div class="push-1 col-12">
+         
+         {caption && <div>{caption}</div>}
+         
+         {/* Content Wrap */}
+         {hasContent && (
+            <div class="full-bleed-content-wrap mt-16">
+              <div class="row" set:html={contentColumnsHTML} />
+            </div>
+         )}
+
+       </div>
+     </div>
+   </div>
+)}

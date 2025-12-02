@@ -217,3 +217,20 @@ body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
 
 	
 }
+
+
+
+
+
+
+
+
+
+.first-load .no-video.hw-bg-vid {
+	opacity: 0;
+	transition: opacity 1s var(--cubicBez, ease-out);
+}
+
+.show-me .no-video.hw-bg-vid {
+	opacity: 1
+}

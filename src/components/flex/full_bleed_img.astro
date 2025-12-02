@@ -3,7 +3,6 @@ import CFVideo from "../ui/CFVideo.astro";
 
 const vars = { ...Astro.props };
 const v = vars.video;
-
 // --- 1. Data Processing --- //
 const rawContent = vars.content || [];
 const hasContent = rawContent.length > 0;
@@ -88,6 +87,7 @@ const layoutClasses = [
   vars.width !== "full" ? `align-${vars.align}` : null
 ];
 
+
 const videoClasses = [
   "hw-bg-vid",
   "hw-player-parent",
@@ -96,6 +96,7 @@ const videoClasses = [
   "full-bleed-img-inner",
   vars.round_corner && "round-corner",
   `corner-pos-${vars.corner_pos}`,
+  !v[0]?.cf_stream_video && "no-video"   // ⭐ ADD THIS
 ];
 ---
 

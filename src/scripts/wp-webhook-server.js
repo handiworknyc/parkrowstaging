@@ -13,7 +13,7 @@ if (process.env.NETLIFY) {
 const PORT = 4321;
 
 const server = http.createServer((req, res) => {
-  if (req.url === "/__wp-sync" && req.method === "POST") {
+  if (req.url === "/wp-sync" && req.method === "POST") {
     console.log("🔔 WordPress → Local machine: Page updated");
     
     try {
@@ -33,5 +33,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🌐 Local webhook server ready → http://localhost:${PORT}/__wp-sync`);
+  console.log(`🌐 Local webhook server ready → http://localhost:${PORT}/wp-sync`);
 });
