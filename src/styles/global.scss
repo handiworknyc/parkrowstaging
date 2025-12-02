@@ -242,6 +242,11 @@ ul.section-text li::before {
 	overflow: hidden;
 }
 
+.flex-module {
+	max-width: 100vw;
+	position: relative;
+	overflow: hidden;
+}
 .flex-module:not(.rowindex-1) {
 	background-color: #fff;
 }
@@ -294,6 +299,30 @@ ul.two-col-list {
 
 .full-bleed-content-wrap .col-5 {
 	max-width: 560px;
+}
+
+
+
+.txt_img-module {
+	[class*="col-"] {
+		position: relative;
+	}
+
+	.full-bleed-caption {
+		position: absolute;
+		bottom: -3.25rem;
+	}
+
+	.full-bleed-caption.text-right {
+		right: var(--containerPadding);
+		padding-right: 10px;
+	}
+
+	
+	.full-bleed-caption.text-left {
+		left: var(--containerPadding);
+		padding-left: 10px;
+	}
 }
 
 

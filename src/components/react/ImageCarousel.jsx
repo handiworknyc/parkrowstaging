@@ -114,7 +114,14 @@ function Stylesheet() {
             .carousel-center-mask { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
             .ticker-item { overflow: hidden; }
             .carousel { width: min(80vw, 900px); }
-            
+
+			.carousel li:hover {
+				cursor: grab;
+			}
+
+			.carousel li:active {
+				cursor: grabbing;
+			}
             .carousel li {
                 width: min(50vw, 900px) !important;
                 flex: 0 0 min(50vw, 900px) !important;
