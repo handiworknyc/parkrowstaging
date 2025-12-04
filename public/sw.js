@@ -1,85 +1,78 @@
-const CACHE_NAME = "prefetch-cache-v1";
-const LATEST_MAP = "/prefetch-map-latest.json";
+/* ==========================================================
+   SERVICE WORKER — OPAQUE PREFETCH MODE
+   - Eliminates ALL CORS console errors
+   - Prefetches remote WP Engine images safely
+   - Prefetches Cloudflare Stream manifests safely
+   - Stores opaque responses in CacheStorage
+   - Never blocks the page
+========================================================== */
 
-// Resolve hash → actual filename
-async function resolveMapFile() {
-  try {
-    const res = await fetch(LATEST_MAP, { cache: "no-cache" });
-    if (!res.ok) return null;
+const CACHE_NAME = "prefetch-v1";
 
-    const { file } = await res.json();
-    return "/" + file;
-  } catch {
-    return null;
-  }
-}
+// List of assets passed from your page via postMessage('prefetch')
+let prefetchList = [];
 
-async function prefetchAssets() {
-  const mapFile = await resolveMapFile();
-  if (!mapFile) {
-    console.warn("[SW] Could not resolve map file.");
-    return;
-  }
-
-  try {
-    const res = await fetch(mapFile, { cache: "no-cache" });
-    if (!res.ok) {
-      console.warn("[SW] Failed to fetch", mapFile);
-      return;
-    }
-
-    const assetMap = await res.json();
-    const cache = await caches.open(CACHE_NAME);
-
-    for (const entry of assetMap) {
-      // VIDEO
-      if (entry.video) {
-        try {
-          await cache.add(entry.video);
-          console.log("[SW] Prefetched video:", entry.video);
-        } catch (e) {}
-      }
-
-      // LCP IMAGE
-      if (entry.lcp?.href) {
-        try {
-          await cache.add(entry.lcp.href);
-          console.log("[SW] Prefetched LCP:", entry.lcp.href);
-        } catch (e) {}
-      }
-    }
-  } catch (err) {
-    console.warn("[SW] Prefetch failed:", err);
-  }
-}
-
-// SW receives "prefetch" command after activation
-self.addEventListener("message", (event) => {
-  if (event.data === "prefetch") prefetchAssets();
+// Listen for activation
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
 });
 
-// Cleanup old caches
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      for (const key of keys) {
-        if (key !== CACHE_NAME) {
-          await caches.delete(key);
-        }
-      }
-      await clients.claim();
-    })()
-  );
+  event.waitUntil(self.clients.claim());
 });
 
-// Serve cached video/image assets
-self.addEventListener("fetch", (event) => {
-  const url = event.request.url;
+/* ==========================================================
+   SAFE OPAQUE PREFETCH HELPER
+========================================================== */
+async function opaqueFetchAndCache(url) {
+  try {
+    // Opaque request — NO-CORS → NO CORS ERRORS
+    const response = await fetch(url, { mode: "no-cors" });
 
-  if (url.includes(".m3u8") || url.match(/\.(jpg|jpeg|png|webp|avif)$/)) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
-    );
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(url, response.clone());
+
+    console.log("[SW] Prefetched (opaque cached):", url);
+  } catch (err) {
+    console.warn("[SW] Prefetch failed:", url, err);
+  }
+}
+
+/* ==========================================================
+  MESSAGES FROM MAIN THREAD (prefetch trigger)
+========================================================== */
+self.addEventListener("message", (event) => {
+  if (event.data === "prefetch") {
+    // Client will send asset map back
+    sendPrefetchRequest(event.source.id);
+  }
+
+  if (event.data.prefetchAssets) {
+    prefetchList = event.data.prefetchAssets;
+    prefetchAll();
   }
 });
+
+/* ==========================================================
+   REQUEST THE ASSET LIST FROM THE PAGE
+========================================================== */
+async function sendPrefetchRequest(clientId) {
+  const client = await self.clients.get(clientId);
+  if (!client) return;
+
+  client.postMessage("request-prefetch-list");
+}
+
+/* ==========================================================
+   PREFETCH ALL RESOURCES (Cloudflare + WP images)
+========================================================== */
+async function prefetchAll() {
+  if (!prefetchList || prefetchList.length === 0) return;
+
+  for (const item of prefetchList) {
+    if (!item) continue;
+
+    // Just fetch blindly — opaque mode handles all remote assets
+    opaqueFetchAndCache(item);
+  }
+}

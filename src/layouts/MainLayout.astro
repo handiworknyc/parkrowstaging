@@ -74,36 +74,75 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 		href={`${lcpVideo.href}`} 
 		crossorigin="anonymous" 
 		/>
-		
-		<link rel="modulepreload" href={videoJsRuntime} />
-		<link rel="modulepreload" href={qualityLevelsRuntime} />
 	</>
 	)}
 
-	<script is:client>
-	if ("serviceWorker" in navigator) {
-	navigator.serviceWorker.register("/sw.js").then(reg => {
+<script is:client>
+(async () => {
+  try {
+    const req = await fetch("/prefetch-map.json", { cache: "no-store" });
+    if (!req.ok) return;
 
-		function sendPrefetchMessage(worker) {
-		worker.postMessage("prefetch");
-		}
+    const map = await req.json();
 
-		if (reg.active) {
-		sendPrefetchMessage(reg.active);
-		} else {
-		// Wait for installation
-		reg.addEventListener("updatefound", () => {
-			const newWorker = reg.installing;
-			newWorker.addEventListener("statechange", () => {
-			if (newWorker.state === "activated") {
-				sendPrefetchMessage(newWorker);
-			}
-			});
-		});
-		}
-	});
-	}
-	</script>
+    // Build image + video list without duplicates
+    const assets = new Set();
+
+    map.forEach((entry) => {
+      if (entry.image) assets.add(entry.image);
+      if (entry.video) assets.add(entry.video);
+    });
+
+    window.__PREFETCH_ASSETS__ = Array.from(assets);
+
+    console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
+  } catch (err) {
+    console.warn("Prefetch map failed:", err);
+  }
+})();
+</script>
+
+
+<script is:client>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").then((reg) => {
+
+    // STEP 1 — Handle SW asking for the asset list
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data === "request-prefetch-list") {
+        // Send the asset list from the page into the SW
+        if (window.__PREFETCH_ASSETS__ && window.__PREFETCH_ASSETS__.length) {
+          reg.active?.postMessage({
+            prefetchAssets: window.__PREFETCH_ASSETS__,
+          });
+        }
+      }
+    });
+
+    // STEP 2 — Trigger SW to begin prefetch handshake
+    function notifySW(worker) {
+      // Tell SW: "Ask me for the list"
+      worker.postMessage("prefetch");
+    }
+
+    // STEP 3 — Send the message to proper worker
+    if (reg.active) {
+      notifySW(reg.active);
+    } else {
+      // Wait for install → activate
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "activated") {
+            notifySW(newWorker);
+          }
+        });
+      });
+    }
+  });
+}
+</script>
+
 
 
     <script>
