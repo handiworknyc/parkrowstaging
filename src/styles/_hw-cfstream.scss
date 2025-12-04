@@ -106,18 +106,19 @@ body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
     transition: opacity 1s var(--cubicBez);
 }
 
-.first-load .rowindex-1 .hw-vid-wrap.loading {
-    opacity: 0;
 
-    &.playing:not(.is-buffering) {
-        opacity: 1;
-        transition-delay: .15s
-    }
+// .first-load .rowindex-1 .hw-vid-wrap.loading {
+//     opacity: 0;
+
+//     &.playing:not(.is-buffering) {
+//         opacity: 1;
+//         transition-delay: .15s
+//     }
     
-    .hw-vid-poster-img {
-        opacity: 0
-    }
-}
+//     .hw-vid-poster-img {
+//         opacity: 0
+//     }
+// }
 
 ::view-transition-new(main-content) {
 	.hw-vid-wrap,

@@ -43,26 +43,27 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
     {description && <meta name="description" content={description} />}
 	
     {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
-    {lcp && lcp.href && (
-      <link 
-  		rel="prefetch"
-        as="image"
-        href={lcp.href}
-        imagesrcset={lcp.imagesrcset}
-        imagesizes={lcp.imagesizes}
-        fetchpriority="high"
-      />
-    )}
+	{lcp && (
+	<link 
+		rel="preload"
+		as="image"
+		fetchpriority="high"
+		href={lcp.href}
+		imagesrcset={lcp.imagesrcset}
+		imagesizes={lcp.imagesizes}
+		type={lcp.type}
+	/>
+	)}
 
-    {/* 🚀 NEW: Cloudflare Stream video manifest preload */}
-    {lcpVideo && lcpVideo.href && (
-      <link
-  		rel="prefetch"
-        as="fetch"
-        href={lcpVideo.href}
-        crossorigin="anonymous"
-      />
-    )}
+	{lcpVideo && (
+	<link
+		rel="prefetch"
+		href={lcpVideo.href}
+		as="fetch"
+		type={lcpVideo.type}
+		crossorigin="anonymous"
+	/>
+	)}
 
 	<script is:client>
 	if ("serviceWorker" in navigator) {
