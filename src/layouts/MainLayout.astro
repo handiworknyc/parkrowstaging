@@ -89,15 +89,17 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 	}
 	</script>
 
-    <link rel="preload" href={belowCssUrl} as="style" />
-
     <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
       :root {
         --wp-base-url: var(--wpBaseUrl);
       }
     </style>
 
-    <script src={headerCriticalUrl} defer></script>
+	<link rel="modulepreload" href={headerCriticalUrl} />
+	<script type="module">
+		import headerCritical from "{headerCriticalUrl}";
+	</script>
+
     <ClientRouter prefetch="viewport" />
 
 	
@@ -105,11 +107,6 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 		document.addEventListener('astro:before-swap', (ev) => {
 			ev.newDocument.body.classList.remove('first-load');
 		});
-	</script>
-
-	<script>
-		const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-		if (isSafari) document.documentElement.classList.add("disable-vt");
 	</script>
   </head>
 
@@ -131,15 +128,12 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
       onload="this.media='all'"
     />
 
-    <script>
-      import "../scripts/smart-image";
-      import "../scripts/gsap-global";
-    </script>
+	<script is:client src="/scripts/smart-image.js" type="module"></script>
+	<script is:client src="/scripts/gsap-global.js" type="module"></script>
+
 
 	<script is:client>
-	const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-	if (isSafari) {
+	if (window.__isSafari) {
 		// Kill all view transition effects completely
 		document.documentElement.classList.add("disable-vt");
 
