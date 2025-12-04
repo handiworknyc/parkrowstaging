@@ -73,18 +73,6 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 		href={`${lcpVideo.href}`} 
 		crossorigin="anonymous" 
 		/>
-
-		{/* 4. Preload the VIDEO.JS runtime used by CFVideo */}
-		<link rel="modulepreload" href={videoJsRuntime} />
-		<link rel="modulepreload" href={videoJsQualityPlugin} />
-
-		{/* 5. (Optional) Preload first HLS segment if you want near-zero buffer stall */}
-		<link 
-		rel="prefetch" 
-		as="fetch" 
-		href={`${lcpVideo.href.replace("manifest/video.m3u8","video_720p0.ts")}`} 
-		crossorigin="anonymous" 
-		/>
 	</>
 	)}
 

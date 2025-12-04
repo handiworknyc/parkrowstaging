@@ -3,6 +3,8 @@
 
 import SmartImage from "../ui/SmartImage.astro";
 
+import videoJsCssUrl from "video.js/dist/video-js.css?url";
+
 const v = Astro.props.video?.[0] ?? {};
 
 const src = v.cf_stream_video || "";
@@ -75,6 +77,10 @@ const ytAlt = ytImg?.alt || "";
         controlsList="nodownload noplaybackrate noremoteplayback"
       ></video>
     </div>
+
+<script>
+  window.__VIDEOJS_CSS_URL__ = "{videoJsCssUrl}";
+</script>
 
 <script>
 	import { initCFVideo } from "/src/scripts/videojs.js";
