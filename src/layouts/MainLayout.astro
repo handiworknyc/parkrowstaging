@@ -68,9 +68,6 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 	/>
 	)}
 
-	<link rel="modulepreload" href={videoJsRuntime}>
-	<link rel="modulepreload" href={videoJsQualityPlugin}>
-
 	<script is:client>
 	if ("serviceWorker" in navigator) {
 	navigator.serviceWorker.register("/sw.js").then(reg => {
