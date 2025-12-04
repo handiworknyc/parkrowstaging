@@ -45,7 +45,7 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
     {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
     {lcp && lcp.href && (
       <link 
-        rel="preload"
+  		rel="prefetch"
         as="image"
         href={lcp.href}
         imagesrcset={lcp.imagesrcset}
@@ -57,7 +57,7 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
     {/* 🚀 NEW: Cloudflare Stream video manifest preload */}
     {lcpVideo && lcpVideo.href && (
       <link
-        rel="preload"
+  		rel="prefetch"
         as="fetch"
         href={lcpVideo.href}
         crossorigin="anonymous"
@@ -89,16 +89,19 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 	}
 	</script>
 
+
+    <script>
+      import "../scripts/smart-image";
+     // import "../scripts/gsap-global";
+    </script>
+
     <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
       :root {
         --wp-base-url: var(--wpBaseUrl);
       }
     </style>
 
-	<link rel="modulepreload" href={headerCriticalUrl} />
-	<script type="module">
-		import headerCritical from "{headerCriticalUrl}";
-	</script>
+    <script src={headerCriticalUrl} defer></script>
 
     <ClientRouter prefetch="viewport" />
 
@@ -127,9 +130,6 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
       media="print"
       onload="this.media='all'"
     />
-
-	<script is:client src="/scripts/smart-image.js" type="module"></script>
-	<script is:client src="/scripts/gsap-global.js" type="module"></script>
 
 
 	<script is:client>
