@@ -2,6 +2,7 @@
 // CFVideo.astro
 
 import SmartImage from "../ui/SmartImage.astro";
+import videoJsUrl from "@/scripts/videojs.js?url";
 
 const v = Astro.props.video?.[0] ?? {};
 
@@ -76,22 +77,19 @@ const ytAlt = ytImg?.alt || "";
       ></video>
     </div>
 
-<script type="module" define:vars={{ videoId }}>
-  // The *first* microtask after DOM node is parsed
+
+<script type="module" define:vars={{ videoId, videoJsUrl }}>
   queueMicrotask(() => {
     const vid = document.getElementById(`cfvideo-${videoId}`);
     if (!vid) return;
 
-    // Prevent double-run
     if (vid.dataset.initted === "true") return;
     vid.dataset.initted = "true";
 
-    // Delay the heavy work to next tick — non-blocking
-    import("/src/scripts/videojs.js").then(({ initCFVideo }) => {
+    import(videoJsUrl).then(({ initCFVideo }) => {
       const shouldAnimate = document.body.classList.contains("first-load");
       const id = vid.dataset.id;
 
-      // Transition logic
       if (shouldAnimate) {
         const onEnd = (e) => {
           if (e.propertyName === "opacity" && e.target === vid) {
@@ -105,7 +103,6 @@ const ytAlt = ytImg?.alt || "";
         vid.classList.remove("loading");
       }
 
-      // Initialize video player
       if (id) initCFVideo(id);
     });
   });
