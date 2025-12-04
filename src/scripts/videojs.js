@@ -1,9 +1,22 @@
 // src/scripts/videojs.js
 
-// 1. Static Import (This allows Vite to auto-preload this chunk)
+// 1. Static JS imports (still eagerly loaded)
 import videojs from "video.js";
 import "videojs-contrib-quality-levels";
-import "video.js/dist/video-js.css";
+
+// ❌ Removed global CSS import:
+// import "video.js/dist/video-js.css";
+
+// ✅ Load CSS only if/when we actually need controls
+let videoJsCssLoaded = false;
+
+function ensureVideoJsCss() {
+  if (videoJsCssLoaded) return;
+
+  // Vite will handle this dynamic CSS import as a side-effect chunk
+  import("video.js/dist/video-js.css");
+  videoJsCssLoaded = true;
+}
 
 // Use Maps for O(1) lookups
 const players = new Map();
@@ -21,16 +34,21 @@ export function initCFVideo(videoId) {
   // Prevent double init
   if (players.has(videoId)) return players.get(videoId);
 
-  // --- NEW: Detect controls setting from the class ---
+  // --- Detect controls setting from the class ---
   const hasControls = el.classList.contains("show-controls-true");
 
-  // 2. Initialize immediately (No awaiting)
+  // ✅ Only load Video.js CSS when we actually show controls
+  if (hasControls) {
+    ensureVideoJsCss();
+  }
+
+  // Initialize player
   const player = videojs(el, {
     controls: hasControls, // Set dynamically based on class
     loop: true,
     autoplay: false, // We control this via observer
     muted: true,
-    preload: "metadata", 
+    preload: "metadata",
     playsinline: true,
     html5: {
       hls: {
@@ -47,16 +65,15 @@ export function initCFVideo(videoId) {
 
   player.ready(() => {
     if (player.isDisposed()) return;
-    
-    // --- NEW: Only hide controls if the setting is false ---
+
+    // If controls are off, hide them completely
     if (!hasControls) {
       player.controls(false);
       if (player.controlBar) player.controlBar.hide();
     }
   });
 
-  // ... [Keep your existing quality logic and observers below] ...
-  
+  // --- Quality forcing logic ---
   function forceMaxQuality() {
     if (player.isDisposed()) return;
     const q = player.qualityLevels?.();
@@ -80,9 +97,7 @@ export function initCFVideo(videoId) {
   player.on("loadeddata", forceMaxQuality);
   player.on("resolutionchange", forceMaxQuality);
 
-  // ... [Keep your existing Event Listeners (play/pause/hover/scroll)] ...
-  
-  // Basic States
+  // --- Basic state classes ---
   wrap.classList.add("paused");
   player.on("play", () => {
     wrap.classList.add("playing");
@@ -93,7 +108,7 @@ export function initCFVideo(videoId) {
     wrap.classList.add("paused");
   });
 
-  // Scroll Play Logic
+  // --- Scroll Play Logic ---
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
@@ -105,9 +120,9 @@ export function initCFVideo(videoId) {
         entries.forEach((entry) => {
           if (player.isDisposed()) return;
           if (entry.isIntersecting) {
-             player.play().catch(() => {});
+            player.play().catch(() => {});
           } else {
-             if (!player.paused()) player.pause();
+            if (!player.paused()) player.pause();
           }
         });
       },
@@ -120,7 +135,7 @@ export function initCFVideo(videoId) {
   return player;
 }
 
-// ... [Keep destroyCFVideoPlayer and global cleanup] ...
+// --- Cleanup helpers ---
 export function destroyCFVideoPlayer(videoId) {
   if (observers.has(videoId)) {
     observers.get(videoId).disconnect();
@@ -134,19 +149,12 @@ export function destroyCFVideoPlayer(videoId) {
 }
 
 if (typeof document !== "undefined") {
-  // We use 'after-swap' because at this point:
-  // 1. The "Old" snapshot has already been captured (with the video visible!).
-  // 2. The Old DOM is gone.
-  // 3. We can safely clean up memory without affecting the visual transition.
   document.addEventListener("astro:after-swap", () => {
     players.forEach((player, id) => {
-       // Safety check: The player might already be destroyed if the user
-       // navigated away very quickly.
-       if (player && !player.isDisposed()) {
-         destroyCFVideoPlayer(id);
-       }
+      if (player && !player.isDisposed()) {
+        destroyCFVideoPlayer(id);
+      }
     });
-    // Clear the maps completely to ensure no stale references persist
     players.clear();
     observers.clear();
   });
