@@ -2,6 +2,9 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
+import videoJsRuntime from "video.js?url";
+import videoJsQualityPlugin from "videojs-contrib-quality-levels?url";
+
 //import VideoPrefetch from "../components/global/VideoPrefetch.astro";
 
 // Critical CSS
@@ -64,6 +67,9 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 		crossorigin="anonymous"
 	/>
 	)}
+
+	<link rel="modulepreload" href={videoJsRuntime}>
+	<link rel="modulepreload" href={videoJsQualityPlugin}>
 
 	<script is:client>
 	if ("serviceWorker" in navigator) {

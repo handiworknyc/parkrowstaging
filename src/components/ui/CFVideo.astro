@@ -1,14 +1,17 @@
 ---
+// CFVideo.astro
+
 import SmartImage from "../ui/SmartImage.astro";
-import videoJsUrl from "@/scripts/videojs.js?url";
 
 const v = Astro.props.video?.[0] ?? {};
+
 const src = v.cf_stream_video || "";
 const playOnHover = v.yt_hover === true;
 const showControls = v.show_controls ?? false;
 const playOnScroll = true;
 const threshold = 0.6;
 
+// Generate safe ID
 let rawId =
   (v.id || v.cf_stream_video || "") +
   "-" +
@@ -16,6 +19,7 @@ let rawId =
 
 const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
 
+// Poster
 const ytImg = v.yt_img || null;
 const smartImg = ytImg
   ? {
@@ -29,7 +33,7 @@ const smartImg = ytImg
 const ytAlt = ytImg?.alt || "";
 ---
 
-{/* Fallback: Render image if NO video source exists */}
+{/* Fallback image only if NO video */}
 {!src && smartImg && (
   <SmartImage
     images={smartImg}
@@ -50,6 +54,8 @@ const ytAlt = ytImg?.alt || "";
       data-scroll={playOnScroll}
       data-threshold={threshold}
     >
+
+      {/* Poster only when controls are OFF */}
       {smartImg && !showControls && (
         <SmartImage
           images={smartImg}
@@ -70,46 +76,49 @@ const ytAlt = ytImg?.alt || "";
       ></video>
     </div>
 
-    <!-- ⭐ DYNAMIC IMPORT — NOW PRODUCTION SAFE -->
-    <script define:vars={{ videoId, videoJsUrl }}>
-      import(videoJsUrl).then(({ initCFVideo }) => {
+<script>
+	import { initCFVideo } from "/src/scripts/videojs.js";
 
-        const init = () => {
-          const vid = document.getElementById(`cfvideo-${videoId}`);
-          if (!vid) return;
+    const init = () => {
+        // 1. Session Logic
+        const isFirstLoad = !window.hwSessionLoaded;
+        window.hwSessionLoaded = true;
 
-          if (!window.hwSessionLoaded) {
-            window.hwSessionLoaded = true;
-            if (!document.body.classList.contains("first-load")) {
-              document.body.classList.add("first-load");
+        const videos = document.querySelectorAll('.hw-vid-wrap');
+		const shouldAnimate = document.body.classList.contains('first-load');
+
+        videos.forEach((vid) => {
+
+            // 🛑 Prevent this video from being initialized more than once
+            if (vid.dataset.initted === "true") return;
+            vid.dataset.initted = "true";
+
+            const id = vid.getAttribute('data-id');
+            console.log("CFVideo init:", id);
+
+            // 2. First-load transition logic
+            if (shouldAnimate) {
+                const onTransitionEnd = (e) => {
+                    if (e.propertyName === 'opacity' && e.target === vid) {
+                        vid.classList.remove('loading');
+                        document.body.classList.remove('first-load');
+                        vid.removeEventListener('transitionend', onTransitionEnd);
+                    }
+                };
+                vid.addEventListener('transitionend', onTransitionEnd);
+            } else {
+                vid.classList.remove('loading');
             }
-          }
 
-          const shouldAnimate = document.body.classList.contains("first-load");
-          const id = vid.getAttribute("data-id");
+            // 3. Init Player
+            if (id) {
+                initCFVideo(id);
+            }
+        });
+    };
 
-          if (shouldAnimate) {
-            const onEnd = (e) => {
-              if (e.propertyName === "opacity" && e.target === vid) {
-                vid.classList.remove("loading");
-                document.body.classList.remove("first-load");
-                vid.removeEventListener("transitionend", onEnd);
-              }
-            };
-            vid.addEventListener("transitionend", onEnd);
-          } else {
-            vid.classList.remove("loading");
-          }
+    document.addEventListener('astro:page-load', init);
+</script>
 
-          if (id) initCFVideo(id);
-        };
-
-        document.addEventListener("astro:page-load", init, { once: true });
-
-        if (!document.documentElement.dataset.astroTransitioning) {
-          init();
-        }
-      });
-    </script>
   </>
 )}
