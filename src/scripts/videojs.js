@@ -1,29 +1,57 @@
 // src/scripts/videojs.js
+// ------------------------------------------------------------
+// 100% browser-safe module for dynamic import
+// Netlify-compatible (no bare imports inside the browser)
+// CSS loads only when controls are enabled
+// ------------------------------------------------------------
 
-// 1. Static JS imports (still eagerly loaded)
-import videojs from "video.js";
-import "videojs-contrib-quality-levels";
+// ⭐ Import URLs for browser-safe loading
+import videoJsCoreUrl from "video.js/dist/video.min.js?url";
+import qualityLevelsUrl from "videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js?url";
+import videoJsCssUrl from "video.js/dist/video-js.min.css?url";
 
-// ❌ Removed global CSS import:
-// import "video.js/dist/video-js.css";
-
-// ✅ Load CSS only if/when we actually need controls
-let videoJsCssLoaded = false;
-
-function ensureVideoJsCss() {
-  if (videoJsCssLoaded) return;
-
-  // Vite will handle this dynamic CSS import as a side-effect chunk
-  import("video.js/dist/video-js.css");
-  videoJsCssLoaded = true;
-}
-
-// Use Maps for O(1) lookups
+// Track loaded assets so they load once
 const players = new Map();
 const observers = new Map();
+const loadedAssets = new Set();
 
-// Note: Removed 'async' because we don't need to await imports anymore
-export function initCFVideo(videoId) {
+// ------------------------------------------------------------
+// UTIL: load JS or CSS exactly once
+// ------------------------------------------------------------
+function loadOnce(url, type = "js") {
+  return new Promise((resolve, reject) => {
+    if (loadedAssets.has(url)) {
+      resolve();
+      return;
+    }
+
+    let el;
+
+    if (type === "css") {
+      el = document.createElement("link");
+      el.rel = "stylesheet";
+      el.href = url;
+    } else {
+      el = document.createElement("script");
+      el.type = "module";
+      el.src = url;
+    }
+
+    el.onload = () => {
+      loadedAssets.add(url);
+      resolve();
+    };
+
+    el.onerror = reject;
+
+    document.head.appendChild(el);
+  });
+}
+
+// ------------------------------------------------------------
+// MAIN: Init Video Player
+// ------------------------------------------------------------
+export async function initCFVideo(videoId) {
   const wrap = document.getElementById(`cfvideo-${videoId}`);
   if (!wrap) return;
 
@@ -34,19 +62,32 @@ export function initCFVideo(videoId) {
   // Prevent double init
   if (players.has(videoId)) return players.get(videoId);
 
-  // --- Detect controls setting from the class ---
+  // Detect controls state
   const hasControls = el.classList.contains("show-controls-true");
 
-  // ✅ Only load Video.js CSS when we actually show controls
+  // ⭐ Load CSS *only if* controls are enabled
   if (hasControls) {
-    ensureVideoJsCss();
+    await loadOnce(videoJsCssUrl, "css");
   }
 
-  // Initialize player
+  // ⭐ Load Video.js core + quality-levels JS
+  await loadOnce(videoJsCoreUrl);
+  await loadOnce(qualityLevelsUrl);
+
+  // Video.js becomes available globally after script loads
+  const videojs = window.videojs;
+  if (!videojs) {
+    console.error("video.js failed to load");
+    return;
+  }
+
+  // ------------------------------------------------------------
+  // Initialize Video.js
+  // ------------------------------------------------------------
   const player = videojs(el, {
-    controls: hasControls, // Set dynamically based on class
+    controls: hasControls,
     loop: true,
-    autoplay: false, // We control this via observer
+    autoplay: false,
     muted: true,
     preload: "metadata",
     playsinline: true,
@@ -66,14 +107,16 @@ export function initCFVideo(videoId) {
   player.ready(() => {
     if (player.isDisposed()) return;
 
-    // If controls are off, hide them completely
+    // Hide UI if controls false
     if (!hasControls) {
       player.controls(false);
       if (player.controlBar) player.controlBar.hide();
     }
   });
 
-  // --- Quality forcing logic ---
+  // ------------------------------------------------------------
+  // FORCE MAX QUALITY
+  // ------------------------------------------------------------
   function forceMaxQuality() {
     if (player.isDisposed()) return;
     const q = player.qualityLevels?.();
@@ -88,6 +131,7 @@ export function initCFVideo(videoId) {
         bestIndex = i;
       }
     }
+
     for (let i = 0; i < q.length; i++) {
       q[i].enabled = i === bestIndex;
     }
@@ -97,18 +141,24 @@ export function initCFVideo(videoId) {
   player.on("loadeddata", forceMaxQuality);
   player.on("resolutionchange", forceMaxQuality);
 
-  // --- Basic state classes ---
+  // ------------------------------------------------------------
+  // PLAY STATES
+  // ------------------------------------------------------------
   wrap.classList.add("paused");
+
   player.on("play", () => {
     wrap.classList.add("playing");
     wrap.classList.remove("paused");
   });
+
   player.on("pause", () => {
     wrap.classList.remove("playing");
     wrap.classList.add("paused");
   });
 
-  // --- Scroll Play Logic ---
+  // ------------------------------------------------------------
+  // SCROLL-PLAY LOGIC
+  // ------------------------------------------------------------
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
@@ -128,6 +178,7 @@ export function initCFVideo(videoId) {
       },
       { threshold }
     );
+
     observer.observe(parent);
     observers.set(videoId, observer);
   }
@@ -135,12 +186,15 @@ export function initCFVideo(videoId) {
   return player;
 }
 
-// --- Cleanup helpers ---
+// ------------------------------------------------------------
+// CLEANUP
+// ------------------------------------------------------------
 export function destroyCFVideoPlayer(videoId) {
   if (observers.has(videoId)) {
     observers.get(videoId).disconnect();
     observers.delete(videoId);
   }
+
   if (players.has(videoId)) {
     const p = players.get(videoId);
     if (p && !p.isDisposed()) p.dispose();
@@ -148,12 +202,13 @@ export function destroyCFVideoPlayer(videoId) {
   }
 }
 
+// ------------------------------------------------------------
+// CLEAR EVERYTHING AFTER PAGE SWAP
+// ------------------------------------------------------------
 if (typeof document !== "undefined") {
   document.addEventListener("astro:after-swap", () => {
     players.forEach((player, id) => {
-      if (player && !player.isDisposed()) {
-        destroyCFVideoPlayer(id);
-      }
+      if (player && !player.isDisposed()) destroyCFVideoPlayer(id);
     });
     players.clear();
     observers.clear();
