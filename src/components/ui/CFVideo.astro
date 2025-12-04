@@ -29,6 +29,16 @@ const smartImg = ytImg
 const ytAlt = ytImg?.alt || "";
 ---
 
+{/* Fallback: Render image if NO video source exists */}
+{!src && smartImg && (
+  <SmartImage
+    images={smartImg}
+    alt={ytAlt}
+    imgClass="abs-full of-cover hw-vid-poster-img"
+    sizes="(max-width: 1200px) 60vw, 100vw"
+  />
+)}
+
 {src && (
   <>
     <div
