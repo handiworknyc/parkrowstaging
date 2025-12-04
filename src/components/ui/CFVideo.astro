@@ -76,49 +76,41 @@ const ytAlt = ytImg?.alt || "";
       ></video>
     </div>
 
-<script>
-	import { initCFVideo } from "/src/scripts/videojs.js";
+<script type="module" define:vars={{ videoId }}>
+  // The *first* microtask after DOM node is parsed
+  queueMicrotask(() => {
+    const vid = document.getElementById(`cfvideo-${videoId}`);
+    if (!vid) return;
 
-    const init = () => {
-        // 1. Session Logic
-        const isFirstLoad = !window.hwSessionLoaded;
-        window.hwSessionLoaded = true;
+    // Prevent double-run
+    if (vid.dataset.initted === "true") return;
+    vid.dataset.initted = "true";
 
-        const videos = document.querySelectorAll('.hw-vid-wrap');
-		const shouldAnimate = document.body.classList.contains('first-load');
+    // Delay the heavy work to next tick — non-blocking
+    import("/src/scripts/videojs.js").then(({ initCFVideo }) => {
+      const shouldAnimate = document.body.classList.contains("first-load");
+      const id = vid.dataset.id;
 
-        videos.forEach((vid) => {
+      // Transition logic
+      if (shouldAnimate) {
+        const onEnd = (e) => {
+          if (e.propertyName === "opacity" && e.target === vid) {
+            vid.classList.remove("loading");
+            document.body.classList.remove("first-load");
+            vid.removeEventListener("transitionend", onEnd);
+          }
+        };
+        vid.addEventListener("transitionend", onEnd);
+      } else {
+        vid.classList.remove("loading");
+      }
 
-            // 🛑 Prevent this video from being initialized more than once
-            if (vid.dataset.initted === "true") return;
-            vid.dataset.initted = "true";
-
-            const id = vid.getAttribute('data-id');
-            console.log("CFVideo init:", id);
-
-            // 2. First-load transition logic
-            if (shouldAnimate) {
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'opacity' && e.target === vid) {
-                        vid.classList.remove('loading');
-                        document.body.classList.remove('first-load');
-                        vid.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                vid.addEventListener('transitionend', onTransitionEnd);
-            } else {
-                vid.classList.remove('loading');
-            }
-
-            // 3. Init Player
-            if (id) {
-                initCFVideo(id);
-            }
-        });
-    };
-
-    document.addEventListener('astro:page-load', init);
+      // Initialize video player
+      if (id) initCFVideo(id);
+    });
+  });
 </script>
+
 
   </>
 )}

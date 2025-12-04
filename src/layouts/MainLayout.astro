@@ -59,13 +59,33 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 	)}
 
 	{lcpVideo && (
-	<link
-		rel="prefetch"
-		href={lcpVideo.href}
-		as="fetch"
-		type={lcpVideo.type}
-		crossorigin="anonymous"
-	/>
+	<>
+		{/* 1. DNS + TCP + TLS warmup */}
+		<link rel="preconnect" href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" crossorigin />
+
+		{/* 2. Early connection for the exact subdomain (required for speed) */}
+		<link rel="dns-prefetch" href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" />
+
+		{/* 3. Warm HLS manifest early without blocking render */}
+		<link 
+		rel="prefetch" 
+		as="fetch" 
+		href={`${lcpVideo.href}`} 
+		crossorigin="anonymous" 
+		/>
+
+		{/* 4. Preload the VIDEO.JS runtime used by CFVideo */}
+		<link rel="modulepreload" href={videoJsRuntime} />
+		<link rel="modulepreload" href={videoJsQualityPlugin} />
+
+		{/* 5. (Optional) Preload first HLS segment if you want near-zero buffer stall */}
+		<link 
+		rel="prefetch" 
+		as="fetch" 
+		href={`${lcpVideo.href.replace("manifest/video.m3u8","video_720p0.ts")}`} 
+		crossorigin="anonymous" 
+		/>
+	</>
 	)}
 
 	<script is:client>
