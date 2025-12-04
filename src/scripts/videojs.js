@@ -1,65 +1,29 @@
-// ============================================================================
-//  VIDEO.JS — FULL DYNAMIC IMPORT VERSION (Netlify Safe, No Render Blocking)
-// ============================================================================
+// src/scripts/videojs.js
 
-// We support a global CSS URL set via Astro layout
-// Example: window.__VIDEOJS_CSS_URL__ = "/_astro/video-js.A1b2C3.css";
-let videoJsCssUrl = null;
-if (typeof window !== "undefined") {
-  window.__VIDEOJS_CSS_URL__ = window.__VIDEOJS_CSS_URL__ || null;
-  videoJsCssUrl = window.__VIDEOJS_CSS_URL__;
-}
+// 1. Static JS imports (still eagerly loaded)
+import videojs from "video.js";
+import "videojs-contrib-quality-levels";
 
-// Internal state
+// ❌ Removed global CSS import:
+// import "video.js/dist/video-js.css";
+
+// ✅ Load CSS only if/when we actually need controls
 let videoJsCssLoaded = false;
-let videoJsLib = null;
-let qualityPluginLoaded = false;
 
-// Dynamic CSS loader
 function ensureVideoJsCss() {
   if (videoJsCssLoaded) return;
-  videoJsCssLoaded = true;
 
-  // If Astro set the CSS URL → use it
-  if (window.__VIDEOJS_CSS_URL__) {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = window.__VIDEOJS_CSS_URL__;
-    document.head.appendChild(link);
-    return;
-  }
-
-  // (Dev fallback) Vite side-effect CSS import
+  // Vite will handle this dynamic CSS import as a side-effect chunk
   import("video.js/dist/video-js.css");
+  videoJsCssLoaded = true;
 }
 
-// ============================================================================
-//  DYNAMIC LOADER — Loads video.js + plugin ONLY ON DEMAND
-// ============================================================================
-async function loadVideoJs() {
-  if (!videoJsLib) {
-    const mod = await import("video.js");
-    videoJsLib = mod.default;
-  }
-
-  if (!qualityPluginLoaded) {
-    await import("videojs-contrib-quality-levels");
-    qualityPluginLoaded = true;
-  }
-
-  return videoJsLib;
-}
-
-// ============================================================================
-//  STATE STORAGE
-// ============================================================================
+// Use Maps for O(1) lookups
 const players = new Map();
 const observers = new Map();
 
-// ============================================================================
-//  INIT CF VIDEO
-// ============================================================================
-export async function initCFVideo(videoId) {
+// Note: Removed 'async' because we don't need to await imports anymore
+export function initCFVideo(videoId) {
   const wrap = document.getElementById(`cfvideo-${videoId}`);
   if (!wrap) return;
 
@@ -70,22 +34,19 @@ export async function initCFVideo(videoId) {
   // Prevent double init
   if (players.has(videoId)) return players.get(videoId);
 
-  // Determine controls
+  // --- Detect controls setting from the class ---
   const hasControls = el.classList.contains("show-controls-true");
 
-  // Load Video.js library dynamically (first time only)
-  const videojs = await loadVideoJs();
-
-  // CSS only when controls are needed
+  // ✅ Only load Video.js CSS when we actually show controls
   if (hasControls) {
     ensureVideoJsCss();
   }
 
-  // Initialize Video.js player
+  // Initialize player
   const player = videojs(el, {
-    controls: hasControls,
+    controls: hasControls, // Set dynamically based on class
     loop: true,
-    autoplay: false,
+    autoplay: false, // We control this via observer
     muted: true,
     preload: "metadata",
     playsinline: true,
@@ -102,17 +63,17 @@ export async function initCFVideo(videoId) {
 
   players.set(videoId, player);
 
-  // Hide control bar when controls=false
   player.ready(() => {
-    if (!hasControls && !player.isDisposed()) {
+    if (player.isDisposed()) return;
+
+    // If controls are off, hide them completely
+    if (!hasControls) {
       player.controls(false);
       if (player.controlBar) player.controlBar.hide();
     }
   });
 
-  // ========================================================================
-  //  QUALITY FORCING
-  // ========================================================================
+  // --- Quality forcing logic ---
   function forceMaxQuality() {
     if (player.isDisposed()) return;
     const q = player.qualityLevels?.();
@@ -127,7 +88,6 @@ export async function initCFVideo(videoId) {
         bestIndex = i;
       }
     }
-
     for (let i = 0; i < q.length; i++) {
       q[i].enabled = i === bestIndex;
     }
@@ -137,24 +97,18 @@ export async function initCFVideo(videoId) {
   player.on("loadeddata", forceMaxQuality);
   player.on("resolutionchange", forceMaxQuality);
 
-  // ========================================================================
-  //  PLAY / PAUSE STATES
-  // ========================================================================
+  // --- Basic state classes ---
   wrap.classList.add("paused");
-
   player.on("play", () => {
     wrap.classList.add("playing");
     wrap.classList.remove("paused");
   });
-
   player.on("pause", () => {
     wrap.classList.remove("playing");
     wrap.classList.add("paused");
   });
 
-  // ========================================================================
-  //  SCROLL PLAY LOGIC
-  // ========================================================================
+  // --- Scroll Play Logic ---
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
@@ -174,7 +128,6 @@ export async function initCFVideo(videoId) {
       },
       { threshold }
     );
-
     observer.observe(parent);
     observers.set(videoId, observer);
   }
@@ -182,9 +135,7 @@ export async function initCFVideo(videoId) {
   return player;
 }
 
-// ============================================================================
-//  CLEANUP
-// ============================================================================
+// --- Cleanup helpers ---
 export function destroyCFVideoPlayer(videoId) {
   if (observers.has(videoId)) {
     observers.get(videoId).disconnect();
@@ -197,11 +148,12 @@ export function destroyCFVideoPlayer(videoId) {
   }
 }
 
-// Clear all players on Astro soft navigation
 if (typeof document !== "undefined") {
   document.addEventListener("astro:after-swap", () => {
     players.forEach((player, id) => {
-      if (player && !player.isDisposed()) destroyCFVideoPlayer(id);
+      if (player && !player.isDisposed()) {
+        destroyCFVideoPlayer(id);
+      }
     });
     players.clear();
     observers.clear();

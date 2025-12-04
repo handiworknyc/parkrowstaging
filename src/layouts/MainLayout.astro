@@ -2,8 +2,9 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
+
 import videoJsRuntime from "video.js?url";
-import videoJsQualityPlugin from "videojs-contrib-quality-levels?url";
+import qualityLevelsRuntime from "videojs-contrib-quality-levels?url";
 
 //import VideoPrefetch from "../components/global/VideoPrefetch.astro";
 
@@ -73,6 +74,9 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 		href={`${lcpVideo.href}`} 
 		crossorigin="anonymous" 
 		/>
+		
+		<link rel="modulepreload" href={videoJsRuntime} />
+		<link rel="modulepreload" href={qualityLevelsRuntime} />
 	</>
 	)}
 
