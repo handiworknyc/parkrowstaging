@@ -4,30 +4,7 @@ import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
 
-/* ------------------------------------------------------
-   CFVideo Chunk Detection (SSR ONLY)
------------------------------------------------------- */
-function findCFVideoChunk(manifest) {
-  if (!manifest || !manifest.client || !manifest.client.assets) {
-    return null;
-  }
-
-  const keys = Object.keys(manifest.client.assets);
-  const match = keys.find((k) =>
-    k.toLowerCase().includes("cfvideo")
-  );
-
-  return match ? "/" + manifest.client.assets[match] : null;
-}
-
-const cfvideoChunk = findCFVideoChunk(Astro.manifest ?? null);
-console.log("[SSR] Preload CFVideo chunk:", cfvideoChunk);
-
-
-//import videoJsRuntime from "video.js?url";
-//import qualityLevelsRuntime from "videojs-contrib-quality-levels?url";
-
-//import VideoPrefetch from "../components/global/VideoPrefetch.astro";
+import videoJsUrl from "/src/scripts/videojs.js?url";
 
 // Critical CSS
 import "../styles/global.scss";
@@ -84,6 +61,8 @@ const bodyClasses = segments.length ? segments.join(" ") : "home";
 		type={lcp.type}
 	/>
 	)}
+
+	<link rel="modulepreload" href={videoJsUrl} />
 
 	{lcpVideo && (
 	<>

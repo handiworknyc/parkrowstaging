@@ -1,9 +1,6 @@
 ---
 // CFVideo.astro
-
 import SmartImage from "../ui/SmartImage.astro";
-
-import videoJsCssUrl from "video.js/dist/video-js.css?url";
 
 const v = Astro.props.video?.[0] ?? {};
 
@@ -14,6 +11,8 @@ const playOnScroll = true;
 const threshold = 0.6;
 
 // Generate safe ID
+// We use a simpler UUID method to ensure hydration consistency if possible, 
+// but Math.random is fine here since this is not a hydrated React component.
 let rawId =
   (v.id || v.cf_stream_video || "") +
   "-" +
@@ -71,35 +70,40 @@ const ytAlt = ytImg?.alt || "";
         class={`abs-full video-js hw-vid-player vjs-default-skin show-controls-${showControls}`}
         muted
         autoplay
-        playsinline	
+        playsinline 
         preload="auto"
         disablePictureInPicture
         controlsList="nodownload noplaybackrate noremoteplayback"
       ></video>
     </div>
 
+    {/* NOTE: No 'client:load' needed here. 
+      This script automatically runs on the client.
+    */}
+    <script>
+      import { initCFVideo } from "/src/scripts/videojs.js";
 
-<script>
-	import { initCFVideo } from "/src/scripts/videojs.js";
-
-    const init = () => {
-        // 1. Session Logic
-        const isFirstLoad = !window.hwSessionLoaded;
-        window.hwSessionLoaded = true;
-
+      // This function handles finding elements and initializing them
+      const initVideoComponents = () => {
         const videos = document.querySelectorAll('.hw-vid-wrap');
-		const shouldAnimate = document.body.classList.contains('first-load');
+        
+        // Check for first-load animation logic
+        const shouldAnimate = document.body.classList.contains('first-load');
+        // Logic to track session load
+        if (!window.hwSessionLoaded) {
+           window.hwSessionLoaded = true;
+        }
 
         videos.forEach((vid) => {
-
-            // 🛑 Prevent this video from being initialized more than once
+            // 🛑 CRITICAL: Prevent double initialization
             if (vid.dataset.initted === "true") return;
+            
+            // Mark as initted immediately
             vid.dataset.initted = "true";
 
             const id = vid.getAttribute('data-id');
-            console.log("CFVideo init:", id);
 
-            // 2. First-load transition logic
+            // 1. Transition/Loading Logic
             if (shouldAnimate) {
                 const onTransitionEnd = (e) => {
                     if (e.propertyName === 'opacity' && e.target === vid) {
@@ -113,15 +117,20 @@ const ytAlt = ytImg?.alt || "";
                 vid.classList.remove('loading');
             }
 
-            // 3. Init Player
+            // 2. Init Player Logic
             if (id) {
-                initCFVideo(id);
+                // We use requestAnimationFrame to ensure the DOM is painted 
+                // before the heavy videoJS logic kicks in, making the page feel faster.
+                requestAnimationFrame(() => {
+                    initCFVideo(id);
+                });
             }
         });
-    };
+      };
 
-    document.addEventListener('astro:page-load', init);
-</script>
-
+      // Run on every page navigation (View Transitions)
+      document.addEventListener('astro:page-load', initVideoComponents);
+      
+    </script>
   </>
 )}
