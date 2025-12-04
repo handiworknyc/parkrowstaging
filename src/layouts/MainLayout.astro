@@ -34,6 +34,11 @@ interface Props {
 }
 
 const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const segments = pathname.split("/").filter(Boolean);
+const bodyClasses = segments.length ? segments.join(" ") : "home";
+
 ---
 
 <html lang="en">
@@ -168,7 +173,7 @@ if ("serviceWorker" in navigator) {
 	</script>
   </head>
 
-  <body class="first-load">
+<body class={`first-load ${bodyClasses}`}>
     <main>
       <SiteNav />
       <div class="switcher" style="view-transition-name: main-content">
