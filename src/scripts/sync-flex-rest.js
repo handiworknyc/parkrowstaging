@@ -2,6 +2,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import crypto from "crypto";
+
+function hashJSON(data) {
+  return crypto.createHash("sha1").update(JSON.stringify(data)).digest("hex").slice(0, 12);
+}
 
 /* -------------------------------------------
    Load env files only when running locally
@@ -249,8 +254,24 @@ async function run() {
     }
   }
 
-  const mapFile = path.join(publicDir, "prefetch-map.json");
-  fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+  
+// Generate hashed filename
+const hash = hashJSON(prefetchMap);
+const mapFilename = `prefetch-map.${hash}.json`;
+const mapFile = path.join(publicDir, mapFilename);
+
+// Write file
+fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+
+// Also write a small "latest" pointer
+fs.writeFileSync(
+  path.join(publicDir, "prefetch-map-latest.json"),
+  JSON.stringify({ file: mapFilename })
+);
+
+console.log("---------------------------------------------------");
+console.log(`🎥 Generated map: ${mapFilename}`);
+console.log("---------------------------------------------------");
 
   console.log("---------------------------------------------------");
   console.log(`🎥 Generated map with ${prefetchMap.length} entries.`);

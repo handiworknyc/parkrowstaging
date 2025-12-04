@@ -2,7 +2,7 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
-import VideoPrefetch from "../components/global/VideoPrefetch.astro";
+//import VideoPrefetch from "../components/global/VideoPrefetch.astro";
 
 // Critical CSS
 import "../styles/global.scss";
@@ -41,8 +41,6 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
     <title>{title}</title>
 
     {description && <meta name="description" content={description} />}
-
-	<VideoPrefetch />
 	
     {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
     {lcp && lcp.href && (
@@ -66,6 +64,31 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
       />
     )}
 
+	<script is:client>
+	if ("serviceWorker" in navigator) {
+	navigator.serviceWorker.register("/sw.js").then(reg => {
+
+		function sendPrefetchMessage(worker) {
+		worker.postMessage("prefetch");
+		}
+
+		if (reg.active) {
+		sendPrefetchMessage(reg.active);
+		} else {
+		// Wait for installation
+		reg.addEventListener("updatefound", () => {
+			const newWorker = reg.installing;
+			newWorker.addEventListener("statechange", () => {
+			if (newWorker.state === "activated") {
+				sendPrefetchMessage(newWorker);
+			}
+			});
+		});
+		}
+	});
+	}
+	</script>
+
     <link rel="preload" href={belowCssUrl} as="style" />
 
     <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
@@ -85,8 +108,8 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 	</script>
 
 	<script>
-	const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-	if (isSafari) document.documentElement.classList.add("disable-vt");
+		const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+		if (isSafari) document.documentElement.classList.add("disable-vt");
 	</script>
   </head>
 

@@ -181,14 +181,14 @@ function Stylesheet() {
 				mix-blend-mode: multiply;
 				/* Subtle diagonal black → transparent gradient */
 				background: linear-gradient(
-					38deg,
-					rgba(0, 0, 0, 0.65) 0%,
+					32deg,
+					rgba(0, 0, 0, 0.55) 0%,
 					rgba(0, 0, 0, 0.4) 7%,
-					rgba(0, 0, 0, 0.0) 25%
+					rgba(0, 0, 0, 0.0) 17%
 				);
 
 				border-radius: 6px;
-				filter: blur(2px); /* softens the edges even more */
+				filter: blur(11px); /* softens the edges even more */
 				pointer-events: none;
 			}
 
