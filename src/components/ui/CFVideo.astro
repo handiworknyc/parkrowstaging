@@ -1,25 +1,22 @@
 ---
-// CFVideo.astro
-
 import SmartImage from "../ui/SmartImage.astro";
+import videoJsUrl from "@/scripts/videojs.js?url";
 
 const v = Astro.props.video?.[0] ?? {};
-
 const src = v.cf_stream_video || "";
 const playOnHover = v.yt_hover === true;
-
-// 1. Get the value from props (default to false if missing)
-const showControls = v.show_controls ?? false; 
+const showControls = v.show_controls ?? false;
 const playOnScroll = true;
 const threshold = 0.6;
 
-// Generate safe ID
-let rawId = (v.id || v.cf_stream_video || "") + "-" + Math.random().toString(36).slice(2, 8);
+let rawId =
+  (v.id || v.cf_stream_video || "") +
+  "-" +
+  Math.random().toString(36).slice(2, 8);
+
 const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
 
-// WordPress image / poster
 const ytImg = v.yt_img || null;
-
 const smartImg = ytImg
   ? {
       xl: ytImg.sizes?.intch_xl || ytImg.url,
@@ -32,16 +29,6 @@ const smartImg = ytImg
 const ytAlt = ytImg?.alt || "";
 ---
 
-{/* Fallback: Render image if NO video source exists */}
-{!src && smartImg && (
-  <SmartImage
-    images={smartImg}
-    alt={ytAlt}
-    imgClass="abs-full of-cover hw-vid-poster-img"
-    sizes="(max-width: 1200px) 60vw, 100vw"
-  />
-)}
-
 {src && (
   <>
     <div
@@ -53,7 +40,6 @@ const ytAlt = ytImg?.alt || "";
       data-scroll={playOnScroll}
       data-threshold={threshold}
     >
-      {/* 2. LOGIC UPDATE: Only show custom poster if controls are FALSE */}
       {smartImg && !showControls && (
         <SmartImage
           images={smartImg}
@@ -63,7 +49,6 @@ const ytAlt = ytImg?.alt || "";
         />
       )}
 
-      {/* Video Player */}
       <video
         class={`abs-full video-js hw-vid-player vjs-default-skin show-controls-${showControls}`}
         muted
@@ -74,61 +59,47 @@ const ytAlt = ytImg?.alt || "";
         controlsList="nodownload noplaybackrate noremoteplayback"
       ></video>
     </div>
-	
-	<script define:vars={{ videoId }}>
-    	import("/src/scripts/videojs.js").then(({ initCFVideo }) => {
-        
+
+    <!-- ⭐ DYNAMIC IMPORT — NOW PRODUCTION SAFE -->
+    <script define:vars={{ videoId, videoJsUrl }}>
+      import(videoJsUrl).then(({ initCFVideo }) => {
+
         const init = () => {
-            // TARGETING: Select the specific element by ID
-            const vid = document.getElementById(`cfvideo-${videoId}`);
-            
-            // Safety check
-            if (!vid) return;
+          const vid = document.getElementById(`cfvideo-${videoId}`);
+          if (!vid) return;
 
-            // 1. Session Logic 
-            // Note: Since this script runs for EVERY video instance, we check the global window object.
-            if (!window.hwSessionLoaded) {
-                window.hwSessionLoaded = true;
-                // Ensure the body has the class if that's your logic
-                if (!document.body.classList.contains('first-load')) {
-                     document.body.classList.add('first-load');
-                }
+          if (!window.hwSessionLoaded) {
+            window.hwSessionLoaded = true;
+            if (!document.body.classList.contains("first-load")) {
+              document.body.classList.add("first-load");
             }
+          }
 
-            const shouldAnimate = document.body.classList.contains('first-load');
+          const shouldAnimate = document.body.classList.contains("first-load");
+          const id = vid.getAttribute("data-id");
 
-            // 2. Logic for this SPECIFIC video (No forEach loop needed)
-            const id = vid.getAttribute('data-id');
+          if (shouldAnimate) {
+            const onEnd = (e) => {
+              if (e.propertyName === "opacity" && e.target === vid) {
+                vid.classList.remove("loading");
+                document.body.classList.remove("first-load");
+                vid.removeEventListener("transitionend", onEnd);
+              }
+            };
+            vid.addEventListener("transitionend", onEnd);
+          } else {
+            vid.classList.remove("loading");
+          }
 
-            console.log("Initializing specific video:", id);
-            
-            if (shouldAnimate) {
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'opacity' && e.target === vid) {
-                        vid.classList.remove('loading');
-                        document.body.classList.remove('first-load');
-                        vid.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                vid.addEventListener('transitionend', onTransitionEnd);
-            } else {
-                vid.classList.remove('loading'); 
-            }
-
-            // 3. Init Player
-            if (id) {
-                initCFVideo(id);
-            }
+          if (id) initCFVideo(id);
         };
 
-        // Initialize on Astro page load
-        document.addEventListener('astro:page-load', init, { once: true });
-        
-        // Fallback: If page is already loaded (e.g. hard refresh), run immediately
+        document.addEventListener("astro:page-load", init, { once: true });
+
         if (!document.documentElement.dataset.astroTransitioning) {
-             init();
+          init();
         }
-    });
-</script>
+      });
+    </script>
   </>
 )}
