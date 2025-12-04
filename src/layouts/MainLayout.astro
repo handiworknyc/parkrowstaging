@@ -1,10 +1,19 @@
 ---
+//mainlayout.astro
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
 
-import videoJsRuntime from "video.js?url";
-import qualityLevelsRuntime from "videojs-contrib-quality-levels?url";
+import { loadManifest } from "@/lib/loadManifest";
+import { findCFVideoChunk } from "@/lib/findCFVideo";
+
+const manifest = loadManifest();
+const cfvideoChunk = findCFVideoChunk(manifest);
+
+console.log("[SSR] Preload CFVideo chunk:", cfvideoChunk);
+
+//import videoJsRuntime from "video.js?url";
+//import qualityLevelsRuntime from "videojs-contrib-quality-levels?url";
 
 //import VideoPrefetch from "../components/global/VideoPrefetch.astro";
 
@@ -50,7 +59,11 @@ const bodyClasses = segments.length ? segments.join(" ") : "home";
     <title>{title}</title>
 
     {description && <meta name="description" content={description} />}
-	
+
+	{cfvideoChunk && (
+	<link rel="modulepreload" href={cfvideoChunk} />
+	)}
+
     {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
 	{lcp && (
 	<link 
