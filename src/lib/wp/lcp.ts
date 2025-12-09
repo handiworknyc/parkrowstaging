@@ -1,11 +1,24 @@
 // src/lib/wp/lcp.ts
 import type { NormRow } from "./normalize";
 
+function appendWebp(url: string | undefined): string | undefined {
+  if (!url) return url;
+
+  // Already a .webp or already appended
+  if (url.endsWith(".webp")) return url;
+  if (url.endsWith(".jpg.webp") || url.endsWith(".png.webp")) return url;
+
+  if (url.endsWith(".jpg") || url.endsWith(".png")) {
+    return url + ".webp";
+  }
+  return url;
+}
+
+
 export function getLcpImage(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 
   const firstData = rows[0].data || {};
-  let foundImg = null;
 
   // HERO VIDEO POSTER
   if (Array.isArray(firstData.video) && firstData.video[0]?.yt_img) {
@@ -13,10 +26,10 @@ export function getLcpImage(rows: NormRow[]) {
     const sizes = raw.sizes || {};
 
     const candidates = [
-      { url: sizes.intch_xl || raw.url, w: sizes["intch_xl-width"] },
-      { url: sizes.intch_lg, w: sizes["intch_lg-width"] },
-      { url: sizes.intch_med, w: sizes["intch_med-width"] },
-      { url: sizes.intch_sm, w: sizes["intch_sm-width"] }
+      { url: appendWebp(sizes.intch_xl || raw.url), w: sizes["intch_xl-width"] },
+      { url: appendWebp(sizes.intch_lg),           w: sizes["intch_lg-width"] },
+      { url: appendWebp(sizes.intch_med),          w: sizes["intch_med-width"] },
+      { url: appendWebp(sizes.intch_sm),           w: sizes["intch_sm-width"] }
     ].filter(c => c.url);
 
     const srcsetParts = candidates
@@ -27,13 +40,12 @@ export function getLcpImage(rows: NormRow[]) {
       href: candidates[0].url,
       imagesrcset: srcsetParts.length ? srcsetParts.join(", ") : undefined,
       imagesizes: "(max-width: 1200px) 60vw, 100vw",
-      type: "image/jpeg"
+      type: "image/webp"
     };
   }
+
   return null;
 }
-
-
 
 // NEW: Get Cloudflare video URL for preload
 export function getLcpVideo(rows: NormRow[]) {

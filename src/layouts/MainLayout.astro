@@ -150,6 +150,35 @@ if ("serviceWorker" in navigator) {
 
 
 
+
+
+
+<script is:client>
+  // Listen for messages from Service Worker (mp4Ready event)
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    const data = event.data;
+    if (!data || !data.mp4Ready) return;
+
+    const { videoId, mp4Url } = data.mp4Ready;
+
+    console.log("[MAIN] mp4Ready received from SW:", { videoId, mp4Url });
+
+    // Forward to videojs.js (window global event)
+    window.dispatchEvent(
+      new CustomEvent("cfvideo-mp4-ready", {
+        detail: { videoId, mp4Url }
+      })
+    );
+  });
+</script>
+
+
+
+
+
+
+
+
     <script>
       import "../scripts/smart-image";
      // import "../scripts/gsap-global";

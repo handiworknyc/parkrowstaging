@@ -223,15 +223,59 @@ async function run() {
       const entry = { path: cleanPath };
       let hasEntry = false;
 
-      // 1. EXTRACT VIDEO
-      const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
-      if (videoField && Array.isArray(videoField)) {
-        const videoObj = videoField[0];
-        if (videoObj && videoObj.cf_stream_video) {
-           entry.video = videoObj.cf_stream_video;
-           hasEntry = true;
-        }
-      }
+		// 1. EXTRACT VIDEO
+		const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
+		if (videoField && Array.isArray(videoField)) {
+		const videoObj = videoField[0];
+		if (videoObj && videoObj.cf_stream_video) {
+
+			const manifestUrl = videoObj.cf_stream_video; // Cloudflare HLS URL
+			entry.video = manifestUrl;
+
+			// -------------------------------------------
+			// NEW: Derive videoId and MP4 URL
+			// -------------------------------------------
+			const idMatch = manifestUrl.match(/com\/([^/]+)\//);
+			if (idMatch) {
+			const videoId = idMatch[1];
+			const mp4Url = manifestUrl.replace("/manifest/video.m3u8", "/downloads/default.mp4");
+
+			// Store the MP4 URL for frontend/service worker
+			entry.video_mp4 = `/videos/${videoId}.mp4`;
+
+			// -------------------------------------------
+			// NEW: Mirror MP4 into /public/videos
+			// -------------------------------------------
+			const videosDir = path.join(publicDir, "videos");
+			fs.mkdirSync(videosDir, { recursive: true });
+
+			const localPath = path.join(videosDir, `${videoId}.mp4`);
+			const exists = fs.existsSync(localPath);
+
+			if (!exists) {
+				console.log(`⬇️  Downloading MP4 for ${videoId}`);
+
+				try {
+				const res = await fetch(mp4Url);
+				if (!res.ok) {
+					console.warn(`⚠️ MP4 not downloadable (${res.status}): ${mp4Url}`);
+				} else {
+					const buffer = Buffer.from(await res.arrayBuffer());
+					fs.writeFileSync(localPath, buffer);
+					console.log(`💾 Saved MP4 → ${localPath}`);
+				}
+				} catch (err) {
+				console.warn(`⚠️ MP4 download failed for ${videoId}`, err);
+				}
+			} else {
+				console.log(`✓ MP4 exists for ${videoId}`);
+			}
+			}
+
+			hasEntry = true;
+		}
+		}
+
 
       // 2. EXTRACT LCP IMAGE DATA
       const lcpData = getRawLcpImage(firstRow);

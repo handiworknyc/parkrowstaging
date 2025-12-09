@@ -1,141 +1,195 @@
 // src/scripts/videojs.js
 
-// 1. Static JS imports (still eagerly loaded)
 import videojs from "video.js";
 import "videojs-contrib-quality-levels";
 
-// ❌ Removed global CSS import:
-// import "video.js/dist/video-js.css";
-
-// ✅ Load CSS only if/when we actually need controls
+// Lazy-load Video.js CSS only when controls enabled
 let videoJsCssLoaded = false;
-
 function ensureVideoJsCss() {
   if (videoJsCssLoaded) return;
-
-  // Vite will handle this dynamic CSS import as a side-effect chunk
   import("video.js/dist/video-js.css");
   videoJsCssLoaded = true;
 }
 
-// Use Maps for O(1) lookups
 const players = new Map();
 const observers = new Map();
 
-// Note: Removed 'async' because we don't need to await imports anymore
+/* -----------------------------------------------------
+   Helper: check if local MP4 is cached
+----------------------------------------------------- */
+async function isMp4Cached(url) {
+  try {
+    const cache = await caches.open("videos-mp4");
+    const match = await cache.match(url);
+    const ok = !!match;
+    console.log("[CFVideo] MP4 cached?", url, ok);
+    return ok;
+  } catch (e) {
+    console.warn("[CFVideo] MP4 cache check failed:", e);
+    return false;
+  }
+}
+
+/* -----------------------------------------------------
+   Helper: extract Cloudflare videoId from manifest URL
+----------------------------------------------------- */
+function extractCFId(url) {
+  const m = url.match(/com\/([^/]+)\//);
+  return m ? m[1] : null;
+}
+
+/* -----------------------------------------------------
+   initCFVideo
+----------------------------------------------------- */
+
 export function initCFVideo(videoId) {
   const wrap = document.getElementById(`cfvideo-${videoId}`);
   if (!wrap) return;
 
   const el = wrap.querySelector("video");
-  const src = wrap.dataset.src;
-  if (!el || !src) return;
+  const manifestSrc = wrap.dataset.src;
 
-  // Prevent double init
+  if (!el || !manifestSrc) return;
   if (players.has(videoId)) return players.get(videoId);
 
-  // --- Detect controls setting from the class ---
-  const hasControls = el.classList.contains("show-controls-true");
+  console.log("[CFVideo] INIT", { videoId, manifestSrc });
 
-  // ✅ Only load Video.js CSS when we actually show controls
-  if (hasControls) {
-    ensureVideoJsCss();
+  const cfId = extractCFId(manifestSrc);
+  if (!cfId) {
+    console.warn("[CFVideo] Could not derive Cloudflare video ID from:", manifestSrc);
   }
 
-  // Initialize player
-  const player = videojs(el, {
-    controls: hasControls, // Set dynamically based on class
-    loop: true,
-    autoplay: false, // We control this via observer
-    muted: true,
-    preload: "metadata",
-    playsinline: true,
-    html5: {
-      hls: {
-        overrideNative: true,
-        useDevicePixelRatio: true,
-        bandwidth: 16194304,
-        limitRenditionByPlayerDimensions: false,
-      },
-    },
-    sources: [{ src, type: "application/x-mpegURL" }],
-  });
+  // Local mirrored MP4 (ONLY created during build)
+  const mp4Local = cfId ? `/videos/${cfId}.mp4` : null;
 
-  players.set(videoId, player);
+  console.log("[CFVideo] Local MP4:", mp4Local);
 
-  player.ready(() => {
-    if (player.isDisposed()) return;
+  // Controls logic
+  const hasControls = el.classList.contains("show-controls-true");
+  if (hasControls) ensureVideoJsCss();
 
-    // If controls are off, hide them completely
-    if (!hasControls) {
-      player.controls(false);
-      if (player.controlBar) player.controlBar.hide();
+  /* ---------------------------------------------
+      Decide which source to start with
+  --------------------------------------------- */
+  let initialSource = { src: manifestSrc, type: "application/x-mpegURL" };
+
+  async function chooseSource() {
+    if (mp4Local && await isMp4Cached(mp4Local)) {
+      console.log("[CFVideo] Using cached LOCAL MP4:", mp4Local);
+      initialSource = { src: mp4Local, type: "video/mp4" };
+    } else {
+      console.log("[CFVideo] Local MP4 not available → using HLS:", manifestSrc);
+      // ❗ IMPORTANT: No Cloudflare MP4 download at runtime
     }
-  });
 
-  // --- Quality forcing logic ---
-  function forceMaxQuality() {
-    if (player.isDisposed()) return;
-    const q = player.qualityLevels?.();
-    if (!q || q.length === 0) return;
+    initPlayer();
+  }
 
-    let bestIndex = 0;
-    let bestHeight = 0;
+  /* ---------------------------------------------
+      Initialize Video.js
+  --------------------------------------------- */
+  function initPlayer() {
+    const player = videojs(el, {
+      controls: hasControls,
+      loop: true,
+      autoplay: false,
+      muted: true,
+      preload: "metadata",
+      playsinline: true,
 
-    for (let i = 0; i < q.length; i++) {
-      if (q[i].height > bestHeight) {
-        bestHeight = q[i].height;
-        bestIndex = i;
+      html5: {
+        hls: {
+          overrideNative: true,
+          useDevicePixelRatio: true,
+          bandwidth: 16194304,
+          limitRenditionByPlayerDimensions: false,
+        },
+      },
+
+      sources: [initialSource],
+    });
+
+    players.set(videoId, player);
+
+    player.ready(() => {
+      if (!hasControls && player.controlBar) {
+        player.controls(false);
+        player.controlBar.hide();
+      }
+    });
+
+    /* ---------------------------------------------
+        Quality locking (HLS only)
+    --------------------------------------------- */
+    function forceMaxQuality() {
+      const q = player.qualityLevels?.();
+      if (!q || q.length === 0) return;
+
+      let bestIndex = 0;
+      let bestHeight = 0;
+
+      for (let i = 0; i < q.length; i++) {
+        if (q[i].height > bestHeight) {
+          bestHeight = q[i].height;
+          bestIndex = i;
+        }
+      }
+      for (let i = 0; i < q.length; i++) {
+        q[i].enabled = i === bestIndex;
       }
     }
-    for (let i = 0; i < q.length; i++) {
-      q[i].enabled = i === bestIndex;
+
+    player.on("loadedmetadata", forceMaxQuality);
+    player.on("loadeddata", forceMaxQuality);
+    player.on("resolutionchange", forceMaxQuality);
+
+    /* ---------------------------------------------
+        UI state classes
+    --------------------------------------------- */
+    wrap.classList.add("paused");
+    player.on("play", () => {
+      wrap.classList.add("playing");
+      wrap.classList.remove("paused");
+    });
+    player.on("pause", () => {
+      wrap.classList.remove("playing");
+      wrap.classList.add("paused");
+    });
+
+    /* ---------------------------------------------
+        Scroll Play Logic
+    --------------------------------------------- */
+    if (wrap.dataset.scroll === "true") {
+      const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
+      const parent = wrap.closest(".hw-player-parent") || wrap;
+
+      if (observers.has(videoId)) observers.get(videoId).disconnect();
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              player.play().catch(() => {});
+            } else {
+              if (!player.paused()) player.pause();
+            }
+          });
+        },
+        { threshold }
+      );
+      observer.observe(parent);
+      observers.set(videoId, observer);
     }
   }
 
-  player.on("loadedmetadata", forceMaxQuality);
-  player.on("loadeddata", forceMaxQuality);
-  player.on("resolutionchange", forceMaxQuality);
+  chooseSource(); // <-- start decision chain
 
-  // --- Basic state classes ---
-  wrap.classList.add("paused");
-  player.on("play", () => {
-    wrap.classList.add("playing");
-    wrap.classList.remove("paused");
-  });
-  player.on("pause", () => {
-    wrap.classList.remove("playing");
-    wrap.classList.add("paused");
-  });
-
-  // --- Scroll Play Logic ---
-  if (wrap.dataset.scroll === "true") {
-    const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
-    const parent = wrap.closest(".hw-player-parent") || wrap;
-
-    if (observers.has(videoId)) observers.get(videoId).disconnect();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (player.isDisposed()) return;
-          if (entry.isIntersecting) {
-            player.play().catch(() => {});
-          } else {
-            if (!player.paused()) player.pause();
-          }
-        });
-      },
-      { threshold }
-    );
-    observer.observe(parent);
-    observers.set(videoId, observer);
-  }
-
-  return player;
+  return players.get(videoId);
 }
 
-// --- Cleanup helpers ---
+/* -----------------------------------------------------
+   Cleanup on Astro page swap
+----------------------------------------------------- */
 export function destroyCFVideoPlayer(videoId) {
   if (observers.has(videoId)) {
     observers.get(videoId).disconnect();
