@@ -28,6 +28,7 @@ interface Props {
   } | null;
   lcpVideo?: {
     href: string;
+    mp4?: string;      // <── ADDED SUPPORT FOR LCP MP4
   } | null;
 }
 
@@ -36,227 +37,230 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
 const bodyClasses = segments.length ? segments.join(" ") : "home";
-
 ---
 
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width" />
+  <meta name="generator" content={Astro.generator} />
+  <title>{title}</title>
 
-    {description && <meta name="description" content={description} />}
-	
-    {/* 🚀 LCP PRELOAD: High priority preload for hero image */}
-	{lcp && (
-	<link 
-		rel="preload"
-		as="image"
-		fetchpriority="high"
-		href={lcp.href}
-		imagesrcset={lcp.imagesrcset}
-		imagesizes={lcp.imagesizes}
-		type={lcp.type}
-	/>
-	)}
+  {description && <meta name="description" content={description} />}
 
-	<link rel="modulepreload" href={videoJsUrl} />
+  {/* 🚀 LCP PRELOAD (IMAGE) */}
+  {lcp && (
+    <link 
+      rel="preload"
+      as="image"
+      fetchpriority="high"
+      href={lcp.href}
+      imagesrcset={lcp.imagesrcset}
+      imagesizes={lcp.imagesizes}
+      type={lcp.type}
+    />
+  )}
 
-	{lcpVideo && (
-	<>
-		{/* 1. DNS + TCP + TLS warmup */}
-		<link rel="preconnect" href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" crossorigin />
+  <link rel="modulepreload" href={videoJsUrl} />
 
-		{/* 2. Early connection for the exact subdomain (required for speed) */}
-		<link rel="dns-prefetch" href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" />
+  {/* ────────────────────────────────────────────────────────────────
+      LCP VIDEO (HLS WARMUP — REMOVABLE IF MP4 CACHED)
+  ───────────────────────────────────────────────────────────────── */}
+  {lcpVideo && (
+    <>
+      <link id="lcp-preconnect" rel="preconnect"
+        href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com"
+        crossorigin />
 
-		{/* 3. Warm HLS manifest early without blocking render */}
-		<link 
-		rel="prefetch" 
-		as="fetch" 
-		href={`${lcpVideo.href}`} 
-		crossorigin="anonymous" 
-		/>
-	</>
-	)}
+      <link id="lcp-dns" rel="dns-prefetch"
+        href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" />
 
-<script is:client>
-(async () => {
-  try {
-    const req = await fetch("/prefetch-map.json", { cache: "no-store" });
-    if (!req.ok) return;
+      <link id="lcp-hls-prefetch"
+        rel="prefetch"
+        as="fetch"
+        href={lcpVideo.href}
+        crossorigin="anonymous" />
+    </>
+  )}
 
-    const map = await req.json();
+  {/* ────────────────────────────────────────────────────────────────
+      CONDITIONAL REMOVE HLS PREFETCH IF MP4 EXISTS IN SW CACHE
+  ───────────────────────────────────────────────────────────────── */}
+  {lcpVideo?.mp4 && (
+    <script is:client>
+      (async () => {
+        try {
+          const mp4Url = "{lcpVideo.mp4}";
 
-    // Build image + video list without duplicates
-    const assets = new Set();
+          const cache = await caches.open("videos-mp4");
+          const match = await cache.match(mp4Url);
 
-    map.forEach((entry) => {
-      if (entry.image) assets.add(entry.image);
-      if (entry.video) assets.add(entry.video);
-    });
+          if (match) {
+            console.log("[LCP] MP4 already cached → removing HLS warmup");
 
-    window.__PREFETCH_ASSETS__ = Array.from(assets);
+            document.getElementById("lcp-hls-prefetch")?.remove();
+            document.getElementById("lcp-preconnect")?.remove();
+            document.getElementById("lcp-dns")?.remove();
 
-    console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
-  } catch (err) {
-    console.warn("Prefetch map failed:", err);
-  }
-})();
-</script>
+            // Add MP4 preload
+            const preload = document.createElement("link");
+            preload.rel = "preload";
+            preload.as = "video";
+            preload.href = mp4Url;
+            preload.type = "video/mp4";
+            preload.fetchPriority = "high";
+            document.head.appendChild(preload);
 
+          } else {
+            console.log("[LCP] MP4 not cached → keeping HLS warmup");
+          }
 
-<script is:client>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").then((reg) => {
-
-    // STEP 1 — Handle SW asking for the asset list
-    navigator.serviceWorker.addEventListener("message", (event) => {
-      if (event.data === "request-prefetch-list") {
-        // Send the asset list from the page into the SW
-        if (window.__PREFETCH_ASSETS__ && window.__PREFETCH_ASSETS__.length) {
-          reg.active?.postMessage({
-            prefetchAssets: window.__PREFETCH_ASSETS__,
-          });
+        } catch (err) {
+          console.warn("[LCP] Cache check error:", err);
         }
+      })();
+    </script>
+  )}
+
+  {/* ────────────────────────────────────────────────────────────────
+      PREFETCH MAP → pass image/video URLs to SW
+  ───────────────────────────────────────────────────────────────── */}
+  <script is:client>
+    (async () => {
+      try {
+        const req = await fetch("/prefetch-map.json", { cache: "no-store" });
+        if (!req.ok) return;
+
+        const map = await req.json();
+        const assets = new Set();
+
+        map.forEach((entry) => {
+          if (entry.image) assets.add(entry.image);
+          if (entry.video) assets.add(entry.video);
+          if (entry.video_mp4) assets.add(entry.video_mp4);
+        });
+
+        window.__PREFETCH_ASSETS__ = Array.from(assets);
+
+        console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
+      } catch (err) {
+        console.warn("Prefetch map failed:", err);
       }
-    });
+    })();
+  </script>
 
-    // STEP 2 — Trigger SW to begin prefetch handshake
-    function notifySW(worker) {
-      // Tell SW: "Ask me for the list"
-      worker.postMessage("prefetch");
-    }
+  {/* ────────────────────────────────────────────────────────────────
+      SW PREFETCH HANDSHAKE
+  ───────────────────────────────────────────────────────────────── */}
+  <script is:client>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").then((reg) => {
 
-    // STEP 3 — Send the message to proper worker
-    if (reg.active) {
-      notifySW(reg.active);
-    } else {
-      // Wait for install → activate
-      reg.addEventListener("updatefound", () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener("statechange", () => {
-          if (newWorker.state === "activated") {
-            notifySW(newWorker);
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data === "request-prefetch-list") {
+            if (window.__PREFETCH_ASSETS__?.length) {
+              reg.active?.postMessage({
+                prefetchAssets: window.__PREFETCH_ASSETS__,
+              });
+            }
           }
         });
+
+        function notifySW(worker) {
+          worker.postMessage("prefetch");
+        }
+
+        if (reg.active) {
+          notifySW(reg.active);
+        } else {
+          reg.addEventListener("updatefound", () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "activated") notifySW(newWorker);
+            });
+          });
+        }
       });
     }
-  });
-}
-</script>
+  </script>
 
+  {/* ────────────────────────────────────────────────────────────────
+      Listen for mp4Ready → forward to videojs
+  ───────────────────────────────────────────────────────────────── */}
+  <script is:client>
+    navigator.serviceWorker?.addEventListener("message", (event) => {
+      const data = event.data;
+      if (!data?.mp4Ready) return;
 
+      const { videoId, mp4Url } = data.mp4Ready;
+      console.log("[MAIN] mp4Ready →", videoId, mp4Url);
 
+      window.dispatchEvent(
+        new CustomEvent("cfvideo-mp4-ready", {
+          detail: { videoId, mp4Url }
+        })
+      );
+    });
+  </script>
 
+  <script>
+    import "../scripts/smart-image";
+  </script>
 
+  <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
+    :root {
+      --wp-base-url: var(--wpBaseUrl);
+    }
+  </style>
 
-<script is:client>
-  // Listen for messages from Service Worker (mp4Ready event)
-  navigator.serviceWorker?.addEventListener("message", (event) => {
-    const data = event.data;
-    if (!data || !data.mp4Ready) return;
+  <script src={headerCriticalUrl} defer></script>
 
-    const { videoId, mp4Url } = data.mp4Ready;
+  <ClientRouter prefetch="viewport" />
 
-    console.log("[MAIN] mp4Ready received from SW:", { videoId, mp4Url });
-
-    // Forward to videojs.js (window global event)
-    window.dispatchEvent(
-      new CustomEvent("cfvideo-mp4-ready", {
-        detail: { videoId, mp4Url }
-      })
-    );
-  });
-</script>
-
-
-
-
-
-
-
-
-    <script>
-      import "../scripts/smart-image";
-     // import "../scripts/gsap-global";
-    </script>
-
-    <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
-      :root {
-        --wp-base-url: var(--wpBaseUrl);
-      }
-    </style>
-
-    <script src={headerCriticalUrl} defer></script>
-
-    <ClientRouter prefetch="viewport" />
-
-	
-	<script>		
-		document.addEventListener('astro:before-swap', (ev) => {
-			ev.newDocument.body.classList.remove('first-load');
-		});
-	</script>
-  </head>
+  <script>
+    document.addEventListener('astro:before-swap', (ev) => {
+      ev.newDocument.body.classList.remove('first-load');
+    });
+  </script>
+</head>
 
 <body class={`first-load ${bodyClasses}`}>
-    <main>
-      <SiteNav />
-      <div class="switcher" style="view-transition-name: main-content">
-        <slot />
-      </div>
-    </main>
+  <main>
+    <SiteNav />
+    <div class="switcher" style="view-transition-name: main-content">
+      <slot />
+    </div>
+  </main>
 
-    <SiteFooter />
+  <SiteFooter />
 
-    {/* below-the-fold CSS */}
-    <link
-      rel="stylesheet"
-      href={belowCssUrl}
-      media="print"
-      onload="this.media='all'"
-    />
+  <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
 
+  <script is:client>
+    if (window.__isSafari) {
+      document.documentElement.classList.add("disable-vt");
 
-	<script is:client>
-	if (window.__isSafari) {
-		// Kill all view transition effects completely
-		document.documentElement.classList.add("disable-vt");
+      document.addEventListener("click", (e) => {
+        const a = e.target.closest("a[href]");
+        if (!a) return;
 
-		// Intercept all internal <a> clicks and force real navigation
-		document.addEventListener("click", (e) => {
-			const a = e.target.closest("a[href]");
-			if (!a) return;
+        const url = a.getAttribute("href");
+        if (
+          (url.startsWith("http") && !url.startsWith(location.origin)) ||
+          url.startsWith("#") ||
+          url.startsWith("mailto:") ||
+          url.startsWith("tel:") ||
+          url.startsWith("javascript:")
+        ) {
+          return;
+        }
 
-			const url = a.getAttribute("href");
+        e.preventDefault();
+        window.location.href = url;
+      });
+    }
+  </script>
 
-			// Skip external links, mailto, #hash, javascript:void(0)
-			if (
-				url.startsWith("http") && !url.startsWith(location.origin)
-				|| url.startsWith("#")
-				|| url.startsWith("mailto:")
-				|| url.startsWith("tel:")
-				|| url.startsWith("javascript:")
-			) {
-				return;
-			}
-
-			// STOP Astro ClientRouter
-			e.preventDefault();
-
-			// Hard navigation — NO FLASH, NO TRANSITION, NO FLICKER
-			window.location.href = url;
-		});
-	}
-
-	// Keep your first-load reset
-	document.addEventListener("astro:before-swap", (ev) => {
-		ev.newDocument.body.classList.remove("first-load");
-	});
-	</script>
-
-  </body>
+</body>
 </html>

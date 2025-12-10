@@ -1,45 +1,66 @@
-/* ============================================================================
-   SERVICE WORKER — FINAL VERSION
-   Local MP4 streamer + Opaque Prefetch
-   NO Cloudflare MP4 download allowed at runtime
-============================================================================ */
-
-/* ----------------------------------------------------------
-   LOCAL MP4 CACHE
----------------------------------------------------------- */
+/* ==========================================================
+   CONSTANTS
+========================================================== */
 const MP4_CACHE = "videos-mp4";
+const PREFETCH_CACHE = "prefetch-v1";
 
-/* ----------------------------------------------------------
-   FETCH INTERCEPTOR FOR LOCAL MP4 STREAMING
----------------------------------------------------------- */
+/* ==========================================================
+   PRIVATE MODE DETECTION
+========================================================== */
+async function isPrivateMode() {
+  return new Promise((resolve) => {
+    const db = indexedDB.open("sw-private-check");
+    db.onerror = () => resolve(true);
+    db.onsuccess = () => resolve(false);
+  });
+}
+
+/* ==========================================================
+   STREAM MP4 WITH BYTE-RANGE SUPPORT
+========================================================== */
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Only handle SERVING of local mirrored MP4 files
-  if (url.pathname.startsWith("/videos/") && url.pathname.endsWith(".mp4")) {
-    console.log("[SW] Intercept local MP4:", event.request.url);
-    event.respondWith(streamLocalMp4(event.request));
+  const isLocalMp4 =
+    url.pathname.startsWith("/videos/") &&
+    url.pathname.match(/\.mp4($|\?)/);
+
+  if (isLocalMp4) {
+    console.log("[SW] FETCH MP4:", url.pathname);
+    event.respondWith(streamMp4(event.request, url.pathname));
     return;
   }
 });
 
-/* ----------------------------------------------------------
-   Stream local MP4 from CacheStorage with byte-range support
----------------------------------------------------------- */
-async function streamLocalMp4(request) {
-  const cache = await caches.open(MP4_CACHE);
-  const cached = await cache.match(request.url);
-
-  if (!cached) {
-    console.warn("[SW] Local MP4 not in cache → fallback to network:", request.url);
+async function streamMp4(request, pathname) {
+  /* 🔒 DO NOT use cache in private mode */
+  if (await isPrivateMode()) {
+    console.warn("[SW] Private mode → MP4 cache disabled:", pathname);
     return fetch(request);
   }
 
+  const cache = await caches.open(MP4_CACHE);
+  const cached = await cache.match(pathname);
+
+  if (!cached) {
+    console.warn("[SW] MP4 not cached → falling back to network:", pathname);
+    return fetch(request);
+  }
+
+  // If placeholder (0 bytes), skip (prevents MEDIA_ERR_SRC_NOT_SUPPORTED)
   const buffer = await cached.arrayBuffer();
   const total = buffer.byteLength;
 
+  if (total === 0) {
+    console.warn("[SW] Placeholder MP4 detected → network fallback:", pathname);
+    return fetch(request);
+  }
+
   const range = request.headers.get("Range");
+
   if (!range) {
+    console.log("[SW] Serving full MP4:", pathname);
     return new Response(buffer, {
       status: 200,
       headers: {
@@ -50,16 +71,12 @@ async function streamLocalMp4(request) {
     });
   }
 
-  // Parse bytes
   const match = /bytes=(\d+)-(\d+)?/.exec(range);
   const start = Number(match[1]);
   const end = match[2] ? Number(match[2]) : total - 1;
-
   const chunk = buffer.slice(start, end + 1);
 
-  console.log(
-    `[SW] Serving MP4 chunk ${start}-${end} of ${total} bytes → ${request.url}`
-  );
+  console.log(`[SW] Serving MP4 chunk: ${start}-${end} / ${total}`);
 
   return new Response(chunk, {
     status: 206,
@@ -72,24 +89,10 @@ async function streamLocalMp4(request) {
   });
 }
 
-/* ============================================================================
-   IMPORTANT:
-   Cloudflare MP4 download logic is completely removed.
-   The SW NEVER fetches Cloudflare MP4 URLs.
-   Only LOCAL MP4s in /videos/*.mp4 are served.
-============================================================================ */
+/* ==========================================================
+   SW LIFECYCLE
+========================================================== */
 
-
-/* ============================================================================
-   OPAQUE PREFETCH SYSTEM (unchanged)
-============================================================================ */
-
-const CACHE_NAME = "prefetch-v1";
-let prefetchList = [];
-
-/* ----------------------------------------------------------
-   Install & Activate
----------------------------------------------------------- */
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
@@ -98,23 +101,10 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-/* ----------------------------------------------------------
-   Safe opaque prefetch helper
----------------------------------------------------------- */
-async function opaqueFetchAndCache(url) {
-  try {
-    const response = await fetch(url, { mode: "no-cors" });
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(url, response.clone());
-    console.log("[SW] Prefetched (opaque cached):", url);
-  } catch (err) {
-    console.warn("[SW] Prefetch failed:", url, err);
-  }
-}
+/* ==========================================================
+   MESSAGE HANDLERS
+========================================================== */
 
-/* ----------------------------------------------------------
-   Messaging from client
----------------------------------------------------------- */
 self.addEventListener("message", (event) => {
   if (event.data === "prefetch") {
     sendPrefetchRequest(event.source.id);
@@ -126,27 +116,105 @@ self.addEventListener("message", (event) => {
   }
 });
 
-/* ----------------------------------------------------------
-   Ask client for list of assets to prefetch
----------------------------------------------------------- */
 async function sendPrefetchRequest(clientId) {
   const client = await self.clients.get(clientId);
   if (!client) return;
   client.postMessage("request-prefetch-list");
 }
 
-/* ----------------------------------------------------------
-   Prefetch all assets
----------------------------------------------------------- */
-async function prefetchAll() {
-  if (!Array.isArray(prefetchList) || prefetchList.length === 0) return;
+/* ==========================================================
+   HELPERS
+========================================================== */
 
-  for (const url of prefetchList) {
-    if (!url) continue;
-    opaqueFetchAndCache(url);
+async function opaqueFetchAndCache(url) {
+  try {
+    const req = new Request(url, { mode: "no-cors" });
+    const res = await fetch(req);
+
+    if (!res) return;
+
+    const cache = await caches.open(PREFETCH_CACHE);
+    await cache.put(url, res.clone());
+
+    console.log("[SW] Prefetched (opaque):", url);
+  } catch (err) {
+    console.warn("[SW] Opaque prefetch failed:", url, err);
   }
 }
 
-/* ============================================================================
-   END OF FILE — FINAL PRODUCTION VERSION
-============================================================================ */
+/**
+ * Mark a local MP4 as “cached”
+ * Used ONLY in normal mode.
+ */
+async function markLocalMp4Cached(path) {
+  try {
+    if (await isPrivateMode()) {
+      console.warn("[SW] Private mode → skip MP4 mark:", path);
+      return;
+    }
+
+    const cache = await caches.open(MP4_CACHE);
+
+    // Placeholder (0 bytes). We now detect this during playback.
+    const placeholder = new Response("", {
+      status: 200,
+      headers: { "Content-Type": "video/mp4" }
+    });
+
+    await cache.put(path, placeholder);
+
+    console.log("[SW] Marked MP4 as cached:", path);
+  } catch (err) {
+    console.warn("[SW] Failed to mark MP4 cached:", path, err);
+  }
+}
+
+/* ==========================================================
+   PREFETCH SYSTEM
+========================================================== */
+
+let prefetchList = [];
+
+async function prefetchAll() {
+  if (!prefetchList || prefetchList.length === 0) return;
+
+  const privateMode = await isPrivateMode();
+
+  /* 🚫 In private browsing: NO video prefetching AT ALL */
+  if (privateMode) {
+    console.warn("[SW] Private mode → disabling all video prefetch");
+    for (const item of prefetchList) {
+      if (!item.includes("cloudflarestream.com")) {
+        opaqueFetchAndCache(item);
+      }
+    }
+    return;
+  }
+
+  const mp4Cache = await caches.open(MP4_CACHE);
+
+  for (const item of prefetchList) {
+    if (!item) continue;
+
+    const isManifest = item.includes("/manifest/video.m3u8");
+
+    if (!isManifest) {
+      opaqueFetchAndCache(item);
+      continue;
+    }
+
+    const match = item.match(/com\/([^/]+)\//);
+
+    if (!match) {
+      opaqueFetchAndCache(item);
+      continue;
+    }
+
+    const cfId = match[1];
+    const localMp4 = `/videos/${cfId}.mp4`;
+
+    await markLocalMp4Cached(localMp4);
+
+    console.log("[SW] Skipping manifest prefetch — local MP4 exists:", localMp4);
+  }
+}
