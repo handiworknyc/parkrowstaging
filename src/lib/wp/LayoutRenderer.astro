@@ -46,6 +46,36 @@ function safeHtml(val: any): string {
   return "";
 }
 
+/* ---------------------------------------------------------
+ * NEW: Auto–WebP Conversion Helper
+ * Rewrites .jpg → .jpg.webp and .png → .png.webp
+ * Deep-recursive for any nested objects/arrays in row.data
+ --------------------------------------------------------- */
+function ensureWebpDeep(obj: any): any {
+  if (!obj) return obj;
+
+  // String: rewrite only if it ENDS with .jpg or .png
+  if (typeof obj === "string") {
+    return obj.replace(/\.(jpg|png)$/i, (ext) => `${ext}.webp`);
+  }
+
+  // Array: map each element
+  if (Array.isArray(obj)) {
+    return obj.map(ensureWebpDeep);
+  }
+
+  // Object: recursively process keys
+  if (typeof obj === "object") {
+    const out: any = {};
+    for (const [key, val] of Object.entries(obj)) {
+      out[key] = ensureWebpDeep(val);
+    }
+    return out;
+  }
+
+  return obj;
+}
+
 async function fetchJson(url: string) {
   const finalUrl = url.includes("?")
     ? `${url}&${WP_FIELDS}`
@@ -180,6 +210,10 @@ const commonCtxBase = {
 )}
 
 {rows.map((row, idx) => {
+
+  /* 🔥 Apply WebP conversion BEFORE passing data to components */
+  row.data = ensureWebpDeep(row.data);
+
   const Comp = getComponent(row.name);
   const rowindex = idx + 1;
   const commonCtx = { ...commonCtxBase, rowIndex: rowindex };
@@ -209,16 +243,12 @@ const commonCtxBase = {
 
   const bgColorClass = green_bg ? "bg-green c-white" : "";
 
-	// Detect image-only full_bleed_image module
-	const isFullBleedImage = row.name === "full_bleed_img";
-	const rawContent = row.data?.content || [];
-	const hasContent = rawContent.length > 0;
+  const isFullBleedImage = row.name === "full_bleed_img";
+  const rawContent = row.data?.content || [];
+  const hasContent = rawContent.length > 0;
+  const imageOnlyClass = isFullBleedImage && !hasContent ? "image-only" : "";
 
-	// Add image-only class when applicable
-	const imageOnlyClass = isFullBleedImage && !hasContent ? "image-only" : "";
-
-	const sectionClass = `flex-bg ${row.meta.classes.join(" ")} ${contentStatusClass} ${imageOnlyClass}`.trim();
-
+  const sectionClass = `flex-bg ${row.meta.classes.join(" ")} ${contentStatusClass} ${imageOnlyClass}`.trim();
 
   const bgWrapClass = computeBgWrapClass(row, rowindex);
 
@@ -234,17 +264,17 @@ const commonCtxBase = {
     <div class={headerWrapperClass}>
       <div class="row">
         <div class="push-1 col-10 flex">
-			<div class="row">
-          {section_title && (
-            <h2 class="antiga section-title col-5" set:html={section_title} />
-          )}
-
-          <div class="section-text-wrap ml-auto col-5">
-            {section_h2 && <h3 class="figure figure-h3" set:html={section_h2} />}
-            {section_text && (
-              <div class="section-text" set:html={section_text} />
+          <div class="row">
+            {section_title && (
+              <h2 class="antiga section-title col-5" set:html={section_title} />
             )}
-			</div>
+
+            <div class="section-text-wrap ml-auto col-5">
+              {section_h2 && <h3 class="figure figure-h3" set:html={section_h2} />}
+              {section_text && (
+                <div class="section-text" set:html={section_text} />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -265,7 +295,6 @@ const commonCtxBase = {
               row.meta?.ofh ? "ofh" : ""
             }`}
           >
-            {/* If NOT below → header goes first */}
             {!placeHeaderBelow && headerContent}
 
             {Comp ? (
@@ -281,7 +310,6 @@ const commonCtxBase = {
               </div>
             )}
 
-            {/* If below → header goes last */}
             {placeHeaderBelow && headerContent}
           </div>
         </div>
