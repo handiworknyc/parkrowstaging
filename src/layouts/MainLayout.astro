@@ -37,6 +37,17 @@ const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.prop
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
 const bodyClasses = segments.length ? segments.join(" ") : "home";
+
+Astro.response.headers.set ( 
+	'Cache-Control',
+	'public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000',
+)
+
+Astro.response.headers.set(
+	'Netlify-CDN-Cache-Control',
+	'public, max-age=2700, stale-while-revalidate=12000',
+)
+
 ---
 
 <html lang="en">
