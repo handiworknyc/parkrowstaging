@@ -347,16 +347,16 @@
                 "filename": "park_row_neighborhood.jpg",
                 "filesize": 1841765,
                 "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg",
-                "link": "https://parkrow1.wpenginepowered.com/?attachment_id=81",
+                "link": "https://parkrow1.wpenginepowered.com/bellevue/park_row_neighborhood/",
                 "alt": "",
                 "author": "1",
                 "description": "",
                 "caption": "",
                 "name": "park_row_neighborhood",
                 "status": "inherit",
-                "uploaded_to": 80,
+                "uploaded_to": 41,
                 "date": "2025-12-01 05:05:50",
-                "modified": "2025-12-01 23:01:37",
+                "modified": "2026-01-03 00:54:45",
                 "menu_order": 0,
                 "mime_type": "image/jpeg",
                 "type": "image",
@@ -1105,9 +1105,9 @@
     {
       "acf_fc_layout": "curvy_image_grid",
       "layout_settings": {
-        "section_title": "Distinguished<br />\r\n& highly appointed",
+        "section_title": "",
         "section_h2": "",
-        "section_text": "<p>These limited residences embody artistry and precision: bespoke cabinetry, fine stonework, and private indoor-outdoor spaces that flow seamlessly between  sky and garden.</p>\n",
+        "section_text": "",
         "green_bg": false,
         "section_text_below": false
       },
@@ -1582,5 +1582,5 @@
       ]
     }
   ],
-  "_syncedAt": "2025-12-18 14:12:24"
+  "_syncedAt": "2026-01-03 19:52:34"
 }

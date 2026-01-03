@@ -1,0 +1,47 @@
+---
+import FadeSlideshow from '../react/FadeSlideshow.jsx';
+
+// 1. Get the raw props
+const { images } = Astro.props;
+
+
+// 2. Transform the data based on your specific object structure
+// We map over the array to format the 'smartImg' object exactly as your component expects
+const formattedSlides = Array.isArray(images) ? images.map((item) => {
+  const rawImg = item.image;
+  
+  // Logic from your example to handle sizes safely
+  const smartImg = rawImg
+    ? {
+        xl: rawImg.sizes?.intch_xl || rawImg.url,
+        large: rawImg.sizes?.intch_lg || rawImg.url,
+        med: rawImg.sizes?.intch_med || rawImg.url,
+        small: rawImg.sizes?.intch_sm || rawImg.url,
+      }
+    : null;
+
+  return {
+    id: rawImg.id || Math.random(), // Fallback ID if missing
+    smartImg: smartImg,
+    alt: rawImg.alt || item.caption || "Slideshow image", // Fallback chain for ALT
+    caption: item.caption
+  };
+}) : [];
+
+// 3. Filter out any broken slides where image might be null
+const validSlides = formattedSlides.filter(s => s.smartImg !== null);
+---
+
+<section class="relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
+  {validSlides.length > 0 ? (
+    <FadeSlideshow 
+      client:visible 
+      slides={validSlides} 
+      duration={4000} 
+    />
+  ) : (
+    <div class="flex items-center justify-center w-full h-full flex-col left-[var(--containerPadding)] text-[1.08rem] ">
+      <p>No images found</p>
+    </div>
+  )}
+</section>

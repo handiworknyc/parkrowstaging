@@ -1,0 +1,101 @@
+---
+import CFVideo from "../ui/CFVideo.astro";
+
+const vars = { ...Astro.props };
+
+const { images = [] } = vars;
+
+images.forEach((img, i) => {
+  console.log("video", i + 1, img?.video);
+});
+---
+
+<div class="photo-collage hw-contain">
+
+  {/* ---------- ROW 1 : #1–3 ---------- */}
+  <div class="row flex justify-[flex-end]">
+    {images.slice(0, 3).map((img, i) => {
+      const video = img?.video;
+      if (!video) return null;
+
+      const classMap = [
+        "col-5 push-1 photo-collage-cell ml-auto",
+        "col-3 photo-collage-cell ml-auto",
+        "col-3 photo-collage-cell bleed-right"
+      ];
+
+      return (
+        <div class={classMap[i]}>
+          <div class={`pr ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`}>
+            <CFVideo video={video} />
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {/* ---------- ROW 2 : #4 ---------- */}
+  {images[3]?.video && (
+    <div class="row flex bleed-x">
+      <div class="photo-collage-cell w100">
+        <div class="pr">
+          <CFVideo video={images[3].video} />
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ---------- ROW 3 : #5–6 ---------- */}
+  {(images[4]?.video || images[5]?.video) && (
+    <div class="row flex">
+      {images[4]?.video && (
+        <div class="photo-collage-cell col-6 bleed-left">
+          <div class="pr">
+            <CFVideo video={images[4].video} />
+          </div>
+        </div>
+      )}
+
+      {images[5]?.video && (
+        <div class="photo-collage-cell col-6 bleed-right">
+          <div class="pr">
+            <CFVideo video={images[5].video} />
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+
+  {/* ---------- ROW 4 : #7 ---------- */}
+  {images[6]?.video && (
+    <div class="row flex bleed-x">
+      <div class="photo-collage-cell w100">
+        <div class="pr">
+          <CFVideo video={images[6].video} />
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ---------- ROW 5 : #8–9 ---------- */}
+  {(images[7]?.video || images[8]?.video) && (
+    <div class="row flex">
+      {images[7]?.video && (
+        <div class="photo-collage-cell col-5 bleed-left">
+          <div class="pr">
+            <CFVideo video={images[7].video} />
+          </div>
+        </div>
+      )}
+
+      {images[8]?.video && (
+        <div class="photo-collage-cell col-6">
+          <div class="pr rounded-br-[9rem] ofh">
+            <CFVideo video={images[8].video} />
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+
+</div>

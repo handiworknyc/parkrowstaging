@@ -9,8 +9,7 @@
 	}
 }
 
-#main-nav[data-nav-modal],
-#bofa {
+#main-nav[data-nav-modal] {
 	transition: all .45s var(--cubicBez);
 }
 
@@ -49,21 +48,9 @@
 }
 
 
-body.modal-open {
+html.modal-open body {
   overflow: hidden;
 }
-
-body.modal-open {
-	#bofa  {
-		opacity: 0;
-	}
-
-	#main-logo path {
-		fill: var(--pink) !important
-	}
-}
-
-
 
 
 
@@ -232,3 +219,11 @@ body.modal-open {
   top: 20px;
   transform: rotate(-45deg);
 }
+
+
+
+
+
+
+
+

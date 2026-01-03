@@ -25,14 +25,14 @@
   /* Row wrapper */
   .row {
     @apply flex flex-wrap;
-    margin-left: -10px;   /* 20px total gutter */
-    margin-right: -10px;
+    margin-left: -.75rem;   /* 20px total gutter */
+    margin-right: -.75rem;
   }
 
   /* Column wrapper */
   [class*="col-"] {
-    padding-left: 10px;   /* 20px total gutter */
-    padding-right: 10px;
+    padding-left: .75rem;   /* 20px total gutter */
+    padding-right: .75rem;
     box-sizing: border-box;
   }
   /* FULL BLEED LEFT */
@@ -60,6 +60,13 @@ html {
 	--headerHeight: 8rem;
 	font-family: 'Hanken Grotesk';
 	color: var(--brown);
+}
+
+
+.modal-open body {
+  overflow: hidden !important;
+  height: 100% !important; /* Helps prevent rubber-banding on iOS */
+  touch-action: none;      /* Disables touch gestures (use carefully) */
 }
 
 .antiga {
@@ -110,7 +117,7 @@ html:not(.ua-safari) .antiga {
   animation-timing-function: var(--cubicBez);
   animation-fill-mode: both;
   opacity: 1;
-  z-index: 1;
+  z-index: -1;
   mix-blend-mode: normal;
 }
 
@@ -120,7 +127,7 @@ html:not(.ua-safari) .antiga {
   animation-duration: 1.1s;
   animation-timing-function: var(--cubicBez);
   animation-fill-mode: both;
-  z-index: 2;
+  z-index: 0;
   mix-blend-mode: normal;
 }
 
@@ -142,6 +149,14 @@ html:not(.ua-safari) .antiga {
 }
 
 
+::view-transition-group(page-header) {
+	animation-duration: 0s;
+	mix-blend-mode: normal;
+	opacity: 1;
+	z-index: 9999;
+}
+
+
 
 
 
@@ -158,8 +173,20 @@ html:not(.ua-safari) .antiga {
 	}
 }
 
+.section_header-module {
+	padding: 0 !important;
+
+	.flex-section-content {
+		padding: 5rem;
+	}
+}
+
 .flex-module:not(.rowindex-1):not(.full_bleed_img-module + .full_bleed_img-module.rowindex-2):not(.carousel-module) {
 	padding: 4rem 0;
+}
+
+.full_bleed_img-module.rowindex-1 + .flex-module {
+	padding-top: 0 !important;
 }
 
 .flex-module.carousel-module {
@@ -299,7 +326,7 @@ ul.section-text li::before {
 
 ul.two-col-list {
   columns: 2;
-  column-gap: 20px;
+  column-gap: .75rem;
 }
 
 .full-bleed-content-wrap .col-5 {
@@ -320,13 +347,13 @@ ul.two-col-list {
 
 	.full-bleed-caption.text-right {
 		right: var(--containerPadding);
-		padding-right: 10px;
+		padding-right: .75rem;
 	}
 
 	
 	.full-bleed-caption.text-left {
 		left: var(--containerPadding);
-		padding-left: 10px;
+		padding-left: .75rem;
 	}
 }
 
@@ -398,4 +425,20 @@ ul.two-col-list {
 .curvy-image-row.align-right {
   flex-direction: row-reverse;
   justify-content: flex-end
+}
+
+
+
+
+
+
+
+.photo-collage-cell:not(.row:last-child .photo-collage-cell) {
+	margin-bottom: 1.5rem;
+}
+
+.photo-collage-cell,
+.photo-collage-cell .pr {
+	height: 33rem;
+	position: relative;
 }

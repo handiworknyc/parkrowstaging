@@ -130,10 +130,13 @@ html {
 }
 
 
+html {
+	--containerMaxW: 2000px;
+}
 .hw-contain {
 	width: 100%;
 	margin: 0 auto;
-	max-width: 1800px;
+	max-width: var(--containerMaxW);
 	padding: 0 2rem
 }
 
@@ -232,7 +235,7 @@ transition: height .35s var(--cubicBez)
 
 
 
-.modal-open {
+.modal-open body {
   overflow: hidden;
 }
 
