@@ -10,7 +10,12 @@
 }
 
 #main-nav[data-nav-modal] {
+	will-change: opacity;
 	transition: all .45s var(--cubicBez);
+}
+
+html:has(:view-transition-group) #main-nav[data-nav-modal] {
+  transition: opacity 1s var(--cubicBez);
 }
 
 #main-nav[data-nav-modal] {
