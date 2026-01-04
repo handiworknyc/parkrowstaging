@@ -7,8 +7,10 @@
 
 import { normalizeLayouts } from "./normalize";
 import type { NormRow } from "./normalize";
-
 import { getEnv, toBase64 } from "../env.ts";
+
+// ✅ IMPORT PAGE ORDER
+import pageOrder from "../../content/wp/page-order.json";
 
 /* ---------------- Props ---------------- */
 interface Props {
@@ -46,25 +48,14 @@ function safeHtml(val: any): string {
   return "";
 }
 
-/* ---------------------------------------------------------
- * NEW: Auto–WebP Conversion Helper
- * Rewrites .jpg → .jpg.webp and .png → .png.webp
- * Deep-recursive for any nested objects/arrays in row.data
- --------------------------------------------------------- */
 function ensureWebpDeep(obj: any): any {
   if (!obj) return obj;
-
-  // String: rewrite only if it ENDS with .jpg or .png
   if (typeof obj === "string") {
     return obj.replace(/\.(jpg|png)$/i, (ext) => `${ext}.webp`);
   }
-
-  // Array: map each element
   if (Array.isArray(obj)) {
     return obj.map(ensureWebpDeep);
   }
-
-  // Object: recursively process keys
   if (typeof obj === "object") {
     const out: any = {};
     for (const [key, val] of Object.entries(obj)) {
@@ -72,7 +63,6 @@ function ensureWebpDeep(obj: any): any {
     }
     return out;
   }
-
   return obj;
 }
 
@@ -201,6 +191,51 @@ const commonCtxBase = {
   taxonomy: null,
   currentTerm: null,
 };
+
+/* ---------------------------------------------------------
+   ✅ 2. NEXT PAGE CALCULATIONS (ROBUST FIX)
+--------------------------------------------------------- */
+let nextPage: any = null;
+let nextSlug = "none"; 
+
+// Helper to strip slashes/domains for clean comparison
+function stripSlashes(str: string) {
+  try {
+    // If it's a full URL, get pathname
+    if (str.startsWith("http")) {
+      const u = new URL(str);
+      str = u.pathname;
+    }
+    return str.replace(/^\/+|\/+$/g, "");
+  } catch {
+    return str;
+  }
+}
+
+if (!taxContext) {
+  const currentPathClean = stripSlashes(decodeURIComponent(Astro.url.pathname));
+
+  // Reverse order (so we go forward in your specific list)
+  const reversedPageOrder = [...pageOrder].reverse();
+
+  const currentIndex = reversedPageOrder.findIndex((p) => {
+    return stripSlashes(p.uri) === currentPathClean;
+  });
+
+  if (currentIndex >= 0) {
+    if (currentIndex < reversedPageOrder.length - 1) {
+      nextPage = reversedPageOrder[currentIndex + 1];
+    } else {
+      // Loop back to start
+      nextPage = reversedPageOrder[0];
+    }
+  }
+
+  // Generate a safe slug for the ID so Astro knows it's a new element
+  if (nextPage) {
+    nextSlug = stripSlashes(nextPage.uri).replace(/\//g, "-");
+  }
+}
 ---
 
 {rows.length === 0 && (
@@ -336,3 +371,21 @@ const commonCtxBase = {
     </section>
   );
 })}
+
+{/* ✅ 3. RENDER NEXT PAGE LINK */}
+{/* FIX: We use a dynamic 'id' based on the next slug.
+    This guarantees Astro sees it as a NEW element during View Transition,
+    forcing a tear-down and rebuild with the correct content.
+*/}
+{nextPage && (
+  <section 
+    id={`next-link-${nextSlug}`}
+    class="next-page-section py-20 text-right"
+  >
+    <div class="hw-contain">
+      <a href={nextPage.uri} class="figure c-pink caps next-link">
+        {nextPage.title}
+      </a>
+    </div>
+  </section>
+)}

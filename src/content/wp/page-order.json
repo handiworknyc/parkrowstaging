@@ -1,0 +1,34 @@
+[
+  {
+    "uri": "/gallery/",
+    "title": "Gallery"
+  },
+  {
+    "uri": "/floorplans/",
+    "title": "Floorplans"
+  },
+  {
+    "uri": "/bellevue/",
+    "title": "Bellevue"
+  },
+  {
+    "uri": "/amenities/",
+    "title": "Amenities"
+  },
+  {
+    "uri": "/penthouses/",
+    "title": "Penthouses"
+  },
+  {
+    "uri": "/residences/",
+    "title": "Residences"
+  },
+  {
+    "uri": "/building/",
+    "title": "Building"
+  },
+  {
+    "uri": "/",
+    "title": "Home"
+  }
+]

@@ -125,7 +125,7 @@ async function fetchFlexibleForPage(uri) {
 }
 
 /* -------------------------------------------
-   NEW — Fetch Specials JSON
+   Fetch Specials JSON
 ------------------------------------------- */
 async function fetchSpecials() {
   const url = new URL("/wp-json/astro/v1/specials", WP_BASE);
@@ -187,6 +187,10 @@ async function run() {
 
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
+  
+  // ✅ NEW: Path for the Page Order Manifest
+  const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
+  
   const publicDir = path.join(process.cwd(), "public");
 
   fs.mkdirSync(outPages, { recursive: true });
@@ -210,6 +214,9 @@ async function run() {
     failed = 0;
 
   const prefetchMap = [];
+  
+  // ✅ NEW: Initialize manifest array
+  const pageManifest = []; 
 
   for (const uri of pageUris) {
     try {
@@ -220,8 +227,18 @@ async function run() {
         continue;
       }
 
-      const firstRow = layouts[0];
       const cleanPath = toPathname(uri);
+
+      // ✅ NEW: Capture Title and URI for manifest
+      // WP often puts title in data.title.rendered, but sometimes just data.title
+      const pageTitle = data.title?.rendered || data.title || "Untitled Page";
+      
+      pageManifest.push({
+        uri: cleanPath,
+        title: pageTitle
+      });
+
+      const firstRow = layouts[0];
       const entry = { path: cleanPath };
       let hasEntry = false;
 
@@ -288,6 +305,10 @@ async function run() {
       failed++;
     }
   }
+
+  // ✅ NEW: Write the Page Order JSON
+  fs.writeFileSync(outOrder, JSON.stringify(pageManifest, null, 2));
+  console.log(`📜 Wrote Page Order Manifest (${pageManifest.length} pages)`);
 
   /* -------- SPECIALS SYNC -------- */
   try {
