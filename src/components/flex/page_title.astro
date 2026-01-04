@@ -1,0 +1,57 @@
+---
+// Props
+const {
+  layout_settings = {},
+  h1 = "",
+  h2 = "",
+  description = "",
+} = Astro.props;
+
+// Destructure layout settings with defaults
+const {
+  section_title = "",
+  section_h2 = "",
+  section_text = "",
+  green_bg = false,
+  section_text_below = false
+} = layout_settings;
+
+
+// ------------------
+// FALLBACK LOGIC
+// ------------------
+const pageTitle   = h1 || section_title || "";
+const pageSubhead = h2 || section_h2 || "";
+const pageText    = description || section_text || "";
+
+---
+
+<section
+  class="page-title-wrap"
+>
+  <div class="hw-contain text-center page-title-wrap-inner">
+
+    {/* H1 */}
+    {pageTitle && (
+      <h1 class="antiga text-[3.75rem]">
+        {pageTitle}
+      </h1>
+    )}
+
+    {/* H2 */}
+    {pageSubhead && (
+      <h2 class="figure text-[1.75rem]">
+        {pageSubhead}
+      </h2>
+    )}
+
+    {/* Description */}
+    {pageText && (
+      <div
+        class="text-[1.25rem]"
+        set:html={pageText}
+      />
+    )}
+
+  </div>
+</section>

@@ -342,6 +342,7 @@
         "green_bg": false,
         "section_text_below": false
       },
+      "label_above": "",
       "images": [
         {
           "image": {
@@ -1411,5 +1412,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-04 16:52:10"
+  "_syncedAt": "2026-01-04 17:25:37"
 }

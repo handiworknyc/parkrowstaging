@@ -185,6 +185,7 @@ html:not(.ua-safari) .antiga {
 	padding: 4rem 0;
 }
 
+.page_title-module + .flex-module,
 .full_bleed_img-module.rowindex-1 + .flex-module {
 	padding-top: 0 !important;
 }
@@ -450,4 +451,23 @@ ul.two-col-list {
 
 .photo-collage-cell .img-load-par.child-lazy-loaded {
 	opacity: 1;
+}
+
+
+
+
+
+
+
+
+
+.page-title-wrap {
+	padding-top: calc(var(--headerHeight) + 8.5rem);
+	padding-bottom: 8.5rem;
+}
+
+.page-title-wrap-inner {
+	flex-direction: column;
+	display: flex;
+	gap: 2.25rem;
 }

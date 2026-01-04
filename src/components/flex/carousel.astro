@@ -2,6 +2,7 @@
 import ImageCarousel from "../react/ImageCarousel.jsx";
 
 const vars = { ...Astro.props };
+const { label_above = "" } = vars;
 
 // --- 1. Data Processing: Content --- //
 const rawContent = vars.content || [];
@@ -58,6 +59,12 @@ const captionPos = vars.caption_pos || "left";
 const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
 const captionWrapperClass = ["full-bleed-caption", "mt-5", alignMap[captionPos] || "text-left", vars.bleed === true ? "hw-contain" : null].filter(Boolean).join(" ");
 ---
+
+{label_above && (
+  <div class="tac figure hw-contain mb-6 text-[1.75rem]">
+    {label_above}
+  </div>
+)}
 
 {/* --- CAROUSEL SECTION --- */}
 <div class="w-full relative block">
