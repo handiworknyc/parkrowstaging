@@ -37,7 +37,8 @@ const validSlides = formattedSlides.filter(s => s.smartImg !== null);
     <FadeSlideshow 
       client:visible 
       slides={validSlides} 
-      duration={4000} 
+      duration={4000}
+	  client:idle
     />
   ) : (
     <div class="flex items-center justify-center w-full h-full flex-col left-[var(--containerPadding)] text-[1.08rem] ">
