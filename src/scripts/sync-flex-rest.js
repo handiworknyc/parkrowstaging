@@ -10,7 +10,6 @@ function hashJSON(data) {
 
 /* -------------------------------------------
    Load env files only when running locally
-   (Netlify sets process.env.NETLIFY=true)
 ------------------------------------------- */
 if (!process.env.NETLIFY) {
   try {
@@ -18,9 +17,7 @@ if (!process.env.NETLIFY) {
     const mode = process.env.NODE_ENV === "production" ? "production" : "development";
     config({ path: `.env.${mode}` });
     config();
-  } catch {
-    // dotenv is optional
-  }
+  } catch {}
 }
 
 /* -------------------------------------------
@@ -128,51 +125,53 @@ async function fetchFlexibleForPage(uri) {
 }
 
 /* -------------------------------------------
-   Helper: Extract LCP Image Data (src, srcset, sizes)
+   NEW — Fetch Specials JSON
+------------------------------------------- */
+async function fetchSpecials() {
+  const url = new URL("/wp-json/astro/v1/specials", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
+/* -------------------------------------------
+   LCP helper
 ------------------------------------------- */
 function getRawLcpImage(row) {
   if (!row) return null;
 
   let imgObj = null;
-  let defaultSizes = "100vw";
 
-  // 1. Check Video Poster (yt_img)
   const videoField = row.video || (row.data && row.data.video);
   if (Array.isArray(videoField) && videoField[0]?.yt_img) {
     const raw = videoField[0].yt_img;
     const s = raw.sizes || {};
-    
-    // Build array of available sizes from ACF
-    // Note: WordPress API often provides sizes as flat keys or an object. 
-    // We try to reconstruct a useful srcset manually if WP didn't provide one pre-built.
-    const candidates = [
-      { url: s.intch_xl || raw.url, w: s['intch_xl-width'] },
-      { url: s.intch_lg, w: s['intch_lg-width'] },
-      { url: s.intch_med, w: s['intch_med-width'] },
-      { url: s.intch_sm, w: s['intch_sm-width'] }
-    ].filter(c => c.url && c.w); // Must have URL and Width
 
-    const srcSetString = candidates.map(c => `${c.url} ${c.w}w`).join(", ");
-    
+    const candidates = [
+      { url: s.intch_xl || raw.url, w: s["intch_xl-width"] },
+      { url: s.intch_lg, w: s["intch_lg-width"] },
+      { url: s.intch_med, w: s["intch_med-width"] },
+      { url: s.intch_sm, w: s["intch_sm-width"] },
+    ].filter((c) => c.url && c.w);
+
+    const srcSetString = candidates.map((c) => `${c.url} ${c.w}w`).join(", ");
+
     return {
       href: s.intch_xl || raw.url,
       imagesrcset: srcSetString || undefined,
-      imagesizes: "(max-width: 1200px) 60vw, 100vw"
+      imagesizes: "(max-width: 1200px) 60vw, 100vw",
     };
   }
 
-  // 2. Check Standard Images
   const imageKeys = ["image", "hero_image", "background_image", "bg_image", "mobile_image", "desktop_image"];
-  const dataSource = row.data || row; 
-  
+  const dataSource = row.data || row;
+
   for (const key of imageKeys) {
-    if (dataSource[key] && typeof dataSource[key] === 'object') {
+    if (dataSource[key] && typeof dataSource[key] === "object") {
       const img = dataSource[key];
-      // WP REST API usually gives `srcset` directly for image fields
       return {
         href: img.url || img.sourceUrl || img.src,
         imagesrcset: img.srcset || img.srcSet || undefined,
-        imagesizes: "100vw"
+        imagesizes: "100vw",
       };
     }
   }
@@ -187,11 +186,13 @@ async function run() {
   console.log("ENV:", { WP_BASE_URL: maskBasicAuthUrl(WP_BASE) });
 
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
+  const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const publicDir = path.join(process.cwd(), "public");
-  
+
   fs.mkdirSync(outPages, { recursive: true });
   fs.mkdirSync(publicDir, { recursive: true });
 
+  /* -------- PAGES -------- */
   let pageUris = PAGE_URIS_ENV
     ? PAGE_URIS_ENV.split(",").map((s) => s.trim()).filter(Boolean)
     : await discoverPagesViaREST().catch(() => []);
@@ -204,9 +205,10 @@ async function run() {
   console.log(`🔎 Pages discovered: ${pageUris.length}`);
   if (!pageUris.length) return;
 
-  let wrote = 0, skipped = 0, failed = 0;
-  
-  // Stores { path, video, lcp: { href, imagesrcset, imagesizes } }
+  let wrote = 0,
+    skipped = 0,
+    failed = 0;
+
   const prefetchMap = [];
 
   for (const uri of pageUris) {
@@ -223,64 +225,53 @@ async function run() {
       const entry = { path: cleanPath };
       let hasEntry = false;
 
-		// 1. EXTRACT VIDEO
-		const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
-		if (videoField && Array.isArray(videoField)) {
-		const videoObj = videoField[0];
-		if (videoObj && videoObj.cf_stream_video) {
+      const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
+      if (videoField && Array.isArray(videoField)) {
+        const videoObj = videoField[0];
+        if (videoObj && videoObj.cf_stream_video) {
+          const manifestUrl = videoObj.cf_stream_video;
+          entry.video = manifestUrl;
 
-			const manifestUrl = videoObj.cf_stream_video; // Cloudflare HLS URL
-			entry.video = manifestUrl;
+          const idMatch = manifestUrl.match(/com\/([^/]+)\//);
+          if (idMatch) {
+            const videoId = idMatch[1];
+            const mp4Url = manifestUrl.replace("/manifest/video.m3u8", "/downloads/default.mp4");
 
-			// -------------------------------------------
-			// NEW: Derive videoId and MP4 URL
-			// -------------------------------------------
-			const idMatch = manifestUrl.match(/com\/([^/]+)\//);
-			if (idMatch) {
-			const videoId = idMatch[1];
-			const mp4Url = manifestUrl.replace("/manifest/video.m3u8", "/downloads/default.mp4");
+            entry.video_mp4 = `/videos/${videoId}.mp4`;
 
-			// Store the MP4 URL for frontend/service worker
-			entry.video_mp4 = `/videos/${videoId}.mp4`;
+            const videosDir = path.join(publicDir, "videos");
+            fs.mkdirSync(videosDir, { recursive: true });
 
-			// -------------------------------------------
-			// NEW: Mirror MP4 into /public/videos
-			// -------------------------------------------
-			const videosDir = path.join(publicDir, "videos");
-			fs.mkdirSync(videosDir, { recursive: true });
+            const localPath = path.join(videosDir, `${videoId}.mp4`);
+            const exists = fs.existsSync(localPath);
 
-			const localPath = path.join(videosDir, `${videoId}.mp4`);
-			const exists = fs.existsSync(localPath);
+            if (!exists) {
+              console.log(`⬇️  Downloading MP4 for ${videoId}`);
 
-			if (!exists) {
-				console.log(`⬇️  Downloading MP4 for ${videoId}`);
+              try {
+                const res = await fetch(mp4Url);
+                if (!res.ok) {
+                  console.warn(`⚠️ MP4 not downloadable (${res.status}): ${mp4Url}`);
+                } else {
+                  const buffer = Buffer.from(await res.arrayBuffer());
+                  fs.writeFileSync(localPath, buffer);
+                  console.log(`💾 Saved MP4 → ${localPath}`);
+                }
+              } catch (err) {
+                console.warn(`⚠️ MP4 download failed for ${videoId}`, err);
+              }
+            } else {
+              console.log(`✓ MP4 exists for ${videoId}`);
+            }
+          }
 
-				try {
-				const res = await fetch(mp4Url);
-				if (!res.ok) {
-					console.warn(`⚠️ MP4 not downloadable (${res.status}): ${mp4Url}`);
-				} else {
-					const buffer = Buffer.from(await res.arrayBuffer());
-					fs.writeFileSync(localPath, buffer);
-					console.log(`💾 Saved MP4 → ${localPath}`);
-				}
-				} catch (err) {
-				console.warn(`⚠️ MP4 download failed for ${videoId}`, err);
-				}
-			} else {
-				console.log(`✓ MP4 exists for ${videoId}`);
-			}
-			}
+          hasEntry = true;
+        }
+      }
 
-			hasEntry = true;
-		}
-		}
-
-
-      // 2. EXTRACT LCP IMAGE DATA
       const lcpData = getRawLcpImage(firstRow);
       if (lcpData) {
-        entry.lcp = lcpData; // Store the whole object {href, imagesrcset, imagesizes}
+        entry.lcp = lcpData;
         hasEntry = true;
       }
 
@@ -298,24 +289,46 @@ async function run() {
     }
   }
 
-  
-// Generate hashed filename
-const hash = hashJSON(prefetchMap);
-const mapFilename = `prefetch-map.${hash}.json`;
-const mapFile = path.join(publicDir, mapFilename);
+  /* -------- SPECIALS SYNC -------- */
+  try {
+    console.log("🔄 Fetching Specials…");
+    const specials = await fetchSpecials();
 
-// Write file
-fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+    const newHash = hashJSON(specials);
+    let oldHash = null;
 
-// Also write a small "latest" pointer
-fs.writeFileSync(
-  path.join(publicDir, "prefetch-map-latest.json"),
-  JSON.stringify({ file: mapFilename })
-);
+    if (fs.existsSync(outSpecials)) {
+      try {
+        const old = JSON.parse(fs.readFileSync(outSpecials, "utf8"));
+        oldHash = hashJSON(old);
+      } catch {}
+    }
 
-console.log("---------------------------------------------------");
-console.log(`🎥 Generated map: ${mapFilename}`);
-console.log("---------------------------------------------------");
+    if (newHash !== oldHash) {
+      fs.writeFileSync(outSpecials, JSON.stringify(specials, null, 2));
+      console.log("✨ Specials updated");
+    } else {
+      console.log("⏩ Specials unchanged — skip write");
+    }
+  } catch (e) {
+    console.error("❌ Failed to sync Specials:", e.message || e);
+  }
+
+  /* -------- PREFETCH MAP -------- */
+  const hash = hashJSON(prefetchMap);
+  const mapFilename = `prefetch-map.${hash}.json`;
+  const mapFile = path.join(publicDir, mapFilename);
+
+  fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+
+  fs.writeFileSync(
+    path.join(publicDir, "prefetch-map-latest.json"),
+    JSON.stringify({ file: mapFilename })
+  );
+
+  console.log("---------------------------------------------------");
+  console.log(`🎥 Generated map: ${mapFilename}`);
+  console.log("---------------------------------------------------");
 
   console.log("---------------------------------------------------");
   console.log(`🎥 Generated map with ${prefetchMap.length} entries.`);

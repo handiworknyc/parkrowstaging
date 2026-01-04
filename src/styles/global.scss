@@ -442,3 +442,12 @@ ul.two-col-list {
 	height: 33rem;
 	position: relative;
 }
+
+.photo-collage-cell .img-load-par {
+	opacity: 0;
+	transition: opacity .8s var(--cubicBez);
+}
+
+.photo-collage-cell .img-load-par.child-lazy-loaded {
+	opacity: 1;
+}

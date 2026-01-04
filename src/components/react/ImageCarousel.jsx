@@ -13,9 +13,6 @@ function ParallaxSlide({ image, index }) {
     const captionOpacity = useTransform(offset, [-200, 0, 200], [0, 1, 0])
     const captionY = useTransform(offset, [-200, 0, 200], ["10%", "0%", "10%"])
 
-	console.log('ASDASDSAD');
-	console.log("aspectRatio for slide", index, image.aspectRatio)
-
     return (
         <figure className={`slide-figure ${image.caption ? "has-caption" : ""}`}>
             <div className="image-wrapper">

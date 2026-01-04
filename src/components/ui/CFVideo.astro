@@ -2,7 +2,19 @@
 // CFVideo.astro
 import SmartImage from "../ui/SmartImage.astro";
 
-const v = Astro.props.video?.[0] ?? {};
+interface Props {
+  video: any;
+  usePosterSrcSet?: boolean;
+  forceSize?: 'xl' | 'large' | 'med' | 'small';
+}
+
+const {
+  video,
+  usePosterSrcSet = true,
+  forceSize
+} = Astro.props as Props;
+
+const v = video?.[0] ?? {};
 
 const src = v.cf_stream_video || "";
 const playOnHover = v.yt_hover === true;
@@ -11,8 +23,6 @@ const playOnScroll = true;
 const threshold = 0.6;
 
 // Generate safe ID
-// We use a simpler UUID method to ensure hydration consistency if possible, 
-// but Math.random is fine here since this is not a hydrated React component.
 let rawId =
   (v.id || v.cf_stream_video || "") +
   "-" +
@@ -41,6 +51,8 @@ const ytAlt = ytImg?.alt || "";
     alt={ytAlt}
     imgClass="abs-full of-cover hw-vid-poster-img"
     sizes="(max-width: 1200px) 60vw, 100vw"
+    useSrcSet={usePosterSrcSet}
+    forceSize={forceSize}
   />
 )}
 
@@ -63,6 +75,8 @@ const ytAlt = ytImg?.alt || "";
           alt={ytAlt}
           imgClass="abs-full hw-vid-poster-img"
           sizes="(max-width: 1200px) 60vw, 100vw"
+          useSrcSet={usePosterSrcSet}
+          forceSize={forceSize}
         />
       )}
 
@@ -70,67 +84,52 @@ const ytAlt = ytImg?.alt || "";
         class={`abs-full video-js hw-vid-player vjs-default-skin show-controls-${showControls}`}
         muted
         autoplay
-        playsinline 
+        playsinline
         preload="auto"
         disablePictureInPicture
         controlsList="nodownload noplaybackrate noremoteplayback"
       ></video>
     </div>
 
-    {/* NOTE: No 'client:load' needed here. 
-      This script automatically runs on the client.
-    */}
     <script>
       import { initCFVideo } from "/src/scripts/videojs.js";
 
-      // This function handles finding elements and initializing them
       const initVideoComponents = () => {
         const videos = document.querySelectorAll('.hw-vid-wrap');
-        
-        // Check for first-load animation logic
         const shouldAnimate = document.body.classList.contains('first-load');
-        // Logic to track session load
+
         if (!window.hwSessionLoaded) {
-           window.hwSessionLoaded = true;
+          window.hwSessionLoaded = true;
         }
 
         videos.forEach((vid) => {
-            // 🛑 CRITICAL: Prevent double initialization
-            if (vid.dataset.initted === "true") return;
-            
-            // Mark as initted immediately
-            vid.dataset.initted = "true";
+          if (vid.dataset.initted === "true") return;
+          vid.dataset.initted = "true";
 
-            const id = vid.getAttribute('data-id');
+          const id = vid.getAttribute('data-id');
 
-            // 1. Transition/Loading Logic
-            if (shouldAnimate) {
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'opacity' && e.target === vid) {
-                        vid.classList.remove('loading');
-                        document.body.classList.remove('first-load');
-                        vid.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                vid.addEventListener('transitionend', onTransitionEnd);
-            } else {
+          if (shouldAnimate) {
+            const onTransitionEnd = (e) => {
+              if (e.propertyName === 'opacity' && e.target === vid) {
                 vid.classList.remove('loading');
-            }
+                document.body.classList.remove('first-load');
+                vid.removeEventListener('transitionend', onTransitionEnd);
+              }
+            };
+            vid.addEventListener('transitionend', onTransitionEnd);
+          } else {
+            vid.classList.remove('loading');
+          }
 
-            // 2. Init Player Logic
-            if (id) {
-                // We use requestAnimationFrame to ensure the DOM is painted 
-                // before the heavy videoJS logic kicks in, making the page feel faster.
-                requestAnimationFrame(() => {
-                    initCFVideo(id);
-                });
-            }
+          if (id) {
+            requestAnimationFrame(() => {
+              initCFVideo(id);
+            });
+          }
         });
       };
 
-      // Run on every page navigation (View Transitions)
       document.addEventListener('astro:page-load', initVideoComponents);
-      
     </script>
   </>
 )}

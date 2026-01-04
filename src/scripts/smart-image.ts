@@ -1,9 +1,8 @@
 // Native lazy loader for <img.hw-lazy-img>
-// Updated for Astro View Transitions compatibility
+// Updated for Astro View Transitions compatibility + video support
 
-// Check for window to avoid SSR errors
 if (typeof window !== "undefined") {
-  
+
   const SELECTOR_IMG = "img.hw-lazy-img",
     SELECTOR_LAZY = `${SELECTOR_IMG}[data-src]:not(.critical)`,
     SELECTOR_CRIT_DEFERRED = `${SELECTOR_IMG}.critical[data-src]`,
@@ -12,21 +11,37 @@ if (typeof window !== "undefined") {
     PARENT_CLASS_ON_CRIT = "crit-child-lazy-loaded",
     IO_ROOT_MARGIN = "200px";
 
-  // State trackers
-  let io: IntersectionObserver | null = null;
-  let mo: MutationObserver | null = null;
+  let io = null;
+  let mo = null;
 
-  const qsa = (root: ParentNode, sel: string) =>
-    Array.from(root.querySelectorAll<HTMLImageElement>(sel));
+  const qsa = (root, sel) => Array.from(root.querySelectorAll(sel));
 
-  const isCritFetch = (img: HTMLImageElement) =>
+  const isCritFetch = (img) =>
     (img.getAttribute("fetchpriority") || "").toLowerCase() === "high";
 
-  // --- Core Actions ---
+  function tagParentEl(el, isCrit = false) {
+    const parent = el.closest(".img-load-par");
+    if (!parent) return;
+    parent.classList.add(PARENT_CLASS_ON_LOAD);
+    if (isCrit) parent.classList.add(PARENT_CLASS_ON_CRIT);
+  }
 
-  function upgrade(img: HTMLImageElement) {
+  function markLoaded(img) {
+    if (img.classList.contains("lazy-loaded")) return;
+    img.classList.add("lazy-loaded");
+    img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+    tagParentEl(img, isCritFetch(img));
+  }
+
+  function markVideoLoaded(video) {
+    const parent = video.closest(".img-load-par");
+    if (!parent || parent.classList.contains(PARENT_CLASS_ON_LOAD)) return;
+    parent.classList.add(PARENT_CLASS_ON_LOAD);
+  }
+
+  function upgrade(img) {
     const { src: ds, srcset: dss, sizes: dsz } = img.dataset;
-    
+
     if (ds) img.src = ds;
     if (dss) img.srcset = dss;
     if (dsz) img.sizes = dsz;
@@ -35,87 +50,71 @@ if (typeof window !== "undefined") {
     img.removeAttribute("data-srcset");
     img.removeAttribute("data-sizes");
 
-    // Check immediately in case it was cached
     if (img.complete && img.naturalWidth > 0) markLoaded(img);
   }
 
-  function tagParent(img: HTMLImageElement) {
-    const parent = img.closest<HTMLElement>(".img-load-par");
-    if (!parent) return;
-    parent.classList.add(PARENT_CLASS_ON_LOAD);
-    if (isCritFetch(img)) parent.classList.add(PARENT_CLASS_ON_CRIT);
-  }
-
-  function markLoaded(img: HTMLImageElement) {
-    if (img.classList.contains("lazy-loaded")) return;
-    
-    img.classList.add("lazy-loaded");
-    img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-    tagParent(img);
-  }
-
-  // --- Event Handlers ---
-
-  function onLoadedOrError(e: Event) {
-    const img = e.target as HTMLImageElement;
+  function onLoadedOrError(e) {
+    const img = e.target;
     if (!img?.matches?.(SELECTOR_IMG)) return;
-
-    if (e.type === "load") {
-      markLoaded(img);
-    } else {
-      img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
-    }
+    if (e.type === "load") markLoaded(img);
+    else img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
   }
 
-  const observeLazy = (img: HTMLImageElement) => {
+  const observeLazy = (img) => {
     if (!img.matches(SELECTOR_LAZY)) return;
     if (io) io.observe(img);
     else upgrade(img);
   };
 
-  // --- Initialization Logic (Runs on every page nav) ---
+  function finalSweep() {
+    // ⭐ THIS FIXES MISSED IMAGES ⭐
+    qsa(document, SELECTOR_IMG).forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) {
+        markLoaded(img);
+      }
+    });
+  }
 
   function initSmartImages() {
-    // 1. Setup IntersectionObserver (Singleton)
     if (!io && "IntersectionObserver" in window) {
       io = new IntersectionObserver(
         (entries) => {
           for (const ent of entries) {
             if (!ent.isIntersecting) continue;
-            const img = ent.target as HTMLImageElement;
-            upgrade(img);
-            io!.unobserve(img);
+            upgrade(ent.target);
+            io.unobserve(ent.target);
           }
         },
         { rootMargin: IO_ROOT_MARGIN }
       );
     }
 
-    // 2. Initial Pass: Upgrade criticals & Observe lazy
     qsa(document, SELECTOR_CRIT_DEFERRED).forEach(upgrade);
     qsa(document, SELECTOR_LAZY).forEach(observeLazy);
-    
-    // 3. Check already loaded images
+
     qsa(document, SELECTOR_CRIT_FETCH).forEach((img) => {
       if (img.complete && img.naturalWidth > 0) markLoaded(img);
     });
 
-    // 4. Setup MutationObserver (Reset for new DOM)
+    document.querySelectorAll("video").forEach((v) => {
+      if (v.readyState >= 2) markVideoLoaded(v);
+    });
+
+    // ⭐ RUN FINAL SWEEP ⭐
+    finalSweep();
+
     if (mo) mo.disconnect();
-    
+
     mo = new MutationObserver((muts) => {
       for (const m of muts) {
-        m.addedNodes.forEach((n) => {
-          if (n instanceof Element) handleElement(n);
-        });
+        m.addedNodes.forEach((n) => n instanceof Element && handleElement(n));
       }
     });
-    
-    // Re-observe documentElement (persists across swaps, but good to be safe)
+
     mo.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  function handleElement(el: Element) {
+  function handleElement(el) {
     qsa(el, SELECTOR_CRIT_DEFERRED).forEach(upgrade);
     qsa(el, SELECTOR_LAZY).forEach(observeLazy);
 
@@ -123,34 +122,30 @@ if (typeof window !== "undefined") {
       if (img.complete && img.naturalWidth > 0) markLoaded(img);
     });
 
-    if (el.matches?.(SELECTOR_IMG)) {
-      const img = el as HTMLImageElement;
-      if (img.matches(SELECTOR_CRIT_DEFERRED)) upgrade(img);
-      else if (img.matches(SELECTOR_LAZY)) observeLazy(img);
-      if (img.matches(SELECTOR_CRIT_FETCH) && img.complete && img.naturalWidth > 0) {
-        markLoaded(img);
-      }
-    }
+    qsa(el, SELECTOR_IMG).forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) markLoaded(img);
+    });
+
+    qsa(el, "video").forEach((v) => {
+      if (v.readyState >= 2) markVideoLoaded(v);
+    });
   }
 
-  // --- Attach Listeners ---
-
-  // 1. Global load/error (only attach once)
-  // We check if we've already attached to avoid duplicates during HMR/dev
-  if (!(window as any).__smartImageListenersAttached) {
+  if (!(window).__smartImageListenersAttached) {
     document.addEventListener("load", onLoadedOrError, true);
     document.addEventListener("error", onLoadedOrError, true);
-    (window as any).__smartImageListenersAttached = true;
+
+    document.addEventListener("loadeddata", (e) => {
+      const t = e.target;
+      if (t instanceof HTMLVideoElement) markVideoLoaded(t);
+    }, true);
+
+    (window).__smartImageListenersAttached = true;
   }
 
-  // 2. Lifecycle Hook for Astro View Transitions
-  // 'astro:page-load' fires on the initial visit AND after every swap.
   document.addEventListener("astro:page-load", initSmartImages);
 
-  // 3. Fallback for non-Astro environments or if event already missed
   if (document.readyState === "interactive" || document.readyState === "complete") {
-     // Optional: check if we are NOT in an Astro environment to avoid double run
-     // But initSmartImages is idempotent enough to run twice safely
-     initSmartImages();
+    initSmartImages();
   }
 }

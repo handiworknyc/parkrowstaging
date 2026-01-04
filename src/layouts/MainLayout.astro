@@ -3,7 +3,7 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
-
+import PromoPopup from "../components/PromoPopup.astro";	
 import videoJsUrl from "/src/scripts/videojs.js?url";
 
 // Critical CSS
@@ -247,7 +247,8 @@ Astro.response.headers.set(
   <SiteFooter />
 
   <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
-
+  <PromoPopup />
+  
   <script is:client>
     if (window.__isSafari) {
       document.documentElement.classList.add("disable-vt");

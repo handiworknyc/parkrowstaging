@@ -26,19 +26,19 @@ images.forEach((img, i) => {
 
       return (
         <div class={classMap[i]}>
-          <div class={`pr ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`}>
-            <CFVideo video={video} />
+          <div class={`pr img-load-par ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`}>
+            <CFVideo video={video} forceSize="med" />
           </div>
         </div>
       );
     })}
   </div>
 
-  {/* ---------- ROW 2 : #4 ---------- */}
+  {/* ---------- ROW 2 : #4 (Full Width - No forceSize Prop) ---------- */}
   {images[3]?.video && (
     <div class="row flex bleed-x">
       <div class="photo-collage-cell w100">
-        <div class="pr">
+        <div class="pr img-load-par">
           <CFVideo video={images[3].video} />
         </div>
       </div>
@@ -50,27 +50,27 @@ images.forEach((img, i) => {
     <div class="row flex">
       {images[4]?.video && (
         <div class="photo-collage-cell col-6 bleed-left">
-          <div class="pr">
-            <CFVideo video={images[4].video} />
+          <div class="pr img-load-par">
+            <CFVideo video={images[4].video} forceSize="med" />
           </div>
         </div>
       )}
 
       {images[5]?.video && (
         <div class="photo-collage-cell col-6 bleed-right">
-          <div class="pr">
-            <CFVideo video={images[5].video} />
+          <div class="pr img-load-par">
+            <CFVideo video={images[5].video} forceSize="med" />
           </div>
         </div>
       )}
     </div>
   )}
 
-  {/* ---------- ROW 4 : #7 ---------- */}
+  {/* ---------- ROW 4 : #7 (Full Width - No Size Prop) ---------- */}
   {images[6]?.video && (
     <div class="row flex bleed-x">
       <div class="photo-collage-cell w100">
-        <div class="pr">
+        <div class="pr img-load-par">
           <CFVideo video={images[6].video} />
         </div>
       </div>
@@ -82,16 +82,16 @@ images.forEach((img, i) => {
     <div class="row flex">
       {images[7]?.video && (
         <div class="photo-collage-cell col-5 bleed-left">
-          <div class="pr">
-            <CFVideo video={images[7].video} />
+          <div class="pr img-load-par">
+            <CFVideo video={images[7].video} forceSize="med" />
           </div>
         </div>
       )}
 
       {images[8]?.video && (
         <div class="photo-collage-cell col-6">
-          <div class="pr rounded-br-[9rem] ofh">
-            <CFVideo video={images[8].video} />
+          <div class="pr rounded-br-[9rem] ofh img-load-par">
+            <CFVideo video={images[8].video} forceSize="med" />
           </div>
         </div>
       )}

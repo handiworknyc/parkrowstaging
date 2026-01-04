@@ -6,6 +6,10 @@ export default function SmartImage({
   critical = false,
   crossorigin,
   fetchpriority,
+
+  /* NEW */
+  useSrcSet = true,
+  forceSize, // 'xl' | 'large' | 'med' | 'small'
 }) {
   const fp = fetchpriority ?? (critical ? "high" : "low");
 
@@ -23,6 +27,19 @@ export default function SmartImage({
       ? null
       : toWebP(typeof images?.small === "string" ? images.small : null);
 
+  /* ---------------------------------------------------
+     FORCE SIZE LOGIC — SINGLE SRC ONLY
+  ----------------------------------------------------*/
+  const forcedSrc =
+    forceSize === "xl" ? xl :
+    forceSize === "large" ? lg :
+    forceSize === "med" ? md :
+    forceSize === "small" ? sm :
+    null;
+
+  /* ---------------------------------------------------
+     SRCSET LOGIC (ONLY WHEN NOT FORCED)
+  ----------------------------------------------------*/
   const parts = [];
   if (xl) parts.push({ url: xl, w: 1700 });
   if (lg) parts.push({ url: lg, w: 1400 });
@@ -30,23 +47,45 @@ export default function SmartImage({
   if (sm) parts.push({ url: sm, w: 600 });
 
   const srcSet = parts.map((p) => `${p.url} ${p.w}w`).join(", ");
+  const defaultPrimary = parts.length ? parts[0].url : xl || lg || md || sm || "";
 
-  const primary = parts.length ? parts[0].url : xl || lg || md || sm || "";
+  const primary = forcedSrc || defaultPrimary;
 
   const loading = critical ? "eager" : "lazy";
   const decoding = critical ? "sync" : "async";
 
+  const base = {
+    className: ["hw-lazy-img", imgClass].filter(Boolean).join(" "),
+    src: primary,
+    alt,
+    loading,
+    decoding,
+    fetchPriority: fp,
+    crossOrigin: crossorigin,
+  };
+
+  /* ---------------------------------------------------
+     CASE 1 — FORCE SIZE → NO SRCSET OR SIZES
+  ----------------------------------------------------*/
+  if (forcedSrc) {
+    return <img {...base} />;
+  }
+
+  /* ---------------------------------------------------
+     CASE 2 — SRCSET DISABLED
+  ----------------------------------------------------*/
+  if (!useSrcSet) {
+    return <img {...base} />;
+  }
+
+  /* ---------------------------------------------------
+     CASE 3 — NORMAL RESPONSIVE IMAGE
+  ----------------------------------------------------*/
   return (
     <img
-      className={["hw-lazy-img", imgClass].filter(Boolean).join(" ")}
-      src={primary}
+      {...base}
       srcSet={srcSet}
       sizes={sizes}
-      alt={alt}
-      loading={loading}
-      decoding={decoding}
-      fetchPriority={fp}
-      crossOrigin={crossorigin}
     />
   );
 }

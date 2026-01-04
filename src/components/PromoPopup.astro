@@ -1,0 +1,234 @@
+---
+// src/components/PromoPopup.astro
+import specials from "../content/wp/specials.json";
+
+// --- DEBUG: Guard Clauses ---
+const activeSpecial = specials && specials.length > 0 ? specials[0] : null;
+
+// Fallback data for preview/debugging if no special is found
+const title = activeSpecial?.title;
+const text = activeSpecial?.text;
+const image = activeSpecial?.image;
+const show_once = activeSpecial?.show_once || false;
+const show_on = activeSpecial?.show_on;
+
+// --- SERVER SIDE CHECKS ---
+if (activeSpecial && show_on && Array.isArray(show_on) && show_on.length > 0) {
+  const currentPath = Astro.url.pathname;
+  let currentSlug = currentPath === "/" ? "home" : currentPath.replace(/^\/|\/$/g, "");
+  const isMatch = show_on.some((page) => page.slug === currentSlug);
+  if (!isMatch) return; // Don't render if not on the right page
+}
+
+const imageUrl = image?.sizes?.medium_large || image?.url;
+const imageAlt = image?.alt || title;
+const popupId = `promo-${image?.id || 'default'}`;
+
+if (!imageUrl) return; // Don't render if no image
+---
+
+<div 
+  id="promo-popup-container" 
+  class="promo-popup-backdrop hidden"
+  data-popup-id={popupId}
+  data-show-once={show_once.toString()}
+>
+  <div class="promo-popup-modal">
+    <button id="promo-close" class="close-btn" aria-label="Close popup">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+
+    <div class="popup-image-wrapper">
+      <img src={imageUrl} alt={imageAlt} loading="eager" />
+      <div class="image-overlay"></div>
+    </div>
+    
+    <div class="popup-content">
+      {title && <h3 class="antiga lilblur">{title}</h3>}
+      {text && <div class="popup-text figure max-w-[23em]" set:html={text} />}
+    </div>
+  </div>
+</div>
+
+<style lang="scss">
+  /* 1. BACKDROP */
+  .promo-popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    
+    opacity: 0; /* JS handles this */
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  /* 2. MODAL CONTAINER */
+  .promo-popup-modal {
+    width: 90%;
+    max-width: 800px; 
+    height: 70vh;
+    max-height: 600px;
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    background: #000; 
+
+    /* Mask Setup */
+    mask-image: linear-gradient(135deg, black 30%, transparent 70%);
+    mask-size: 450% 450%;
+    mask-repeat: no-repeat;
+    mask-position: 130% 130%; /* Start Hidden */
+    
+    will-change: mask-position, transform;
+    transform: translateY(3px) scale(0.99);
+  }
+
+  /* CONTENT */
+  .popup-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 5;
+    padding: 2.5rem 2.5rem 4.5rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: center;
+    color: white;
+    
+    opacity: 0;
+    transform: translateY(3px);
+
+    h3.antiga {
+      margin: 0 0 1.5rem 0;
+      font-size: 4.5rem;
+      line-height: 1;
+      font-weight: normal;
+      color: white;
+    }
+    .popup-text.figure {
+      font-size: 1.75rem;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  .popup-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  }
+  .image-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.65); z-index: 1;
+  }
+  .close-btn {
+    position: absolute; top: 15px; right: 15px;
+    background: transparent; border: none; padding: 0; cursor: pointer; z-index: 10;
+    opacity: 0; 
+  }
+</style>
+
+<script>
+  /* * CRITICAL FIX: 
+   * If you are using `framer-motion` (React), change the import to:
+   * import { animate } from "framer-motion";
+   * * If you are using Motion One (Vanilla), keep it as:
+   * import { animate } from "motion";
+   */
+  import { animate } from "motion";
+
+  if (!window._sessionPopupsSeen) {
+    window._sessionPopupsSeen = new Set();
+  }
+
+  function initPopup() {
+    const container = document.getElementById('promo-popup-container');
+    if (!container) return;
+
+    const modal = container.querySelector('.promo-popup-modal');
+    const content = container.querySelector('.popup-content');
+    const closeBtn = document.getElementById('promo-close');
+
+    // --- CHECK LOGIC ---
+    const popupId = container.dataset.popupId;
+    const showOnce = container.dataset.showOnce === 'true'; 
+    const storageKey = `popup_seen_${popupId}`;
+    
+    let shouldBlock = false;
+    if (showOnce && localStorage.getItem(storageKey)) shouldBlock = true;
+    else if (!showOnce && window._sessionPopupsSeen.has(popupId)) shouldBlock = true;
+
+    // Uncomment to force show during dev
+    // shouldBlock = false;
+
+    if (shouldBlock) {
+      container.remove();
+      return;
+    }
+
+    if (!showOnce) window._sessionPopupsSeen.add(popupId);
+
+    // --- ANIMATION SEQUENCE (Manual Implementation) ---
+    container.classList.remove('hidden');
+
+    // 1. Fade in Backdrop
+    animate(container, { opacity: 1 }, { duration: 0.5 });
+
+    // 2. Wipe in Modal (Wait 100ms)
+    setTimeout(() => {
+      animate(
+        modal, 
+        { 
+          maskPosition: ["130% 130%", "0% 0%"], 
+          transform: ["translateY(5px) scale(0.99)", "translateY(0) scale(1)"] 
+        }, 
+        { 
+          duration: 1.3, 
+          easing: [0.22, 1, 0.36, 1] 
+        }
+      );
+    }, 100);
+
+    // 3. Stagger Content (Wait 600ms)
+    setTimeout(() => {
+      if (content) animate(content, { opacity: 1, transform: "translateY(0)" }, { duration: 0.8 });
+      if (closeBtn) animate(closeBtn, { opacity: 1 }, { duration: 0.8 });
+    }, 430);
+
+    // --- CLOSE LOGIC ---
+    const closePopup = async () => {
+      // Parallel exit animations
+      const exit1 = animate(container, { opacity: 0 }, { duration: 0.4 });
+      const exit2 = animate(modal, { opacity: 0, transform: "scale(0.99)" }, { duration: 0.4 });
+      
+      await Promise.all([exit1.finished, exit2.finished]);
+      
+      container.classList.add('hidden');
+      if (showOnce) localStorage.setItem(storageKey, 'true');
+    };
+
+    closeBtn?.addEventListener('click', closePopup);
+    container.addEventListener('click', (e) => {
+      if (e.target === container) closePopup();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initPopup);
+</script>
