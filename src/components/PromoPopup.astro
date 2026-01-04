@@ -2,29 +2,29 @@
 // src/components/PromoPopup.astro
 import specials from "../content/wp/specials.json";
 
-// --- DEBUG: Guard Clauses ---
 const activeSpecial = specials && specials.length > 0 ? specials[0] : null;
 
-// Fallback data for preview/debugging if no special is found
-const title = activeSpecial?.title;
-const text = activeSpecial?.text;
-const image = activeSpecial?.image;
-const show_once = activeSpecial?.show_once || false;
-const show_on = activeSpecial?.show_on;
+// Guard clauses
+if (!activeSpecial || !activeSpecial.image) return;
 
-// --- SERVER SIDE CHECKS ---
-if (activeSpecial && show_on && Array.isArray(show_on) && show_on.length > 0) {
+// ---------------------------------------------------------
+// SHOW_ON LOGIC (Server-Side)
+// ---------------------------------------------------------
+const { show_on } = activeSpecial;
+
+if (show_on && Array.isArray(show_on) && show_on.length > 0) {
   const currentPath = Astro.url.pathname;
   let currentSlug = currentPath === "/" ? "home" : currentPath.replace(/^\/|\/$/g, "");
   const isMatch = show_on.some((page) => page.slug === currentSlug);
-  if (!isMatch) return; // Don't render if not on the right page
+
+  if (!isMatch) return;
 }
+// ---------------------------------------------------------
 
-const imageUrl = image?.sizes?.medium_large || image?.url;
-const imageAlt = image?.alt || title;
-const popupId = `promo-${image?.id || 'default'}`;
-
-if (!imageUrl) return; // Don't render if no image
+const { title, text, show_once, image } = activeSpecial;
+const imageUrl = image.sizes.medium_large || image.url;
+const imageAlt = image.alt || title;
+const popupId = `promo-${image.id}`;
 ---
 
 <div 
@@ -40,6 +40,7 @@ if (!imageUrl) return; // Don't render if no image
 
     <div class="popup-image-wrapper">
       <img src={imageUrl} alt={imageAlt} loading="eager" />
+      
       <div class="image-overlay"></div>
     </div>
     
@@ -51,6 +52,9 @@ if (!imageUrl) return; // Don't render if no image
 </div>
 
 <style lang="scss">
+  .popup-text :global(p) {
+	margin-bottom: 1.25rem;
+  }	
   /* 1. BACKDROP */
   .promo-popup-backdrop {
     position: fixed;
@@ -59,7 +63,6 @@ if (!imageUrl) return; // Don't render if no image
     width: 100%;
     height: 100%;
     z-index: 9999;
-    
     display: flex;
     align-items: center;
     justify-content: center;
@@ -67,7 +70,23 @@ if (!imageUrl) return; // Don't render if no image
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     
-    opacity: 0; /* JS handles this */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    
+    transition: opacity 1.6s ease, visibility 1.6s ease;
+	will-change: opacity, visibility;
+
+    &.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+
+      .promo-popup-modal {
+        mask-position: 0% 0%; 
+        transform: translateY(0) scale(1);
+      }
+    }
 
     &.hidden {
       display: none;
@@ -76,84 +95,113 @@ if (!imageUrl) return; // Don't render if no image
 
   /* 2. MODAL CONTAINER */
   .promo-popup-modal {
+    /* Set a reasonable max width for the image */
     width: 90%;
     max-width: 800px; 
-    height: 70vh;
-    max-height: 600px;
+	height: 70vh;
+	max-height: 600px;
     position: relative;
     border-radius: 4px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
-    background: #000; 
+    background: #000; /* Fallback */
 
-    /* Mask Setup */
+    /* The Mask Animation */
     mask-image: linear-gradient(135deg, black 30%, transparent 70%);
     mask-size: 450% 450%;
     mask-repeat: no-repeat;
     mask-position: 130% 130%; /* Start Hidden */
-    
+
+    transform: translateY(5px) scale(0.99);
     will-change: mask-position, transform;
-    transform: translateY(3px) scale(0.99);
+    transition: 
+      mask-position 3.4s cubic-bezier(0.22, 1, 0.36, 1), 
+      transform 1s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* CONTENT */
+  /* IMAGE WRAPPER */
+  .popup-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    /* Ensure image dictates height or define fixed height if preferred */
+    
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  /* 50% BLACK OVERLAY */
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1;
+  }
+
+  /* CLOSE BUTTON */
+  .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+
+  /* CONTENT OVERLAY */
   .popup-content {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    z-index: 5;
+    z-index: 5; /* Above overlay */
     padding: 2.5rem 2.5rem 4.5rem 2.5rem;
+    
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
     text-align: center;
     color: white;
-    
-    opacity: 0;
-    transform: translateY(3px);
 
     h3.antiga {
-      margin: 0 0 1.5rem 0;
+      margin: 0;
+      margin-bottom: 1.5rem;
       font-size: 4.5rem;
       line-height: 1;
       font-weight: normal;
       color: white;
     }
+
     .popup-text.figure {
       font-size: 1.75rem;
       line-height: 1.4;
       color: rgba(255, 255, 255, 0.9);
+      
+      :global(a) {
+        color: white;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
     }
-  }
-
-  .popup-image-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  }
-  .image-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.65); z-index: 1;
-  }
-  .close-btn {
-    position: absolute; top: 15px; right: 15px;
-    background: transparent; border: none; padding: 0; cursor: pointer; z-index: 10;
-    opacity: 0; 
   }
 </style>
 
 <script>
-  /* * CRITICAL FIX: 
-   * If you are using `framer-motion` (React), change the import to:
-   * import { animate } from "framer-motion";
-   * * If you are using Motion One (Vanilla), keep it as:
-   * import { animate } from "motion";
-   */
-  import { animate } from "motion";
-
   if (!window._sessionPopupsSeen) {
     window._sessionPopupsSeen = new Set();
   }
@@ -162,66 +210,47 @@ if (!imageUrl) return; // Don't render if no image
     const container = document.getElementById('promo-popup-container');
     if (!container) return;
 
-    const modal = container.querySelector('.promo-popup-modal');
-    const content = container.querySelector('.popup-content');
-    const closeBtn = document.getElementById('promo-close');
+    // Reset state
+    container.classList.add('hidden');
+    container.classList.remove('active');
 
-    // --- CHECK LOGIC ---
+    const closeBtn = document.getElementById('promo-close');
     const popupId = container.dataset.popupId;
     const showOnce = container.dataset.showOnce === 'true'; 
     const storageKey = `popup_seen_${popupId}`;
-    
-    let shouldBlock = false;
-    if (showOnce && localStorage.getItem(storageKey)) shouldBlock = true;
-    else if (!showOnce && window._sessionPopupsSeen.has(popupId)) shouldBlock = true;
 
-    // Uncomment to force show during dev
-    // shouldBlock = false;
+    let shouldBlock = false;
+
+    if (showOnce) {
+      if (localStorage.getItem(storageKey)) shouldBlock = true;
+    } else {
+      if (window._sessionPopupsSeen.has(popupId)) shouldBlock = true;
+    }
 
     if (shouldBlock) {
       container.remove();
       return;
     }
 
-    if (!showOnce) window._sessionPopupsSeen.add(popupId);
+    if (!showOnce) {
+      window._sessionPopupsSeen.add(popupId);
+    }
 
-    // --- ANIMATION SEQUENCE (Manual Implementation) ---
+    // Show
     container.classList.remove('hidden');
+    void container.offsetWidth; 
 
-    // 1. Fade in Backdrop
-    animate(container, { opacity: 1 }, { duration: 0.5 });
-
-    // 2. Wipe in Modal (Wait 100ms)
     setTimeout(() => {
-      animate(
-        modal, 
-        { 
-          maskPosition: ["130% 130%", "0% 0%"], 
-          transform: ["translateY(5px) scale(0.99)", "translateY(0) scale(1)"] 
-        }, 
-        { 
-          duration: 1.3, 
-          easing: [0.22, 1, 0.36, 1] 
-        }
-      );
-    }, 100);
+        container.classList.add('active');
+    }, 1000); 
 
-    // 3. Stagger Content (Wait 600ms)
-    setTimeout(() => {
-      if (content) animate(content, { opacity: 1, transform: "translateY(0)" }, { duration: 0.8 });
-      if (closeBtn) animate(closeBtn, { opacity: 1 }, { duration: 0.8 });
-    }, 430);
-
-    // --- CLOSE LOGIC ---
-    const closePopup = async () => {
-      // Parallel exit animations
-      const exit1 = animate(container, { opacity: 0 }, { duration: 0.4 });
-      const exit2 = animate(modal, { opacity: 0, transform: "scale(0.99)" }, { duration: 0.4 });
-      
-      await Promise.all([exit1.finished, exit2.finished]);
-      
-      container.classList.add('hidden');
-      if (showOnce) localStorage.setItem(storageKey, 'true');
+    // Hide
+    const closePopup = () => {
+      container.classList.remove('active');
+      setTimeout(() => {
+        container.classList.add('hidden');
+        if (showOnce) localStorage.setItem(storageKey, 'true');
+      }, 1600); 
     };
 
     closeBtn?.addEventListener('click', closePopup);

@@ -247,7 +247,6 @@ Astro.response.headers.set(
   <SiteFooter />
 
   <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
-  <PromoPopup />
   
   <script is:client>
     if (window.__isSafari) {
@@ -273,6 +272,8 @@ Astro.response.headers.set(
       });
     }
   </script>
+
+  <PromoPopup />
 
 </body>
 </html>
