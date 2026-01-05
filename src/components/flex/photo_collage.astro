@@ -1,18 +1,18 @@
 ---
 import CFVideo from "../ui/CFVideo.astro";
+import CollageParallax from "../CollageParallax.jsx";
 
 const vars = { ...Astro.props };
-
 const { images = [] } = vars;
 
-images.forEach((img, i) => {
-  console.log("video", i + 1, img?.video);
-});
+function isImageMode(video) {
+  const v = video?.[0];
+  return !v?.cf_stream_video || v?.cf_stream_video === "";
+}
 ---
-
 <div class="photo-collage hw-contain">
 
-  {/* ---------- ROW 1 : #1–3 ---------- */}
+  {/* ---------- ROW 1 : #1–3 (Normal Direction) ---------- */}
   <div class="row flex justify-[flex-end]">
     {images.slice(0, 3).map((img, i) => {
       const video = img?.video;
@@ -23,35 +23,56 @@ images.forEach((img, i) => {
         "col-3 photo-collage-cell ml-auto",
         "col-3 photo-collage-cell bleed-right"
       ];
+      // Only first item in first row needs rounding
+      const wrapClass = `pr img-load-par ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`;
 
       return (
         <div class={classMap[i]}>
-          <div class={`pr img-load-par ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`}>
-            <CFVideo video={video} forceSize="med" />
+          <div class={wrapClass}>
+            {isImageMode(video) ? (
+              <CollageParallax strength='11' client:load>
+                <CFVideo video={video} forceSize="med" />
+              </CollageParallax>
+            ) : (
+              <CFVideo video={video} forceSize="med" />
+            )}
           </div>
         </div>
       );
     })}
   </div>
 
-  {/* ---------- ROW 2 : #4 (Full Width - No forceSize Prop) ---------- */}
+  {/* ---------- ROW 2 : #4 (Inverted Direction) ---------- */}
   {images[3]?.video && (
     <div class="row flex bleed-x">
       <div class="photo-collage-cell w100">
         <div class="pr img-load-par">
-          <CFVideo video={images[3].video} />
+          {isImageMode(images[3].video) ? (
+            // Added `invert` prop here
+            <CollageParallax client:load strength={20} invert>
+              <CFVideo video={images[3].video} />
+            </CollageParallax>
+          ) : (
+            <CFVideo video={images[3].video} />
+          )}
         </div>
       </div>
     </div>
   )}
 
-  {/* ---------- ROW 3 : #5–6 ---------- */}
+  {/* ---------- ROW 3 : #5–6 (Normal Direction) ---------- */}
   {(images[4]?.video || images[5]?.video) && (
     <div class="row flex">
       {images[4]?.video && (
         <div class="photo-collage-cell col-6 bleed-left">
           <div class="pr img-load-par">
-            <CFVideo video={images[4].video} forceSize="med"/>
+            {isImageMode(images[4].video) ? (
+              <CollageParallax client:load>
+                <CFVideo video={images[4].video} forceSize="med" />
+              </CollageParallax>
+            ) : (
+              <CFVideo video={images[4].video} forceSize="med" />
+            )}
           </div>
         </div>
       )}
@@ -59,31 +80,50 @@ images.forEach((img, i) => {
       {images[5]?.video && (
         <div class="photo-collage-cell col-6 bleed-right">
           <div class="pr img-load-par">
-            <CFVideo video={images[5].video} forceSize="med" />
+            {isImageMode(images[5].video) ? (
+              <CollageParallax client:load strength={20}>
+                <CFVideo video={images[5].video} forceSize="med" />
+              </CollageParallax>
+            ) : (
+              <CFVideo video={images[5].video} forceSize="med" />
+            )}
           </div>
         </div>
       )}
     </div>
   )}
 
-  {/* ---------- ROW 4 : #7 (Full Width - No Size Prop) ---------- */}
+  {/* ---------- ROW 4 : #7 (Inverted Direction) ---------- */}
   {images[6]?.video && (
     <div class="row flex bleed-x">
       <div class="photo-collage-cell w100">
         <div class="pr img-load-par">
-          <CFVideo video={images[6].video} />
+          {isImageMode(images[6].video) ? (
+            // Added `invert` prop here
+            <CollageParallax client:load invert>
+              <CFVideo video={images[6].video} />
+            </CollageParallax>
+          ) : (
+            <CFVideo video={images[6].video} />
+          )}
         </div>
       </div>
     </div>
   )}
 
-  {/* ---------- ROW 5 : #8–9 ---------- */}
+  {/* ---------- ROW 5 : #8–9 (Normal Direction) ---------- */}
   {(images[7]?.video || images[8]?.video) && (
     <div class="row flex">
       {images[7]?.video && (
         <div class="photo-collage-cell col-5 bleed-left">
           <div class="pr img-load-par">
-            <CFVideo video={images[7].video} forceSize="med" />
+            {isImageMode(images[7].video) ? (
+              <CollageParallax client:load strength="12">
+                <CFVideo video={images[7].video} forceSize="med" />
+              </CollageParallax>
+            ) : (
+              <CFVideo video={images[7].video} forceSize="med" />
+            )}
           </div>
         </div>
       )}
@@ -91,7 +131,13 @@ images.forEach((img, i) => {
       {images[8]?.video && (
         <div class="photo-collage-cell col-6">
           <div class="pr rounded-br-[9rem] ofh img-load-par">
-            <CFVideo video={images[8].video} forceSize="med" />
+            {isImageMode(images[8].video) ? (
+              <CollageParallax client:load strength="12">
+                <CFVideo video={images[8].video} forceSize="med" />
+              </CollageParallax>
+            ) : (
+              <CFVideo video={images[8].video} forceSize="med" />
+            )}
           </div>
         </div>
       )}
@@ -99,5 +145,3 @@ images.forEach((img, i) => {
   )}
 
 </div>
-
-
