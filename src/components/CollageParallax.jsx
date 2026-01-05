@@ -6,7 +6,7 @@ import { useRef } from "react";
 export default function CollageParallax({ 
   children, 
   strength = 5, 
-  scaleMax = 1.08,
+  scaleMax = 1.1,
   invert = false 
 }) {
   const ref = useRef(null);
