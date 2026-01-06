@@ -24,9 +24,15 @@ if (show_on && Array.isArray(show_on) && show_on.length > 0) {
 
 const { title, text, show_once, image } = activeSpecial;
 
-// Use helper to get local WebP/Astro image, fallback to remote URL
+// Resolve the main image using your helper
 const resolvedImage = getWpImage(image);
-const imageUrl = resolvedImage?.src || image.url;
+
+// LOGIC: Prefer the specific 1000px WebP ('intch_med') for this modal size.
+// If not found, fall back to the helper's result, then the raw URL.
+const imageUrl = 
+  image.sizes?.intch_med || 
+  resolvedImage?.src || 
+  image.url;
 
 const imageAlt = image.alt || title;
 const popupId = `promo-${image.id}`;
@@ -129,7 +135,6 @@ const popupId = `promo-${image.id}`;
     position: relative;
     width: 100%;
     height: 100%;
-    /* Ensure image dictates height or define fixed height if preferred */
     
     img {
       display: block;
