@@ -34,10 +34,6 @@ const {
 
 /* --------------------------------------------------------------------------
    HELPER: Get Local Path
-   Updated to handle .jpg.webp URLs gracefully
--------------------------------------------------------------------------- */
-/* --------------------------------------------------------------------------
-   HELPER: Get Local Path
 -------------------------------------------------------------------------- */
 function getLocalPath(url: string | undefined | false): string | null {
   if (!url || typeof url !== "string") return null;
@@ -55,8 +51,7 @@ function getLocalPath(url: string | undefined | false): string | null {
       }
     }
 
-    // 2. Generate Hash from CLEANED URL (Matches sync script)
-    //    CHANGED: .update(processUrl) instead of .update(url)
+    // 2. Generate Hash from CLEANED URL
     const hash = createHash("md5").update(processUrl).digest("hex").slice(0, 8);
     
     // 3. Extract filename parts from CLEANED url
@@ -129,6 +124,8 @@ if (forceSize) {
 const loading = critical ? "eager" : "lazy";
 const decoding = critical ? "sync" : "async";
 const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
+
+// ✅ LOGIC: If forceSize is set, !forceSize is false, so finalSrcSet becomes undefined.
 const finalSrcSet = (useSrcSet && !forceSize) ? generatedSrcSet : undefined;
 ---
 

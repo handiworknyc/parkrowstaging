@@ -31,10 +31,10 @@ function isImageMode(video) {
           <div class={wrapClass}>
             {isImageMode(video) ? (
               <CollageParallax strength='11' client:load>
-                <CFVideo video={video} forceSize="med" />
+                <CFVideo video={video} posterForceSize="med" />
               </CollageParallax>
             ) : (
-              <CFVideo video={video} forceSize="med" />
+              <CFVideo video={video} posterForceSize="med" />
             )}
           </div>
         </div>
@@ -68,10 +68,10 @@ function isImageMode(video) {
           <div class="pr img-load-par">
             {isImageMode(images[4].video) ? (
               <CollageParallax client:load>
-                <CFVideo video={images[4].video} forceSize="med" />
+                <CFVideo video={images[4].video} posterForceSize="med" />
               </CollageParallax>
             ) : (
-              <CFVideo video={images[4].video} forceSize="med" />
+              <CFVideo video={images[4].video} posterForceSize="med" />
             )}
           </div>
         </div>
@@ -82,10 +82,10 @@ function isImageMode(video) {
           <div class="pr img-load-par">
             {isImageMode(images[5].video) ? (
               <CollageParallax client:load strength={20}>
-                <CFVideo video={images[5].video} forceSize="med" />
+                <CFVideo video={images[5].video} posterForceSize="med" />
               </CollageParallax>
             ) : (
-              <CFVideo video={images[5].video} forceSize="med" />
+              <CFVideo video={images[5].video} posterForceSize="med" />
             )}
           </div>
         </div>
@@ -119,10 +119,10 @@ function isImageMode(video) {
           <div class="pr img-load-par">
             {isImageMode(images[7].video) ? (
               <CollageParallax client:load strength="12">
-                <CFVideo video={images[7].video} forceSize="med" />
+                <CFVideo video={images[7].video} posterForceSize="med" />
               </CollageParallax>
             ) : (
-              <CFVideo video={images[7].video} forceSize="med" />
+              <CFVideo video={images[7].video} posterForceSize="med" />
             )}
           </div>
         </div>
@@ -133,10 +133,10 @@ function isImageMode(video) {
           <div class="pr rounded-br-[9rem] ofh img-load-par">
             {isImageMode(images[8].video) ? (
               <CollageParallax client:load strength="12">
-                <CFVideo video={images[8].video} forceSize="med" />
+                <CFVideo video={images[8].video} posterForceSize="med" />
               </CollageParallax>
             ) : (
-              <CFVideo video={images[8].video} forceSize="med" />
+              <CFVideo video={images[8].video} posterForceSize="med" />
             )}
           </div>
         </div>
