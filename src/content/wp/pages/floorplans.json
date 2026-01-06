@@ -21,7 +21,7 @@
             "title": "plants2",
             "filename": "plants2.jpg",
             "filesize": 933232,
-            "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+            "url": "/img-cache/plants2-8752044d.jpg.webp",
             "link": "https://parkrow1.wpenginepowered.com/home/plants2/",
             "alt": "",
             "author": "1",
@@ -64,16 +64,16 @@
               "ph": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-10x9.jpg",
               "ph-width": 10,
               "ph-height": 9,
-              "intch_xl": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+              "intch_xl": "/img-cache/plants2-8752044d.jpg.webp",
               "intch_xl-width": 1280,
               "intch_xl-height": 1154,
-              "intch_lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+              "intch_lg": "/img-cache/plants2-8752044d.jpg.webp",
               "intch_lg-width": 1280,
               "intch_lg-height": 1154,
-              "intch_med": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-1000x902.jpg",
+              "intch_med": "/img-cache/plants2-1000x902-c550761c.jpg.webp",
               "intch_med-width": 1000,
               "intch_med-height": 902,
-              "intch_sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-600x541.jpg",
+              "intch_sm": "/img-cache/plants2-600x541-6ccc712e.jpg.webp",
               "intch_sm-width": 600,
               "intch_sm-height": 541,
               "post_slide": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-750x676.jpg",
@@ -166,5 +166,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-06 19:59:19"
+  "_syncedAt": "2026-01-06 23:01:19"
 }

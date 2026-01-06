@@ -4,35 +4,54 @@ import type { NormRow } from "./normalize";
 
 /**
  * Transforms a WordPress URL into the local cached path.
- * * EXACT MATCH of SmartImage.astro logic:
- * 1. MD5 Hash (8 chars)
- * 2. Parse URL & Path
- * 3. Sanitize Filename (lowercase, remove special chars)
- * 4. Reconstruct: cleanName-hash.ext.webp
+ * * EXACT MATCH of sync-flex-rest.js logic:
+ * 1. Check if already local
+ * 2. Strip .webp if double extension
+ * 3. Hash CLEANED URL
+ * 4. Sanitize Filename
+ * 5. Reconstruct: cleanName-hash.jpg.webp
  */
 function toLocalCache(url: string | undefined): string | undefined {
   if (!url) return undefined;
+  
+  // ✅ 1. If already local (because sync-flex-rest ran first), return as is
+  if (url.startsWith("/")) return url;
 
   try {
-    // 1. Generate a short hash based on the unique URL
-    const hash = createHash("md5").update(url).digest("hex").slice(0, 8);
+    let processUrl = url;
 
-    // 2. Extract the original filename
+    // ✅ 2. STRIP .webp if it is a double extension (e.g. image.jpg.webp)
+    if (processUrl.toLowerCase().endsWith('.webp')) {
+      const withoutWebp = processUrl.slice(0, -5); 
+      const extBefore = path.extname(withoutWebp);
+      if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
+          processUrl = withoutWebp;
+      }
+    }
+
+    // ✅ 3. Generate hash based on the CLEANED URL
+    const hash = createHash("md5").update(processUrl).digest("hex").slice(0, 8);
+
+    // 4. Extract parts from CLEANED URL
     // We use a dummy base because 'url' might be a relative path or just a string
-    const urlObj = new URL(url, "https://example.com"); 
-    const pathname = urlObj.pathname; // e.g. "/wp-content/uploads/2024/01/My Image.jpg"
-    const basename = path.basename(pathname); // "My Image.jpg"
+    const urlObj = new URL(processUrl, "https://example.com"); 
+    const pathname = urlObj.pathname; 
+    const basename = path.basename(pathname);
 
-    // 3. Remove extension from basename to clean it up
-    const ext = path.extname(basename); // ".jpg"
-    const nameWithoutExt = path.basename(basename, ext); // "My Image"
+    const ext = path.extname(basename); 
+    const nameWithoutExt = path.basename(basename, ext); 
 
-    // 4. Sanitize the name (Exact match to SmartImage logic)
+    // 5. Sanitize the name 
     const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
 
-    // 5. Construct final filename
-    // Note: SmartImage usually saves the file as [original-name]-[hash].[ext].webp
-    const filename = `${cleanName}-${hash}${ext}.webp`;
+    // ✅ 6. Handle WebP appending
+    let finalExt = ext;
+    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
+        finalExt = `${ext}.webp`;
+    }
+
+    // 7. Construct final filename
+    const filename = `${cleanName}-${hash}${finalExt}`;
 
     return `/img-cache/${filename}`;
 
