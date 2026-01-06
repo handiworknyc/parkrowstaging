@@ -1,19 +1,46 @@
-// src/lib/wp/lcp.ts
+import { createHash } from "node:crypto";
+import path from "node:path";
 import type { NormRow } from "./normalize";
 
-function appendWebp(url: string | undefined): string | undefined {
-  if (!url) return url;
+/**
+ * Transforms a WordPress URL into the local cached path.
+ * * EXACT MATCH of SmartImage.astro logic:
+ * 1. MD5 Hash (8 chars)
+ * 2. Parse URL & Path
+ * 3. Sanitize Filename (lowercase, remove special chars)
+ * 4. Reconstruct: cleanName-hash.ext.webp
+ */
+function toLocalCache(url: string | undefined): string | undefined {
+  if (!url) return undefined;
 
-  // Already a .webp or already appended
-  if (url.endsWith(".webp")) return url;
-  if (url.endsWith(".jpg.webp") || url.endsWith(".png.webp")) return url;
+  try {
+    // 1. Generate a short hash based on the unique URL
+    const hash = createHash("md5").update(url).digest("hex").slice(0, 8);
 
-  if (url.endsWith(".jpg") || url.endsWith(".png")) {
-    return url + ".webp";
+    // 2. Extract the original filename
+    // We use a dummy base because 'url' might be a relative path or just a string
+    const urlObj = new URL(url, "https://example.com"); 
+    const pathname = urlObj.pathname; // e.g. "/wp-content/uploads/2024/01/My Image.jpg"
+    const basename = path.basename(pathname); // "My Image.jpg"
+
+    // 3. Remove extension from basename to clean it up
+    const ext = path.extname(basename); // ".jpg"
+    const nameWithoutExt = path.basename(basename, ext); // "My Image"
+
+    // 4. Sanitize the name (Exact match to SmartImage logic)
+    const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
+
+    // 5. Construct final filename
+    // Note: SmartImage usually saves the file as [original-name]-[hash].[ext].webp
+    const filename = `${cleanName}-${hash}${ext}.webp`;
+
+    return `/img-cache/${filename}`;
+
+  } catch (err) {
+    console.warn("Could not convert to local cache path:", url);
+    return undefined;
   }
-  return url;
 }
-
 
 export function getLcpImage(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
@@ -26,19 +53,19 @@ export function getLcpImage(rows: NormRow[]) {
     const sizes = raw.sizes || {};
 
     const candidates = [
-      { url: appendWebp(sizes.intch_xl || raw.url), w: sizes["intch_xl-width"] },
-      { url: appendWebp(sizes.intch_lg),           w: sizes["intch_lg-width"] },
-      { url: appendWebp(sizes.intch_med),          w: sizes["intch_med-width"] },
-      { url: appendWebp(sizes.intch_sm),           w: sizes["intch_sm-width"] }
-    ].filter(c => c.url);
+      { url: toLocalCache(sizes.intch_xl || raw.url), w: sizes["intch_xl-width"] },
+      { url: toLocalCache(sizes.intch_lg),            w: sizes["intch_lg-width"] },
+      { url: toLocalCache(sizes.intch_med),           w: sizes["intch_med-width"] },
+      { url: toLocalCache(sizes.intch_sm),            w: sizes["intch_sm-width"] }
+    ].filter(c => c.url && c.w);
 
-    const srcsetParts = candidates
-      .filter(c => c.w)
-      .map(c => `${c.url} ${c.w}w`);
+    if (!candidates.length) return null;
+
+    const srcsetParts = candidates.map(c => `${c.url} ${c.w}w`);
 
     return {
-      href: candidates[0].url,
-      imagesrcset: srcsetParts.length ? srcsetParts.join(", ") : undefined,
+      href: candidates[0].url as string,
+      imagesrcset: srcsetParts.join(", "),
       imagesizes: "(max-width: 1200px) 60vw, 100vw",
       type: "image/webp"
     };
@@ -47,7 +74,6 @@ export function getLcpImage(rows: NormRow[]) {
   return null;
 }
 
-// NEW: Get Cloudflare video URL for preload
 export function getLcpVideo(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 

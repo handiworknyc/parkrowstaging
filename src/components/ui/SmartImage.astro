@@ -2,7 +2,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { Image } from "astro:assets";
 
 interface ImagesMap {
   xl?: string;
@@ -34,74 +33,85 @@ const {
 } = Astro.props as Props;
 
 /* --------------------------------------------------------------------------
-   HELPER: Download & Cache Protected Images
-   1. Checks if image exists in public/img-cache/
-   2. If not, fetches it using WP_AUTH_BASIC headers
-   3. Returns the local path (bypassing the 401 error)
+   HELPER: Get Local Path
+   Updated to handle .jpg.webp URLs gracefully
 -------------------------------------------------------------------------- */
-async function cacheImage(url: string | undefined | false): Promise<string | null> {
+/* --------------------------------------------------------------------------
+   HELPER: Get Local Path
+-------------------------------------------------------------------------- */
+function getLocalPath(url: string | undefined | false): string | null {
   if (!url || typeof url !== "string") return null;
-  if (url.startsWith("/")) return url; // Already local
+  if (url.startsWith("/")) return url; 
 
   try {
-    // Generate a clean filename based on the URL hash
-    const hash = createHash("md5").update(url).digest("hex");
-    const ext = path.extname(url).split("?")[0] || ".jpg";
-    const filename = `${hash}${ext}`;
+    let processUrl = url;
 
-    // Paths
-    const publicDir = path.join(process.cwd(), "public", "img-cache");
-    const filePath = path.join(publicDir, filename);
-    const webPath = `/img-cache/${filename}`;
-
-    // Return immediately if cached
-    if (fs.existsSync(filePath)) {
-      return webPath;
+    // 1. STRIP .webp if it is a double extension
+    if (processUrl.toLowerCase().endsWith('.webp')) {
+      const withoutWebp = processUrl.slice(0, -5);
+      const extBefore = path.extname(withoutWebp);
+      if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
+          processUrl = withoutWebp;
+      }
     }
 
-    // Ensure directory exists
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-
-    // Prepare Auth Headers
-    const headers: Record<string, string> = {};
-    const authEnv = import.meta.env.WP_AUTH_BASIC; // "demo:12345a"
+    // 2. Generate Hash from CLEANED URL (Matches sync script)
+    //    CHANGED: .update(processUrl) instead of .update(url)
+    const hash = createHash("md5").update(processUrl).digest("hex").slice(0, 8);
     
-    if (authEnv) {
-      const token = Buffer.from(authEnv).toString("base64");
-      headers["Authorization"] = `Basic ${token}`;
+    // 3. Extract filename parts from CLEANED url
+    const urlObj = new URL(processUrl);
+    const basename = path.basename(urlObj.pathname); 
+    const ext = path.extname(basename); 
+    const nameWithoutExt = path.basename(basename, ext); 
+
+    // 4. Sanitize
+    const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
+
+    // 5. Append .webp to jpg/png
+    let finalExt = ext;
+    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
+        finalExt = `${ext}.webp`;
     }
 
-    // Fetch and Save
-    console.log(`[SmartImage] Downloading: ${url}`);
-    const res = await fetch(url, { headers });
+    // 6. Final Filename
+    const filename = `${cleanName}-${hash}${finalExt}`;
     
-    if (!res.ok) {
-      console.warn(`[SmartImage] Failed to fetch ${url}: ${res.status}`);
-      return url; // Fallback to original if fetch fails
-    }
-
-    const buffer = await res.arrayBuffer();
-    fs.writeFileSync(filePath, Buffer.from(buffer));
-
-    return webPath;
+    return `/img-cache/${filename}`;
 
   } catch (err) {
-    console.warn(`[SmartImage] Error caching ${url}`, err);
+    console.warn(`[SmartImage] Error calculating path for ${url}`);
     return url;
   }
 }
 
 /* --------------------------------------------------------------------------
-   PROCESS ALL IMAGES
+   1. RESOLVE ALL PATHS
 -------------------------------------------------------------------------- */
-const xl = await cacheImage(images?.xl);
-const lg = await cacheImage(images?.large);
-const md = await cacheImage(images?.med);
-const sm = await cacheImage(images?.small);
+const xl = getLocalPath(images?.xl);
+const lg = getLocalPath(images?.large);
+const md = getLocalPath(images?.med);
+const sm = getLocalPath(images?.small);
 
-// Select the source based on props
+/* --------------------------------------------------------------------------
+   2. BUILD SRCSET
+-------------------------------------------------------------------------- */
+const allCandidates = [
+  { url: xl, w: "1700w" },
+  { url: lg, w: "1400w" },
+  { url: md, w: "1000w" },
+  { url: sm, w: "600w" }
+];
+
+const validCandidates = allCandidates.filter(c => c.url);
+
+const generatedSrcSet = validCandidates.length > 0 
+  ? validCandidates.map(c => `${c.url} ${c.w}`).join(", ") 
+  : undefined;
+
+/* --------------------------------------------------------------------------
+   3. DETERMINE PRIMARY SRC
+-------------------------------------------------------------------------- */
 let srcToUse: string | null = null;
 
 if (forceSize) {
@@ -119,34 +129,18 @@ if (forceSize) {
 const loading = critical ? "eager" : "lazy";
 const decoding = critical ? "sync" : "async";
 const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
+const finalSrcSet = (useSrcSet && !forceSize) ? generatedSrcSet : undefined;
 ---
-
-{/* NOTE: We use standard <img> for the local cached files because 
-    Astro's <Image> optimization on /public files is limited. 
-    This ensures the 401 error is gone and the image loads reliably.
-*/}
 
 {srcToUse && (
   <img
     src={srcToUse}
+    srcset={finalSrcSet}
+    sizes={finalSrcSet ? sizes : undefined}
     alt={alt}
     class={className}
-    sizes={useSrcSet && !forceSize ? sizes : undefined}
     loading={loading}
     decoding={decoding}
     fetchpriority={fetchpriority}
-    /* Rebuild srcset from our local cached URLs */
-    srcset={
-      useSrcSet && !forceSize
-        ? [
-            xl ? `${xl} 1700w` : "",
-            lg ? `${lg} 1400w` : "",
-            md ? `${md} 1000w` : "",
-            sm ? `${sm} 600w` : "",
-          ]
-            .filter(Boolean)
-            .join(", ")
-        : undefined
-    }
   />
 )}

@@ -25,6 +25,7 @@ interface Props {
     href: string;
     imagesrcset?: string;
     imagesizes?: string;
+    type?: string;
   } | null;
   lcpVideo?: {
     href: string; // HLS (.m3u8) URL only
@@ -46,7 +47,6 @@ Astro.response.headers.set(
     'Netlify-CDN-Cache-Control',
     'public, max-age=2700, stale-while-revalidate=12000',
 )
-
 ---
 
 <html lang="en" style="view-transition-name: main-content">
@@ -59,7 +59,7 @@ Astro.response.headers.set(
 
   {description && <meta name="description" content={description} />}
 
-  {/* 🚀 LCP PRELOAD (IMAGE) */}
+  {/* 🚀 LCP PRELOAD (CURRENT PAGE) */}
   {lcp && (
     <link 
       rel="preload"
@@ -86,7 +86,6 @@ Astro.response.headers.set(
       <link rel="dns-prefetch"
         href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" />
 
-      {/* Prefetch the manifest file */}
       <link rel="prefetch"
         as="fetch"
         href={lcpVideo.href}
@@ -95,10 +94,42 @@ Astro.response.headers.set(
   )}
 
   {/* ────────────────────────────────────────────────────────────────
-      PREFETCH MAP → pass image URLs to SW
+      PREFETCH MAP LOGIC (SRCSET PARSER)
   ───────────────────────────────────────────────────────────────── */}
   <script is:client>
     (async () => {
+      // Helper: Pick the best image from srcset for current device
+      function getBestImage(srcset) {
+        if (!srcset) return null;
+
+        // 1. Parse "url widthDescriptor"
+        const candidates = srcset.split(',').map(s => {
+          const parts = s.trim().split(/\s+/);
+          // usually: ["https://.../img-800.jpg", "800w"]
+          const url = parts[0];
+          const wDesc = parts.length > 1 ? parts[1] : null;
+          
+          let width = 0;
+          if (wDesc && wDesc.endsWith('w')) {
+            width = parseInt(wDesc, 10);
+          }
+          
+          return { url, width };
+        });
+
+        // 2. Sort by width (ascending)
+        candidates.sort((a, b) => a.width - b.width);
+
+        // 3. Determine target width (viewport * dpr)
+        const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
+
+        // 4. Find first candidate >= targetWidth
+        const best = candidates.find(c => c.width >= targetWidth);
+
+        // 5. Return match, or largest if none match
+        return best ? best.url : candidates[candidates.length - 1].url;
+      }
+
       try {
         const req = await fetch("/prefetch-map.json", { cache: "no-store" });
         if (!req.ok) return;
@@ -107,19 +138,27 @@ Astro.response.headers.set(
         const assets = new Set();
 
         map.forEach((entry) => {
-          // FIX: Look for 'lcp.href' instead of 'image'
-          if (entry.lcp && entry.lcp.href) {
+          if (!entry.lcp) return;
+
+          // A. If srcset exists, calculate best fit for THIS device
+          if (entry.lcp.imagesrcset) {
+            const bestUrl = getBestImage(entry.lcp.imagesrcset);
+            if (bestUrl) assets.add(bestUrl);
+          } 
+          // B. Fallback to standard href
+          else if (entry.lcp.href) {
             assets.add(entry.lcp.href);
           }
-          // Optional: If you want to prefetch the HLS manifests for other pages too
+
+          // C. Videos (Manifests)
           if (entry.video) {
             assets.add(entry.video);
           }
         });
 
         window.__PREFETCH_ASSETS__ = Array.from(assets);
-
         console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
+
       } catch (err) {
         console.warn("Prefetch map failed:", err);
       }
@@ -133,6 +172,7 @@ Astro.response.headers.set(
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").then((reg) => {
 
+        // Listen for requests from SW asking for the list
         navigator.serviceWorker.addEventListener("message", (event) => {
           if (event.data === "request-prefetch-list") {
             if (window.__PREFETCH_ASSETS__?.length) {

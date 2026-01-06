@@ -3,54 +3,68 @@
     "path": "/floorplans/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/dd1c7b15001caa7d2c9818e7ea43b949/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/8752044d7e77f748d9d2972b59b2ac65.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/plants2-8752044d.jpg.webp",
+      "imagesrcset": "/img-cache/plants2-8752044d.jpg.webp 1280w, /img-cache/plants2-8752044d.jpg.webp 1280w, /img-cache/plants2-1000x902-c550761c.jpg.webp 1000w, /img-cache/plants2-600x541-6ccc712e.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/bellevue/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/3ff46ea83a1f1f1dafc06fbd03f86bea/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/ee8890e922d394042aec8ecd536bcd82.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp",
+      "imagesrcset": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-1000x569-1b3bb200.jpg.webp 1000w, /img-cache/park_row_neighborhood-600x342-503407da.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/amenities/",
     "lcp": {
-      "href": "/img-cache/5b504fdb6c9db8cb73280b552fca7d4b.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/park-row-amenities-5b504fdb.jpg.webp",
+      "imagesrcset": "/img-cache/park-row-amenities-5b504fdb.jpg.webp 1600w, /img-cache/park-row-amenities-1500x851-3b560a2b.jpg.webp 1500w, /img-cache/park-row-amenities-1000x568-9a039c42.jpg.webp 1000w, /img-cache/park-row-amenities-600x341-929f3cd5.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/penthouses/",
     "lcp": {
-      "href": "/img-cache/edcfefb50bad674af46d60cf231a7039.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/park-row-penthouses2-edcfefb5.jpg.webp",
+      "imagesrcset": "/img-cache/park-row-penthouses2-edcfefb5.jpg.webp 1600w, /img-cache/park-row-penthouses2-1500x840-030097c6.jpg.webp 1500w, /img-cache/park-row-penthouses2-1000x560-d3171fc1.jpg.webp 1000w, /img-cache/park-row-penthouses2-600x336-8af1db29.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/residences/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/254bcfd4b78a1f03901c774b8a0ac327/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/43f1a0a89b5fb786443c255d84df0120.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/park-row-residences-43f1a0a8.jpg.webp",
+      "imagesrcset": "/img-cache/park-row-residences-43f1a0a8.jpg.webp 1440w, /img-cache/park-row-residences-43f1a0a8.jpg.webp 1440w, /img-cache/park-row-residences-1000x569-1b1b0abc.jpg.webp 1000w, /img-cache/park-row-residences-600x342-b987f536.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/building/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/95ca71e5f83721133687c0a12594a4c9/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/0d065419e42ceac8badbbd0320c951ac.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp",
+      "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1000x569-ae5f105a.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-600x342-f2345ef4.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   },
   {
     "path": "/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/febcd96215f04d7443058c99c5135b54/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/97e7b94d5e4d0bdc9f0e606382d659a6.jpg",
-      "type": "image/jpeg"
+      "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp",
+      "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-1000x569-94a3d786.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-600x342-c3792cef.jpg.webp 600w",
+      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
+      "type": "image/webp"
     }
   }
 ]

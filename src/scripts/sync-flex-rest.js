@@ -80,16 +80,44 @@ function fileSlugFromUri(uri) {
 }
 
 /* -------------------------------------------
-   NEW: Download & Cache Helper
+   SEO-Friendly Download & Cache
+   Format: "my-image-hash.jpg.webp"
 ------------------------------------------- */
 async function downloadAndCache(url, outputDir) {
   if (!url || typeof url !== 'string') return null;
   
   try {
-    // Create a hash filename to avoid collisions and invalid chars
-    const hash = crypto.createHash("md5").update(url).digest("hex");
-    const ext = path.extname(url).split("?")[0] || ".jpg"; // Default to .jpg if no ext
-    const filename = `${hash}${ext}`;
+    let processUrl = url;
+
+    // 1. STRIP .webp if it is a double extension (e.g. image.jpg.webp)
+    if (processUrl.toLowerCase().endsWith('.webp')) {
+      const withoutWebp = processUrl.slice(0, -5); 
+      const extBefore = path.extname(withoutWebp);
+      if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
+          processUrl = withoutWebp;
+      }
+    }
+
+    // 2. Generate Hash from CLEANED URL (Ensures image.jpg and image.jpg.webp match)
+    const hash = crypto.createHash("md5").update(processUrl).digest("hex").slice(0, 8);
+    
+    // 3. Extract and clean filename from the CLEANED url
+    const urlObj = new URL(processUrl);
+    const basename = path.basename(urlObj.pathname); 
+    const ext = path.extname(basename); 
+    const nameWithoutExt = path.basename(basename, ext); 
+    
+    // 4. Sanitize name 
+    const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
+    
+    // 5. Handle WebP appending
+    let finalExt = ext;
+    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
+        finalExt = `${ext}.webp`;
+    }
+
+    // 6. Combine
+    const filename = `${cleanName}-${hash}${finalExt}`;
     const localPath = path.join(outputDir, filename);
     const publicUrl = `/img-cache/${filename}`;
 
@@ -98,7 +126,6 @@ async function downloadAndCache(url, outputDir) {
       return publicUrl;
     }
 
-    // Download with Auth headers
     const res = await fetch(url, { headers: { ...authHeaders() } });
     if (!res.ok) {
       console.warn(`⚠️ Failed to download ${url} (${res.status})`);
@@ -114,6 +141,59 @@ async function downloadAndCache(url, outputDir) {
     console.warn(`⚠️ Error downloading ${url}:`, e.message);
     return null;
   }
+}
+
+/* -------------------------------------------
+   RECURSIVE IMAGE FINDER
+------------------------------------------- */
+function recurseFindImages(obj, collected = new Set()) {
+  if (!obj || typeof obj !== 'object') return collected;
+
+  // 1. Check if object looks like a WP Image (has 'url')
+  if (typeof obj.url === 'string') {
+    
+    // A. Add Full Size (always)
+    if (obj.url.match(/\.(jpeg|jpg|png|webp|gif)$/i)) {
+      collected.add(obj.url);
+    }
+
+    // B. Check 'sizes' for intch_ candidates
+    if (obj.sizes && typeof obj.sizes === 'object') {
+      for (const [key, val] of Object.entries(obj.sizes)) {
+        if (key.startsWith('intch_')) {
+          if (typeof val === 'string') {
+            collected.add(val);
+          } 
+          else if (val && typeof val === 'object' && typeof val.url === 'string') {
+            collected.add(val.url);
+          }
+          else if (val && typeof val === 'object' && typeof val.source_url === 'string') {
+             collected.add(val.source_url);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Recurse through all children (arrays or objects)
+  for (const val of Object.values(obj)) {
+    recurseFindImages(val, collected);
+  }
+
+  return collected;
+}
+
+async function processAllPageImages(data, imgCacheDir) {
+  const imageUrls = recurseFindImages(data);
+  const results = [];
+
+  if (imageUrls.size > 0) {
+    for (const url of imageUrls) {
+      const local = await downloadAndCache(url, imgCacheDir);
+      if (local) results.push(local);
+    }
+  }
+  return results;
 }
 
 /* -------------------------------------------
@@ -171,32 +251,74 @@ async function fetchSpecials() {
 }
 
 /* -------------------------------------------
-   LCP helper
+   LCP Helper: Extracts Candidates
 ------------------------------------------- */
 function getRawLcpImage(row) {
   if (!row) return null;
 
-  const videoField = row.video || (row.data && row.data.video);
-  if (Array.isArray(videoField) && videoField[0]?.yt_img) {
-    const raw = videoField[0].yt_img;
-    const s = raw.sizes || {};
-    
-    // We prioritize the largest one for LCP preload
-    return {
-      href: s.intch_xl || raw.url,
-      // We are intentionally NOT returning srcset here anymore 
-      // because we want to force the single cached local file.
-    };
+  // --- Helper: Extract LCP data from a Video Array ---
+  const extractFromVideoArr = (vidArr) => {
+    if (Array.isArray(vidArr) && vidArr[0]?.yt_img) {
+      const raw = vidArr[0].yt_img;
+      const s = raw.sizes || {};
+      
+      const candidates = [
+        { url: s.intch_xl, w: s["intch_xl-width"] },
+        { url: s.intch_lg, w: s["intch_lg-width"] },
+        { url: s.intch_med, w: s["intch_med-width"] },
+        { url: s.intch_sm, w: s["intch_sm-width"] },
+      ]
+      .filter((c) => c.url && c.w) 
+      .map((c) => ({ url: c.url, w: `${c.w}w` }));
+
+      if (candidates.length > 0) {
+        return {
+          candidates,
+          sizesAttr: "(max-width: 1200px) 60vw, 100vw",
+        };
+      }
+    }
+    return null;
+  };
+
+  // 1. DIRECT VIDEO FIELD
+  const directVideo = row.video || (row.data && row.data.video);
+  const directResult = extractFromVideoArr(directVideo);
+  if (directResult) return directResult;
+
+  // 2. IMAGES ARRAY (for Grid/Gallery layouts)
+  //    Structure: row.images = [ { video: [...] }, ... ]
+  if (Array.isArray(row.images) && row.images.length > 0) {
+    const firstImg = row.images[0];
+    if (firstImg && firstImg.video) {
+        const nestedResult = extractFromVideoArr(firstImg.video);
+        if (nestedResult) return nestedResult;
+    }
   }
 
+  // 3. STANDARD IMAGE FIELDS
   const imageKeys = ["image", "hero_image", "background_image", "bg_image", "mobile_image", "desktop_image"];
   const dataSource = row.data || row;
 
   for (const key of imageKeys) {
     if (dataSource[key] && typeof dataSource[key] === "object") {
       const img = dataSource[key];
+      const src = img.url || img.sourceUrl || img.src;
+      if (!src) continue;
+
+      const rawSrcSet = img.srcset || img.srcSet;
+      if (rawSrcSet) {
+        const candidates = rawSrcSet.split(",").map(p => {
+            const parts = p.trim().split(/\s+/); 
+            return { url: parts[0], w: parts[1] || null };
+        }).filter(c => c.url);
+        
+        return { candidates, sizesAttr: "100vw" };
+      }
+
       return {
-        href: img.url || img.sourceUrl || img.src,
+        candidates: [{ url: src, w: null }],
+        sizesAttr: "100vw",
       };
     }
   }
@@ -214,8 +336,6 @@ async function run() {
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const publicDir = path.join(process.cwd(), "public");
-  
-  // ✅ NEW: Image Cache Directory
   const imgCacheDir = path.join(publicDir, "img-cache");
 
   fs.mkdirSync(outPages, { recursive: true });
@@ -246,6 +366,7 @@ async function run() {
     try {
       const data = await fetchFlexibleForPage(uri);
       const layouts = Array.isArray(data?.layouts) ? data.layouts : [];
+      
       if (!layouts.length) {
         skipped++;
         continue;
@@ -254,16 +375,17 @@ async function run() {
       const cleanPath = toPathname(uri);
       const pageTitle = data.title?.rendered || data.title || "Untitled Page";
       
-      pageManifest.push({
-        uri: cleanPath,
-        title: pageTitle
-      });
+      pageManifest.push({ uri: cleanPath, title: pageTitle });
 
+      // 1. Process ALL Images (Full + intch_*) for this page
+      await processAllPageImages(data, imgCacheDir);
+
+      // 2. Build Prefetch Map
       const firstRow = layouts[0];
       const entry = { path: cleanPath };
       let hasEntry = false;
 
-      // 🔍 DETECT VIDEO
+      // VIDEO
       const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
       if (videoField && Array.isArray(videoField)) {
         const videoObj = videoField[0];
@@ -273,25 +395,34 @@ async function run() {
         }
       }
 
-      // 🔍 DETECT AND DOWNLOAD LCP IMAGE
+      // LCP IMAGE
       const lcpData = getRawLcpImage(firstRow);
-      if (lcpData && lcpData.href) {
-        // Download the protected image to public/img-cache/
-        const localUrl = await downloadAndCache(lcpData.href, imgCacheDir);
-        
-        if (localUrl) {
-          // Replace remote WP URL with safe local URL
-          entry.lcp = {
-            href: localUrl,
-            type: "image/jpeg" // You might want to detect this or assume jpeg/webp
-          };
-          hasEntry = true;
+      if (lcpData && lcpData.candidates.length) {
+        const processed = [];
+        for (const c of lcpData.candidates) {
+            const localUrl = await downloadAndCache(c.url, imgCacheDir);
+            if (localUrl) {
+                processed.push({ url: localUrl, w: c.w });
+            }
+        }
+
+        if (processed.length > 0) {
+            const srcSet = processed
+                .filter(p => p.w)
+                .map(p => `${p.url} ${p.w}`)
+                .join(", ");
+            
+            entry.lcp = {
+                href: processed[0].url,
+                imagesrcset: srcSet || undefined,
+                imagesizes: lcpData.sizesAttr,
+                type: "image/webp" 
+            };
+            hasEntry = true;
         }
       }
 
-      if (hasEntry) {
-        prefetchMap.push(entry);
-      }
+      if (hasEntry) prefetchMap.push(entry);
 
       const file = path.join(outPages, `${fileSlugFromUri(uri)}.json`);
       fs.writeFileSync(file, JSON.stringify(data, null, 2));
@@ -303,7 +434,6 @@ async function run() {
     }
   }
 
-  // Write Page Order Manifest
   fs.writeFileSync(outOrder, JSON.stringify(pageManifest, null, 2));
   console.log(`📜 Wrote Page Order Manifest (${pageManifest.length} pages)`);
 
@@ -311,7 +441,6 @@ async function run() {
   try {
     console.log("🔄 Fetching Specials…");
     const specials = await fetchSpecials();
-
     const newHash = hashJSON(specials);
     let oldHash = null;
 
@@ -332,7 +461,6 @@ async function run() {
     console.error("❌ Failed to sync Specials:", e.message || e);
   }
 
-  /* -------- PREFETCH MAP -------- */
   const mapFile = path.join(publicDir, "prefetch-map.json");
   fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
 
