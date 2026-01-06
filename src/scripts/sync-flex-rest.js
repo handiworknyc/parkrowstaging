@@ -80,6 +80,43 @@ function fileSlugFromUri(uri) {
 }
 
 /* -------------------------------------------
+   NEW: Download & Cache Helper
+------------------------------------------- */
+async function downloadAndCache(url, outputDir) {
+  if (!url || typeof url !== 'string') return null;
+  
+  try {
+    // Create a hash filename to avoid collisions and invalid chars
+    const hash = crypto.createHash("md5").update(url).digest("hex");
+    const ext = path.extname(url).split("?")[0] || ".jpg"; // Default to .jpg if no ext
+    const filename = `${hash}${ext}`;
+    const localPath = path.join(outputDir, filename);
+    const publicUrl = `/img-cache/${filename}`;
+
+    // If exists, skip download
+    if (fs.existsSync(localPath)) {
+      return publicUrl;
+    }
+
+    // Download with Auth headers
+    const res = await fetch(url, { headers: { ...authHeaders() } });
+    if (!res.ok) {
+      console.warn(`⚠️ Failed to download ${url} (${res.status})`);
+      return null;
+    }
+
+    const buffer = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(localPath, buffer);
+    console.log(`📥 Cached: ${filename}`);
+    
+    return publicUrl;
+  } catch (e) {
+    console.warn(`⚠️ Error downloading ${url}:`, e.message);
+    return null;
+  }
+}
+
+/* -------------------------------------------
    Discovery
 ------------------------------------------- */
 async function discoverPagesViaREST() {
@@ -143,20 +180,12 @@ function getRawLcpImage(row) {
   if (Array.isArray(videoField) && videoField[0]?.yt_img) {
     const raw = videoField[0].yt_img;
     const s = raw.sizes || {};
-
-    const candidates = [
-      { url: s.intch_xl || raw.url, w: s["intch_xl-width"] },
-      { url: s.intch_lg, w: s["intch_lg-width"] },
-      { url: s.intch_med, w: s["intch_med-width"] },
-      { url: s.intch_sm, w: s["intch_sm-width"] },
-    ].filter((c) => c.url && c.w);
-
-    const srcSetString = candidates.map((c) => `${c.url} ${c.w}w`).join(", ");
-
+    
+    // We prioritize the largest one for LCP preload
     return {
       href: s.intch_xl || raw.url,
-      imagesrcset: srcSetString || undefined,
-      imagesizes: "(max-width: 1200px) 60vw, 100vw",
+      // We are intentionally NOT returning srcset here anymore 
+      // because we want to force the single cached local file.
     };
   }
 
@@ -168,8 +197,6 @@ function getRawLcpImage(row) {
       const img = dataSource[key];
       return {
         href: img.url || img.sourceUrl || img.src,
-        imagesrcset: img.srcset || img.srcSet || undefined,
-        imagesizes: "100vw",
       };
     }
   }
@@ -187,9 +214,13 @@ async function run() {
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const publicDir = path.join(process.cwd(), "public");
+  
+  // ✅ NEW: Image Cache Directory
+  const imgCacheDir = path.join(publicDir, "img-cache");
 
   fs.mkdirSync(outPages, { recursive: true });
   fs.mkdirSync(publicDir, { recursive: true });
+  fs.mkdirSync(imgCacheDir, { recursive: true });
 
   /* -------- PAGES -------- */
   let pageUris = PAGE_URIS_ENV
@@ -232,22 +263,30 @@ async function run() {
       const entry = { path: cleanPath };
       let hasEntry = false;
 
-      // 🔍 DETECT VIDEO (FOR STREAMING WARMUP ONLY)
+      // 🔍 DETECT VIDEO
       const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
       if (videoField && Array.isArray(videoField)) {
         const videoObj = videoField[0];
         if (videoObj && videoObj.cf_stream_video) {
-          // Store only the HLS manifest URL so MainLayout can <link rel="prefetch"> it
           entry.video = videoObj.cf_stream_video;
           hasEntry = true;
         }
       }
 
-      // 🔍 DETECT LCP IMAGE
+      // 🔍 DETECT AND DOWNLOAD LCP IMAGE
       const lcpData = getRawLcpImage(firstRow);
-      if (lcpData) {
-        entry.lcp = lcpData;
-        hasEntry = true;
+      if (lcpData && lcpData.href) {
+        // Download the protected image to public/img-cache/
+        const localUrl = await downloadAndCache(lcpData.href, imgCacheDir);
+        
+        if (localUrl) {
+          // Replace remote WP URL with safe local URL
+          entry.lcp = {
+            href: localUrl,
+            type: "image/jpeg" // You might want to detect this or assume jpeg/webp
+          };
+          hasEntry = true;
+        }
       }
 
       if (hasEntry) {
@@ -294,10 +333,7 @@ async function run() {
   }
 
   /* -------- PREFETCH MAP -------- */
-  // Use a fixed name "prefetch-map.json" for simplicity in MainLayout fetch()
   const mapFile = path.join(publicDir, "prefetch-map.json");
-
-  // We filter out duplicates if needed, but here we just write it direct
   fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
 
   console.log("---------------------------------------------------");

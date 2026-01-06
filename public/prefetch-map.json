@@ -3,61 +3,54 @@
     "path": "/floorplans/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/dd1c7b15001caa7d2c9818e7ea43b949/manifest/video.m3u8",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg 1280w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg 1280w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-1000x902.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-600x541.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/8752044d7e77f748d9d2972b59b2ac65.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/bellevue/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/3ff46ea83a1f1f1dafc06fbd03f86bea/manifest/video.m3u8",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood-1000x569.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood-600x342.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/ee8890e922d394042aec8ecd536bcd82.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/amenities/",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities.jpg 1600w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities-1500x851.jpg 1500w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities-1000x568.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities-600x341.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/5b504fdb6c9db8cb73280b552fca7d4b.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/penthouses/",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2.jpg 1600w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2-1500x840.jpg 1500w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2-1000x560.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2-600x336.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/edcfefb50bad674af46d60cf231a7039.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/residences/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/254bcfd4b78a1f03901c774b8a0ac327/manifest/video.m3u8",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences-1000x569.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences-600x342.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/43f1a0a89b5fb786443c255d84df0120.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/building/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/95ca71e5f83721133687c0a12594a4c9/manifest/video.m3u8",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1000x569.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-600x342.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/0d065419e42ceac8badbbd0320c951ac.jpg",
+      "type": "image/jpeg"
     }
   },
   {
     "path": "/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/febcd96215f04d7443058c99c5135b54/manifest/video.m3u8",
     "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1.jpg 1440w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1-1000x569.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/4_0194_Park_Row_exterior_park_water_draft_04-3-1-600x342.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
+      "href": "/img-cache/97e7b94d5e4d0bdc9f0e606382d659a6.jpg",
+      "type": "image/jpeg"
     }
   }
 ]

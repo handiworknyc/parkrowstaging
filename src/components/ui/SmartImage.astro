@@ -1,4 +1,9 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
+import { createHash } from "node:crypto";
+import { Image } from "astro:assets";
+
 interface ImagesMap {
   xl?: string;
   large?: string;
@@ -12,101 +17,136 @@ interface Props {
   alt?: string;
   imgClass?: string;
   critical?: boolean;
-  crossorigin?: '' | 'anonymous' | 'use-credentials';
-  fetchpriority?: 'auto' | 'high' | 'low';
-
+  fetchpriority?: "auto" | "high" | "low";
   useSrcSet?: boolean;
-  forceSize?: 'xl' | 'large' | 'med' | 'small';
+  forceSize?: "xl" | "large" | "med" | "small";
 }
 
 const {
   images,
-  sizes = '(max-width: 1200px) 40vw, 100vw',
-  alt = '',
-  imgClass = '',
+  sizes = "(max-width: 1200px) 40vw, 100vw",
+  alt = "",
+  imgClass = "",
   critical = false,
-  crossorigin,
-  fetchpriority = critical ? 'high' : 'low',
-
+  fetchpriority = critical ? "high" : "low",
   useSrcSet = true,
-  forceSize
+  forceSize,
 } = Astro.props as Props;
 
-function toWebP(url: string | null): string | null {
-  if (!url) return null;
-  return url.endsWith('.webp') ? url : url + '.webp';
+/* --------------------------------------------------------------------------
+   HELPER: Download & Cache Protected Images
+   1. Checks if image exists in public/img-cache/
+   2. If not, fetches it using WP_AUTH_BASIC headers
+   3. Returns the local path (bypassing the 401 error)
+-------------------------------------------------------------------------- */
+async function cacheImage(url: string | undefined | false): Promise<string | null> {
+  if (!url || typeof url !== "string") return null;
+  if (url.startsWith("/")) return url; // Already local
+
+  try {
+    // Generate a clean filename based on the URL hash
+    const hash = createHash("md5").update(url).digest("hex");
+    const ext = path.extname(url).split("?")[0] || ".jpg";
+    const filename = `${hash}${ext}`;
+
+    // Paths
+    const publicDir = path.join(process.cwd(), "public", "img-cache");
+    const filePath = path.join(publicDir, filename);
+    const webPath = `/img-cache/${filename}`;
+
+    // Return immediately if cached
+    if (fs.existsSync(filePath)) {
+      return webPath;
+    }
+
+    // Ensure directory exists
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+
+    // Prepare Auth Headers
+    const headers: Record<string, string> = {};
+    const authEnv = import.meta.env.WP_AUTH_BASIC; // "demo:12345a"
+    
+    if (authEnv) {
+      const token = Buffer.from(authEnv).toString("base64");
+      headers["Authorization"] = `Basic ${token}`;
+    }
+
+    // Fetch and Save
+    console.log(`[SmartImage] Downloading: ${url}`);
+    const res = await fetch(url, { headers });
+    
+    if (!res.ok) {
+      console.warn(`[SmartImage] Failed to fetch ${url}: ${res.status}`);
+      return url; // Fallback to original if fetch fails
+    }
+
+    const buffer = await res.arrayBuffer();
+    fs.writeFileSync(filePath, Buffer.from(buffer));
+
+    return webPath;
+
+  } catch (err) {
+    console.warn(`[SmartImage] Error caching ${url}`, err);
+    return url;
+  }
 }
 
-const xl = toWebP(images?.xl || null);
-const lg = toWebP(images?.large || null);
-const md = images?.med === false ? null : toWebP(typeof images?.med === 'string' ? images.med : null);
-const sm = images?.small === false ? null : toWebP(typeof images?.small === 'string' ? images.small : null);
+/* --------------------------------------------------------------------------
+   PROCESS ALL IMAGES
+-------------------------------------------------------------------------- */
+const xl = await cacheImage(images?.xl);
+const lg = await cacheImage(images?.large);
+const md = await cacheImage(images?.med);
+const sm = await cacheImage(images?.small);
 
-/* ---------- FORCE SIZE PRIMARY ---------- */
-const forcedPrimary =
-  forceSize === 'xl' ? xl :
-  forceSize === 'large' ? lg :
-  forceSize === 'med' ? md :
-  forceSize === 'small' ? sm :
-  null;
+// Select the source based on props
+let srcToUse: string | null = null;
 
-/* ---------- NORMAL SRCSET BUILD ---------- */
-const parts = [];
-if (xl) parts.push({ url: xl, w: 1700 });
-if (lg) parts.push({ url: lg, w: 1400 });
-if (md) parts.push({ url: md, w: 1000 });
-if (sm) parts.push({ url: sm, w: 600 });
+if (forceSize) {
+  if (forceSize === "xl") srcToUse = xl;
+  else if (forceSize === "large") srcToUse = lg;
+  else if (forceSize === "med") srcToUse = md;
+  else if (forceSize === "small") srcToUse = sm;
+} else {
+  srcToUse = xl || lg || md || sm || null;
+}
 
-const srcsetAttr = parts.map((p) => `${p.url} ${p.w}w`).join(', ');
-const defaultPrimary = parts.length ? parts[0].url : (xl || lg || md || sm || '');
-
-const primary = forcedPrimary || defaultPrimary;
-
-const loading = critical ? 'eager' : 'lazy';
-const decoding = critical ? 'sync' : 'async';
-
-const className = ['hw-lazy-img', imgClass].filter(Boolean).join(' ');
-
-const baseAttrs = {
-  alt,
-  loading,
-  decoding,
-  fetchpriority,
-  ...(crossorigin ? { crossorigin } : {}),
-};
+/* --------------------------------------------------------------------------
+   CONFIG
+-------------------------------------------------------------------------- */
+const loading = critical ? "eager" : "lazy";
+const decoding = critical ? "sync" : "async";
+const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
 ---
 
-{/** ===============================
-    CASE 1 — forceSize -> NO SRCSET
-    =============================== */}
-{forcedPrimary && (
-  <img
-    class={className}
-    src={primary}
-    {...baseAttrs}
-  />
-)}
+{/* NOTE: We use standard <img> for the local cached files because 
+    Astro's <Image> optimization on /public files is limited. 
+    This ensures the 401 error is gone and the image loads reliably.
+*/}
 
-{/** ===============================
-    CASE 2 — useSrcSet = false
-    =============================== */}
-{!forcedPrimary && !useSrcSet && (
+{srcToUse && (
   <img
+    src={srcToUse}
+    alt={alt}
     class={className}
-    src={primary}
-    {...baseAttrs}
-  />
-)}
-
-{/** ===============================
-    CASE 3 — normal responsive image
-    =============================== */}
-{!forcedPrimary && useSrcSet && (
-  <img
-    class={className}
-    src={primary}
-    srcset={srcsetAttr}
-    sizes={sizes}
-    {...baseAttrs}
+    sizes={useSrcSet && !forceSize ? sizes : undefined}
+    loading={loading}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    /* Rebuild srcset from our local cached URLs */
+    srcset={
+      useSrcSet && !forceSize
+        ? [
+            xl ? `${xl} 1700w` : "",
+            lg ? `${lg} 1400w` : "",
+            md ? `${md} 1000w` : "",
+            sm ? `${sm} 600w` : "",
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : undefined
+    }
   />
 )}
