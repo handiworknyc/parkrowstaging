@@ -173,7 +173,7 @@ Astro.response.headers.set(
 
   <script src={headerCriticalUrl} defer></script>
 
-  <ClientRouter prefetch="viewport" />
+  <ClientRouter prefetch="load" />
 
   <script>
     document.addEventListener('astro:before-swap', (ev) => {

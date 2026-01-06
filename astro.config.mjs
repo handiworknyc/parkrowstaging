@@ -16,6 +16,10 @@ export default defineConfig({
   adapter: netlify(),
 
   integrations: [tailwind(), react()],
+  
+  prefetch: {
+    prefetchAll: true
+  },
 
   vite: {
     server: {
