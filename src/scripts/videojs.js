@@ -18,44 +18,8 @@ const players = new Map();
 const observers = new Map();
 
 /* -----------------------------------------------------
-   Detect private/incognito mode (reliable, async)
------------------------------------------------------ */
-async function isPrivateMode() {
-  return new Promise((resolve) => {
-    const db = indexedDB.open("test-private-check");
-    db.onerror = () => resolve(true);   // private mode → error
-    db.onsuccess = () => resolve(false);
-  });
-}
-
-/* -----------------------------------------------------
-   Helper: check if mirrored MP4 is cached
------------------------------------------------------ */
-async function isMp4Cached(mp4Path) {
-  try {
-    const cache = await caches.open("videos-mp4");
-    const match = await cache.match(mp4Path);
-    const ok = !!match;
-    console.log("[CFVideo] MP4 cached?", mp4Path, ok);
-    return ok;
-  } catch (err) {
-    console.warn("[CFVideo] MP4 cache lookup error:", err);
-    return false;
-  }
-}
-
-/* -----------------------------------------------------
-   Extract Cloudflare videoId from manifest URL
------------------------------------------------------ */
-function extractCFId(url) {
-  const m = url.match(/com\/([^/]+)\//);
-  return m ? m[1] : null;
-}
-
-/* -----------------------------------------------------
    Initialize CF Video
 ----------------------------------------------------- */
-
 export function initCFVideo(videoId) {
   const wrap = document.getElementById(`cfvideo-${videoId}`);
   if (!wrap) return;
@@ -68,159 +32,107 @@ export function initCFVideo(videoId) {
 
   console.log("[CFVideo] INIT", videoId, manifestSrc);
 
-  const cfId = extractCFId(manifestSrc);
-  if (!cfId) {
-    console.warn("[CFVideo] Could not derive CF ID from:", manifestSrc);
-  }
-
-  const mp4Local = cfId ? `/videos/${cfId}.mp4` : null;
-
-  console.log("[CFVideo] Local MP4:", mp4Local);
-
   const hasControls = el.classList.contains("show-controls-true");
   if (hasControls) ensureVideoJsCss();
 
-  let initialSource = { src: manifestSrc, type: "application/x-mpegURL" };
+  // Always use HLS source
+  const initialSource = { src: manifestSrc, type: "application/x-mpegURL" };
 
-  /* -----------------------------------------------------
-     Decide initial source (cached MP4 → instant play)
-  ----------------------------------------------------- */
-  async function chooseSource() {
-    /* 1️⃣ Check for private browsing — disable MP4 logic */
-    if (await isPrivateMode()) {
-      console.warn("[CFVideo] Private mode detected → forcing HLS only");
-      initialSource = { src: manifestSrc, type: "application/x-mpegURL" };
-      return initPlayer();
-    }
+  const player = videojs(el, {
+    controls: hasControls,
+    loop: true,
+    autoplay: false,
+    muted: true,
+    preload: "metadata",
+    playsinline: true,
 
-    /* 2️⃣ Normal mode: try local MP4 cache */
-    if (mp4Local && await isMp4Cached(mp4Local)) {
-      console.log("[CFVideo] Using cached MP4:", mp4Local);
-      initialSource = { src: mp4Local, type: "video/mp4" };
-    } else {
-      console.log("[CFVideo] Using HLS:", manifestSrc);
-    }
-
-    initPlayer();
-  }
-
-  /* -----------------------------------------------------
-     Initialize Video.js player
-  ----------------------------------------------------- */
-  function initPlayer() {
-    const player = videojs(el, {
-      controls: hasControls,
-      loop: true,
-      autoplay: false,
-      muted: true,
-      preload: "metadata",
-      playsinline: true,
-
-      html5: {
-        hls: {
-          overrideNative: true,
-          useDevicePixelRatio: true,
-          bandwidth: 16194304,
-          limitRenditionByPlayerDimensions: false,
-        },
+    html5: {
+      hls: {
+        overrideNative: true,
+        useDevicePixelRatio: true,
+        bandwidth: 16194304, // Suggest high bandwidth to start
+        limitRenditionByPlayerDimensions: false,
       },
+    },
 
-      sources: [initialSource],
-    });
+    sources: [initialSource],
+  });
 
-    players.set(videoId, player);
+  players.set(videoId, player);
 
-    player.ready(() => {
-      if (!hasControls && player.controlBar) {
-        player.controls(false);
-        player.controlBar.hide();
-      }
-    });
+  player.ready(() => {
+    if (!hasControls && player.controlBar) {
+      player.controls(false);
+      player.controlBar.hide();
+    }
+  });
 
-    /* -----------------------------------------------------
-       Auto-recover if MP4 fails to load
-    ----------------------------------------------------- */
-    player.on("error", () => {
-      const err = player.error();
-      if (!err) return;
+  /* -----------------------------------------------------
+     Force max HLS resolution
+  ----------------------------------------------------- */
+  function forceMaxQuality() {
+    const q = player.qualityLevels?.();
+    if (!q) return;
 
-      console.warn("[CFVideo] Player error:", err);
+    let best = 0;
+    let bestHeight = 0;
 
-      if (initialSource.type === "video/mp4") {
-        console.warn("[CFVideo] MP4 failed, reverting to HLS");
-        player.src({ src: manifestSrc, type: "application/x-mpegURL" });
-      }
-    });
-
-    /* -----------------------------------------------------
-       Force max HLS resolution
-    ----------------------------------------------------- */
-    function forceMaxQuality() {
-      const q = player.qualityLevels?.();
-      if (!q) return;
-
-      let best = 0;
-      let bestHeight = 0;
-
-      for (let i = 0; i < q.length; i++) {
-        if (q[i].height > bestHeight) {
-          bestHeight = q[i].height;
-          best = i;
-        }
-      }
-
-      for (let i = 0; i < q.length; i++) {
-        q[i].enabled = i === best;
+    for (let i = 0; i < q.length; i++) {
+      if (q[i].height > bestHeight) {
+        bestHeight = q[i].height;
+        best = i;
       }
     }
 
-    player.on("loadedmetadata", forceMaxQuality);
-    player.on("loadeddata", forceMaxQuality);
-    player.on("resolutionchange", forceMaxQuality);
-
-    /* -----------------------------------------------------
-       UI state classes
-    ----------------------------------------------------- */
-    wrap.classList.add("paused");
-
-    player.on("play", () => {
-      wrap.classList.add("playing");
-      wrap.classList.remove("paused");
-    });
-
-    player.on("pause", () => {
-      wrap.classList.remove("playing");
-      wrap.classList.add("paused");
-    });
-
-    /* -----------------------------------------------------
-       Scroll-to-play logic
-    ----------------------------------------------------- */
-    if (wrap.dataset.scroll === "true") {
-      const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
-      const parent = wrap.closest(".hw-player-parent") || wrap;
-
-      if (observers.has(videoId)) observers.get(videoId).disconnect();
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              player.play().catch(() => {});
-            } else {
-              if (!player.paused()) player.pause();
-            }
-          });
-        },
-        { threshold }
-      );
-
-      observer.observe(parent);
-      observers.set(videoId, observer);
+    for (let i = 0; i < q.length; i++) {
+      q[i].enabled = i === best;
     }
   }
 
-  chooseSource();
+  player.on("loadedmetadata", forceMaxQuality);
+  player.on("loadeddata", forceMaxQuality);
+  player.on("resolutionchange", forceMaxQuality);
+
+  /* -----------------------------------------------------
+     UI state classes
+  ----------------------------------------------------- */
+  wrap.classList.add("paused");
+
+  player.on("play", () => {
+    wrap.classList.add("playing");
+    wrap.classList.remove("paused");
+  });
+
+  player.on("pause", () => {
+    wrap.classList.remove("playing");
+    wrap.classList.add("paused");
+  });
+
+  /* -----------------------------------------------------
+     Scroll-to-play logic
+  ----------------------------------------------------- */
+  if (wrap.dataset.scroll === "true") {
+    const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
+    const parent = wrap.closest(".hw-player-parent") || wrap;
+
+    if (observers.has(videoId)) observers.get(videoId).disconnect();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            player.play().catch(() => {});
+          } else {
+            if (!player.paused()) player.pause();
+          }
+        });
+      },
+      { threshold }
+    );
+
+    observer.observe(parent);
+    observers.set(videoId, observer);
+  }
 
   return players.get(videoId);
 }

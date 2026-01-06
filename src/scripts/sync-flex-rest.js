@@ -139,8 +139,6 @@ async function fetchSpecials() {
 function getRawLcpImage(row) {
   if (!row) return null;
 
-  let imgObj = null;
-
   const videoField = row.video || (row.data && row.data.video);
   if (Array.isArray(videoField) && videoField[0]?.yt_img) {
     const raw = videoField[0].yt_img;
@@ -187,10 +185,7 @@ async function run() {
 
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
-  
-  // ✅ NEW: Path for the Page Order Manifest
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
-  
   const publicDir = path.join(process.cwd(), "public");
 
   fs.mkdirSync(outPages, { recursive: true });
@@ -214,8 +209,6 @@ async function run() {
     failed = 0;
 
   const prefetchMap = [];
-  
-  // ✅ NEW: Initialize manifest array
   const pageManifest = []; 
 
   for (const uri of pageUris) {
@@ -228,9 +221,6 @@ async function run() {
       }
 
       const cleanPath = toPathname(uri);
-
-      // ✅ NEW: Capture Title and URI for manifest
-      // WP often puts title in data.title.rendered, but sometimes just data.title
       const pageTitle = data.title?.rendered || data.title || "Untitled Page";
       
       pageManifest.push({
@@ -242,50 +232,18 @@ async function run() {
       const entry = { path: cleanPath };
       let hasEntry = false;
 
+      // 🔍 DETECT VIDEO (FOR STREAMING WARMUP ONLY)
       const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
       if (videoField && Array.isArray(videoField)) {
         const videoObj = videoField[0];
         if (videoObj && videoObj.cf_stream_video) {
-          const manifestUrl = videoObj.cf_stream_video;
-          entry.video = manifestUrl;
-
-          const idMatch = manifestUrl.match(/com\/([^/]+)\//);
-          if (idMatch) {
-            const videoId = idMatch[1];
-            const mp4Url = manifestUrl.replace("/manifest/video.m3u8", "/downloads/default.mp4");
-
-            entry.video_mp4 = `/videos/${videoId}.mp4`;
-
-            const videosDir = path.join(publicDir, "videos");
-            fs.mkdirSync(videosDir, { recursive: true });
-
-            const localPath = path.join(videosDir, `${videoId}.mp4`);
-            const exists = fs.existsSync(localPath);
-
-            if (!exists) {
-              console.log(`⬇️  Downloading MP4 for ${videoId}`);
-
-              try {
-                const res = await fetch(mp4Url);
-                if (!res.ok) {
-                  console.warn(`⚠️ MP4 not downloadable (${res.status}): ${mp4Url}`);
-                } else {
-                  const buffer = Buffer.from(await res.arrayBuffer());
-                  fs.writeFileSync(localPath, buffer);
-                  console.log(`💾 Saved MP4 → ${localPath}`);
-                }
-              } catch (err) {
-                console.warn(`⚠️ MP4 download failed for ${videoId}`, err);
-              }
-            } else {
-              console.log(`✓ MP4 exists for ${videoId}`);
-            }
-          }
-
+          // Store only the HLS manifest URL so MainLayout can <link rel="prefetch"> it
+          entry.video = videoObj.cf_stream_video;
           hasEntry = true;
         }
       }
 
+      // 🔍 DETECT LCP IMAGE
       const lcpData = getRawLcpImage(firstRow);
       if (lcpData) {
         entry.lcp = lcpData;
@@ -306,7 +264,7 @@ async function run() {
     }
   }
 
-  // ✅ NEW: Write the Page Order JSON
+  // Write Page Order Manifest
   fs.writeFileSync(outOrder, JSON.stringify(pageManifest, null, 2));
   console.log(`📜 Wrote Page Order Manifest (${pageManifest.length} pages)`);
 
@@ -336,23 +294,15 @@ async function run() {
   }
 
   /* -------- PREFETCH MAP -------- */
-  const hash = hashJSON(prefetchMap);
-  const mapFilename = `prefetch-map.${hash}.json`;
-  const mapFile = path.join(publicDir, mapFilename);
+  // Use a fixed name "prefetch-map.json" for simplicity in MainLayout fetch()
+  const mapFile = path.join(publicDir, "prefetch-map.json");
 
+  // We filter out duplicates if needed, but here we just write it direct
   fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
 
-  fs.writeFileSync(
-    path.join(publicDir, "prefetch-map-latest.json"),
-    JSON.stringify({ file: mapFilename })
-  );
-
   console.log("---------------------------------------------------");
-  console.log(`🎥 Generated map: ${mapFilename}`);
-  console.log("---------------------------------------------------");
-
-  console.log("---------------------------------------------------");
-  console.log(`🎥 Generated map with ${prefetchMap.length} entries.`);
+  console.log(`🎥 Generated map: prefetch-map.json`);
+  console.log(`Entries: ${prefetchMap.length}`);
   console.log(`Sync complete: wrote=${wrote}, skipped=${skipped}, failed=${failed}`);
   console.log("---------------------------------------------------");
 }

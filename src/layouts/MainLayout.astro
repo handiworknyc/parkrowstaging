@@ -3,7 +3,7 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
-import PromoPopup from "../components/PromoPopup.astro";	
+import PromoPopup from "../components/PromoPopup.astro";    
 import videoJsUrl from "/src/scripts/videojs.js?url";
 
 // Critical CSS
@@ -27,8 +27,7 @@ interface Props {
     imagesizes?: string;
   } | null;
   lcpVideo?: {
-    href: string;
-    mp4?: string;      // <── ADDED SUPPORT FOR LCP MP4
+    href: string; // HLS (.m3u8) URL only
   } | null;
 }
 
@@ -39,13 +38,13 @@ const segments = pathname.split("/").filter(Boolean);
 const bodyClasses = segments.length ? segments.join(" ") : "home";
 
 Astro.response.headers.set ( 
-	'Cache-Control',
-	'public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000',
+    'Cache-Control',
+    'public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000',
 )
 
 Astro.response.headers.set(
-	'Netlify-CDN-Cache-Control',
-	'public, max-age=2700, stale-while-revalidate=12000',
+    'Netlify-CDN-Cache-Control',
+    'public, max-age=2700, stale-while-revalidate=12000',
 )
 
 ---
@@ -76,19 +75,19 @@ Astro.response.headers.set(
   <link rel="modulepreload" href={videoJsUrl} />
 
   {/* ────────────────────────────────────────────────────────────────
-      LCP VIDEO (HLS WARMUP — REMOVABLE IF MP4 CACHED)
+      LCP VIDEO (HLS WARMUP)
   ───────────────────────────────────────────────────────────────── */}
   {lcpVideo && (
     <>
-      <link id="lcp-preconnect" rel="preconnect"
+      <link rel="preconnect"
         href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com"
         crossorigin />
 
-      <link id="lcp-dns" rel="dns-prefetch"
+      <link rel="dns-prefetch"
         href="https://customer-kzf3pwxulwy9bd0t.cloudflarestream.com" />
 
-      <link id="lcp-hls-prefetch"
-        rel="prefetch"
+      {/* Prefetch the manifest file */}
+      <link rel="prefetch"
         as="fetch"
         href={lcpVideo.href}
         crossorigin="anonymous" />
@@ -96,46 +95,7 @@ Astro.response.headers.set(
   )}
 
   {/* ────────────────────────────────────────────────────────────────
-      CONDITIONAL REMOVE HLS PREFETCH IF MP4 EXISTS IN SW CACHE
-  ───────────────────────────────────────────────────────────────── */}
-  {lcpVideo?.mp4 && (
-    <script is:client>
-      (async () => {
-        try {
-          const mp4Url = "{lcpVideo.mp4}";
-
-          const cache = await caches.open("videos-mp4");
-          const match = await cache.match(mp4Url);
-
-          if (match) {
-            console.log("[LCP] MP4 already cached → removing HLS warmup");
-
-            document.getElementById("lcp-hls-prefetch")?.remove();
-            document.getElementById("lcp-preconnect")?.remove();
-            document.getElementById("lcp-dns")?.remove();
-
-            // Add MP4 preload
-            const preload = document.createElement("link");
-            preload.rel = "preload";
-            preload.as = "video";
-            preload.href = mp4Url;
-            preload.type = "video/mp4";
-            preload.fetchPriority = "high";
-            document.head.appendChild(preload);
-
-          } else {
-            console.log("[LCP] MP4 not cached → keeping HLS warmup");
-          }
-
-        } catch (err) {
-          console.warn("[LCP] Cache check error:", err);
-        }
-      })();
-    </script>
-  )}
-
-  {/* ────────────────────────────────────────────────────────────────
-      PREFETCH MAP → pass image/video URLs to SW
+      PREFETCH MAP → pass image URLs to SW
   ───────────────────────────────────────────────────────────────── */}
   <script is:client>
     (async () => {
@@ -147,9 +107,14 @@ Astro.response.headers.set(
         const assets = new Set();
 
         map.forEach((entry) => {
-          if (entry.image) assets.add(entry.image);
-          if (entry.video) assets.add(entry.video);
-          if (entry.video_mp4) assets.add(entry.video_mp4);
+          // FIX: Look for 'lcp.href' instead of 'image'
+          if (entry.lcp && entry.lcp.href) {
+            assets.add(entry.lcp.href);
+          }
+          // Optional: If you want to prefetch the HLS manifests for other pages too
+          if (entry.video) {
+            assets.add(entry.video);
+          }
         });
 
         window.__PREFETCH_ASSETS__ = Array.from(assets);
@@ -194,25 +159,6 @@ Astro.response.headers.set(
         }
       });
     }
-  </script>
-
-  {/* ────────────────────────────────────────────────────────────────
-      Listen for mp4Ready → forward to videojs
-  ───────────────────────────────────────────────────────────────── */}
-  <script is:client>
-    navigator.serviceWorker?.addEventListener("message", (event) => {
-      const data = event.data;
-      if (!data?.mp4Ready) return;
-
-      const { videoId, mp4Url } = data.mp4Ready;
-      console.log("[MAIN] mp4Ready →", videoId, mp4Url);
-
-      window.dispatchEvent(
-        new CustomEvent("cfvideo-mp4-ready", {
-          detail: { videoId, mp4Url }
-        })
-      );
-    });
   </script>
 
   <script>

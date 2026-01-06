@@ -1,14 +1,5 @@
 [
   {
-    "path": "/gallery/",
-    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/dd1c7b15001caa7d2c9818e7ea43b949/manifest/video.m3u8",
-    "lcp": {
-      "href": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
-      "imagesrcset": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg 1280w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg 1280w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-1000x902.jpg 1000w, https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-600x541.jpg 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw"
-    }
-  },
-  {
     "path": "/floorplans/",
     "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/dd1c7b15001caa7d2c9818e7ea43b949/manifest/video.m3u8",
     "lcp": {
