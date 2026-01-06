@@ -1,6 +1,7 @@
 ---
 // src/components/PromoPopup.astro
 import specials from "../content/wp/specials.json";
+import { getWpImage } from "../lib/wp/get-wp-image.js";
 
 const activeSpecial = specials && specials.length > 0 ? specials[0] : null;
 
@@ -22,7 +23,11 @@ if (show_on && Array.isArray(show_on) && show_on.length > 0) {
 // ---------------------------------------------------------
 
 const { title, text, show_once, image } = activeSpecial;
-const imageUrl = image.sizes.medium_large || image.url;
+
+// Use helper to get local WebP/Astro image, fallback to remote URL
+const resolvedImage = getWpImage(image);
+const imageUrl = resolvedImage?.src || image.url;
+
 const imageAlt = image.alt || title;
 const popupId = `promo-${image.id}`;
 ---
@@ -53,8 +58,8 @@ const popupId = `promo-${image.id}`;
 
 <style lang="scss">
   .popup-text :global(p) {
-	margin-bottom: 1.25rem;
-  }	
+    margin-bottom: 1.25rem;
+  } 
   /* 1. BACKDROP */
   .promo-popup-backdrop {
     position: fixed;
@@ -75,7 +80,7 @@ const popupId = `promo-${image.id}`;
     pointer-events: none;
     
     transition: opacity 1.6s ease, visibility 1.6s ease;
-	will-change: opacity, visibility;
+    will-change: opacity, visibility;
 
     &.active {
       opacity: 1;
@@ -98,8 +103,8 @@ const popupId = `promo-${image.id}`;
     /* Set a reasonable max width for the image */
     width: 90%;
     max-width: 800px; 
-	height: 70vh;
-	max-height: 600px;
+    height: 70vh;
+    max-height: 600px;
     position: relative;
     border-radius: 4px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
