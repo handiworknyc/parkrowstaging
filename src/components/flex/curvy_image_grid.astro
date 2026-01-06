@@ -3,7 +3,7 @@ import CFVideo from "../ui/CFVideo.astro";
 
 const vars = { ...Astro.props };
 
-console.log(vars);
+
 // ---------------------------------------------
 // 1. ORDER IMAGES
 // ---------------------------------------------
@@ -79,7 +79,7 @@ const rowAlignClass =
                 : "grid-span-1"
             }`}>
               <div class="hw-bg-vid img-load-par pr">
-                <CFVideo video={[video]} />
+                <CFVideo video={[video]} usePosterSrcSet={false} posterForceSize="large" />
               </div>
             </div>
           );

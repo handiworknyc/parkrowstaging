@@ -2,17 +2,25 @@
 // CFVideo.astro
 import SmartImage from "../ui/SmartImage.astro";
 
-const v = Astro.props.video?.[0] ?? {};
+interface Props {
+  video?: any[]; // or your specific Video type
+  usePosterSrcSet?: boolean;
+  posterForceSize?: "xl" | "large" | "med" | "small";
+}
+
+const {
+  video,
+  usePosterSrcSet = true,       // Default to true
+  posterForceSize = undefined   // Default to undefined
+} = Astro.props as Props;
+
+const v = video?.[0] ?? {};
 
 const src = v.cf_stream_video || "";
 const playOnHover = v.yt_hover === true;
 const showControls = v.show_controls ?? false;
 const playOnScroll = true;
 const threshold = 0.6;
-
-// 🔥 NEW — control poster image behavior
-const usePosterSrcSet = true;                 // set false to disable responsive images
-const posterForceSize = undefined;           // 'xl' | 'large' | 'med' | 'small'
 
 // Generate safe ID
 let rawId =
@@ -95,7 +103,9 @@ const ytAlt = ytImg?.alt || "";
         }
 
         videos.forEach((vid) => {
+            // @ts-ignore
             if (vid.dataset.initted === "true") return;
+            // @ts-ignore
             vid.dataset.initted = "true";
 
             const id = vid.getAttribute('data-id');

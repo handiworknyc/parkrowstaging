@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Carousel, useCarousel, useTickerItem } from "motion-plus/react"
 import { motion, useTransform } from "motion/react"
 import SlideNavigation from "../ui/SlideNavigation" // Adjust path as needed
+import { getWpImage } from "../../lib/wp/get-wp-image.js"
+
 
 /* ------------------ Parallax Slide Component ------------------ */
 function ParallaxSlide({ image, index }) {
@@ -13,13 +15,16 @@ function ParallaxSlide({ image, index }) {
     const captionOpacity = useTransform(offset, [-200, 0, 200], [0, 1, 0])
     const captionY = useTransform(offset, [-200, 0, 200], ["10%", "0%", "10%"])
 
+    // ✅ TRANSFORM THE SRC
+    const localSrc = getWpImage(image.src);
+
     return (
         <figure className={`slide-figure ${image.caption ? "has-caption" : ""}`}>
             <div className="image-wrapper">
                 <motion.img
                     draggable={false}
                     className="photo"
-                    src={image.src}
+                    src={localSrc} // ✅ USE LOCAL SRC
                     alt={image.alt || `Slide ${index + 1}`}
                     style={{
                         aspectRatio: image.aspectRatio || "16/9",
@@ -27,18 +32,7 @@ function ParallaxSlide({ image, index }) {
                         scale: 1.05,
                     }}
                 />
-
-                {image.caption && (
-                    <motion.figcaption
-                        className="slide-caption"
-                        style={{
-                            opacity: captionOpacity,
-                            y: captionY
-                        }}
-                    >
-                        {image.caption}
-                    </motion.figcaption>
-                )}
+                {/* ... caption code ... */}
             </div>
         </figure>
     )

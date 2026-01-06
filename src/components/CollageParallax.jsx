@@ -2,9 +2,15 @@
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
+import { getWpImage } from "../lib/wp/get-wp-image.js"; // Adjust path to where you saved the helper
 
 export default function CollageParallax({ 
-  children, 
+  children,
+  // New Image Props
+  src,
+  alt = "",
+  className = "", // Applied to the inner motion element
+  // Parallax Props
   strength = 5, 
   scaleMax = 1.1,
   invert = false 
@@ -18,17 +24,20 @@ export default function CollageParallax({
 
   // Inertia configuration
   const smoothProgress = useSpring(scrollYProgress, {
-    mass: 0.4,      // Reduced from 1: Makes it lightweight so it starts INSTANTLY
-    stiffness: 150, // Tension: Controls how tightly it follows the scroll
-    damping: 25,    // Friction: Lower = longer "drift" at the end
+    mass: 0.4,
+    stiffness: 150,
+    damping: 25,
     restDelta: 0.001
   });
 
   const xRange = invert ? [strength, -strength] : [-strength, strength];
   
-  // Apply transforms to the smoothed progress
+  // Apply transforms
   const x = useTransform(smoothProgress, [0, 1], xRange);
   const scale = useTransform(smoothProgress, [0, 1.06], [1.06, scaleMax]);
+
+  // Convert src if present
+  const localSrc = src ? getWpImage(src) : null;
 
   return (
     <div
@@ -40,18 +49,38 @@ export default function CollageParallax({
         overflow: "hidden", 
       }}
     >
-      <motion.div
-        style={{
-          x,
-          scale,
-          width: "100%",
-          height: "100%",
-          display: "block",
-          willChange: "transform",
-        }}
-      >
-        {children}
-      </motion.div>
+      {src ? (
+        /* MODE A: Smart Image (Auto-cached) */
+        <motion.img
+          src={localSrc}
+          alt={alt}
+          className={className}
+          style={{
+            x,
+            scale,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+            willChange: "transform",
+          }}
+        />
+      ) : (
+        /* MODE B: Wrapper (Backwards compatible) */
+        <motion.div
+          className={className}
+          style={{
+            x,
+            scale,
+            width: "100%",
+            height: "100%",
+            display: "block",
+            willChange: "transform",
+          }}
+        >
+          {children}
+        </motion.div>
+      )}
     </div>
   );
 }
