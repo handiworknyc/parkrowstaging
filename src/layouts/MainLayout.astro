@@ -1,6 +1,6 @@
 ---
 //mainlayout.astro
-import { ClientRouter, fade } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
 import PromoPopup from "../components/PromoPopup.astro";	
@@ -50,7 +50,7 @@ Astro.response.headers.set(
 
 ---
 
-<html lang="en">
+<html lang="en" style="view-transition-name: main-content">
 <head>
   <meta charset="utf-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -239,7 +239,7 @@ Astro.response.headers.set(
 <body class={`first-load ${bodyClasses}`}>
   <main>
     <SiteNav />
-    <div class="switcher" transition:animate={fade({duration: '.3s'})}>
+    <div class="switcher">
       <slot />
     </div>
   </main>
