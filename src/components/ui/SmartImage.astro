@@ -155,8 +155,9 @@ const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : 
           function setLoaded() {
             // Frame 1: Browser paints opacity: 0
             requestAnimationFrame(() => {
-              // Frame 2: We add the class, triggering transition to opacity: 1
-                img.classList.add('lazy-loaded');
+		    	requestAnimationFrame(() => {
+					img.classList.add('lazy-loaded');
+				});
             });
           }
 
