@@ -59,7 +59,6 @@ const rowAlignClass =
     ]}
   >
 
-    <!-- ---------------- GRID (LEFT) ---------------- -->
     <div class="curvy-image-grid min-[700px]:col-6 min-[700px]:push-1">
       <div class="grid-container hw-player-parent">
 
@@ -67,19 +66,26 @@ const rowAlignClass =
           const video = img.video?.[0];
           if (!video) return null;
 
-          // ⭐ NEW: Single-image mode
           const isSingle = orderedImages.length === 1;
 
+          // 1. Determine Span Class
+          const spanClass = isSingle
+            ? "grid-span-4"
+            : img.large
+            ? "grid-span-2"
+            : "grid-span-1";
+
+          // 2. Determine Poster Size based on Span
+          const pSize = spanClass === "grid-span-1" ? "med" : "large";
+
           return (
-            <div class={`grid-item ${
-              isSingle
-                ? "grid-span-4"
-                : img.large
-                ? "grid-span-2"
-                : "grid-span-1"
-            }`}>
+            <div class={`grid-item ${spanClass}`}>
               <div class="hw-bg-vid img-load-par pr">
-                <CFVideo video={[video]} usePosterSrcSet={false} posterForceSize="large" />
+                <CFVideo 
+                  video={[video]} 
+                  usePosterSrcSet={false} 
+                  posterForceSize={pSize} 
+                />
               </div>
             </div>
           );
@@ -90,7 +96,6 @@ const rowAlignClass =
       {caption && <div class={captionWrapperClass}>{caption}</div>}
     </div>
 
-    <!-- ---------------- CONTENT (RIGHT) ---------------- -->
     <div
       class:list={[
         "curvy-image-content",
