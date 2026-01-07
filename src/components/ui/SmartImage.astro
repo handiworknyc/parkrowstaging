@@ -146,11 +146,6 @@ const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : 
       fetchpriority={fetchpriority}
     />
 
-    {/* CRITICAL LOAD SCRIPT 
-       Ensures the 'lazy-loaded' class is applied as soon as the image is ready to paint.
-       Uses .decode() for frame-perfect rendering detection.
-    */}
-
     {critical && (
       <script is:inline define:vars={{ imgId }}>
         (function() {
@@ -161,9 +156,7 @@ const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : 
             // Frame 1: Browser paints opacity: 0
             requestAnimationFrame(() => {
               // Frame 2: We add the class, triggering transition to opacity: 1
-              requestAnimationFrame(() => {
                 img.classList.add('lazy-loaded');
-              });
             });
           }
 

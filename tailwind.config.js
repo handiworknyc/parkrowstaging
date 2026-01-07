@@ -18,15 +18,23 @@ export default {
 
             const pad = "var(--containerPadding)";
             const gut = "1.5rem";
-            const maxW = "var(--containerMaxW)"; // 1800px
+            const maxW = "var(--containerMaxW)";
             
-            // LOGIC CHANGE: 
-            // We use min(100vw, maxW) effectively clamping the base width.
-            // When the screen is > 1800px, it uses 1800px.
-            // When the screen is < 1800px, it uses 100vw.
             const effectiveWidth = `min(100vw, ${maxW})`;
 
             const oneColUnit = `(${effectiveWidth} - (${pad} * 2) - (${gut} * 11)) / 12`;
+
+            /* ---------------------------------------------------------
+               NEW: Push-Half (0.5 column + 0.5 gutter)
+            --------------------------------------------------------- */
+            pushes['.push-h'] = {
+                marginLeft: `calc( (${oneColUnit} * 0.5) + (${gut} * 0.5) )`
+            };
+
+            // Optional: Pull-Half if you need it
+            pulls['.pull-h'] = {
+                 marginLeft: `calc( ((${oneColUnit} * 0.5) + (${gut} * 0.5)) * -1 )`
+            };
 
             for (let i = 1; i <= 12; i++) {
                 // Column Widths
@@ -42,7 +50,7 @@ export default {
                 
                 const standardColWidth = `( (${oneColUnit} * ${i}) + (${gut} * ${i}) )`;
 
-                // Bleeds (These will now stop growing once container hits max width)
+                // Bleeds
                 bleeds[`.bleed-left.col-${i}`] = {
                     marginLeft: `calc(${pad} * -1)`,
                     width: `calc( ${pad} + ${standardColWidth} )`,
