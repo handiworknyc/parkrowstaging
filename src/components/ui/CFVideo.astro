@@ -3,15 +3,17 @@
 import SmartImage from "../ui/SmartImage.astro";
 
 interface Props {
-  video?: any[]; // or your specific Video type
+  video?: any[]; 
   usePosterSrcSet?: boolean;
   posterForceSize?: "xl" | "large" | "med" | "small";
+  critical?: boolean; // ✅ Added Prop
 }
 
 const {
   video,
-  usePosterSrcSet = true,       // Default to true
-  posterForceSize = undefined   // Default to undefined
+  usePosterSrcSet = true,
+  posterForceSize = undefined,
+  critical = false // ✅ Default false
 } = Astro.props as Props;
 
 const v = video?.[0] ?? {};
@@ -53,6 +55,7 @@ const ytAlt = ytImg?.alt || "";
     sizes="(max-width: 1200px) 60vw, 100vw"
     useSrcSet={usePosterSrcSet}
     forceSize={posterForceSize}
+    critical={critical} /* ✅ Pass Critical */
   />
 )}
 
@@ -77,6 +80,7 @@ const ytAlt = ytImg?.alt || "";
           sizes="(max-width: 1200px) 60vw, 100vw"
           useSrcSet={usePosterSrcSet}
           forceSize={posterForceSize}
+          critical={critical} /* ✅ Pass Critical */
         />
       )}
 

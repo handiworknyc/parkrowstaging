@@ -1,4 +1,6 @@
-/* Global Video Wrapper */
+/* ==========================================================================
+   GLOBAL VIDEO WRAPPER
+   ========================================================================== */
 .hw-vid-wrap {
     position: relative;
     width: 100%;
@@ -9,6 +11,7 @@
     backface-visibility: hidden;
     will-change: opacity;
 
+    /* Inner Elements */
     video,
     .video-js,
     .vjs-tech {
@@ -21,7 +24,12 @@
         object-fit: cover;
     }
 
-    /* Poster Image (Sits on top) */
+    /* ---------------------------------------------------------
+       LAYER 1: POSTER IMAGE (Bottom)
+       - Always sits at the bottom (z-index: 1).
+       - Fades in once on load, then STAYS visible.
+       - Does NOT fade out when video plays.
+    --------------------------------------------------------- */
     .hw-vid-poster-img {
         position: absolute;
         top: 0;
@@ -29,15 +37,23 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        z-index: 10;
+        
+        z-index: 1; /* Bottom Layer */
+        
         transition: opacity 1s var(--cubicBez, ease-out);
         pointer-events: none;
     }
 
-    /* Video Player Layer */
+    /* ---------------------------------------------------------
+       LAYER 2: VIDEO PLAYER (Top)
+       - Sits on top (z-index: 10).
+       - Starts INVISIBLE (opacity: 0).
+       - Fades IN when playing.
+    --------------------------------------------------------- */
     .hw-vid-player {
-        z-index: 0;
-        opacity: 1;
+        z-index: 10; /* Top Layer */
+        opacity: 0;  /* Hidden by default */
+        transition: opacity 1s var(--cubicBez, ease-out);
     }
 
     .show-controls-false .hw-vid-player {
@@ -45,97 +61,87 @@
     }
 
     /* ---------------------------------------------------------
-       STATE LOGIC
-       Only hide the poster if the video is playing AND 
-       it is NOT buffering.
+       STATE LOGIC: PLAYING
+       When playing, fade the VIDEO in to opacity: 1.
+       (The image underneath stays visible, but is covered).
     --------------------------------------------------------- */
-    &.playing:not(.is-buffering) .hw-vid-poster-img {
-        opacity: 0;
+    &.playing:not(.is-buffering) .hw-vid-player {
+        opacity: 1 !important;
     }
 }
 
-
-.hw-vid-poster-img {
-	&.image-align-top {
-		object-position: top center !important;
-	}
-
-	&.image-align-center {
-		object-position: center center !important;
-	}
-
-	&.image-align-bottom {
-		object-position: bottom center !important;
-	}
+/* ==========================================================================
+   ALIGNMENT UTILITIES
+   ========================================================================== */
+.hw-vid-poster-img,
+.hw-vid-wrap video,
+.hw-vid-wrap img {
+    &.image-align-top { object-position: top center !important; }
+    &.image-align-center { object-position: center center !important; }
+    &.image-align-bottom { object-position: bottom center !important; }
 }
 
-.hw-vid-wrap {
-	&.image-align-top video,
-	&.image-align-top img {
-		object-position: top center !important;
-	}
+/* ==========================================================================
+   FIRST LOAD / CRITICAL IMAGE TRANSITIONS
+   Logic for Row Index 1 only
+   ========================================================================== */
 
-	&.image-align-center video,
-	&.image-align-center img {
-		object-position: center center !important;
-	}
-
-	&.image-align-bottom video,
-	&.image-align-bottom img {
-		object-position: bottom center !important;
-	}
-}
-
-
-
-
-
-
-
-
+/* 1. Reset for NON-first-load (instant visibility) */
 body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
-	opacity: 0 !important;
-	transition: none !important;
+    opacity: 0 !important;
+    transition: none !important;
 }
 
-/* 🟢 MOVED: Transition Logic
-   Only apply the opacity transition if .first-load is present.
-   This prevents Safari from "fading in" the video on every page navigation.
-*/
+/* 2. Enable Transition only on first load */
+.first-load .hw-vid-poster-img,
 .first-load .hw-vid-wrap {
-    transition: opacity 1s var(--cubicBez);
+    transition: opacity 1s var(--cubicBez, ease-out);
 }
 
+/* 3. The Fade-In Logic (Image Only) */
+.first-load .rowindex-1 {
+    
+    /* Step A: Image Initial State (Invisible) */
+    .hw-vid-poster-img {
+        opacity: 0;
+        will-change: opacity; 
+    }
 
-.first-load .rowindex-1 .hw-vid-wrap.loading {
-    opacity: 0;
-
-    &.playing:not(.is-buffering) {
+    /* Step B: Image Loaded State (Fade In) 
+       Added by JS via Double RAF. */
+    .hw-vid-poster-img.lazy-loaded {
         opacity: 1;
-        transition-delay: .15s
     }
     
-    .hw-vid-poster-img {
-        opacity: 0
+    /* No-Video Fallback */
+    .no-video.hw-bg-vid {
+        opacity: 0;
+        transition: opacity 1s var(--cubicBez, ease-out);
     }
 }
 
+/* Show Fallback when ready */
+.show-me.rowindex-1 .no-video.hw-bg-vid {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   VIEW TRANSITIONS
+   ========================================================================== */
 ::view-transition-new(main-content) {
-	.hw-vid-wrap,
+    .hw-vid-wrap,
     .hw-vid-poster-img {
         opacity: 1 !important;
     }
 
-	.hw-vid-wrap {
-		transition: none !important;
-	}
+    .hw-vid-wrap {
+        transition: none !important;
+    }
 }
 
-/* ---------------------------------------------------------
-   VIDEO.JS CLEANUP
-   Forcefully hide all UI elements for a pure background feel
---------------------------------------------------------- */
-
+/* ==========================================================================
+   VIDEO.JS UI CLEANUP
+   ========================================================================== */
 .show-controls-false {
     .vjs-controls-disabled .vjs-big-play-button,
     .vjs-has-started .vjs-big-play-button,
@@ -147,79 +153,75 @@ body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
     .vjs-loading-spinner,
     .vjs-big-play-button,
     .vjs-hidden {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
     }
 }
 
 .show-controls-true {
-	.vjs-slider,
-	.vjs-control-bar {
-		background: none !important;
-	}
+    .vjs-slider,
+    .vjs-control-bar {
+        background: none !important;
+    }
 
-	.vjs-control-bar {
-		height: 5rem !important;
-	}
+    .vjs-control-bar {
+        height: 5rem !important;
+    }
 
-	.vjs-remaining-time,
-	.vjs-button > .vjs-icon-placeholder:before {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+    .vjs-remaining-time,
+    .vjs-button > .vjs-icon-placeholder:before {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-	.vjs-progress-holder,
-	.vjs-play-progress,
-	.vjs-load-progress {
-		height: .72rem !important;
-		border-radius: 2rem;
-	}
+    .vjs-progress-holder,
+    .vjs-play-progress,
+    .vjs-load-progress {
+        height: .72rem !important;
+        border-radius: 2rem;
+    }
 
-	.vjs-load-progress {
-		overflow: hidden;
-	}
+    .vjs-load-progress {
+        overflow: hidden;
+    }
 
-	.vjs-progress-holder {
-		overflow: visible !important;
-	}
+    .vjs-progress-holder {
+        overflow: visible !important;
+    }
 
-	.vjs-play-progress {
-		background-color: transparent !important;
-		overflow: visible;
-		
-		&:after {
-			content: '';
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			left: 0;
-			top: 0;
-			overflow: hidden;
-			background-color: #C8A2C7;
-			border-radius: 2rem;
-		}
+    .vjs-play-progress {
+        background-color: transparent !important;
+        overflow: visible;
+        
+        &:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            overflow: hidden;
+            background-color: #C8A2C7;
+            border-radius: 2rem;
+        }
 
-		&:before {
-			height: 2.75rem;
-			width: 2.75rem;
-			content: '' !important;
-			background: url(/images/tracking-btn.svg);
-			background-repeat: no-repeat;
-			background-size: contain;
-			top: 50%;
-			right: -1.375rem !important;
-			z-index: 1;
-			transform: translateY(-50%);
-		}
-	}
-
-	
+        &:before {
+            height: 2.75rem;
+            width: 2.75rem;
+            content: '' !important;
+            background: url(/images/tracking-btn.svg);
+            background-repeat: no-repeat;
+            background-size: contain;
+            top: 50%;
+            right: -1.375rem !important;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+    }
 }
-
-
 
 
 

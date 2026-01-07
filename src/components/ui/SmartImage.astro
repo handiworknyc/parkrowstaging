@@ -1,4 +1,5 @@
 ---
+// src/components/ui/SmartImage.astro
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -125,19 +126,60 @@ const loading = critical ? "eager" : "lazy";
 const decoding = critical ? "sync" : "async";
 const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
 
-// ✅ LOGIC: If forceSize is set, !forceSize is false, so finalSrcSet becomes undefined.
 const finalSrcSet = (useSrcSet && !forceSize) ? generatedSrcSet : undefined;
+
+// Unique ID for critical script targeting
+const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : undefined;
 ---
 
 {srcToUse && (
-  <img
-    src={srcToUse}
-    srcset={finalSrcSet}
-    sizes={finalSrcSet ? sizes : undefined}
-    alt={alt}
-    class={className}
-    loading={loading}
-    decoding={decoding}
-    fetchpriority={fetchpriority}
-  />
+  <>
+    <img
+      id={imgId}
+      src={srcToUse}
+      srcset={finalSrcSet}
+      sizes={finalSrcSet ? sizes : undefined}
+      alt={alt}
+      class={className}
+      loading={loading}
+      decoding={decoding}
+      fetchpriority={fetchpriority}
+    />
+
+    {/* CRITICAL LOAD SCRIPT 
+       Ensures the 'lazy-loaded' class is applied as soon as the image is ready to paint.
+       Uses .decode() for frame-perfect rendering detection.
+    */}
+
+    {critical && (
+      <script is:inline define:vars={{ imgId }}>
+        (function() {
+          const img = document.getElementById(imgId);
+          if (!img) return;
+
+          function setLoaded() {
+            // Frame 1: Browser paints opacity: 0
+            requestAnimationFrame(() => {
+              // Frame 2: We add the class, triggering transition to opacity: 1
+              requestAnimationFrame(() => {
+                img.classList.add('lazy-loaded');
+              });
+            });
+          }
+
+          if (img.complete && img.naturalWidth > 0) {
+            setLoaded();
+          } else {
+            if ('decode' in img) {
+              img.decode()
+                .then(setLoaded)
+                .catch(() => { img.onload = setLoaded; });
+            } else {
+              img.onload = setLoaded;
+            }
+          }
+        })();
+      </script>
+    )}
+  </>
 )}
