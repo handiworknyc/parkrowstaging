@@ -1,12 +1,12 @@
 // Native lazy loader for <img.hw-lazy-img>
-// Updated for Astro View Transitions compatibility + video support
+// Behavior:
+// 1. loading="eager" -> Fetched immediately, animates in when in Viewport.
+// 2. loading="lazy"  -> Fetched near Viewport, animates in when in Viewport.
+// 3. Animation       -> Uses Native Web Animations API (WAAPI).
 
 if (typeof window !== "undefined") {
 
   const SELECTOR_IMG = "img.hw-lazy-img",
-    SELECTOR_LAZY = `${SELECTOR_IMG}[data-src]:not(.critical)`,
-    SELECTOR_CRIT_DEFERRED = `${SELECTOR_IMG}.critical[data-src]`,
-    SELECTOR_CRIT_FETCH = `${SELECTOR_IMG}[fetchpriority="high"]`,
     PARENT_CLASS_ON_LOAD = "child-lazy-loaded",
     PARENT_CLASS_ON_CRIT = "crit-child-lazy-loaded",
     IO_ROOT_MARGIN = "200px";
@@ -26,9 +26,32 @@ if (typeof window !== "undefined") {
     if (isCrit) parent.classList.add(PARENT_CLASS_ON_CRIT);
   }
 
+  // ⭐ UPDATED: Native JS Animation
   function markLoaded(img) {
     if (img.classList.contains("lazy-loaded")) return;
+    
+    // 1. Mark state immediately to prevent double-fires
     img.classList.add("lazy-loaded");
+
+    // 2. Trigger Native Fade In
+    const anim = img.animate(
+      [
+        { opacity: 0 },
+        { opacity: 1 }
+      ], 
+      {
+        duration: 1000, // 1 second
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)", // Custom ease-out
+        fill: "forwards" // Keeps the element at opacity: 1 when done
+      }
+    );
+
+    // 3. Hard set opacity on finish for safety
+    anim.onfinish = () => {
+        img.style.opacity = "1";
+    };
+
+    // 4. Notify Parents / Events
     img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
     tagParentEl(img, isCritFetch(img));
   }
@@ -39,93 +62,80 @@ if (typeof window !== "undefined") {
     parent.classList.add(PARENT_CLASS_ON_LOAD);
   }
 
-  function upgrade(img) {
-    const { src: ds, srcset: dss, sizes: dsz } = img.dataset;
-
-    if (ds) img.src = ds;
-    if (dss) img.srcset = dss;
-    if (dsz) img.sizes = dsz;
-
-    img.removeAttribute("data-src");
-    img.removeAttribute("data-srcset");
-    img.removeAttribute("data-sizes");
-
-    if (img.complete && img.naturalWidth > 0) markLoaded(img);
-  }
-
+  // Global handler for network load events
   function onLoadedOrError(e) {
     const img = e.target;
     if (!img?.matches?.(SELECTOR_IMG)) return;
-    if (e.type === "load") markLoaded(img);
-    else img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
-  }
 
-  const observeLazy = (img) => {
-    if (!img.matches(SELECTOR_LAZY)) return;
-    if (io) io.observe(img);
-    else upgrade(img);
-  };
-
-  function finalSweep() {
-    // ⭐ THIS FIXES MISSED IMAGES ⭐
-    qsa(document, SELECTOR_IMG).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) {
-        markLoaded(img);
-      }
-    });
+    if (e.type === "load") {
+        // If image is fully loaded AND marked as 'in-view' by observer
+        if (img.dataset.inView === "true") {
+            markLoaded(img);
+            if (io) io.unobserve(img);
+        }
+    } else {
+        img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
+    }
   }
 
   function initSmartImages() {
+    // 1. Setup Intersection Observer
     if (!io && "IntersectionObserver" in window) {
       io = new IntersectionObserver(
         (entries) => {
           for (const ent of entries) {
-            if (!ent.isIntersecting) continue;
-            upgrade(ent.target);
-            io.unobserve(ent.target);
+            const img = ent.target;
+
+            if (ent.isIntersecting) {
+                // If loaded already, fade in now
+                if (img.complete && img.naturalWidth > 0) {
+                    markLoaded(img);
+                    io.unobserve(img);
+                } 
+                // If still downloading, mark as ready for the 'load' event
+                else {
+                    img.dataset.inView = "true";
+                }
+            } else {
+                // Scrolled away before loading? Cancel the pending fade.
+                img.dataset.inView = "false";
+            }
           }
         },
         { rootMargin: IO_ROOT_MARGIN }
       );
     }
 
-    qsa(document, SELECTOR_CRIT_DEFERRED).forEach(upgrade);
-    qsa(document, SELECTOR_LAZY).forEach(observeLazy);
-
-    qsa(document, SELECTOR_CRIT_FETCH).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) markLoaded(img);
+    // 2. Observe ALL images (Lazy AND Eager)
+    qsa(document, SELECTOR_IMG).forEach((img) => {
+        if (img.classList.contains("lazy-loaded")) return;
+        
+        if (io) io.observe(img);
+        else {
+             // Fallback for no IO support
+             if(img.complete) markLoaded(img);
+        }
     });
 
+    // 3. Check videos
     document.querySelectorAll("video").forEach((v) => {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
 
-    // ⭐ RUN FINAL SWEEP ⭐
-    finalSweep();
-
+    // 4. MutationObserver for View Transitions
     if (mo) mo.disconnect();
-
     mo = new MutationObserver((muts) => {
       for (const m of muts) {
         m.addedNodes.forEach((n) => n instanceof Element && handleElement(n));
       }
     });
-
     mo.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   function handleElement(el) {
-    qsa(el, SELECTOR_CRIT_DEFERRED).forEach(upgrade);
-    qsa(el, SELECTOR_LAZY).forEach(observeLazy);
-
-    qsa(el, SELECTOR_CRIT_FETCH).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) markLoaded(img);
-    });
-
     qsa(el, SELECTOR_IMG).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) markLoaded(img);
+        if (io) io.observe(img);
     });
-
     qsa(el, "video").forEach((v) => {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
