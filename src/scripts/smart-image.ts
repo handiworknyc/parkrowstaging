@@ -1,15 +1,14 @@
 // Native lazy loader for <img.hw-lazy-img>
 // Behavior:
-// 1. loading="eager" -> Fetched immediately, animates in when in Viewport.
-// 2. loading="lazy"  -> Fetched near Viewport, animates in when in Viewport.
-// 3. Animation       -> Uses Native Web Animations API (WAAPI).
+// 1. loading="eager" -> Fetched immediately by browser, but only fades in when in Viewport.
+// 2. loading="lazy"  -> Fetched by browser when near Viewport, fades in when in Viewport.
 
 if (typeof window !== "undefined") {
 
   const SELECTOR_IMG = "img.hw-lazy-img",
     PARENT_CLASS_ON_LOAD = "child-lazy-loaded",
     PARENT_CLASS_ON_CRIT = "crit-child-lazy-loaded",
-    IO_ROOT_MARGIN = "200px";
+    IO_ROOT_MARGIN = "200px"; // Load/Fade slightly before they appear
 
   let io = null;
   let mo = null;
@@ -26,34 +25,16 @@ if (typeof window !== "undefined") {
     if (isCrit) parent.classList.add(PARENT_CLASS_ON_CRIT);
   }
 
-  // ⭐ UPDATED: Native JS Animation
+  // This adds the class that sets opacity: 1
   function markLoaded(img) {
     if (img.classList.contains("lazy-loaded")) return;
     
-    // 1. Mark state immediately to prevent double-fires
-    img.classList.add("lazy-loaded");
-
-    // 2. Trigger Native Fade In
-    const anim = img.animate(
-      [
-        { opacity: 0 },
-        { opacity: 1 }
-      ], 
-      {
-        duration: 1000, // 1 second
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)", // Custom ease-out
-        fill: "forwards" // Keeps the element at opacity: 1 when done
-      }
-    );
-
-    // 3. Hard set opacity on finish for safety
-    anim.onfinish = () => {
-        img.style.opacity = "1";
-    };
-
-    // 4. Notify Parents / Events
-    img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-    tagParentEl(img, isCritFetch(img));
+    // Using rAF ensures the fade transition catches the paint cycle
+    requestAnimationFrame(() => {
+        img.classList.add("lazy-loaded");
+        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+        tagParentEl(img, isCritFetch(img));
+    });
   }
 
   function markVideoLoaded(video) {
@@ -68,9 +49,11 @@ if (typeof window !== "undefined") {
     if (!img?.matches?.(SELECTOR_IMG)) return;
 
     if (e.type === "load") {
-        // If image is fully loaded AND marked as 'in-view' by observer
+        // If the image is ALREADY considered "in-view" by the observer,
+        // but was just waiting for the network, mark it now.
         if (img.dataset.inView === "true") {
             markLoaded(img);
+            // Cleanup observer if it was being watched
             if (io) io.unobserve(img);
         }
     } else {
@@ -79,25 +62,30 @@ if (typeof window !== "undefined") {
   }
 
   function initSmartImages() {
-    // 1. Setup Intersection Observer
+    // 1. Create a single robust observer for EVERYTHING
     if (!io && "IntersectionObserver" in window) {
       io = new IntersectionObserver(
         (entries) => {
           for (const ent of entries) {
             const img = ent.target;
-
+            
+            // Logic: Is it on screen?
             if (ent.isIntersecting) {
-                // If loaded already, fade in now
+                // Yes, it is in viewport.
+                
+                // Case A: Image is fully downloaded -> Show it.
                 if (img.complete && img.naturalWidth > 0) {
                     markLoaded(img);
-                    io.unobserve(img);
+                    io.unobserve(img); // Done with this image
                 } 
-                // If still downloading, mark as ready for the 'load' event
+                // Case B: In viewport, but still downloading -> Mark it as seen.
+                // We wait for the 'load' event (see onLoadedOrError) to actually fade it in.
                 else {
                     img.dataset.inView = "true";
                 }
             } else {
-                // Scrolled away before loading? Cancel the pending fade.
+                // If it scrolls OUT of view before loading, unmark it.
+                // This prevents off-screen fades if user scrolls past quickly.
                 img.dataset.inView = "false";
             }
           }
@@ -107,12 +95,13 @@ if (typeof window !== "undefined") {
     }
 
     // 2. Observe ALL images (Lazy AND Eager)
+    // This ensures Eager images don't "pop" in if they are off-screen or 
+    // if the CSS hides them by default. They will follow the same fade logic.
     qsa(document, SELECTOR_IMG).forEach((img) => {
-        if (img.classList.contains("lazy-loaded")) return;
-        
+        if (img.classList.contains("lazy-loaded")) return; // Skip if already done
         if (io) io.observe(img);
         else {
-             // Fallback for no IO support
+             // Fallback if no IO support (rare) - just show loaded ones
              if(img.complete) markLoaded(img);
         }
     });
@@ -122,7 +111,7 @@ if (typeof window !== "undefined") {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
 
-    // 4. MutationObserver for View Transitions
+    // 4. MutationObserver for View Transitions / Client Routing
     if (mo) mo.disconnect();
     mo = new MutationObserver((muts) => {
       for (const m of muts) {
@@ -133,9 +122,11 @@ if (typeof window !== "undefined") {
   }
 
   function handleElement(el) {
+    // Observe new images injected into DOM
     qsa(el, SELECTOR_IMG).forEach((img) => {
         if (io) io.observe(img);
     });
+    
     qsa(el, "video").forEach((v) => {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
