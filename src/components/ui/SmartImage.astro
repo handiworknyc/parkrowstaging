@@ -28,7 +28,7 @@ const {
   alt = "",
   imgClass = "",
   critical = false,
-  fetchpriority = "high",
+  fetchpriority = critical ? "high" : "auto",
   useSrcSet = true,
   forceSize,
 } = Astro.props as Props;
