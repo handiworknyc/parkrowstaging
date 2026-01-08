@@ -59,8 +59,17 @@ const rowAlignClass =
     ]}
   >
 
-    <div class="curvy-image-grid min-[700px]:col-6 min-[700px]:push-1">
-      <div class="grid-container hw-player-parent">
+	<div
+	class:list={[
+		"curvy-image-grid",
+		"col-7",
+		"min-[1400px]:col-6",
+		vars.align === "right"
+		? "push-1"
+		: "min-[1400px]:push-1"
+	]}
+	>
+	  <div class="grid-container hw-player-parent">
 
         {orderedImages.map((img) => {
           const video = img.video?.[0];
@@ -96,14 +105,17 @@ const rowAlignClass =
       {caption && <div class={captionWrapperClass}>{caption}</div>}
     </div>
 
-    <div
-      class:list={[
-        "curvy-image-content",
-        `text-align-${vars.text_align}`,
-        "min-[700px]:col-3",
-        "min-[700px]:push-1",
-      ]}
-    >
+	<div
+	class:list={[
+		"curvy-image-content",
+		`text-align-${vars.text_align}`,
+		"min-[1400px]:col-3",
+		"col-4",
+		vars.align === "right"
+		? "min-[1400px]:push-1"
+		: "push-1"
+	]}
+	>
 
       {title && <h3 class="figure-h3 mb-5" set:html={title} />}
 

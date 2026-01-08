@@ -193,15 +193,13 @@ const commonCtxBase = {
 };
 
 /* ---------------------------------------------------------
-   ✅ 2. NEXT PAGE CALCULATIONS (ROBUST FIX)
+   NEXT PAGE CALCULATIONS
 --------------------------------------------------------- */
 let nextPage: any = null;
-let nextSlug = "none"; 
+let nextSlug = "none";
 
-// Helper to strip slashes/domains for clean comparison
 function stripSlashes(str: string) {
   try {
-    // If it's a full URL, get pathname
     if (str.startsWith("http")) {
       const u = new URL(str);
       str = u.pathname;
@@ -214,24 +212,19 @@ function stripSlashes(str: string) {
 
 if (!taxContext) {
   const currentPathClean = stripSlashes(decodeURIComponent(Astro.url.pathname));
-
-  // Reverse order (so we go forward in your specific list)
   const reversedPageOrder = [...pageOrder].reverse();
 
-  const currentIndex = reversedPageOrder.findIndex((p) => {
-    return stripSlashes(p.uri) === currentPathClean;
-  });
+  const currentIndex = reversedPageOrder.findIndex(
+    (p) => stripSlashes(p.uri) === currentPathClean
+  );
 
   if (currentIndex >= 0) {
-    if (currentIndex < reversedPageOrder.length - 1) {
-      nextPage = reversedPageOrder[currentIndex + 1];
-    } else {
-      // Loop back to start
-      nextPage = reversedPageOrder[0];
-    }
+    nextPage =
+      currentIndex < reversedPageOrder.length - 1
+        ? reversedPageOrder[currentIndex + 1]
+        : reversedPageOrder[0];
   }
 
-  // Generate a safe slug for the ID so Astro knows it's a new element
   if (nextPage) {
     nextSlug = stripSlashes(nextPage.uri).replace(/\//g, "-");
   }
@@ -245,32 +238,42 @@ if (!taxContext) {
 )}
 
 {rows.map((row, idx) => {
-
-  /* 🔥 Apply WebP conversion BEFORE passing data to components */
   row.data = ensureWebpDeep(row.data);
 
   const Comp = getComponent(row.name);
   const rowindex = idx + 1;
-  const commonCtx = { ...commonCtxBase, rowIndex: rowindex };
+  const prevRow = idx > 0 ? rows[idx - 1] : null;
+
+  const commonCtx = {
+    ...commonCtxBase,
+    rowIndex: rowindex,
+    prevLayout: prevRow,
+  };
+
   const preHtmlString = safeHtml(row.meta.preHtml);
 
-  /* ---------------------------------------------------------
-   * 1. Extract Layout Settings
-   * --------------------------------------------------------- */
   const ls = row.data?.layout_settings || {};
   const {
     section_title,
     section_h2,
     section_text,
     green_bg,
-    section_text_below
+    section_text_below,
   } = ls;
 
   const placeHeaderBelow = section_text_below === true;
 
-  /* ---------------------------------------------------------
-   * 2. Determine Classes
-   * --------------------------------------------------------- */
+  /* ---------- LONG TITLE LOGIC ---------- */
+  let isLongTitle = false;
+
+  if (section_title) {
+    const lines = section_title
+      .split(/<br\s*\/?>/i)
+      .map((l) => l.replace(/<[^>]+>/g, "").trim());
+
+    isLongTitle = lines.some((l) => l.length >= 18);
+  }
+
   const hasHeaderContent = !!(section_title || section_h2 || section_text);
   const contentStatusClass = hasHeaderContent
     ? "has-section-content"
@@ -280,32 +283,37 @@ if (!taxContext) {
 
   const isFullBleedImage = row.name === "full_bleed_img";
   const rawContent = row.data?.content || [];
-  const hasContent = rawContent.length > 0;
-  const imageOnlyClass = isFullBleedImage && !hasContent ? "image-only" : "";
+  const imageOnlyClass =
+    isFullBleedImage && rawContent.length === 0 ? "image-only" : "";
 
-  const sectionClass = `flex-bg ${row.meta.classes.join(" ")} ${contentStatusClass} ${imageOnlyClass}`.trim();
+  const sectionClass = `flex-bg ${row.meta.classes.join(
+    " "
+  )} ${contentStatusClass} ${imageOnlyClass}`.trim();
 
   const bgWrapClass = computeBgWrapClass(row, rowindex);
 
-  /* ---------------------------------------------------------
-   * 3. Header HTML
-   * --------------------------------------------------------- */
-  const hasTextContent = section_h2 || section_text;
   const headerWrapperClass = `flex-section-content hw-contain ${bgColorClass} ${
-    !hasTextContent ? "title-only" : ""
+    !(section_h2 || section_text) ? "title-only" : ""
   }`.trim();
 
   const headerContent = hasHeaderContent ? (
     <div class={headerWrapperClass}>
       <div class="row">
-        <div class="push-1 col-10 flex">
+        <div class="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
           <div class="row">
             {section_title && (
-              <h2 class="antiga section-title col-5" set:html={section_title} />
+              <h2
+                class={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 mb-7 ${
+                  isLongTitle ? "long-title" : ""
+                }`}
+                set:html={section_title}
+              />
             )}
 
-            <div class="section-text-wrap ml-auto col-5">
-              {section_h2 && <h3 class="figure figure-h3" set:html={section_h2} />}
+            <div class="section-text-wrap max-[960px]:ml-0 max-[960px]:max-w-[550px] ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
+              {section_h2 && (
+                <h3 class="figure figure-h3 min-[960px]:mt-0 mt-5" set:html={section_h2} />
+              )}
               {section_text && (
                 <div class="section-text" set:html={section_text} />
               )}
@@ -316,9 +324,6 @@ if (!taxContext) {
     </div>
   ) : null;
 
-  /* ---------------------------------------------------------
-   * 4. Render
-   * --------------------------------------------------------- */
   return (
     <section id={row.meta.id || undefined} class={sectionClass}>
       {preHtmlString && <div set:html={preHtmlString} />}
@@ -331,40 +336,16 @@ if (!taxContext) {
             }`}
           >
             {!placeHeaderBelow && headerContent}
-
             {Comp ? (
               <Comp {...row.data} {...commonCtx} />
-            ) : (
-              <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
-                <p class="font-semibold">
-                  Unknown layout: <code>{row.name}</code>
-                </p>
-                <p class="text-sm mt-1">
-                  Create <code>src/components/flex/{toSnake(row.name)}.astro</code>
-                </p>
-              </div>
-            )}
-
+            ) : null}
             {placeHeaderBelow && headerContent}
           </div>
         </div>
       ) : (
         <>
           {!placeHeaderBelow && headerContent}
-
-          {Comp ? (
-            <Comp {...row.data} {...commonCtx} />
-          ) : (
-            <div class="mx-auto my-8 max-w-5xl rounded-xl border p-4">
-              <p class="font-semibold">
-                Unknown layout: <code>{row.name}</code>
-              </p>
-              <p class="text-sm mt-1">
-                Create <code>src/components/flex/{toSnake(row.name)}.astro</code>
-              </p>
-            </div>
-          )}
-
+          {Comp ? <Comp {...row.data} {...commonCtx} /> : null}
           {placeHeaderBelow && headerContent}
         </>
       )}
@@ -372,13 +353,8 @@ if (!taxContext) {
   );
 })}
 
-{/* ✅ 3. RENDER NEXT PAGE LINK */}
-{/* FIX: We use a dynamic 'id' based on the next slug.
-    This guarantees Astro sees it as a NEW element during View Transition,
-    forcing a tear-down and rebuild with the correct content.
-*/}
 {nextPage && (
-  <section 
+  <section
     id={`next-link-${nextSlug}`}
     class="next-page-section py-20 text-right"
   >

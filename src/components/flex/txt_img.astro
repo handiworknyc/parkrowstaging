@@ -2,6 +2,7 @@
 import CFVideo from "../ui/CFVideo.astro";
 
 const vars = { ...Astro.props };
+const { prevLayout, ...props } = Astro.props;
 
 // ---------------------------------------------
 // 1. VIDEO
@@ -46,7 +47,7 @@ const rowAlignClass = isRight ? "align-right" : "align-left";
 // ---------------------------------------------
 // 5. BLEED CLASS (Match side of alignment)
 // ---------------------------------------------
-const bleedClass = isRight ? "bleed-right" : "bleed-left";
+const bleedClass = isRight ? "min-[700px]:bleed-right" : "min-[700px]:bleed-left";
 ---
 
 <div class="hw-contain">
@@ -61,7 +62,7 @@ const bleedClass = isRight ? "bleed-right" : "bleed-left";
 
     <!-- ---------------- VIDEO (LEFT / RIGHT) ---------------- -->
     <div class:list={[
-      "min-[700px]:col-8",
+      "min-[1400px]:col-8 min-[1240px]:col-10 max-[1240px]:col-10 max-[1400px]:mb-16",
       bleedClass,
     ]}>
       <div class="hw-bg-vid hw-player-parent img-load-par pr full-bleed-img-inner">
@@ -72,14 +73,15 @@ const bleedClass = isRight ? "bleed-right" : "bleed-left";
     </div>
 
     <!-- ---------------- CONTENT (TEXT) ---------------- -->
-    <div
+	<div
       class:list={[
         `self-end`,
-        "min-[700px]:col-3",
-        "min-[700px]:push-h",
+        "min-[1400px]:col-3",
+		"min-[700px]:col-4",
+        // ✅ Apply push-2 on smaller screens ONLY if aligned right
+        isRight ? "max-[1400px]:push-2 min-[1400px]:push-h" : "min-[1240px]:push-h",
       ]}
     >
-
       {title && <h3 class="figure-h3 mb-5" set:html={title} />}
 
       {text && (

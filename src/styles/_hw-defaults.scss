@@ -11,7 +11,7 @@ https://flickity.metafizzy.co
 
 body,
 html {
-	font-size: 11px;
+	font-size: 10.5px;
 	font-weight: 400;
 	font-style: normal;
 	height: auto
@@ -20,36 +20,21 @@ html {
 @media (max-width: 399px) {
 	body,
 	html {
-		font-size: 11px;
-	}
-}
-
-@media (max-width: 349px) {
-	body,
-	html {
 		font-size: 10px;
 	}
 }
 
-@media (max-width: 899px) and (min-width: 700px) {
-	body,
-	html {
-		font-size: 9.5px;
-	}
-}
-
-
-@media (min-width: 900px) {
-	body,
-	html {
-		font-size: 10px;
-	}
-}
-	
-@media (min-width: 1400px) {
+@media (min-width: 1100px) {
 	body,
 	html {
 		font-size: 10.5px;
+	}
+}
+	
+@media (min-width: 1200px) {
+	body,
+	html {
+		font-size: 11.5px;
 	}
 }
 	
@@ -131,47 +116,31 @@ html {
 
 
 html {
+	--containerPadding: 2rem;
 	--containerMaxW: 2000px;
 }
 .hw-contain {
 	width: 100%;
 	margin: 0 auto;
 	max-width: var(--containerMaxW);
-	padding: 0 2rem
+	padding: 0 var(--containerPadding)
 }
 
-@media (min-width: 768px) {
-	html {
-		--containerPadding: 2.5rem;
-	}
-
-	.hw-contain {
-		padding: 0 2.5rem
-	}
-}
-
-@media (max-width: 1099px) {
+@media (min-width: 480px) {
 	html {
 		--containerPadding: 2.5rem;
 	}
 }
 
-@media (max-width: 767px) {
+@media (min-width: 600px) {
 	html {
-		--containerPadding: 1.75rem;
-	}
-	.resp-header-menu-ul {
-		padding: 0 1.75rem;
+		--containerPadding: 4.75rem;
 	}
 }
 
 @media (min-width: 1450px) {
 	html {
 		--containerPadding: 5.5rem;
-	}
-
-	.hw-contain {
-		padding: 0 5.5rem
 	}
 }
 

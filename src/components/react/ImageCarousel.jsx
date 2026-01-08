@@ -32,7 +32,6 @@ const Slide = React.memo(function Slide({ image, index }) {
             aspectRatio: image.aspectRatio || "16/9",
           }}
         />
-
         {image.caption && (
           <figcaption className="slide-caption">
             {image.caption}
@@ -49,21 +48,35 @@ export default function ImageCarousel({ images }) {
 
   const [api, setApi] = useState(null);
   const [current, setCurrent] = useState(0);
-
-  // Tracks when layout is ready for fade-in
   const [ready, setReady] = useState(false);
-
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
 
   useEffect(() => {
     if (!api) return;
 
-    // Ensure centering calculations have painted before fade-in
-    requestAnimationFrame(() => {
+    // 1. Define the ready handler
+    const onReady = () => {
       setReady(true);
-    });
+      // Clean up listener to avoid memory leaks
+      api.off("slidesInView", onReady);
+      api.off("reInit", onReady);
+    };
 
+    // 2. Event Listeners (The "API way")
+    // 'slidesInView' fires when Embla has finished calculating which slides are visible.
+    // 'reInit' fires if the window resizes or DOM changes, ensuring we stay ready.
+    api.on("slidesInView", onReady);
+    api.on("reInit", onReady);
+
+    // 3. Initial Check
+    // If Embla initialized extremely fast (before this Effect ran),
+    // the event might have already fired. We check manually:
+    if (api.slidesInView().length > 0) {
+       onReady();
+    }
+
+    // 4. Standard Navigation Listeners
     setCurrent(api.selectedScrollSnap() + 1);
     setCanPrev(api.canScrollPrev());
     setCanNext(api.canScrollNext());
@@ -73,6 +86,12 @@ export default function ImageCarousel({ images }) {
       setCanPrev(api.canScrollPrev());
       setCanNext(api.canScrollNext());
     });
+    
+    // Cleanup on unmount
+    return () => {
+      api.off("slidesInView", onReady);
+      api.off("reInit", onReady);
+    };
   }, [api]);
 
   const handlePrev = useCallback(() => api?.scrollPrev(), [api]);
@@ -92,7 +111,9 @@ export default function ImageCarousel({ images }) {
             loop: true,
             skipSnaps: false,
             dragFree: false,
-
+            duration: 35,
+            // Optimization: Watch slides to ensure events fire on visibility changes
+            watchSlides: true 
           }}
         >
           <CarouselContent className="-ml-5">
@@ -126,17 +147,21 @@ export default function ImageCarousel({ images }) {
 function Stylesheet() {
   return (
     <style>{`
+      /* 1. Wrapper Logic */
       .carousel-wrapper {
         width: 100%;
         opacity: 0;
-        transition: opacity 0.6s ease-out;
-        will-change: opacity;
+        transform: scale(0.99); /* Tiny scale for better entry feel */
+        transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        will-change: opacity, transform;
       }
 
       .carousel-wrapper[data-ready="true"] {
         opacity: 1;
+        transform: scale(1);
       }
 
+      /* 2. Navigation */
       .carousel-nav-position {
         position: absolute;
         bottom: -6rem;
@@ -144,6 +169,7 @@ function Stylesheet() {
         z-index: 10;
       }
 
+      /* 3. Slide Layout */
       .slide-figure {
         width: 100%;
         margin: 0;
@@ -157,6 +183,7 @@ function Stylesheet() {
         pointer-events: none;
         user-select: none;
         border-radius: 1.333rem;
+        
         backface-visibility: hidden;
         transform: translateZ(0);
         -webkit-mask-image: -webkit-radial-gradient(white, black);
@@ -172,6 +199,7 @@ function Stylesheet() {
         pointer-events: none;
       }
 
+      /* 4. Captions */
       .slide-caption {
         position: absolute;
         bottom: 1.4rem;

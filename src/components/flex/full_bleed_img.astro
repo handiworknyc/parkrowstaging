@@ -60,14 +60,14 @@ const captionWrapperClass = [
 ].filter(Boolean).join(" ");
 
 let colClass = null;
-if (vars.width === "11 columns") colClass = "min-[700px]:col-11";
-if (vars.width === "10 columns") colClass = "min-[700px]:col-10";
-if (vars.width === "9 columns")  colClass = "min-[700px]:col-9";
+if (vars.width === "11 columns") colClass = "min-[1400px]:col-11 col-12";
+if (vars.width === "10 columns") colClass = "min-[1400px]:col-10 col-12";
+if (vars.width === "9 columns")  colClass = "min-[1400px]:col-9 min-[700px]:col-10";
 
 // Static push map
 const PUSH_MAP = {
-  '1': 'min-[700px]:push-1',
-  '2': 'min-[700px]:push-2',
+  '1': 'min-[1400px]:push-1',
+  '2': 'min-[1400px]:push-2 max-[1400px]:bleed-right max-[1400px]:align-right',
   '3': 'min-[700px]:push-3',
   '4': 'min-[700px]:push-4',
   '5': 'min-[700px]:push-5'
