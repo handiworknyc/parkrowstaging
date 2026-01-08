@@ -125,13 +125,17 @@ const modules = import.meta.glob("/src/components/flex/*.astro", {
 const COMPONENT_MAP: Record<string, any> = {};
 
 const toKebab = (s: string) =>
-  s.replace(/[_\s]+/g, "-")
+  s
+    .replace(/[_\s]+/g, "-")
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
     .toLowerCase();
+
 const toSnake = (s: string) =>
-  s.replace(/[-\s]+/g, "_")
+  s
+    .replace(/[-\s]+/g, "_")
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
     .toLowerCase();
+
 const toCamel = (s: string) => {
   const base = s.replace(/[-_ ]+(\w)/g, (_, c) =>
     c ? c.toUpperCase() : ""
@@ -182,6 +186,11 @@ function computeBgWrapClass(row: NormRow, rowindex: number): string | null {
     return rowindex % 2 === 0 ? "whitebg-1" : "mintbg-1";
   }
   return null;
+}
+
+function prevLayoutClass(prevRow: NormRow | null): string {
+  if (!prevRow?.name) return "";
+  return `prev-${toKebab(prevRow.name)}`;
 }
 
 const commonCtxBase = {
@@ -263,7 +272,6 @@ if (!taxContext) {
 
   const placeHeaderBelow = section_text_below === true;
 
-  /* ---------- LONG TITLE LOGIC ---------- */
   let isLongTitle = false;
 
   if (section_title) {
@@ -286,9 +294,11 @@ if (!taxContext) {
   const imageOnlyClass =
     isFullBleedImage && rawContent.length === 0 ? "image-only" : "";
 
+  const prevCls = prevLayoutClass(prevRow);
+
   const sectionClass = `flex-bg ${row.meta.classes.join(
     " "
-  )} ${contentStatusClass} ${imageOnlyClass}`.trim();
+  )} ${prevCls} ${contentStatusClass} ${imageOnlyClass}`.trim();
 
   const bgWrapClass = computeBgWrapClass(row, rowindex);
 
@@ -312,7 +322,10 @@ if (!taxContext) {
 
             <div class="section-text-wrap max-[960px]:ml-0 max-[960px]:max-w-[550px] ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
               {section_h2 && (
-                <h3 class="figure figure-h3 min-[960px]:mt-0 mt-5" set:html={section_h2} />
+                <h3
+                  class="figure figure-h3 min-[960px]:mt-0 mt-5"
+                  set:html={section_h2}
+                />
               )}
               {section_text && (
                 <div class="section-text" set:html={section_text} />
@@ -336,9 +349,7 @@ if (!taxContext) {
             }`}
           >
             {!placeHeaderBelow && headerContent}
-            {Comp ? (
-              <Comp {...row.data} {...commonCtx} />
-            ) : null}
+            {Comp ? <Comp {...row.data} {...commonCtx} /> : null}
             {placeHeaderBelow && headerContent}
           </div>
         </div>

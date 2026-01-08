@@ -4,6 +4,12 @@ import CFVideo from "../ui/CFVideo.astro";
 const vars = { ...Astro.props };
 const v = vars.video;
 
+const { prevLayout, nextLayout, ...props } = Astro.props;
+
+console.log('asdasdad');
+console.log(prevLayout);
+console.log(nextLayout);
+
 // ✅ 1. Check Row Index to determine Critical status
 const currentIndex = vars.rowIndex; 
 const isCritical = currentIndex === 1;
@@ -59,12 +65,33 @@ const captionWrapperClass = [
   vars.bleed === true ? "hw-contain" : null
 ].filter(Boolean).join(" ");
 
-let colClass = null;
-if (vars.width === "11 columns") colClass = "min-[1400px]:col-11 col-12";
-if (vars.width === "10 columns") colClass = "min-[1400px]:col-10 col-12";
-if (vars.width === "9 columns")  colClass = "min-[1400px]:col-9 min-[700px]:col-10";
 
+
+let colClass = null;
+
+// ------------------------------------
+// Column widths
+// ------------------------------------
+if (vars.width === "11 columns") {
+  colClass = "min-[1400px]:col-11 col-12";
+}
+
+if (vars.width === "10 columns") {
+  colClass = "min-[1400px]:col-10 col-12";
+}
+
+if (vars.width === "9 columns") {
+  colClass = "min-[1400px]:col-9 min-[1240px]:col-10 col-11";
+
+  // ✅ ADD bleed-left ONLY for left-aligned 9-col layouts
+  if (vars.align === "left") {
+    colClass += " max-[1400px]:bleed-left";
+  }
+}
+
+// ------------------------------------
 // Static push map
+// ------------------------------------
 const PUSH_MAP = {
   '1': 'min-[1400px]:push-1',
   '2': 'min-[1400px]:push-2 max-[1400px]:bleed-right max-[1400px]:align-right',
@@ -78,12 +105,16 @@ if (vars.width === "9 columns" && vars.push) {
   pushClass = PUSH_MAP[vars.push] || null;
 }
 
+// ------------------------------------
+// Bleed flag (explicit bleed option)
+// ------------------------------------
 let bleedClass = null;
 if (vars.width !== "full" && vars.bleed === true) {
   if (vars.align === "left") bleedClass = "bleed-left";
   else if (vars.align === "right") bleedClass = "bleed-right";
   else bleedClass = "bleed-x";
 }
+
 
 const layoutClasses = [
   colClass,

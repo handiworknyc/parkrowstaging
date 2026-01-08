@@ -593,9 +593,7 @@ ul.two-col-list {
 	}	
 
 	.full_bleed_img-module + .full_bleed_img-module {
-		.min-\[700px\]\:col-9.min-\[1400px\]\:push-1 {
-			margin-left: calc(-1 * var(--containerPadding));
-
+		.min-\[1240px\]\:col-10.min-\[1400px\]\:push-1 {
 			.full-bleed-caption {
 				padding-left: var(--containerPadding);
 			}
