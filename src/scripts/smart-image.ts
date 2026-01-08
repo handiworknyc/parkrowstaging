@@ -31,9 +31,11 @@ if (typeof window !== "undefined") {
     
     // Using rAF ensures the fade transition catches the paint cycle
     requestAnimationFrame(() => {
-        img.classList.add("lazy-loaded");
-        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-        tagParentEl(img, isCritFetch(img));
+		requestAnimationFrame(() => {
+			img.classList.add("lazy-loaded");
+			img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+			tagParentEl(img, isCritFetch(img));
+		});
     });
   }
 

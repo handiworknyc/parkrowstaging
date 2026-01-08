@@ -843,7 +843,7 @@ transition: height .35s var(--cubicBez)
 
 .hw-lazy-img {
 	opacity: 0;
-	transform: opacity .7s var(--cubicBez);
+	transition: opacity .7s var(--cubicBez);
 
 	&.lazy-loaded {
 		opacity: 1;
