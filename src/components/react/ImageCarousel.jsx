@@ -1,192 +1,206 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Carousel, useCarousel, useTickerItem } from "motion-plus/react"
-import { motion, useTransform } from "motion/react"
-import SlideNavigation from "../ui/SlideNavigation" // Adjust path as needed
-import { getWpImage } from "../../lib/wp/get-wp-image.js"
+import * as React from "react";
+import { useState, useEffect, useCallback } from "react";
 
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
-/* ------------------ Parallax Slide Component ------------------ */
-function ParallaxSlide({ image, index }) {
-    const { offset } = useTickerItem()
+import SlideNavigation from "../ui/SlideNavigation";
+import { getWpImage } from "../../lib/wp/get-wp-image.js";
 
-    const x = useTransform(offset, [-500, 0, 500], ["5%", "0%", "-5%"])
-    const captionOpacity = useTransform(offset, [-200, 0, 200], [0, 1, 0])
-    const captionY = useTransform(offset, [-200, 0, 200], ["10%", "0%", "10%"])
+/* ------------------ Standard Slide Component ------------------ */
+const Slide = React.memo(function Slide({ image, index }) {
+  const localSrc = getWpImage(image.src);
 
-    // ✅ TRANSFORM THE SRC
-    const localSrc = getWpImage(image.src);
+  return (
+    <figure
+      className={`slide-figure ${image.caption ? "has-caption" : ""}`}
+    >
+      <div className="image-wrapper">
+        <img
+          draggable={false}
+          className="photo"
+          src={localSrc}
+          alt={image.alt || `Slide ${index + 1}`}
+          decoding="async"
+          loading={index === 0 ? "eager" : "lazy"}
+          style={{
+            aspectRatio: image.aspectRatio || "16/9",
+          }}
+        />
 
-    return (
-        <figure className={`slide-figure ${image.caption ? "has-caption" : ""}`}>
-            <div className="image-wrapper">
-                <motion.img
-                    draggable={false}
-                    className="photo"
-                    src={localSrc} // ✅ USE LOCAL SRC
-                    alt={image.alt || `Slide ${index + 1}`}
-                    style={{
-                        aspectRatio: image.aspectRatio || "16/9",
-                        x,
-                        scale: 1.05,
-                    }}
-                />
-                {/* ... caption code ... */}
-            </div>
-        </figure>
-    )
-}
+        {image.caption && (
+          <figcaption className="slide-caption">
+            {image.caption}
+          </figcaption>
+        )}
+      </div>
+    </figure>
+  );
+});
 
-/* ------------------ Navigation Wrapper ------------------ */
-// We create a tiny wrapper to access the hook context
-function CarouselControls() {
-    try {
-        const { nextPage, prevPage, isNextActive, isPrevActive } = useCarousel()
-        return (
-            <SlideNavigation 
-                onNext={nextPage}
-                onPrev={prevPage}
-                canNext={isNextActive}
-                canPrev={isPrevActive}
-                className="carousel-nav-position" // Used for CSS positioning
-            />
-        )
-    } catch (err) {
-        return null
-    }
-}
-
-/* ------------------ Main Carousel ------------------ */
+/* ------------------ Main Component ------------------ */
 export default function ImageCarousel({ images }) {
-    if (!Array.isArray(images) || images.length === 0) return null
+  if (!Array.isArray(images) || images.length === 0) return null;
 
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => setMounted(true), [])
+  const [api, setApi] = useState(null);
+  const [current, setCurrent] = useState(0);
 
-    return (
-        <article
-            className="carousel-wrapper carousel-fade-wrapper"
-            data-mounted={mounted}
+  // Tracks when layout is ready for fade-in
+  const [ready, setReady] = useState(false);
+
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+
+  useEffect(() => {
+    if (!api) return;
+
+    // Ensure centering calculations have painted before fade-in
+    requestAnimationFrame(() => {
+      setReady(true);
+    });
+
+    setCurrent(api.selectedScrollSnap() + 1);
+    setCanPrev(api.canScrollPrev());
+    setCanNext(api.canScrollNext());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+      setCanPrev(api.canScrollPrev());
+      setCanNext(api.canScrollNext());
+    });
+  }, [api]);
+
+  const handlePrev = useCallback(() => api?.scrollPrev(), [api]);
+  const handleNext = useCallback(() => api?.scrollNext(), [api]);
+
+  return (
+    <article
+      className="carousel-wrapper"
+      data-ready={ready}
+    >
+      <div className="carousel-container">
+        <Carousel
+          setApi={setApi}
+          className="w-full mx-auto"
+          opts={{
+            align: "center",
+            loop: true,
+            skipSnaps: false,
+            dragFree: false,
+
+          }}
         >
-            <div className="carousel-container">
-                <div className="carousel-center-mask">
-                    <Carousel
-                        className="carousel"
-                        items={images.map((image, index) => (
-                            <ParallaxSlide
-                                key={image.id || index}
-                                image={image}
-                                index={index}
-                            />
-                        ))}
-                        overflow
-                        gap={20}
-                        snap="page"
-                        loop={true}
-                        align="center"
-                    >
-                        <CarouselControls />
-                    </Carousel>
-                </div>
-            </div>
+          <CarouselContent className="-ml-5">
+            {images.map((image, index) => (
+              <CarouselItem
+                key={image.id || index}
+                className="pl-5 basis-[85%] md:basis-[60%]"
+              >
+                <Slide image={image} index={index} />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
 
-            <Stylesheet />
-            <FadeStyles />
-        </article>
-    )
+          <div className="carousel-nav-position">
+            <SlideNavigation
+              onNext={handleNext}
+              onPrev={handlePrev}
+              canNext={canNext}
+              canPrev={canPrev}
+            />
+          </div>
+        </Carousel>
+      </div>
+
+      <Stylesheet />
+    </article>
+  );
 }
 
 /* ------------------ Stylesheet ------------------ */
-function FadeStyles() {
-    return (
-        <style>{`
-            .carousel-fade-wrapper {
-                opacity: 0;
-                will-change: opacity;
-                transition: opacity .55s var(--cubicBez, ease-out);
-            }
-            .carousel-fade-wrapper[data-mounted="true"] {
-                opacity: 1;
-            }
-        `}</style>
-    )
-}
-
 function Stylesheet() {
-    return (
-        <style>{`
-            .carousel-center-mask { width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-            .ticker-item { overflow: hidden; }
-            .carousel { width: min(80vw, 900px); }
+  return (
+    <style>{`
+      .carousel-wrapper {
+        width: 100%;
+        opacity: 0;
+        transition: opacity 0.6s ease-out;
+        will-change: opacity;
+      }
 
-            /* Positioning for the new SlideNavigation component specific to this Carousel */
-            .carousel-nav-position {
-                position: absolute; 
-                bottom: -6rem; 
-                right: var(--containerPadding, 0); 
-            }
+      .carousel-wrapper[data-ready="true"] {
+        opacity: 1;
+      }
 
-            .carousel li:hover { cursor: grab; }
-            .carousel li:active { cursor: grabbing; }
+      .carousel-nav-position {
+        position: absolute;
+        bottom: -6rem;
+        right: var(--containerPadding, 0);
+        z-index: 10;
+      }
 
-            .carousel li {
-                width: min(50vw, 900px) !important;
-                flex: 0 0 min(50vw, 900px) !important;
-                display: flex; justify-content: center; align-items: flex-start;
-            }
+      .slide-figure {
+        width: 100%;
+        margin: 0;
+        position: relative;
+      }
 
-            .slide-figure { width: 100%; margin: 0; position: relative; }
+      .image-wrapper {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        pointer-events: none;
+        user-select: none;
+        border-radius: 1.333rem;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+        -webkit-mask-image: -webkit-radial-gradient(white, black);
+      }
 
-            .image-wrapper {
-                width: 100%;
-                overflow: hidden;
-                position: relative;
-                border-radius: 1.333rem;
-                corner-shape: squircle;
-            }
-            
-            .photo {
-                height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem);
-                max-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem);
-                max-width: 100%; min-width: 100%; 
-                object-fit: cover; 
-                display: block; 
-                will-change: transform;
-            }
+      .photo {
+        backface-visibility: hidden;
+        height: calc(var(--jsVhUnits100, 100vh) * 0.75);
+        max-height: calc(var(--jsVhUnits100, 100vh) * 0.75);
+        width: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+      }
 
-            .slide-caption {
-                position: absolute;
-                bottom: 1.4rem;
-                left: 1.8rem;
-                z-index: 10;
-                font-size: 1.25rem;
-                font-weight: 500;
-                letter-spacing: 0.02em;
-                color: white;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                max-width: 80%;
-                text-align: left;
-                pointer-events: none;
-                will-change: transform, opacity;
-            }
+      .slide-caption {
+        position: absolute;
+        bottom: 1.4rem;
+        left: 1.8rem;
+        z-index: 10;
+        font-size: 1.25rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        max-width: 80%;
+        text-align: left;
+        pointer-events: none;
+      }
 
-            .has-caption .image-wrapper::before {
-                content: "";
-                position: absolute;
-                inset: -0.75rem -1rem;
-                z-index: 2;
-                mix-blend-mode: multiply;
-                background: linear-gradient(
-                    32deg,
-                    rgba(0,0,0,0.55) 0%,
-                    rgba(0,0,0,0.4) 7%,
-                    rgba(0,0,0,0.0) 17%
-                );
-                border-radius: 6px;
-                filter: blur(11px);
-                pointer-events: none;
-            }
-        `}</style>
-    )
+      .has-caption .image-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.6) 0%,
+          rgba(0, 0, 0, 0.3) 15%,
+          rgba(0, 0, 0, 0) 40%
+        );
+        pointer-events: none;
+        border-radius: inherit;
+      }
+    `}</style>
+  );
 }
