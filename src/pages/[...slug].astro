@@ -1,11 +1,12 @@
 ---
+// src/pages/[...slug].astro
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
 import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
 
 // ✅ IMPORT LCP HELPERS
 import { normalizeLayouts } from "../lib/wp/normalize";
-import { getLcpImage } from "../lib/wp/lcp"; 
+import { getLcpImage, toLocalCache } from "../lib/wp/lcp"; 
 
 export async function getStaticPaths() {
   return getAllFlexiblePagePaths();
@@ -13,7 +14,7 @@ export async function getStaticPaths() {
 
 const { slug = [] } = Astro.params;
 const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
-const page = getFlexiblePageByUri(uri);
+const page = await getFlexiblePageByUri(uri);
 
 if (!page) {
   Astro.response.status = 404;
@@ -21,17 +22,33 @@ if (!page) {
 }
 
 /* ---------------------------------------------------------
-   LCP CALCULATION
-   We must normalize the first row here (on the server/build)
-   to pass the image URL to the <head> of MainLayout.
+   LCP & PRELOAD CALCULATION
 --------------------------------------------------------- */
 let lcpData = null;
+let carouselPreloads = [];
 
 if (page && page.layouts) {
-  // Normalize raw WP layouts into a format our helper understands
   const rows = normalizeLayouts(page.layouts);
-  // Extract the LCP image data
+  
+  // 1. Extract the LCP image data
   lcpData = getLcpImage(rows);
+
+  // 2. Extract Carousel Images (Targeting 'intch_med')
+  carouselPreloads = rows
+    .filter((r) => r.name === "carousel")
+    .flatMap((r) => r.data.images || [])
+    .map((item) => {
+        // Unpack the wrapper object
+        const imgData = item.image || item || {}; 
+        
+        // Target specific size: intch_med -> fallback to full URL
+        const targetUrl = (imgData.sizes && imgData.sizes.intch_med) 
+          ? imgData.sizes.intch_med 
+          : (imgData.url || imgData.src);
+
+        return toLocalCache(targetUrl);
+    })
+    .filter(Boolean);
 }
 ---
 
@@ -39,7 +56,8 @@ if (page && page.layouts) {
   page ? (
     <BaseLayout 
       title={page.title} 
-      lcp={lcpData} /* ✅ Pass the calculated image data to the Head */
+      lcp={lcpData} 
+      preloads={carouselPreloads} 
     >
       <LayoutRenderer layouts={page.layouts || []} />
     </BaseLayout>

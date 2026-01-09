@@ -11,7 +11,7 @@ import type { NormRow } from "./normalize";
  * 4. Sanitize Filename
  * 5. Reconstruct: cleanName-hash.jpg.webp
  */
-function toLocalCache(url: string | undefined): string | undefined {
+export function toLocalCache(url: string | undefined): string | undefined {
   if (!url) return undefined;
   
   // ✅ 1. If already local (because sync-flex-rest ran first), return as is

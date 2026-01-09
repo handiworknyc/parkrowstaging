@@ -146,34 +146,49 @@ const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : 
       fetchpriority={fetchpriority}
     />
 
-    {critical && (
-      <script is:inline define:vars={{ imgId }}>
-        (function() {
-          const img = document.getElementById(imgId);
-          if (!img) return;
+	{critical && (
+	<script is:inline define:vars={{ imgId }}>
+		(function() {
+		const img = document.getElementById(imgId);
+		if (!img) return;
 
-          function setLoaded() {
-            // Frame 1: Browser paints opacity: 0
-            requestAnimationFrame(() => {
-		    	requestAnimationFrame(() => {
-					img.classList.add('lazy-loaded');
-				});
-            });
-          }
+		function setLoaded() {
+			// Frame 1: Browser paints opacity: 0
+			requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				img.classList.add('lazy-loaded');
+				
+					console.log('CRITICAL LOADED');
+					// 🚀 FIRE GLOBAL EVENT
+					window.dispatchEvent(
+						new CustomEvent('critImgLoaded', {
+							detail: {
+							id: imgId,
+							src: img.currentSrc || img.src,
+							width: img.naturalWidth,
+							height: img.naturalHeight
+							}
+						})
+					);
+			});
+			});
+		}
 
-          if (img.complete && img.naturalWidth > 0) {
-            setLoaded();
-          } else {
-            if ('decode' in img) {
-              img.decode()
-                .then(setLoaded)
-                .catch(() => { img.onload = setLoaded; });
-            } else {
-              img.onload = setLoaded;
-            }
-          }
-        })();
-      </script>
-    )}
+		if (img.complete && img.naturalWidth > 0) {
+			setLoaded();
+		} else {
+			if ('decode' in img) {
+			img.decode()
+				.then(setLoaded)
+				.catch(() => { img.onload = setLoaded; });
+			} else {
+			img.onload = setLoaded;
+			}
+		}
+		})();
+	</script>
+	)}
+
+
   </>
 )}

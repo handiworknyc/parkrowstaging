@@ -30,9 +30,12 @@ interface Props {
   lcpVideo?: {
     href: string; // HLS (.m3u8) URL only
   } | null;
+  // ✅ 1. ADD NEW PROP HERE
+  preloads?: string[];
 }
 
-const { title = "", description = "", lcp = null, lcpVideo = null } = Astro.props;
+// ✅ 2. DESTRUCTURE PROP (default to empty array)
+const { title = "", description = "", lcp = null, lcpVideo = null, preloads = [] } = Astro.props;
 
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
@@ -92,6 +95,28 @@ Astro.response.headers.set(
         crossorigin="anonymous" />
     </>
   )}
+
+{/* ────────────────────────────────────────────────────────────────
+      CAROUSEL PRELOADER (Triggers after Critical Image)
+  ───────────────────────────────────────────────────────────────── */}
+  {/* ✅ FIX 1: Add 'is:inline' so this runs BEFORE the body renders */}
+  <script is:inline define:vars={{ preloads }}>
+    // ✅ FIX 2: Listen on 'window' (matches window.dispatchEvent), not 'document'
+    window.addEventListener("critImgLoaded", () => {
+      
+      if (!preloads || preloads.length === 0) return;
+
+      const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+
+      run(() => {
+        preloads.forEach((url) => {
+          if (!url) return;
+          const img = new Image();
+          img.src = url;
+        });
+      });
+    }, { once: true });
+  </script>
 
   {/* ────────────────────────────────────────────────────────────────
       PREFETCH MAP LOGIC (SRCSET PARSER)
