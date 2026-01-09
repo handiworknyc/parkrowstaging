@@ -26,30 +26,73 @@ if (!page) {
 --------------------------------------------------------- */
 let lcpData = null;
 let carouselPreloads = [];
+let slideshowPreloads = [];
 
 if (page && page.layouts) {
   const rows = normalizeLayouts(page.layouts);
-  
-  // 1. Extract the LCP image data
+
   lcpData = getLcpImage(rows);
 
-  // 2. Extract Carousel Images (Targeting 'intch_med')
+  /* ───────────────────────────────────────────
+     EXISTING CAROUSEL (UNCHANGED)
+  ─────────────────────────────────────────── */
   carouselPreloads = rows
     .filter((r) => r.name === "carousel")
     .flatMap((r) => r.data.images || [])
     .map((item) => {
-        // Unpack the wrapper object
-        const imgData = item.image || item || {}; 
-        
-        // Target specific size: intch_med -> fallback to full URL
-        const targetUrl = (imgData.sizes && imgData.sizes.intch_med) 
-          ? imgData.sizes.intch_med 
-          : (imgData.url || imgData.src);
+      const imgData = item.image || item || {}; 
+      const targetUrl = (imgData.sizes && imgData.sizes.intch_med) 
+        ? imgData.sizes.intch_med 
+        : (imgData.url || imgData.src);
 
-        return toLocalCache(targetUrl);
+      return toLocalCache(targetUrl);
+    })
+    .filter(Boolean);
+
+  /* ───────────────────────────────────────────
+     NEW: FULL WIDTH SLIDESHOW (SRCSET AWARE)
+  ─────────────────────────────────────────── */
+  slideshowPreloads = rows
+    .filter((r) => r.name === "full_width_slideshow")
+    .flatMap((r) => r.data.images || [])
+    .map((item) => {
+      const img = item.image || item || {};
+      if (!img.url) return null;
+
+      const sizes = img.sizes || {};
+
+      const srcXL  = sizes.intch_xl  || img.url;
+      const srcLG  = sizes.intch_lg  || img.url;
+      const srcMED = sizes.intch_med || img.url;
+      const srcSM  = sizes.intch_sm  || img.url;
+
+      const xl  = srcXL  ? toLocalCache(srcXL)  : null;
+      const lg  = srcLG  ? toLocalCache(srcLG)  : null;
+      const med = srcMED ? toLocalCache(srcMED) : null;
+      const sm  = srcSM  ? toLocalCache(srcSM)  : null;
+
+      const imagesrcset = [
+        xl  && `${xl} 2048w`,
+        lg  && `${lg} 1600w`,
+        med && `${med} 1200w`,
+        sm  && `${sm} 800w`,
+      ].filter(Boolean).join(", ");
+
+      const href = xl || lg || med || sm;
+
+      return href
+        ? {
+            href,
+            imagesrcset,
+            imagesizes: "(max-width: 1200px) 100vw, 100vw",
+            type: "image/webp",
+          }
+        : null;
     })
     .filter(Boolean);
 }
+
+
 ---
 
 {
@@ -57,7 +100,10 @@ if (page && page.layouts) {
     <BaseLayout 
       title={page.title} 
       lcp={lcpData} 
-      preloads={carouselPreloads} 
+      preloads={[
+		...carouselPreloads.map((href) => ({ href })),
+		...slideshowPreloads
+	  ]}
     >
       <LayoutRenderer layouts={page.layouts || []} />
     </BaseLayout>

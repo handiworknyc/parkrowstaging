@@ -33,20 +33,6 @@ export default function FadeSlideshow({ slides }) {
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
-  // ---- Preload Logic ----
-  useEffect(() => {
-    if (!slides || slides.length === 0) return;
-    const nextIndex = (currentIndex + 1) % slides.length;
-    const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
-    [nextIndex, prevIndex].forEach((index) => {
-      const { src, srcSet } = getSlideImageProps(slides[index]);
-      const img = new Image();
-      img.sizes = "(max-width: 1200px) 100vw, 100vw"; 
-      if (srcSet) img.srcset = srcSet;
-      img.src = src;
-    });
-  }, [currentIndex, slides]);
-
   const slide = slides[currentIndex];
   const { src: primary, srcSet } = getSlideImageProps(slide);
 

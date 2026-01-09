@@ -1,5 +1,5 @@
 ---
-//mainlayout.astro
+// mainlayout.astro
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
@@ -18,38 +18,46 @@ import headerCriticalUrl from "@/scripts/header-critical.js?url";
 const WP_BASE_URL = import.meta.env.WP_BASE_URL;
 
 /* ---------------- Props Interface ---------------- */
+interface PreloadItem {
+  href: string;
+  imagesrcset?: string;
+  imagesizes?: string;
+  type?: string;
+}
+
 interface Props {
   title?: string;
   description?: string;
-  lcp?: {
-    href: string;
-    imagesrcset?: string;
-    imagesizes?: string;
-    type?: string;
-  } | null;
+  lcp?: PreloadItem | null;
   lcpVideo?: {
     href: string; // HLS (.m3u8) URL only
   } | null;
-  // ✅ 1. ADD NEW PROP HERE
-  preloads?: string[];
+
+  // carousel = string[], full_width_slideshow = PreloadItem[]
+  preloads?: (string | PreloadItem)[];
 }
 
-// ✅ 2. DESTRUCTURE PROP (default to empty array)
-const { title = "", description = "", lcp = null, lcpVideo = null, preloads = [] } = Astro.props;
+const {
+  title = "",
+  description = "",
+  lcp = null,
+  lcpVideo = null,
+  preloads = [],
+} = Astro.props;
 
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
 const bodyClasses = segments.length ? segments.join(" ") : "home";
 
-Astro.response.headers.set ( 
-    'Cache-Control',
-    'public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000',
-)
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000"
+);
 
 Astro.response.headers.set(
-    'Netlify-CDN-Cache-Control',
-    'public, max-age=2700, stale-while-revalidate=12000',
-)
+  "Netlify-CDN-Cache-Control",
+  "public, max-age=2700, stale-while-revalidate=12000"
+);
 ---
 
 <html lang="en" style="view-transition-name: main-content">
@@ -97,61 +105,92 @@ Astro.response.headers.set(
   )}
 
 {/* ────────────────────────────────────────────────────────────────
-      CAROUSEL PRELOADER (Triggers after Critical Image)
-  ───────────────────────────────────────────────────────────────── */}
-  {/* ✅ FIX 1: Add 'is:inline' so this runs BEFORE the body renders */}
-  <script is:inline define:vars={{ preloads }}>
-    // ✅ FIX 2: Listen on 'window' (matches window.dispatchEvent), not 'document'
-    window.addEventListener("critImgLoaded", () => {
-      
-      if (!preloads || preloads.length === 0) return;
+    CAROUSEL + FULL WIDTH SLIDESHOW PRELOADER (WITH LOGGING)
+──────────────────────────────────────────────────────────────── */}
+<script is:inline define:vars={{ preloads }}>
+  window.addEventListener("critImgLoaded", () => {
+    console.log("[Preload] critImgLoaded fired");
+    console.log("[Preload] Incoming preloads:", preloads);
 
-      const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+    if (!preloads || preloads.length === 0) {
+      console.warn("[Preload] No preload items found");
+      return;
+    }
 
-      run(() => {
-        preloads.forEach((url) => {
-          if (!url) return;
+    const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+
+    run(() => {
+      console.log("[Preload] Starting preload queue…");
+
+      preloads.forEach((p, i) => {
+        if (!p) {
+          console.warn(`[Preload] Skipping empty preload at index ${i}`);
+          return;
+        }
+
+        // ─────────────────────────────
+        // Legacy carousel preload
+        // ─────────────────────────────
+        if (typeof p === "string") {
+          console.log(`[Preload][Carousel]`, p);
           const img = new Image();
-          img.src = url;
-        });
+          img.src = p;
+          return;
+        }
+
+        // ─────────────────────────────
+        // SRCSET slideshow preload
+        // ─────────────────────────────
+        if (p.href) {
+          console.log(`[Preload][Slideshow]`, {
+            href: p.href,
+            srcset: p.imagesrcset,
+            sizes: p.imagesizes,
+            type: p.type
+          });
+
+          const link = document.createElement("link");
+          link.rel = "preload";
+          link.as = "image";
+          link.href = p.href;
+
+          if (p.imagesrcset) link.setAttribute("imagesrcset", p.imagesrcset);
+          if (p.imagesizes) link.setAttribute("imagesizes", p.imagesizes);
+          if (p.type) link.setAttribute("type", p.type);
+
+          document.head.appendChild(link);
+          return;
+        }
+
+        console.warn("[Preload] Unknown preload entry:", p);
       });
-    }, { once: true });
-  </script>
+
+      console.log("[Preload] Queue complete");
+    });
+  }, { once: true });
+</script>
+
 
   {/* ────────────────────────────────────────────────────────────────
       PREFETCH MAP LOGIC (SRCSET PARSER)
   ───────────────────────────────────────────────────────────────── */}
   <script is:client>
     (async () => {
-      // Helper: Pick the best image from srcset for current device
       function getBestImage(srcset) {
         if (!srcset) return null;
 
-        // 1. Parse "url widthDescriptor"
-        const candidates = srcset.split(',').map(s => {
+        const candidates = srcset.split(",").map(s => {
           const parts = s.trim().split(/\s+/);
-          // usually: ["https://.../img-800.jpg", "800w"]
           const url = parts[0];
           const wDesc = parts.length > 1 ? parts[1] : null;
-          
           let width = 0;
-          if (wDesc && wDesc.endsWith('w')) {
-            width = parseInt(wDesc, 10);
-          }
-          
+          if (wDesc && wDesc.endsWith("w")) width = parseInt(wDesc, 10);
           return { url, width };
         });
 
-        // 2. Sort by width (ascending)
         candidates.sort((a, b) => a.width - b.width);
-
-        // 3. Determine target width (viewport * dpr)
         const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
-
-        // 4. Find first candidate >= targetWidth
         const best = candidates.find(c => c.width >= targetWidth);
-
-        // 5. Return match, or largest if none match
         return best ? best.url : candidates[candidates.length - 1].url;
       }
 
@@ -165,25 +204,18 @@ Astro.response.headers.set(
         map.forEach((entry) => {
           if (!entry.lcp) return;
 
-          // A. If srcset exists, calculate best fit for THIS device
           if (entry.lcp.imagesrcset) {
             const bestUrl = getBestImage(entry.lcp.imagesrcset);
             if (bestUrl) assets.add(bestUrl);
-          } 
-          // B. Fallback to standard href
-          else if (entry.lcp.href) {
+          } else if (entry.lcp.href) {
             assets.add(entry.lcp.href);
           }
 
-          // C. Videos (Manifests)
-          if (entry.video) {
-            assets.add(entry.video);
-          }
+          if (entry.video) assets.add(entry.video);
         });
 
         window.__PREFETCH_ASSETS__ = Array.from(assets);
         console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
-
       } catch (err) {
         console.warn("Prefetch map failed:", err);
       }
@@ -196,14 +228,10 @@ Astro.response.headers.set(
   <script is:client>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").then((reg) => {
-
-        // Listen for requests from SW asking for the list
         navigator.serviceWorker.addEventListener("message", (event) => {
           if (event.data === "request-prefetch-list") {
             if (window.__PREFETCH_ASSETS__?.length) {
-              reg.active?.postMessage({
-                prefetchAssets: window.__PREFETCH_ASSETS__,
-              });
+              reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
             }
           }
         });
@@ -212,13 +240,12 @@ Astro.response.headers.set(
           worker.postMessage("prefetch");
         }
 
-        if (reg.active) {
-          notifySW(reg.active);
-        } else {
+        if (reg.active) notifySW(reg.active);
+        else {
           reg.addEventListener("updatefound", () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener("statechange", () => {
-              if (newWorker.state === "activated") notifySW(newWorker);
+            const w = reg.installing;
+            w.addEventListener("statechange", () => {
+              if (w.state === "activated") notifySW(w);
             });
           });
         }
@@ -241,8 +268,8 @@ Astro.response.headers.set(
   <ClientRouter prefetch="load" />
 
   <script>
-    document.addEventListener('astro:before-swap', (ev) => {
-      ev.newDocument.body.classList.remove('first-load');
+    document.addEventListener("astro:before-swap", (ev) => {
+      ev.newDocument.body.classList.remove("first-load");
     });
   </script>
 </head>
@@ -258,7 +285,7 @@ Astro.response.headers.set(
   <SiteFooter />
 
   <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
-  
+
   <script is:client>
     if (window.__isSafari) {
       document.documentElement.classList.add("disable-vt");
@@ -274,9 +301,7 @@ Astro.response.headers.set(
           url.startsWith("mailto:") ||
           url.startsWith("tel:") ||
           url.startsWith("javascript:")
-        ) {
-          return;
-        }
+        ) return;
 
         e.preventDefault();
         window.location.href = url;
@@ -285,6 +310,5 @@ Astro.response.headers.set(
   </script>
 
   <PromoPopup />
-
 </body>
 </html>
