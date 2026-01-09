@@ -25,14 +25,16 @@ if (show_on && Array.isArray(show_on) && show_on.length > 0) {
 const { title, text, show_once, image } = activeSpecial;
 
 // Resolve the main image using your helper
-const resolvedImage = getWpImage(image);
+const resolvedImage = getWpImage(image.sizes.intch_med);
 
 // LOGIC: Prefer the specific 1000px WebP ('intch_med') for this modal size.
 // If not found, fall back to the helper's result, then the raw URL.
 const imageUrl = 
-  image.sizes?.intch_med || 
-  resolvedImage?.src || 
+  resolvedImage || 
+  image.sizes?.intch_med ||
   image.url;
+
+
 
 const imageAlt = image.alt || title;
 const popupId = `promo-${image.id}`;
