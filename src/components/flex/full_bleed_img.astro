@@ -30,13 +30,13 @@ const processedContent = rawContent.map((item) => ({
 // --- 2. Generate Content HTML (Columns) --- //
 const contentColumnsHTML = processedContent
   .map((item, index) => {
-    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 col-12";
+    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 max-[990px]:col-12";
 
     if (processedContent.length === 1) {
       cssClass = "col-5";
     }  else if (index === 1) {
 		const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
-		cssClass = `min-[1050px]:col-4 col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} col-12`;
+		cssClass = `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12`;
 	}
 
     const ulClass = `section-text ${

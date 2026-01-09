@@ -192,7 +192,8 @@ function Stylesheet() {
       .photo {
         backface-visibility: hidden;
         height: calc(var(--jsVhUnits100, 100vh) * 0.75);
-        max-height: calc(var(--jsVhUnits100, 100vh) * 0.75);
+        max-height: round(nearest, 47vw, 1rem); 
+
         width: 100%;
         object-fit: cover;
         display: block;
