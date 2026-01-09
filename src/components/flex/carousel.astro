@@ -39,10 +39,14 @@ const carouselImages = rawData.map((item, index) => {
 
 // --- 3. HTML Generation --- //
 const contentColumnsHTML = processedContent.map((item, index) => {
-  let cssClass = "col-4";
-  if (processedContent.length === 1) cssClass = "col-5";
-  else if (index === 1) cssClass = "col-4 push-2";
-  
+  let cssClass = "min-[1050px]:col-4 min-[990px]:col-5 col-12";
+  if (processedContent.length === 1) cssClass = "min-[990px]:col-5 col-12";
+
+  else if (index === 1) {
+	const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
+	cssClass = `min-[1050px]:col-4 col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} col-12`;
+	}
+
   const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
   return `
     <div class="${cssClass}">
@@ -77,7 +81,7 @@ const captionWrapperClass = ["full-bleed-caption", "mt-5", alignMap[captionPos] 
 {(globalCaption || hasContent) && (
    <div class={`hw-contain ${captionWrapperClass}`}>
      <div class="row">
-       <div class="push-1 col-12">
+       <div class="min-[1240px]:push-1 col-12">
          {globalCaption && <div>{globalCaption}</div>}
          {hasContent && (
             <div class="full-bleed-content-wrap mt-16">

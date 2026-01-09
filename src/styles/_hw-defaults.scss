@@ -132,7 +132,13 @@ html {
 	}
 }
 
-@media (min-width: 600px) {
+@media (min-width: 550px) {
+	html {
+		--containerPadding: 3.75rem;
+	}
+}
+
+@media (min-width: 800px) {
 	html {
 		--containerPadding: 4.75rem;
 	}

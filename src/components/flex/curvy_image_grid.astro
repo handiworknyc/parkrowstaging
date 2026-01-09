@@ -28,25 +28,41 @@ const listItems = (vars.list || "")
 // ---------------------------------------------
 const caption = vars.caption || "";
 const captionPos = vars.caption_pos || "left";
+
 const alignMap = {
   left: "text-left",
   center: "text-center",
   right: "text-right",
 };
+
 const captionAlignClass = alignMap[captionPos] || "text-left";
 
+// ✅ responsive padding based on alignment
+const responsivePadClass =
+  vars.align === "right"
+    ? "max-[920px]:pr-[var(--containerPadding)]"
+    : "max-[920px]:pl-[var(--containerPadding)]";
+
 const captionWrapperClass = [
+  responsivePadClass,
   "full-bleed-caption",
   "mt-5",
   captionAlignClass,
   vars.bleed === true ? "hw-contain" : null,
 ].filter(Boolean).join(" ");
 
-// ⭐ NEW — ROW ALIGN CLASS
+// ⭐ ROW ALIGN CLASS (unchanged)
 const rowAlignClass =
   vars.align === "right"
     ? "align-right"
     : "align-left";
+
+
+// ✅ FIX: Define complete strings for Tailwind Scanner
+const mobileBleedClass = 
+  vars.align === "right" 
+    ? "max-[920px]:bleed-right" 
+    : "max-[920px]:bleed-left";
 ---
 
 <div class="hw-contain">
@@ -59,17 +75,19 @@ const rowAlignClass =
     ]}
   >
 
-	<div
-	class:list={[
-		"curvy-image-grid",
-		"col-7",
-		"min-[1400px]:col-6",
-		vars.align === "right"
-		? "push-1"
-		: "min-[1400px]:push-1"
-	]}
-	>
-	  <div class="grid-container hw-player-parent">
+    <div
+    class:list={[
+        "curvy-image-grid",
+        mobileBleedClass, // ✅ Uses the full string variable
+        "col-6",
+        "min-[1024px]:col-7",
+        "min-[1400px]:col-6",
+        vars.align === "right"
+        ? "push-1"
+        : "min-[1400px]:push-1"
+    ]}
+    >
+      <div class="grid-container hw-player-parent">
 
         {orderedImages.map((img) => {
           const video = img.video?.[0];
@@ -105,17 +123,20 @@ const rowAlignClass =
       {caption && <div class={captionWrapperClass}>{caption}</div>}
     </div>
 
-	<div
-	class:list={[
-		"curvy-image-content",
-		`text-align-${vars.text_align}`,
-		"min-[1400px]:col-3",
-		"col-4",
-		vars.align === "right"
-		? "min-[1400px]:push-1"
-		: "push-1"
-	]}
-	>
+    <div
+    class:list={[
+        "curvy-image-content",
+        `text-align-${vars.text_align}`,
+        "min-[1400px]:col-3",
+        "min-[1024px]:col-4",
+        "col-5",
+		"max-[1024px]:flex-1",
+        vars.align === "right"
+        ? "min-[1400px]:push-1 pr-col-h"
+        : "min-[1024px]:push-1 push-h",
+		caption && "mb-9"
+    ]}
+    >
 
       {title && <h3 class="figure-h3 mb-5" set:html={title} />}
 

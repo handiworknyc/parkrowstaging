@@ -63,6 +63,7 @@ export default {
             const cols = {};
             const pushes = {};
             const pulls = {};
+            const colPaddings = {}; // New object for padding
             const bleeds = {};
 
             const pad = "var(--containerPadding)";
@@ -139,9 +140,6 @@ export default {
                 
                 // --- WIDTH CALCULATION ---
                 // Correct Math: (Unit * i) + (Gutter * (i - 1))
-                // The "i - 1" is critical. 8 columns only span 7 gutters.
-                // We use calc(${i} - 1) so it resolves correctly in CSS.
-                
                 const standardColWidth = `((${oneColUnit} * ${i}) + (${gut} * (${i})))`;
 
                 cols[`.col-${i}`] = { 
@@ -151,21 +149,27 @@ export default {
                     flexGrow: '0'
                 };
 
-                // --- PUSH / PULL ---
+                // --- PUSH / PULL / PADDING ---
                 // Push logic: Move over by (Width of i columns) + (The gutter after them)
                 // Math: (Unit * i) + (Gutter * i)
-                
                 const spacingCalc = `((${oneColUnit} * ${i}) + (${gut} * ${i}))`;
 
                 pushes[`.push-${i}`] = { marginLeft: `calc(${spacingCalc})` };
                 pulls[`.pull-${i}`] = { marginLeft: `calc(${spacingCalc} * -1)` };
+
+                // New Padding Classes
+                colPaddings[`.pl-col-${i}`] = { paddingLeft: `calc(${spacingCalc}) !important` };
+                colPaddings[`.pr-col-${i}`] = { paddingRight: `calc(${spacingCalc}) !important` };
             }
             
-            // Half push/pull
+            // Half push/pull/padding
             const halfPushCalc = `((${oneColUnit} * 0.5) + (${gut} * 0.5))`;
 
             pushes['.push-h'] = { marginLeft: `calc(${halfPushCalc})` };
             pulls['.pull-h'] = { marginLeft: `calc(${halfPushCalc} * -1)` };
+            
+            colPaddings['.pl-col-h'] = { paddingLeft: `calc(${halfPushCalc}) !important` };
+            colPaddings['.pr-col-h'] = { paddingRight: `calc(${halfPushCalc}) !important` };
 
             const aligns = {
                 '.align-center': { marginLeft: 'auto', marginRight: 'auto' },
@@ -176,6 +180,7 @@ export default {
             addUtilities(cols);
             addUtilities(pushes);
             addUtilities(pulls);
+            addUtilities(colPaddings); // Added here
             addUtilities(bleeds);
             addUtilities(aligns);
         },

@@ -44,8 +44,8 @@ function isImageMode(video) {
 
   {/* ---------- ROW 2 : #4 (Inverted Direction) ---------- */}
   {images[3]?.video && (
-    <div class="row flex bleed-x">
-      <div class="photo-collage-cell w100">
+    <div class="row flex">
+      <div class="photo-collage-cell bleed-x w-full">
         <div class="pr img-load-par">
           {isImageMode(images[3].video) ? (
             // Added `invert` prop here
@@ -95,8 +95,8 @@ function isImageMode(video) {
 
   {/* ---------- ROW 4 : #7 (Inverted Direction) ---------- */}
   {images[6]?.video && (
-    <div class="row flex bleed-x">
-      <div class="photo-collage-cell w100">
+    <div class="row flex">
+      <div class="photo-collage-cell bleed-x w-full">
         <div class="pr img-load-par">
           {isImageMode(images[6].video) ? (
             // Added `invert` prop here

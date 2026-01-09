@@ -6,12 +6,12 @@ const v = vars.video;
 
 const { prevLayout, nextLayout, ...props } = Astro.props;
 
-console.log('asdasdad');
+console.log("asdasdad");
 console.log(prevLayout);
 console.log(nextLayout);
 
 // ✅ 1. Check Row Index to determine Critical status
-const currentIndex = vars.rowIndex; 
+const currentIndex = vars.rowIndex;
 const isCritical = currentIndex === 1;
 
 // --- 1. Data Processing --- //
@@ -21,51 +21,55 @@ const hasContent = rawContent.length > 0;
 const processedContent = rawContent.map((item) => ({
   title: item.title || "",
   text: item.text || "",
-  twoColList: item.two_col_list || false, 
-  listItems: item.list ? item.list.split(/\r?\n/).filter((li) => li.trim()) : []
+  twoColList: item.two_col_list || false,
+  listItems: item.list
+    ? item.list.split(/\r?\n/).filter((li) => li.trim())
+    : [],
 }));
 
 // --- 2. Generate Content HTML (Columns) --- //
-const contentColumnsHTML = processedContent.map((item, index) => {
-  
-  let cssClass = "col-4";
-  
-  if (processedContent.length === 1) {
-    cssClass = "col-5";
-  } else if (index === 1) {
-    cssClass = "col-4 push-2";
-  }
-  
-  const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
-  
-  return `
-    <div class="${cssClass}">
-      ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ''}
-      ${item.text ? `<div class='section-text'>${item.text}</div>` : ''}
-      ${item.listItems.length > 0 ? `
-        <ul class='${ulClass}'>
-          ${item.listItems.map(li => `<li>${li}</li>`).join('')}
-        </ul>
-      ` : ''}
-    </div>
-  `;
-}).join('');
+const contentColumnsHTML = processedContent
+  .map((item, index) => {
+    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 col-12";
+
+    if (processedContent.length === 1) {
+      cssClass = "col-5";
+    }  else if (index === 1) {
+		const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
+		cssClass = `min-[1050px]:col-4 col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} col-12`;
+	}
+
+    const ulClass = `section-text ${
+      item.twoColList ? "two-col-list" : ""
+    }`.trim();
+
+    return `
+      <div class="${cssClass}">
+        ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ""}
+        ${item.text ? `<div class='section-text'>${item.text}</div>` : ""}
+        ${
+          item.listItems.length > 0
+            ? `
+          <ul class='${ulClass}'>
+            ${item.listItems.map((li) => `<li>${li}</li>`).join("")}
+          </ul>
+        `
+            : ""
+        }
+      </div>
+    `;
+  })
+  .join("");
 
 // --- 3. CSS Class Generation --- //
 const caption = vars.caption || "";
 const captionPos = vars.caption_pos || "left";
-const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
+const alignMap = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
 const captionAlignClass = alignMap[captionPos] || "text-left";
-
-/* ⭐ UPDATED: caption wrapper gets hw-contain when bleed === true */
-const captionWrapperClass = [
-  "full-bleed-caption",
-  "mt-5",
-  captionAlignClass,
-  vars.bleed === true ? "hw-contain" : null
-].filter(Boolean).join(" ");
-
-
 
 let colClass = null;
 
@@ -81,9 +85,8 @@ if (vars.width === "10 columns") {
 }
 
 if (vars.width === "9 columns") {
-  colClass = "min-[1400px]:col-9 min-[1240px]:col-10 col-11";
+  colClass = "min-[1400px]:col-9 min-[1240px]:col-10 col-12";
 
-  // ✅ ADD bleed-left ONLY for left-aligned 9-col layouts
   if (vars.align === "left") {
     colClass += " max-[1400px]:bleed-left";
   }
@@ -93,11 +96,11 @@ if (vars.width === "9 columns") {
 // Static push map
 // ------------------------------------
 const PUSH_MAP = {
-  '1': 'min-[1400px]:push-1',
-  '2': 'min-[1400px]:push-2 max-[1400px]:bleed-right max-[1400px]:align-right',
-  '3': 'min-[700px]:push-3',
-  '4': 'min-[700px]:push-4',
-  '5': 'min-[700px]:push-5'
+  "1": "min-[1400px]:push-1",
+  "2": "min-[1400px]:push-2 max-[1400px]:bleed-right max-[1400px]:align-right",
+  "3": "min-[700px]:push-3",
+  "4": "min-[700px]:push-4",
+  "5": "min-[700px]:push-5",
 };
 
 let pushClass = null;
@@ -115,12 +118,47 @@ if (vars.width !== "full" && vars.bleed === true) {
   else bleedClass = "bleed-x";
 }
 
+// ------------------------------------
+// Corner-based responsive bleed (≤1240px)
+// ------------------------------------
+let cornerBleedClass = null;
+
+if (vars.round_corner && vars.corner_pos && !vars.bleed) {
+  if (vars.corner_pos === "left") {
+    cornerBleedClass = "max-[1240px]:bleed-right";
+  } else if (vars.corner_pos === "right") {
+    cornerBleedClass = "max-[1240px]:bleed-left";
+  }
+}
+
+// ------------------------------------
+// ✅ Detect bleed-left at ≤1240px
+// ------------------------------------
+const needsLeftPadAt1240 =
+  bleedClass === "bleed-left" ||
+  cornerBleedClass === "max-[1240px]:bleed-left";
+
+const leftPadClass = needsLeftPadAt1240
+  ? "max-[1240px]:pl-[var(--containerPadding)]"
+  : null;
+
+/* Caption wrapper */
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "max-[1300px]:mt-4 max-[1300px]:mb-4 min-[1300px]:mt-5",
+  captionAlignClass,
+  vars.bleed === true ? "hw-contain" : null,
+  leftPadClass,
+]
+  .filter(Boolean)
+  .join(" ");
 
 const layoutClasses = [
   colClass,
   pushClass,
   bleedClass,
-  vars.width !== "full" ? `align-${vars.align}` : null
+  cornerBleedClass,
+  vars.width !== "full" ? `align-${vars.align}` : null,
 ];
 
 const videoClasses = [
@@ -131,7 +169,7 @@ const videoClasses = [
   "full-bleed-img-inner",
   vars.round_corner && "round-corner",
   `corner-pos-${vars.corner_pos}`,
-  !v[0]?.cf_stream_video && "no-video"
+  !v?.[0]?.cf_stream_video && "no-video",
 ];
 ---
 
@@ -140,20 +178,25 @@ const videoClasses = [
   <div class="hw-contain">
     <div class="row">
       <div class:list={layoutClasses}>
-        
         <div class:list={videoClasses}>
-          {/* ✅ Pass critical prop */}
           {v && <CFVideo video={v} critical={isCritical} />}
         </div>
 
         {caption && <div class={captionWrapperClass}>{caption}</div>}
 
         {hasContent && (
-          <div class="full-bleed-content-wrap mt-16">
+          <div
+            class={[
+              "full-bleed-content-wrap",
+              "mt-16",
+              leftPadClass,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <div class="row" set:html={contentColumnsHTML} />
           </div>
         )}
-
       </div>
     </div>
   </div>
@@ -161,26 +204,31 @@ const videoClasses = [
   /* --- LAYOUT: FULL WIDTH --- */
   <>
     <div class:list={videoClasses}>
-      {/* ✅ Pass critical prop */}
       {v && <CFVideo video={v} critical={isCritical} />}
     </div>
-    
-    {(caption || hasContent) && (
-       <div class={`hw-contain ${captionWrapperClass}`}>
-         <div class="row">
-           <div class="push-1 col-12">
-             
-             {caption && <div>{caption}</div>}
-             
-             {hasContent && (
-                <div class="full-bleed-content-wrap mt-16">
-                  <div class="row" set:html={contentColumnsHTML} />
-                </div>
-             )}
 
-           </div>
-         </div>
-       </div>
+    {(caption || hasContent) && (
+      <div class={`hw-contain ${captionWrapperClass}`}>
+        <div class="row">
+          <div class="[1240px]:push-1 col-11">
+            {caption && <div>{caption}</div>}
+
+            {hasContent && (
+              <div
+                class={[
+                  "full-bleed-content-wrap",
+                  "mt-16",
+                  leftPadClass,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <div class="row" set:html={contentColumnsHTML} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     )}
   </>
 )}
