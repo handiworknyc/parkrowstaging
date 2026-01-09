@@ -40,8 +40,8 @@ const captionAlignClass = alignMap[captionPos] || "text-left";
 // ✅ responsive padding based on alignment
 const responsivePadClass =
   vars.align === "right"
-    ? "max-[920px]:pr-[var(--containerPadding)]"
-    : "max-[920px]:pl-[var(--containerPadding)]";
+    ? "max-[920px]:min-[760px]:pr-[var(--containerPadding)]"
+    : "max-[920px]:min-[760px]:pl-[var(--containerPadding)]";
 
 const captionWrapperClass = [
   responsivePadClass,
@@ -61,8 +61,8 @@ const rowAlignClass =
 // ✅ FIX: Define complete strings for Tailwind Scanner
 const mobileBleedClass = 
   vars.align === "right" 
-    ? "max-[920px]:bleed-right" 
-    : "max-[920px]:bleed-left";
+    ? "max-[920px]:min-[760px]:bleed-right" 
+    : "max-[920px]:min-[760px]:bleed-left";
 ---
 
 <div class="hw-contain">
@@ -78,12 +78,14 @@ const mobileBleedClass =
     <div
     class:list={[
         "curvy-image-grid",
-        mobileBleedClass, // ✅ Uses the full string variable
-        "col-6",
+		"max-[760px]:mb-16",
+        mobileBleedClass,
+		"col-12",
+        "min-[760px]:col-6",
         "min-[1024px]:col-7",
         "min-[1400px]:col-6",
         vars.align === "right"
-        ? "push-1"
+        ? "min-[760px]:push-1"
         : "min-[1400px]:push-1"
     ]}
     >
@@ -125,6 +127,7 @@ const mobileBleedClass =
 
     <div
     class:list={[
+		"column-content",
         "curvy-image-content",
         `text-align-${vars.text_align}`,
         "min-[1400px]:col-3",
@@ -133,7 +136,7 @@ const mobileBleedClass =
 		"max-[1024px]:flex-1",
         vars.align === "right"
         ? "min-[1400px]:push-1 pr-col-h"
-        : "min-[1024px]:push-1 push-h",
+        : "min-[1024px]:push-1 min-[760px]:push-h",
 		caption && "mb-9"
     ]}
     >

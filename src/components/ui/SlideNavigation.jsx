@@ -37,51 +37,7 @@ export default function SlideNavigation({
                     <ChevronRightIcon />
                 </motion.button>
             </nav>
-            <NavStyles />
         </>
-    )
-}
-
-function NavStyles() {
-    return (
-        <style>{`
-            .slide-navigation { 
-                display: flex; 
-                align-items: center; 
-                gap: 16px; 
-                z-index: 30; 
-            }
-            .nav-arrow { 
-                background: none; 
-                border: none; 
-                color: white; 
-                cursor: pointer; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                border-radius: 50%; 
-                padding: 0; 
-                outline: none; 
-            }
-            .nav-arrow svg { width: 3rem; height: 3rem; }
-
-            /* --- Smooth Color Transitions --- */
-            .nav-arrow svg rect,
-            .nav-arrow svg path {
-                transition: fill 0.3s ease;
-            }
-
-            /* --- Hover States (Color Inversion) --- */
-            .nav-arrow:hover svg rect {
-                fill: var(--green) !important;
-                fill-opacity: 1; /* Ensure full opacity on hover */
-            }
-            .nav-arrow:hover svg path {
-                fill: white !important;
-            }
-
-            .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
-        `}</style>
     )
 }
 
