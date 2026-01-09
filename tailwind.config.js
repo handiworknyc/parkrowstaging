@@ -111,8 +111,6 @@ export default {
                 '&[class]': {
                     // Width = Current Column Width + Container Padding
                     width: `calc(var(--col-width) + ${pad})`,
-                    flexShrink: '0', 
-                    flexGrow: '0'
                 }
             };
 
@@ -145,8 +143,6 @@ export default {
                 cols[`.col-${i}`] = { 
                     '--col-width': `calc(${standardColWidth})`,
                     width: `var(--col-width)`,
-                    flexShrink: '0',
-                    flexGrow: '0'
                 };
 
                 // --- PUSH / PULL / PADDING ---
