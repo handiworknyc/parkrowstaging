@@ -36,7 +36,7 @@ const formattedSlides = Array.isArray(images)
 const validSlides = formattedSlides.filter(Boolean);
 ---
 
-<section class="relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
+<section class="full-width-slideshow-wrap relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
   {validSlides.length > 0 ? (
     <FadeSlideshow 
       client:visible 

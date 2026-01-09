@@ -349,10 +349,15 @@ ul.section-text li::before {
 .flex-module:not(.rowindex-1) {
 	background-color: #fff;
 }
+
 .full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
 .full-bleed-img-inner  {
 	position: relative;
 	min-height: round(nearest, 47vw, 1rem); 
+}
+
+.full-width-slideshow-wrap {
+	max-height: round(nearest, 56.25vw, 1rem);
 }
 
 @media (min-width: 1440px) {
@@ -448,7 +453,12 @@ ul.two-col-list {
 	}
 }
 
-
+@media (max-width: 1024px) {
+	.section-text-wrap *,
+	.column-content * {
+		max-width: 420px;
+	}
+}
 
 
 

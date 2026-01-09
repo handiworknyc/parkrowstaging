@@ -27,13 +27,13 @@ const processedContent = rawContent.map((item) => ({
 // --- 2. Generate Content HTML (Columns) --- //
 const contentColumnsHTML = processedContent
   .map((item, index) => {
-    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 max-[990px]:col-12";
+    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 max-[990px]:col-12 column-content";
 
     if (processedContent.length === 1) {
-      cssClass = "col-5";
+      cssClass = "min-[1024px]:col-5 column-content";
     }  else if (index === 1) {
 		const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
-		cssClass = `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12`;
+		cssClass = `column-content min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12`;
 	}
 
     const ulClass = `section-text ${
@@ -207,7 +207,7 @@ const videoClasses = [
     {(caption || hasContent) && (
       <div class={`hw-contain ${captionWrapperClass}`}>
         <div class="row">
-          <div class="[1240px]:push-1 col-11">
+          <div class="min-[1240px]:push-1 col-11">
             {caption && <div>{caption}</div>}
 
             {hasContent && (

@@ -39,12 +39,12 @@ const carouselImages = rawData.map((item, index) => {
 
 // --- 3. HTML Generation --- //
 const contentColumnsHTML = processedContent.map((item, index) => {
-  let cssClass = "min-[1050px]:col-4 min-[990px]:col-5 col-12";
-  if (processedContent.length === 1) cssClass = "min-[990px]:col-5 max-[990px]:col-12";
+  let cssClass = "min-[1050px]:col-4 min-[990px]:col-5 col-12 column-content";
+  if (processedContent.length === 1) cssClass = "min-[990px]:col-5 max-[990px]:col-12 column-content";
 
   else if (index === 1) {
 	const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
-	cssClass = `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12`;
+	cssClass = `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12 column-content`;
   }
 
   const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
