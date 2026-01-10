@@ -31,10 +31,10 @@ function isImageMode(video) {
           <div class={wrapClass}>
             {isImageMode(video) ? (
               <CollageParallax strength='11' client:load>
-                <CFVideo video={video} posterForceSize="med" />
+                <CFVideo video={video} posterForceSize="small" />
               </CollageParallax>
             ) : (
-              <CFVideo video={video} posterForceSize="med" />
+              <CFVideo video={video} posterForceSize="small" />
             )}
           </div>
         </div>

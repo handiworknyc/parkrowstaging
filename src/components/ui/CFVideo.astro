@@ -34,6 +34,7 @@ const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
 
 // Poster
 const ytImg = v.yt_img || null;
+
 const smartImg = ytImg
   ? {
       xl: ytImg.sizes?.intch_xl || ytImg.url,

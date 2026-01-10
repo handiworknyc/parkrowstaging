@@ -27,7 +27,7 @@ const Slide = React.memo(function Slide({ image, index }) {
           src={localSrc}
           alt={image.alt || `Slide ${index + 1}`}
           decoding="async"
-          loading={index === 0 ? "eager" : "lazy"}
+          loading="eager"
           style={{
             aspectRatio: image.aspectRatio || "16/9",
           }}

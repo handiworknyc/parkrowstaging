@@ -1235,38 +1235,62 @@ HW.cleanUrl = function(myhref){
 
 
 
-
-window.addEventListener("load", () => {
-  let overlay = null;
+document.addEventListener("astro:page-load", () => {
+  // 1. Try to find the overlay in case it was preserved or generated server-side
+  let overlay = document.querySelector(".grid-overlay");
 
   function createGridOverlay() {
-    overlay = document.createElement("div");
-    overlay.className = "grid-overlay";
-
+    const el = document.createElement("div");
+    el.className = "grid-overlay";
+    
     // Create 12 columns
     for (let i = 0; i < 12; i++) {
       const col = document.createElement("div");
       col.className = "col";
-      overlay.appendChild(col);
+      el.appendChild(col);
     }
-
-    document.body.appendChild(overlay);
+    
+    document.body.appendChild(el);
+    return el;
   }
 
   function toggleGrid() {
-    if (!overlay) createGridOverlay();
-    overlay.style.display =
-      overlay.style.display === "none" ? "grid" : "none";
+    if (!overlay) {
+      overlay = createGridOverlay();
+      // Default to visible if we just created it
+      overlay.style.display = "grid"; 
+    } else {
+      overlay.style.display = overlay.style.display === "none" ? "grid" : "none";
+    }
+    
+    // Optional: Save state so it stays open across refreshes
+    sessionStorage.setItem("grid-visible", overlay.style.display);
   }
 
-  window.addEventListener("keydown", (e) => {
-    // SHIFT + G
+  // 2. Event Handler
+  const onKeydown = (e) => {
     if (e.key === "G" && e.shiftKey) {
       e.preventDefault();
       toggleGrid();
     }
-  });
+  };
+
+  // 3. Restore state from previous page view (Optional Quality of Life)
+  if (sessionStorage.getItem("grid-visible") === "grid") {
+    if (!overlay) overlay = createGridOverlay();
+    overlay.style.display = "grid";
+  }
+
+  // 4. Attach Listener
+  window.addEventListener("keydown", onKeydown);
+
+  // 5. Cleanup Listener (CRITICAL)
+  // This removes the specific instance of 'onKeydown' before the new page loads
+  document.addEventListener("astro:before-swap", () => {
+    window.removeEventListener("keydown", onKeydown);
+  }, { once: true });
 });
+
 
 var cssua=function(n,l,p){var q=/\s*([\-\w ]+)[\s\/\:]([\d_]+\b(?:[\-\._\/]\w+)*)/,r=/([\w\-\.]+[\s\/][v]?[\d_]+\b(?:[\-\._\/]\w+)*)/g,s=/\b(?:(blackberry\w*|bb10)|(rim tablet os))(?:\/(\d+\.\d+(?:\.\w+)*))?/,t=/\bsilk-accelerated=true\b/,u=/\bfluidapp\b/,v=/(\bwindows\b|\bmacintosh\b|\blinux\b|\bunix\b)/,w=/(\bandroid\b|\bipad\b|\bipod\b|\bwindows phone\b|\bwpdesktop\b|\bxblwp7\b|\bzunewp7\b|\bwindows ce\b|\bblackberry\w*|\bbb10\b|\brim tablet os\b|\bmeego|\bwebos\b|\bpalm|\bsymbian|\bj2me\b|\bdocomo\b|\bpda\b|\bchtml\b|\bmidp\b|\bcldc\b|\w*?mobile\w*?|\w*?phone\w*?)/,
 x=/(\bxbox\b|\bplaystation\b|\bnintendo\s+\w+)/,k={parse:function(b,d){var a={};d&&(a.standalone=d);b=(""+b).toLowerCase();if(!b)return a;for(var c,e,g=b.split(/[()]/),f=0,k=g.length;f<k;f++)if(f%2){var m=g[f].split(";");c=0;for(e=m.length;c<e;c++)if(q.exec(m[c])){var h=RegExp.$1.split(" ").join("_"),l=RegExp.$2;if(!a[h]||parseFloat(a[h])<parseFloat(l))a[h]=l}}else if(m=g[f].match(r))for(c=0,e=m.length;c<e;c++)h=m[c].split(/[\/\s]+/),h.length&&"mozilla"!==h[0]&&(a[h[0].split(" ").join("_")]=h.slice(1).join("-"));
