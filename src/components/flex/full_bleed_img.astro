@@ -85,7 +85,7 @@ if (vars.width === "9 columns") {
   colClass = "min-[1400px]:col-9 min-[1240px]:col-10 col-12";
 
   if (vars.align === "left") {
-    colClass += " max-[1400px]:bleed-left";
+    colClass += " max-[1400px]:min-[660px]:bleed-left max-[660px]:bleed-x";
   }
 }
 
@@ -94,7 +94,7 @@ if (vars.width === "9 columns") {
 // ------------------------------------
 const PUSH_MAP = {
   "1": "min-[1400px]:push-1",
-  "2": "min-[1400px]:push-2 max-[1400px]:bleed-right max-[1400px]:align-right",
+  "2": "min-[1400px]:push-2 max-[1400px]:min-[660px]:bleed-right max-[660px]:bleed-x max-[1400px]:align-right",
   "3": "min-[700px]:push-3",
   "4": "min-[700px]:push-4",
   "5": "min-[700px]:push-5",
@@ -122,9 +122,9 @@ let cornerBleedClass = null;
 
 if (vars.round_corner && vars.corner_pos && !vars.bleed) {
   if (vars.corner_pos === "left") {
-    cornerBleedClass = "max-[1240px]:bleed-right";
+    cornerBleedClass = "max-[1240px]:min-[660px]:bleed-right max-[660px]:bleed-x";
   } else if (vars.corner_pos === "right") {
-    cornerBleedClass = "max-[1240px]:bleed-left";
+    cornerBleedClass = "max-[1240px]:min-[660px]:bleed-left max-[660px]:bleed-x";
   }
 }
 
@@ -133,7 +133,7 @@ if (vars.round_corner && vars.corner_pos && !vars.bleed) {
 // ------------------------------------
 const needsLeftPadAt1240 =
   bleedClass === "bleed-left" ||
-  cornerBleedClass === "max-[1240px]:bleed-left";
+  cornerBleedClass === "max-[1240px]:min-[660px]:bleed-left max-[660px]:bleed-x";
 
 const leftPadClass = needsLeftPadAt1240
   ? "max-[1240px]:pl-[var(--containerPadding)]"

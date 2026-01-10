@@ -3,16 +3,33 @@ import CFVideo from "../ui/CFVideo.astro";
 
 const vars = { ...Astro.props };
 
-
 // ---------------------------------------------
-// 1. ORDER IMAGES
+// 1. ORDER & NORMALIZE IMAGES
 // ---------------------------------------------
-const images = Array.isArray(vars.images) ? vars.images : [];
+const rawImages = Array.isArray(vars.images) ? vars.images : [];
+const isSingle = rawImages.length === 1;
 
-const orderedImages =
-  images.length === 4
-    ? [images[0], images[1], images[2], images[3]]
-    : images;
+let renderImages = [];
+
+// 1. Normalize the Array
+if (isSingle) {
+  // 📸 SINGLE IMAGE: Duplicate it so we have 2 items to split
+  renderImages = [rawImages[0], rawImages[0]];
+} else {
+  // 📸 MULTI IMAGE: Use as is (limit to 4 for sanity if needed)
+  renderImages = rawImages.slice(0, 4); 
+}
+
+// 2. Calculate Split Index
+// If we have 2 items (real or duplicated), split at 1 (Middle).
+// If we have 3+ items, split at 2 (After first row of 2).
+const splitIndex = renderImages.length <= 2 ? 1 : 2;
+
+// 3. Enable Split
+// simply checks if quote is true. The logic above handles the 'where'.
+const isQuote = !!vars.quote;
+const useMobileSplit = isQuote; 
+
 
 // ---------------------------------------------
 // 2. SIMPLE CONTENT
@@ -37,7 +54,6 @@ const alignMap = {
 
 const captionAlignClass = alignMap[captionPos] || "text-left";
 
-// ✅ responsive padding based on alignment
 const responsivePadClass =
   vars.align === "right"
     ? "max-[920px]:min-[760px]:pr-[var(--containerPadding)]"
@@ -51,14 +67,8 @@ const captionWrapperClass = [
   vars.bleed === true ? "hw-contain" : null,
 ].filter(Boolean).join(" ");
 
-// ⭐ ROW ALIGN CLASS (unchanged)
-const rowAlignClass =
-  vars.align === "right"
-    ? "align-right"
-    : "align-left";
+const rowAlignClass = vars.align === "right" ? "align-right" : "align-left";
 
-
-// ✅ FIX: Define complete strings for Tailwind Scanner
 const mobileBleedClass = 
   vars.align === "right" 
     ? "max-[920px]:min-[760px]:bleed-right" 
@@ -66,57 +76,106 @@ const mobileBleedClass =
 ---
 
 <div class="hw-contain">
-  <div
-    class:list={[
-      "row",
-      "flex",
-      "curvy-image-row",
-      rowAlignClass
-    ]}
-  >
+  <div class:list={["row", "flex", "curvy-image-row", rowAlignClass]}>
 
-    <div
-    class:list={[
-        "curvy-image-grid",
-		"max-[760px]:mb-16",
-        mobileBleedClass,
+	<div
+		class:list={[
+		"curvy-image-grid",
+		"max-[759px]:mb-16",
+		mobileBleedClass,
+
+		/* -------- Base -------- */
+		"min-[760px]:col-6",
+		"min-[1024px]:col-6",
+		"min-[1400px]:col-6",
+		"min-[1400px]:push-1",
 		"col-12",
-        "min-[760px]:col-6",
-        "min-[1024px]:col-7",
-        "min-[1400px]:col-6",
-        vars.align === "right"
-        ? "min-[760px]:push-1"
-        : "min-[1400px]:push-1"
-    ]}
-    >
-      <div class="grid-container hw-player-parent">
 
-        {orderedImages.map((img) => {
+		/* -------- Non-quote only -------- */
+		!vars.quote && "min-[680px]:col-10",
+
+		/* -------- Alignment push -------- */
+		vars.align === "right"
+			? "min-[760px]:push-1"
+			: "min-[1400px]:push-1",
+
+		/* -------- Quote overrides -------- */
+		vars.quote && [
+			"max-[759px]:col-12"
+		]
+		]}
+	>
+
+    
+    <div class:list={[
+      "grid-container hw-player-parent", 
+      { [`is-quote-${!!vars.quote}`]: true }
+    ]}>
+        {renderImages.map((img, index) => {
           const video = img.video?.[0];
-          if (!video) return null;
+          
+          // ✅ UNIVERSAL SPLIT CHECK
+          const showMobileContent = useMobileSplit && index === splitIndex;
+          
+          const imageMarkup = (() => {
+             if (!video) return null;
 
-          const isSingle = orderedImages.length === 1;
+             let spanClass = "";
+             if (isSingle) {
+                spanClass = "grid-span-2"; 
+             } else {
+                spanClass = img.large ? "grid-span-2" : "grid-span-1";
+             }
+             
+             let posClass = "";
+             if (isSingle) {
+                // If single, top half is index 0, bottom is index 1
+                posClass = index === 0 ? "split-img-top" : "split-img-bottom";
+             }
+             
+             const pSize = spanClass === "grid-span-1" ? "med" : "large";
 
-          // 1. Determine Span Class
-          const spanClass = isSingle
-            ? "grid-span-4"
-            : img.large
-            ? "grid-span-2"
-            : "grid-span-1";
-
-          // 2. Determine Poster Size based on Span
-          const pSize = spanClass === "grid-span-1" ? "med" : "large";
+             return (
+                <div class={`grid-item ${spanClass}`}>
+                  <div class={`hw-bg-vid img-load-par pr ${posClass} max-[759px]:h-[12rem]`}>
+                    <CFVideo 
+                      video={[video]} 
+                      usePosterSrcSet={false} 
+                      posterForceSize={pSize} 
+                    />
+                  </div>
+                </div>
+             );
+          })();
 
           return (
-            <div class={`grid-item ${spanClass}`}>
-              <div class="hw-bg-vid img-load-par pr">
-                <CFVideo 
-                  video={[video]} 
-                  usePosterSrcSet={false} 
-                  posterForceSize={pSize} 
-                />
-              </div>
-            </div>
+            <>
+                {showMobileContent && (
+                    <div 
+                        class:list={[
+                            "mobile-mid-content",
+                            "min-[760px]:hidden", // Hide on Desktop
+                            "col-span-full",      // Tailwind Full Width
+                            "w-full",
+                            "py-12",
+                            "!h-auto",            // Force auto height
+                            "row-auto",           // Grid row auto
+                            "self-start",
+                            `text-align-${vars.text_align}`
+                        ]}
+                        style={{ gridRow: 'auto' }}
+                    >
+                        {title && <h3 class="figure-h3 pb-0" set:html={title} />}
+                        {text && <div class="section-text mt-5" set:html={text} />}
+                        {listItems.length > 0 && (
+                            <ul class="section-text two-col-list min-[760px]:mt-6">
+                                {listItems.map((li) => <li>{li}</li>)}
+                            </ul>
+                        )}
+                    </div>
+                )}
+                {imageMarkup}
+            </>
           );
         })}
 
@@ -125,30 +184,34 @@ const mobileBleedClass =
       {caption && <div class={captionWrapperClass}>{caption}</div>}
     </div>
 
+    {/* DESKTOP CONTENT COLUMN */}
     <div
     class:list={[
-		"column-content",
+        "column-content",
         "curvy-image-content",
         `text-align-${vars.text_align}`,
         "min-[1400px]:col-3",
         "min-[1024px]:col-4",
-        "col-5",
-		"max-[1024px]:flex-1",
+        "min-[760px]:col-5",
+        "min-[450px]:col-10",
+        "col-12",
+        // ✅ Toggle Visibility
+        useMobileSplit ? "max-[759px]:hidden" : "",
         vars.align === "right"
-        ? "min-[1400px]:push-1 pr-col-h"
-        : "min-[1024px]:push-1 min-[760px]:push-h",
-		caption && "mb-9"
+        ? "min-[1400px]:push-1"
+        : "min-[760px]:push-1",
+        caption && "min-[760px]:mb-9"
     ]}
     >
 
-      {title && <h3 class="figure-h3 mb-5" set:html={title} />}
+      {title && <h3 class="figure-h3 pb-0" set:html={title} />}
 
       {text && (
-        <div class="section-text mb-6" set:html={text} />
+        <div class="section-text mt-5" set:html={text} />
       )}
 
       {listItems.length > 0 && (
-        <ul class="section-text two-col-list">
+        <ul class="section-text two-col-list min-[760px]:mt-6">
           {listItems.map((li) => <li>{li}</li>)}
         </ul>
       )}
@@ -157,3 +220,16 @@ const mobileBleedClass =
 
   </div>
 </div>
+
+<style>
+/* Force object position for the single-image split trick */
+.split-img-top :global(video),
+.split-img-top :global(img) {
+    object-position: center top !important;
+}
+
+.split-img-bottom :global(video),
+.split-img-bottom :global(img) {
+    object-position: center bottom !important;
+}
+</style>

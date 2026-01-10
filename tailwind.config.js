@@ -143,6 +143,7 @@ export default {
                 cols[`.col-${i}`] = { 
                     '--col-width': `calc(${standardColWidth})`,
                     width: `var(--col-width)`,
+					minWidth: `var(--col-width)`,
                 };
 
                 // --- PUSH / PULL / PADDING ---

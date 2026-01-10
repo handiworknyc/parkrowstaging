@@ -939,7 +939,8 @@
       "title": "Retreat & Relax",
       "text": "<p>From sauna to steam, lounge to sun deck, Park Row provides restorative spaces for body and mind.</p>\n",
       "list": "Pool toys\r\nSauna\r\nSteam room\r\nSalt water\r\nFresh water",
-      "text_align": "bottom"
+      "text_align": "bottom",
+      "quote": false
     },
     {
       "acf_fc_layout": "full_bleed_img",
@@ -1451,5 +1452,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-09 16:36:20"
+  "_syncedAt": "2026-01-09 23:40:37"
 }

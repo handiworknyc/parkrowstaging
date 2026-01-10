@@ -251,17 +251,22 @@ if (!taxContext) {
 
   const Comp = getComponent(row.name);
   const rowindex = idx + 1;
+  
   const prevRow = idx > 0 ? rows[idx - 1] : null;
+  // ✅ ADDED: Calculate next row
+  const nextRow = idx < rows.length - 1 ? rows[idx + 1] : null;
 
   const commonCtx = {
     ...commonCtxBase,
     rowIndex: rowindex,
     prevLayout: prevRow,
+    nextLayout: nextRow, // ✅ ADDED: Pass to component props
   };
 
   const preHtmlString = safeHtml(row.meta.preHtml);
 
   const ls = row.data?.layout_settings || {};
+
   const {
     section_title,
     section_h2,
