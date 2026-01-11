@@ -1010,7 +1010,9 @@ ul.two-col-list {
 		padding-bottom: 2.25rem;
 		padding-top: 2.25rem;
 		backdrop-filter: blur(10px);
-		background-color: rgba(0,0,0,.35)
+		background-color: rgba(0,0,0,.35);
+		backface-visibility: hidden;
+		z-index: 9999;
 	}
 }
 
