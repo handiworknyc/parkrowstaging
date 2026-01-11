@@ -10,7 +10,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   // Needed so API routes run server-side and can store MP4 files
-  output: "server",
+  output: "static",
 
   // Netlify SSR adapter
   adapter: netlify(),
@@ -21,6 +21,24 @@ export default defineConfig({
     prefetchAll: true
   },
 
+  /* -----------------------------------------------------------
+     30-DAY IMMUTABLE IMAGE CACHE FOR /public/img-cache
+     Maps to: /img-cache/*
+  ----------------------------------------------------------- */
+  server: {
+    headers: [
+      {
+        source: "/img-cache/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, immutable"
+          }
+        ]
+      }
+    ]
+  },
+
   vite: {
     server: {
       fs: {
@@ -29,6 +47,13 @@ export default defineConfig({
           resolve(root, "videos"),
         ],
       },
+
+      // Dev server headers so behavior matches production
+      headers: {
+        "/img-cache": {
+          "Cache-Control": "public, max-age=2592000, immutable"
+        }
+      }
     },
 
     resolve: {
