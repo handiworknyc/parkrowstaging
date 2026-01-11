@@ -3,11 +3,10 @@
 if (typeof window !== "undefined") {
 
   const SELECTOR_IMG = "img.hw-lazy-img";
-  const CLASS_LOADED = "lazy-loaded"; // The class that triggers opacity: 1
+  const CLASS_LOADED = "lazy-loaded"; 
   const PARENT_CLASS_LOADED = "child-lazy-loaded";
   const PARENT_CLASS_CRIT = "crit-child-lazy-loaded";
   
-  // Triggers slightly before element enters viewport
   const IO_ROOT_MARGIN = "300px"; 
 
   let observer;
@@ -18,26 +17,28 @@ if (typeof window !== "undefined") {
   function reveal(img) {
     if (img.classList.contains(CLASS_LOADED)) return;
 
-    // Double rAF ensures the browser is ready to paint the transition
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        img.classList.add(CLASS_LOADED);
+    // Optional: Use decode() ensures the image is painted to the GPU 
+    // before we fade it in, preventing "white flash" on large JPEGs.
+    const promise = img.decode ? img.decode() : Promise.resolve();
 
-        // Handle Parent Classes (for background colors/spinners)
-        const parent = img.closest(".img-load-par");
-        if (parent) {
-          parent.classList.add(PARENT_CLASS_LOADED);
-          if (img.getAttribute("fetchpriority") === "high") {
-            parent.classList.add(PARENT_CLASS_CRIT);
-          }
-        }
-        
-        // Stop watching this image to save performance
-        if (observer) observer.unobserve(img);
-        
-        // Dispatch event for other scripts
-        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-      });
+    promise.catch(() => {
+        // If decode fails (e.g. broken image), we still reveal so alt text shows
+        return; 
+    }).then(() => {
+        requestAnimationFrame(() => {
+            img.classList.add(CLASS_LOADED);
+
+            const parent = img.closest(".img-load-par");
+            if (parent) {
+                parent.classList.add(PARENT_CLASS_LOADED);
+                if (img.getAttribute("fetchpriority") === "high") {
+                    parent.classList.add(PARENT_CLASS_CRIT);
+                }
+            }
+            
+            if (observer) observer.unobserve(img);
+            img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+        });
     });
   }
 
@@ -46,13 +47,11 @@ if (typeof window !== "undefined") {
   // ---------------------------------------------------------
   function attemptReveal(img) {
     // CONDITION 1: Has the browser finished downloading it?
-    // We check .complete for cached images, or our custom data attribute for new loads
-    const isLoaded = img.complete;
-	
-	console.log('hey hey');
-	console.log(img);
-	console.log(img.complete);
-	
+    // We assume loaded if:
+    // A) .complete is true (Standard check)
+    // B) .naturalWidth > 0 (Fallback: Browser has parsed dimensions, so data exists)
+    const isLoaded = img.complete || img.naturalWidth > 0;
+    
     // CONDITION 2: Is the user actually looking at it?
     const isInView = img.dataset.inView === "true";
 
@@ -66,7 +65,6 @@ if (typeof window !== "undefined") {
   // 3. THE TRIGGERS
   // ---------------------------------------------------------
   
-  // TRIGGER A: Intersection Observer (The User Scroll)
   function initObserver() {
     if (observer) observer.disconnect();
 
@@ -75,26 +73,20 @@ if (typeof window !== "undefined") {
         const img = entry.target;
 
         if (entry.isIntersecting) {
-          // User sees it -> Set Flag -> Check Handshake
           img.dataset.inView = "true";
           attemptReveal(img);
         } else {
-          // User scrolled away -> Unset Flag
-          // This prevents off-screen fade-ins if loading finishes while scrolled away
           img.dataset.inView = "false";
         }
       });
     }, { rootMargin: IO_ROOT_MARGIN, threshold: 0.01 });
   }
 
-  // TRIGGER B: Network Events (The Browser Download)
-  // We attach this globally ONCE.
   if (!window.__smartImageListenersAttached) {
-    // Capture 'load' event (does not bubble, so capture=true is mandatory)
+    // Capture 'load' event
     document.addEventListener("load", (e) => {
       const img = e.target;
       if (img.matches?.(SELECTOR_IMG)) {
-        // Download done -> Check Handshake
         attemptReveal(img);
       }
     }, true);
@@ -103,8 +95,6 @@ if (typeof window !== "undefined") {
     document.addEventListener("loadeddata", (e) => {
       const v = e.target;
       if (v.tagName === "VIDEO") {
-        // Videos effectively auto-reveal once they have data
-        // because we don't usually "lazy load" the poster frame logic the same way
         const parent = v.closest(".img-load-par");
         if (parent) parent.classList.add(PARENT_CLASS_LOADED);
       }
@@ -122,26 +112,24 @@ if (typeof window !== "undefined") {
     const images = document.querySelectorAll(SELECTOR_IMG);
     
     images.forEach((img) => {
-      // If already done, skip
       if (img.classList.contains(CLASS_LOADED)) return;
 
-      // Register with Observer
       observer.observe(img);
 
-      // Edge Case: If image is cached, 'load' event might never fire.
-      // We manually check it on init.
-      if (img.complete && img.naturalHeight > 0) {
-
+      // Check immediately. 
+      // This catches images that were cached or loaded before this script ran.
+      if (img.complete || img.naturalWidth > 0) {
+        // We simulate the "inView" check here just in case they are already visible
+        // But strictly speaking, the observer callback will handle the visibility check.
+        // However, checking the load state ensures we are ready when the observer fires.
+        attemptReveal(img);
       }
     });
   }
 
-  // Run on initial load and every Astro View Transition
   document.addEventListener("astro:page-load", initSmartImages);
   
-  // Fallback for first load if astro:page-load misses
   if (document.readyState === "interactive" || document.readyState === "complete") {
-    // slight delay to let Astro hydrate
     setTimeout(initSmartImages, 0);
   }
 }
