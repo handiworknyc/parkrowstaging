@@ -20,18 +20,18 @@ type HeaderState = {
 };
 
 type StickyState = {
-  installed: boolean;
   headers: Map<string, HeaderState>;
   lastY: number;
   ticking: boolean;
   footerVisible: boolean;
   observer?: MutationObserver;
   footerObserver?: IntersectionObserver;
+  configs?: HeaderConfig[];
 };
 
 declare global { interface Window { __stickyHeaderState?: StickyState } }
 
-export default function initStickyHeader(
+function initStickyHeader(
   config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
 ) {
   dbg("🚀 [sticky] initStickyHeader called");
@@ -42,24 +42,18 @@ export default function initStickyHeader(
   }
 
   const S = (window.__stickyHeaderState ??= { 
-    installed: false, 
     headers: new Map(), 
     lastY: 0, 
     ticking: false,
     footerVisible: false
   });
 
-  // NOTE: If installed is true, we return. 
-  // Make sure this isn't preventing re-binding if that's your intention.
-  if (S.installed) {
-    dbg("ℹ️ [sticky] Already installed globally.");
-    return;
-  }
-  S.installed = true;
-
   const configs: HeaderConfig[] = (Array.isArray(config) ? config : [config]).map(item =>
     typeof item === "string" ? { selector: item, bannerScroll: true } : { bannerScroll: true, ...item }
   );
+  
+  // Store configs for later use
+  S.configs = configs;
 
   const HIDE_AFTER = 64;
   const DOWN_THRESHOLD = 12;
@@ -89,9 +83,6 @@ export default function initStickyHeader(
   function onScrollRaf() {
     const y = getY();
     const dy = y - S.lastY;
-    
-    // Commented out to prevent console spam, uncomment if debugging scroll delta
-    // dbg("[sticky] y=", y, "dy=", dy);
 
     const shouldHide = dy > DOWN_THRESHOLD && y > HIDE_AFTER;
     const shouldShow = dy < -UP_THRESHOLD || y <= 0;
@@ -137,18 +128,36 @@ export default function initStickyHeader(
   }
 
   // ---------------------------------------------------------
+  // Cleanup Function
+  // ---------------------------------------------------------
+  function cleanup() {
+    dbg("🧹 [sticky] Cleanup running...");
+    
+    if (S.footerObserver) {
+      dbg("   - Disconnecting footer observer");
+      S.footerObserver.disconnect();
+      S.footerObserver = undefined;
+    }
+    
+    if (S.observer) {
+      dbg("   - Disconnecting mutation observer");
+      S.observer.disconnect();
+      S.observer = undefined;
+    }
+    
+    // Reset footer state
+    S.footerVisible = false;
+    document.documentElement.classList.remove("footer-visible");
+    
+    dbg("✅ [sticky] Cleanup complete");
+  }
+
+  // ---------------------------------------------------------
   // Footer Observer Logic
   // ---------------------------------------------------------
   function watchFooter() {
     dbg("👀 [sticky] watchFooter running...");
     
-    // 1. Disconnect previous
-    if(S.footerObserver) {
-        dbg("🧹 [sticky] Disconnecting old footer observer");
-        S.footerObserver.disconnect();
-    }
-
-    // 2. Find new footer
     const footer = document.querySelector("#footer");
     
     if (!footer) {
@@ -158,7 +167,6 @@ export default function initStickyHeader(
         dbg("✅ [sticky] Found #footer element", footer);
     }
 
-    // 3. Create Observer
     S.footerObserver = new IntersectionObserver((entries) => {
       const entry = entries[0];
       
@@ -181,8 +189,6 @@ export default function initStickyHeader(
       }
     }, {
       root: null,
-      // DEBUG NOTE: Check if this string is valid for iOS. 
-      // Sometimes just "0px" or "100%" is safer than mixed syntax if not working.
       rootMargin: "0px 0px 1000px 0px", 
       threshold: 0
     });
@@ -219,8 +225,6 @@ export default function initStickyHeader(
 
     S.observer?.disconnect?.();
     S.observer = new MutationObserver(() => {
-        // Reduced log noise here, but can enable if DOM isn't updating
-        // dbg("[sticky] MutationObserver triggered"); 
       let needsRebind = false;
       S.headers.forEach(state => {
         if (!document.body.contains(state.element)) {
@@ -252,41 +256,57 @@ export default function initStickyHeader(
     requestAnimationFrame(onScrollRaf);
   }
 
-  function initAll(eventSource?: any) {
-    // If this comes from an event, log the event type
-    const eventName = eventSource?.type || "direct call";
-    dbg(`🏁 [sticky] initAll triggered via: ${eventName}`);
+  function reinit() {
+    dbg(`🏁 [sticky] Reinitializing...`);
+    cleanup();
     
-    // Small timeout to allow DOM to settle on iOS after swap
     setTimeout(() => {
         watchForHeaders();
         watchFooter();
     }, 50);
   }
 
-  initAll();
+  // Expose reinit globally
+  (window as any).__stickyHeaderReinit = reinit;
+
+  // Initial setup
+  watchForHeaders();
+  watchFooter();
   
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
   
-  // LOGGING ADDED HERE
-  window.addEventListener("astro:after-swap", (e) => {
-      dbg("🔁 [sticky] Event: astro:after-swap");
-      initAll(e);
-  });
-  window.addEventListener("astro:page-load", (e) => {
-      dbg("📄 [sticky] Event: astro:page-load");
-      initAll(e);
-  });
-  
-  window.addEventListener("popstate", initAll);
   window.addEventListener("pageshow", e => {
-    if (e.persisted) initAll();
+    if (e.persisted) reinit();
     else requestAnimationFrame(onScrollRaf);
   });
 }
 
+// Initialize on first load
 initStickyHeader([
   { selector: "#header", bannerScroll: true },
   { selector: ".mob-bottom-bar", bannerScroll: false },
 ]);
+
+// Handle Astro view transitions
+document.addEventListener("astro:before-swap", () => {
+  dbg("🔄 [sticky] Event: astro:before-swap");
+  const state = window.__stickyHeaderState;
+  if (state?.footerObserver) {
+    state.footerObserver.disconnect();
+  }
+  if (state?.observer) {
+    state.observer.disconnect();
+  }
+});
+
+document.addEventListener("astro:after-swap", () => {
+  alert("astro:after-swap fired!");
+  dbg("🔁 [sticky] Event: astro:after-swap");
+  (window as any).__stickyHeaderReinit?.();
+});
+
+document.addEventListener("astro:page-load", () => {
+  alert("astro:page-load fired!");
+  dbg("📄 [sticky] Event: astro:page-load");
+});
