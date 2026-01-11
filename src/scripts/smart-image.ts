@@ -1,164 +1,144 @@
-// Native lazy loader for <img.hw-lazy-img>
-// Behavior:
-// 1. loading="eager" -> Fetched immediately by browser, but only fades in when in Viewport.
-// 2. loading="lazy"  -> Fetched by browser when near Viewport, fades in when in Viewport.
+// src/scripts/smart-images.js
 
 if (typeof window !== "undefined") {
 
-  const SELECTOR_IMG = "img.hw-lazy-img",
-    PARENT_CLASS_ON_LOAD = "child-lazy-loaded",
-    PARENT_CLASS_ON_CRIT = "crit-child-lazy-loaded",
-    IO_ROOT_MARGIN = "200px"; // Load/Fade slightly before they appear
+  const SELECTOR_IMG = "img.hw-lazy-img";
+  const CLASS_LOADED = "lazy-loaded"; // The class that triggers opacity: 1
+  const PARENT_CLASS_LOADED = "child-lazy-loaded";
+  const PARENT_CLASS_CRIT = "crit-child-lazy-loaded";
+  
+  // Triggers slightly before element enters viewport
+  const IO_ROOT_MARGIN = "100px"; 
 
-  let io = null;
-  let mo = null;
-  let lenisBound = false;
+  let observer;
 
-  const qsa = (root, sel) => Array.from(root.querySelectorAll(sel));
+  // ---------------------------------------------------------
+  // 1. THE REVEALER (The destination)
+  // ---------------------------------------------------------
+  function reveal(img) {
+    if (img.classList.contains(CLASS_LOADED)) return;
 
-  const isCritFetch = (img) =>
-    (img.getAttribute("fetchpriority") || "").toLowerCase() === "high";
-
-  function tagParentEl(el, isCrit = false) {
-    const parent = el.closest(".img-load-par");
-    if (!parent) return;
-    parent.classList.add(PARENT_CLASS_ON_LOAD);
-    if (isCrit) parent.classList.add(PARENT_CLASS_ON_CRIT);
-  }
-
-  // Fade-in + fire event
-  function markLoaded(img) {
-    if (img.classList.contains("lazy-loaded")) return;
-
+    // Double rAF ensures the browser is ready to paint the transition
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        img.classList.add("lazy-loaded");
+        img.classList.add(CLASS_LOADED);
+
+        // Handle Parent Classes (for background colors/spinners)
+        const parent = img.closest(".img-load-par");
+        if (parent) {
+          parent.classList.add(PARENT_CLASS_LOADED);
+          if (img.getAttribute("fetchpriority") === "high") {
+            parent.classList.add(PARENT_CLASS_CRIT);
+          }
+        }
+        
+        // Stop watching this image to save performance
+        if (observer) observer.unobserve(img);
+        
+        // Dispatch event for other scripts
         img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-        tagParentEl(img, isCritFetch(img));
       });
     });
   }
 
-  function markVideoLoaded(video) {
-    const parent = video.closest(".img-load-par");
-    if (!parent || parent.classList.contains(PARENT_CLASS_ON_LOAD)) return;
-    parent.classList.add(PARENT_CLASS_ON_LOAD);
-  }
+  // ---------------------------------------------------------
+  // 2. THE HANDSHAKE (The Logic)
+  // ---------------------------------------------------------
+  function attemptReveal(img) {
+    // CONDITION 1: Has the browser finished downloading it?
+    // We check .complete for cached images, or our custom data attribute for new loads
+    const isLoaded = img.complete && img.naturalHeight > 0;
 
-  // Handle <img> network events
-  function onLoadedOrError(e) {
-    const img = e.target;
-    if (!img?.matches?.(SELECTOR_IMG)) return;
+    // CONDITION 2: Is the user actually looking at it?
+    const isInView = img.dataset.inView === "true";
 
-    if (e.type === "load") {
-      if (img.dataset.inView === "true") {
-        markLoaded(img);
-        if (io) io.unobserve(img);
-      }
-    } else {
-      img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
+    // If both are true, we show it.
+    if (isLoaded && isInView) {
+      reveal(img);
     }
   }
 
-  /* ------------------------------------------------------------
-     LENIS SYNC — THIS IS THE FIX
-     Forces IO to re-evaluate when Lenis moves content via transform
-  ------------------------------------------------------------ */
-  function bindLenis() {
-    if (lenisBound) return;
+  // ---------------------------------------------------------
+  // 3. THE TRIGGERS
+  // ---------------------------------------------------------
+  
+  // TRIGGER A: Intersection Observer (The User Scroll)
+  function initObserver() {
+    if (observer) observer.disconnect();
 
-    const lenis = window.lenis || window.__lenis || null;
-    if (!lenis || !io || typeof lenis.on !== "function") return;
+    observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const img = entry.target;
 
-    lenis.on("scroll", () => {
-      // Forces IntersectionObserver to recalc with transformed content
-      io.takeRecords();
-    });
-
-    lenisBound = true;
+        if (entry.isIntersecting) {
+          // User sees it -> Set Flag -> Check Handshake
+          img.dataset.inView = "true";
+          attemptReveal(img);
+        } else {
+          // User scrolled away -> Unset Flag
+          // This prevents off-screen fade-ins if loading finishes while scrolled away
+          img.dataset.inView = "false";
+        }
+      });
+    }, { rootMargin: IO_ROOT_MARGIN });
   }
 
-  function initSmartImages() {
-
-    // 1. Create IO
-    if (!io && "IntersectionObserver" in window) {
-      io = new IntersectionObserver(
-        (entries) => {
-          for (const ent of entries) {
-            const img = ent.target;
-
-            if (ent.isIntersecting) {
-              if (img.complete && img.naturalWidth > 0) {
-                markLoaded(img);
-                io.unobserve(img);
-              } else {
-                img.dataset.inView = "true";
-              }
-            } else {
-              // Remove stale state — this fixes offscreen fade bugs
-              delete img.dataset.inView;
-            }
-          }
-        },
-        { rootMargin: IO_ROOT_MARGIN }
-      );
-    }
-
-    // Bind Lenis AFTER IO exists
-    bindLenis();
-
-    // 2. Observe all images
-    qsa(document, SELECTOR_IMG).forEach((img) => {
-      if (img.classList.contains("lazy-loaded")) return;
-
-      if (io) io.observe(img);
-      else if (img.complete) markLoaded(img); // safe fallback
-    });
-
-    // 3. Videos
-    document.querySelectorAll("video").forEach((v) => {
-      if (v.readyState >= 2) markVideoLoaded(v);
-    });
-
-    // 4. MutationObserver (Astro view transitions / client nav)
-    if (mo) mo.disconnect();
-    mo = new MutationObserver((muts) => {
-      for (const m of muts) {
-        m.addedNodes.forEach((n) => n instanceof Element && handleElement(n));
+  // TRIGGER B: Network Events (The Browser Download)
+  // We attach this globally ONCE.
+  if (!window.__smartImageListenersAttached) {
+    // Capture 'load' event (does not bubble, so capture=true is mandatory)
+    document.addEventListener("load", (e) => {
+      const img = e.target;
+      if (img.matches?.(SELECTOR_IMG)) {
+        // Download done -> Check Handshake
+        attemptReveal(img);
       }
-    });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
-  }
-
-  function handleElement(el) {
-    qsa(el, SELECTOR_IMG).forEach((img) => {
-      if (io) io.observe(img);
-    });
-
-    qsa(el, "video").forEach((v) => {
-      if (v.readyState >= 2) markVideoLoaded(v);
-    });
-  }
-
-  /* ------------------------------------------------------------
-     Global event listeners (only once)
-  ------------------------------------------------------------ */
-  if (!(window).__smartImageListenersAttached) {
-    document.addEventListener("load", onLoadedOrError, true);
-    document.addEventListener("error", onLoadedOrError, true);
-
-    document.addEventListener("loadeddata", (e) => {
-      const t = e.target;
-      if (t instanceof HTMLVideoElement) markVideoLoaded(t);
     }, true);
 
-    (window).__smartImageListenersAttached = true;
+    // Handle Video ready state
+    document.addEventListener("loadeddata", (e) => {
+      const v = e.target;
+      if (v.tagName === "VIDEO") {
+        // Videos effectively auto-reveal once they have data
+        // because we don't usually "lazy load" the poster frame logic the same way
+        const parent = v.closest(".img-load-par");
+        if (parent) parent.classList.add(PARENT_CLASS_LOADED);
+      }
+    }, true);
+
+    window.__smartImageListenersAttached = true;
   }
 
-  // Astro routing
-  document.addEventListener("astro:page-load", initSmartImages);
+  // ---------------------------------------------------------
+  // 4. INITIALIZATION (Astro Friendly)
+  // ---------------------------------------------------------
+  function initSmartImages() {
+    initObserver();
 
+    const images = document.querySelectorAll(SELECTOR_IMG);
+    
+    images.forEach((img) => {
+      // If already done, skip
+      if (img.classList.contains(CLASS_LOADED)) return;
+
+      // Register with Observer
+      observer.observe(img);
+
+      // Edge Case: If image is cached, 'load' event might never fire.
+      // We manually check it on init.
+      if (img.complete && img.naturalHeight > 0) {
+        // Note: We don't force reveal here. We let the Observer 
+        // trigger the 'inView' flag first.
+      }
+    });
+  }
+
+  // Run on initial load and every Astro View Transition
+  document.addEventListener("astro:page-load", initSmartImages);
+  
+  // Fallback for first load if astro:page-load misses
   if (document.readyState === "interactive" || document.readyState === "complete") {
-    initSmartImages();
+    // slight delay to let Astro hydrate
+    setTimeout(initSmartImages, 0);
   }
 }
