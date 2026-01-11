@@ -118,22 +118,6 @@ if (typeof window !== "undefined") {
       }
     }, true);
 
-    // Check on scroll for instant reveals
-    let scrollTimeout;
-    document.addEventListener("scroll", () => {
-      console.log('[scroll] Checking for images to reveal...');
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const images = document.querySelectorAll(SELECTOR_IMG);
-        console.log('[scroll timeout] Found', images.length, 'images');
-        images.forEach((img) => {
-          if (!img.classList.contains(CLASS_LOADED)) {
-            attemptReveal(img);
-          }
-        });
-      }, 50);
-    }, { passive: true });
-
     window.__smartImageListenersAttached = true;
   }
 
@@ -141,9 +125,11 @@ if (typeof window !== "undefined") {
   // 4. INITIALIZATION (Astro Friendly)
   // ---------------------------------------------------------
   function initSmartImages() {
+    console.log('[initSmartImages] Initializing...');
     initObserver();
 
     const images = document.querySelectorAll(SELECTOR_IMG);
+    console.log('[initSmartImages] Found', images.length, 'lazy images');
     
     images.forEach((img) => {
       if (img.classList.contains(CLASS_LOADED)) return;
