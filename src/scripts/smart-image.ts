@@ -12,50 +12,43 @@ if (typeof window !== "undefined") {
   let observer;
 
   // ---------------------------------------------------------
+  // Check if element is actually in viewport RIGHT NOW
+  // ---------------------------------------------------------
+  function isInViewport(el) {
+    const rect = el.getBoundingClientRect();
+    const margin = parseInt(IO_ROOT_MARGIN);
+    const inView = (
+      rect.top < (window.innerHeight + margin) &&
+      rect.bottom > -margin &&
+      rect.left < (window.innerWidth + margin) &&
+      rect.right > -margin
+    );
+    console.log('[isInViewport]', el.src?.slice(-30), 'inView:', inView, 'rect:', rect);
+    return inView;
+  }
+
+  // ---------------------------------------------------------
   // 1. THE REVEALER (The destination)
   // ---------------------------------------------------------
-  function reveal(img, skipDecode = false) {
+  function reveal(img) {
     if (img.classList.contains(CLASS_LOADED)) return;
 
-    // Skip decode for images that are already fully loaded and in cache
-    if (skipDecode) {
-      requestAnimationFrame(() => {
-        img.classList.add(CLASS_LOADED);
+    console.log('[reveal] REVEALING:', img.src?.slice(-30));
 
-        const parent = img.closest(".img-load-par");
-        if (parent) {
-          parent.classList.add(PARENT_CLASS_LOADED);
-          if (img.getAttribute("fetchpriority") === "high") {
-            parent.classList.add(PARENT_CLASS_CRIT);
-          }
+    requestAnimationFrame(() => {
+      img.classList.add(CLASS_LOADED);
+
+      const parent = img.closest(".img-load-par");
+      if (parent) {
+        parent.classList.add(PARENT_CLASS_LOADED);
+        if (img.getAttribute("fetchpriority") === "high") {
+          parent.classList.add(PARENT_CLASS_CRIT);
         }
-        
-        if (observer) observer.unobserve(img);
-        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-      });
-      return;
-    }
-
-    // Use decode() for images still loading to prevent flash
-    const promise = img.decode ? img.decode() : Promise.resolve();
-
-    promise.catch(() => {
-      return; 
-    }).then(() => {
-      requestAnimationFrame(() => {
-        img.classList.add(CLASS_LOADED);
-
-        const parent = img.closest(".img-load-par");
-        if (parent) {
-          parent.classList.add(PARENT_CLASS_LOADED);
-          if (img.getAttribute("fetchpriority") === "high") {
-            parent.classList.add(PARENT_CLASS_CRIT);
-          }
-        }
-        
-        if (observer) observer.unobserve(img);
-        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-      });
+      }
+      
+      if (observer) observer.unobserve(img);
+      img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+      console.log('[reveal] COMPLETE:', img.src?.slice(-30));
     });
   }
 
@@ -63,14 +56,25 @@ if (typeof window !== "undefined") {
   // 2. THE HANDSHAKE (The Logic)
   // ---------------------------------------------------------
   function attemptReveal(img) {
-    const isLoaded = img.complete || img.naturalWidth > 0;
-    const isInView = img.dataset.inView === "true";
+    // CONDITION 1: Has the browser finished downloading it?
+    const isLoaded = img.complete && img.naturalWidth > 0;
+    
+    // CONDITION 2: Is the user actually looking at it?
+    // Check BOTH the dataset flag AND do a synchronous viewport check
+    const isInView = img.dataset.inView === "true" || isInViewport(img);
 
+    console.log('[attemptReveal]', img.src?.slice(-30), {
+      isLoaded,
+      complete: img.complete,
+      naturalWidth: img.naturalWidth,
+      datasetInView: img.dataset.inView,
+      isInView,
+      willReveal: isLoaded && isInView
+    });
+
+    // If both are true, show immediately
     if (isLoaded && isInView) {
-      // If image is complete AND has natural dimensions, it's fully cached
-      // Skip decode() for instant reveal
-      const isFullyCached = img.complete && img.naturalWidth > 0;
-      reveal(img, isFullyCached);
+      reveal(img);
     }
   }
 
@@ -84,6 +88,7 @@ if (typeof window !== "undefined") {
     observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const img = entry.target;
+        console.log('[IntersectionObserver]', img.src?.slice(-30), 'isIntersecting:', entry.isIntersecting);
 
         if (entry.isIntersecting) {
           img.dataset.inView = "true";
@@ -113,6 +118,22 @@ if (typeof window !== "undefined") {
       }
     }, true);
 
+    // Check on scroll for instant reveals
+    let scrollTimeout;
+    document.addEventListener("scroll", () => {
+      console.log('[scroll] Checking for images to reveal...');
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const images = document.querySelectorAll(SELECTOR_IMG);
+        console.log('[scroll timeout] Found', images.length, 'images');
+        images.forEach((img) => {
+          if (!img.classList.contains(CLASS_LOADED)) {
+            attemptReveal(img);
+          }
+        });
+      }, 50);
+    }, { passive: true });
+
     window.__smartImageListenersAttached = true;
   }
 
@@ -129,10 +150,8 @@ if (typeof window !== "undefined") {
 
       observer.observe(img);
 
-      // Immediately reveal if already loaded and in viewport
-      if (img.complete || img.naturalWidth > 0) {
-        attemptReveal(img);
-      }
+      // Immediately check and reveal if conditions are met
+      attemptReveal(img);
     });
   }
 
