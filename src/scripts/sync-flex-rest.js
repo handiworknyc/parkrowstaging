@@ -156,7 +156,7 @@ async function downloadAndCache(url, outputDir) {
         await execFileP(cwebp, [
           tempInput, 
           '-size', '2097152', 
-          '-q', '80', 
+          '-q', '95', 
           '-o', localPath
         ]);
         console.log(`✨ Converted & Cached (Max 2MB): ${filename}`);
