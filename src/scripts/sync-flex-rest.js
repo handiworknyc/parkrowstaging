@@ -4,6 +4,12 @@ import path from "node:path";
 import process from "node:process";
 import crypto from "crypto";
 
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import cwebp from "cwebp-bin";
+
+const execFileP = promisify(execFile);
+
 function hashJSON(data) {
   return crypto.createHash("sha1").update(JSON.stringify(data)).digest("hex").slice(0, 12);
 }
@@ -80,43 +86,46 @@ function fileSlugFromUri(uri) {
 }
 
 /* -------------------------------------------
-   SEO-Friendly Download & Cache
-   Format: "my-image-hash.jpg.webp"
+SEO-Friendly Download & Cache
+Format: "my-image-hash.jpg.webp"
 ------------------------------------------- */
 async function downloadAndCache(url, outputDir) {
   if (!url || typeof url !== 'string') return null;
-  
+
   try {
     let processUrl = url;
 
-    // 1. STRIP .webp if it is a double extension (e.g. image.jpg.webp)
+    // 1. STRIP .webp if it is a double extension
     if (processUrl.toLowerCase().endsWith('.webp')) {
-      const withoutWebp = processUrl.slice(0, -5); 
+      const withoutWebp = processUrl.slice(0, -5);
       const extBefore = path.extname(withoutWebp);
       if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
-          processUrl = withoutWebp;
+        processUrl = withoutWebp;
       }
     }
 
-    // 2. Generate Hash from CLEANED URL (Ensures image.jpg and image.jpg.webp match)
+    // 2. Generate Hash
     const hash = crypto.createHash("md5").update(processUrl).digest("hex").slice(0, 8);
     
-    // 3. Extract and clean filename from the CLEANED url
+    // 3. Extract and clean filename
     const urlObj = new URL(processUrl);
-    const basename = path.basename(urlObj.pathname); 
-    const ext = path.extname(basename); 
-    const nameWithoutExt = path.basename(basename, ext); 
+    const basename = path.basename(urlObj.pathname);
+    const ext = path.extname(basename);
+    const nameWithoutExt = path.basename(basename, ext);
     
-    // 4. Sanitize name 
+    // 4. Sanitize name
     const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
     
-    // 5. Handle WebP appending
+    // 5. Determine Final Extension (we force .webp for compatible types)
     let finalExt = ext;
-    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
-        finalExt = `${ext}.webp`;
+    const isConvertible = ['.jpg', '.jpeg', '.png', '.tiff', '.webp'].includes(ext.toLowerCase());
+    
+    if (isConvertible) {
+      // e.g. image.jpg -> image.jpg.webp
+      finalExt = `${ext}.webp`;
     }
 
-    // 6. Combine
+    // 6. Define Paths
     const filename = `${cleanName}-${hash}${finalExt}`;
     const localPath = path.join(outputDir, filename);
     const publicUrl = `/img-cache/${filename}`;
@@ -126,19 +135,48 @@ async function downloadAndCache(url, outputDir) {
       return publicUrl;
     }
 
+    // 7. Download to Buffer
     const res = await fetch(url, { headers: { ...authHeaders() } });
     if (!res.ok) {
       console.warn(`⚠️ Failed to download ${url} (${res.status})`);
       return null;
     }
-
     const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync(localPath, buffer);
-    console.log(`📥 Cached: ${filename}`);
-    
+
+    // 8. Process Image
+    if (isConvertible) {
+      // Create a temp file for cwebp input
+      const tempInput = path.join(outputDir, `temp-${hash}${ext}`);
+      fs.writeFileSync(tempInput, buffer);
+
+      try {
+        // Run cwebp
+        // -size 2097152 = 2MB limit
+        // -q 80 = Base quality (cwebp will lower this if needed to hit size limit)
+        await execFileP(cwebp, [
+          tempInput, 
+          '-size', '2097152', 
+          '-q', '80', 
+          '-o', localPath
+        ]);
+        console.log(`✨ Converted & Cached (Max 2MB): ${filename}`);
+      } catch (err) {
+        console.warn(`⚠️ Conversion failed for ${filename}, saving original.`, err.message);
+        // Fallback: just write the original buffer if cwebp fails
+        fs.writeFileSync(localPath, buffer);
+      } finally {
+        // Cleanup temp file
+        if (fs.existsSync(tempInput)) fs.unlinkSync(tempInput);
+      }
+    } else {
+      // For GIFs or other unsupported formats, just save raw
+      fs.writeFileSync(localPath, buffer);
+      console.log(`📥 Cached (Raw): ${filename}`);
+    }
+
     return publicUrl;
   } catch (e) {
-    console.warn(`⚠️ Error downloading ${url}:`, e.message);
+    console.warn(`⚠️ Error processing ${url}:`, e.message);
     return null;
   }
 }
