@@ -317,10 +317,21 @@ Astro.response.headers.set(
 <body class={`first-load ${bodyClasses}`}>
   <main>
     <SiteNav />
+
     <div class="switcher">
       <slot />
     </div>
   </main>
+
+  	<div class="mob-bottom-bar">
+		<div class="hw-contain flex-wrap items-center">
+			<a class="icon-arrow-right icon-after border-btn white">
+				Inquire
+			</a>
+
+			<a class='ml-auto c-white mob-bar-phone' href="tel:">425-555-1234</a>
+		</div>
+	</div>
 
   <SiteFooter />
 

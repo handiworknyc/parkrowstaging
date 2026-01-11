@@ -10,10 +10,20 @@ function dbg(...args: any[]) {
 }
 // ------------------------------------
 
+type HeaderConfig = {
+  selector: string;
+  bannerScroll?: boolean;
+};
+
+type HeaderState = {
+  element: HTMLElement;
+  hidden: boolean;
+  bannerScroll: boolean;
+};
+
 type StickyState = {
   installed: boolean;
-  header: HTMLElement | null;
-  hidden: boolean;
+  headers: Map<string, HeaderState>;
   lastY: number;
   ticking: boolean;
   observer?: MutationObserver;
@@ -21,16 +31,23 @@ type StickyState = {
 
 declare global { interface Window { __stickyHeaderState?: StickyState } }
 
-export default function initStickyHeader() {
+export default function initStickyHeader(
+  config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
+) {
   dbg("[sticky] init");
 
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const S = (window.__stickyHeaderState ??=
-    { installed: false, header: null, hidden: false, lastY: 0, ticking: false });
+    { installed: false, headers: new Map(), lastY: 0, ticking: false });
 
   if (S.installed) return;
   S.installed = true;
+
+  // normalize config to array of HeaderConfig objects
+  const configs: HeaderConfig[] = (Array.isArray(config) ? config : [config]).map(item =>
+    typeof item === "string" ? { selector: item, bannerScroll: true } : { bannerScroll: true, ...item }
+  );
 
   // thresholds
   const HIDE_AFTER = 64;
@@ -44,39 +61,45 @@ export default function initStickyHeader() {
   const getY = () =>
     scroller?.scrollTop || document.documentElement.scrollTop || window.scrollY || 0;
 
-  function setHidden(next: boolean) {
-    if (!S.header) return;
-    if (S.hidden === next) return;
+  function setHidden(key: string, next: boolean) {
+    const state = S.headers.get(key);
+    if (!state) return;
+    if (state.hidden === next) return;
 
-    S.hidden = next;
+    state.hidden = next;
 
     if (next) {
-      S.header.classList.add("is-hidden");
+      state.element.classList.add("is-hidden");
     } else {
-      S.header.classList.remove("is-hidden");
+      state.element.classList.remove("is-hidden");
     }
 
-    dbg("[sticky] setHidden:", next);
+    dbg("[sticky] setHidden:", key, next);
   }
 
   function onScrollRaf() {
     const y = getY();
     const dy = y - S.lastY;
 
-    dbg("[sticky] y=", y, "dy=", dy, "hidden=", S.hidden);
+    dbg("[sticky] y=", y, "dy=", dy);
 
-    if (dy > DOWN_THRESHOLD && y > HIDE_AFTER) {
-      setHidden(true);
-    } else if (dy < -UP_THRESHOLD) {
-      setHidden(false);
-    } else if (y <= 0) {
-      setHidden(false);
-    }
+    const shouldHide = dy > DOWN_THRESHOLD && y > HIDE_AFTER;
+    const shouldShow = dy < -UP_THRESHOLD || y <= 0;
 
-    if (S.header) {
-      const progress = Math.min(1, Math.max(0, y / 100));
-      S.header.style.setProperty("--bannerScroll", String(progress));
-    }
+    // batch DOM updates for all headers
+    S.headers.forEach((state, key) => {
+      if (shouldHide) {
+        setHidden(key, true);
+      } else if (shouldShow) {
+        setHidden(key, false);
+      }
+
+      // update CSS custom property only if enabled for this element
+      if (state.bannerScroll) {
+        const progress = Math.min(1, Math.max(0, y / 100));
+        state.element.style.setProperty("--bannerScroll", String(progress));
+      }
+    });
 
     S.lastY = y;
     S.ticking = false;
@@ -88,24 +111,64 @@ export default function initStickyHeader() {
     requestAnimationFrame(onScrollRaf);
   }
 
-  function bindHeader(el: HTMLElement) {
-    dbg("[sticky] bindHeader:", el);
-    S.header = el;
-    S.hidden = false;
-    S.lastY = getY();
+  function bindHeader(el: HTMLElement, key: string, bannerScroll: boolean) {
+    dbg("[sticky] bindHeader:", key, el, "bannerScroll:", bannerScroll);
+    
+    S.headers.set(key, {
+      element: el,
+      hidden: false,
+      bannerScroll
+    });
+
     el.classList.remove("is-hidden");
-    requestAnimationFrame(onScrollRaf);
   }
 
-  function watchForHeader() {
-    const el = document.getElementById("header");
-    if (el) bindHeader(el);
+  function watchForHeaders() {
+    const currentY = getY();
+    S.lastY = currentY;
+
+    // find and bind all matching elements
+    configs.forEach(({ selector, bannerScroll = true }) => {
+      const elements = document.querySelectorAll<HTMLElement>(selector);
+      elements.forEach((el, idx) => {
+        const key = `${selector}[${idx}]`;
+        
+        // only bind if not already tracked or if element changed
+        const existing = S.headers.get(key);
+        if (!existing || existing.element !== el) {
+          bindHeader(el, key, bannerScroll);
+        }
+      });
+    });
+
+    // clean up removed elements
+    S.headers.forEach((state, key) => {
+      if (!document.body.contains(state.element)) {
+        S.headers.delete(key);
+        dbg("[sticky] removed:", key);
+      }
+    });
 
     S.observer?.disconnect?.();
     S.observer = new MutationObserver(() => {
-      if (!S.header || !document.body.contains(S.header)) {
-        const h = document.getElementById("header");
-        if (h) bindHeader(h);
+      // check if any tracked elements were removed
+      let needsRebind = false;
+      S.headers.forEach(state => {
+        if (!document.body.contains(state.element)) {
+          needsRebind = true;
+        }
+      });
+
+      if (needsRebind) {
+        watchForHeaders();
+      } else {
+        // check for new elements matching our selectors
+        configs.forEach(({ selector }) => {
+          const elements = document.querySelectorAll<HTMLElement>(selector);
+          if (elements.length !== Array.from(S.headers.keys()).filter(k => k.startsWith(selector)).length) {
+            watchForHeaders();
+          }
+        });
       }
     });
 
@@ -113,19 +176,27 @@ export default function initStickyHeader() {
       childList: true,
       subtree: true,
     });
+
+    requestAnimationFrame(onScrollRaf);
   }
 
   // init
-  watchForHeader();
+  watchForHeaders();
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
 
-  window.addEventListener("astro:after-swap", watchForHeader);
-  window.addEventListener("astro:page-load", watchForHeader);
-  window.addEventListener("popstate", watchForHeader);
+  window.addEventListener("astro:after-swap", watchForHeaders);
+  window.addEventListener("astro:page-load", watchForHeaders);
+  window.addEventListener("popstate", watchForHeaders);
 
   window.addEventListener("pageshow", e => {
-    if (e.persisted) watchForHeader();
+    if (e.persisted) watchForHeaders();
     else requestAnimationFrame(onScrollRaf);
   });
 }
+
+
+initStickyHeader([
+  { selector: "#header", bannerScroll: true },
+  { selector: ".mob-bottom-bar", bannerScroll: false },
+]);
