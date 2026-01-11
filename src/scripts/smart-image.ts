@@ -84,7 +84,7 @@ if (typeof window !== "undefined") {
           img.dataset.inView = "false";
         }
       });
-    }, { rootMargin: IO_ROOT_MARGIN });
+    }, { rootMargin: IO_ROOT_MARGIN, threshold: 0.01 });
   }
 
   // TRIGGER B: Network Events (The Browser Download)
