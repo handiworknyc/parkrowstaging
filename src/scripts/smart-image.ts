@@ -14,31 +14,48 @@ if (typeof window !== "undefined") {
   // ---------------------------------------------------------
   // 1. THE REVEALER (The destination)
   // ---------------------------------------------------------
-  function reveal(img) {
+  function reveal(img, skipDecode = false) {
     if (img.classList.contains(CLASS_LOADED)) return;
 
-    // Optional: Use decode() ensures the image is painted to the GPU 
-    // before we fade it in, preventing "white flash" on large JPEGs.
+    // Skip decode for images that are already fully loaded and in cache
+    if (skipDecode) {
+      requestAnimationFrame(() => {
+        img.classList.add(CLASS_LOADED);
+
+        const parent = img.closest(".img-load-par");
+        if (parent) {
+          parent.classList.add(PARENT_CLASS_LOADED);
+          if (img.getAttribute("fetchpriority") === "high") {
+            parent.classList.add(PARENT_CLASS_CRIT);
+          }
+        }
+        
+        if (observer) observer.unobserve(img);
+        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+      });
+      return;
+    }
+
+    // Use decode() for images still loading to prevent flash
     const promise = img.decode ? img.decode() : Promise.resolve();
 
     promise.catch(() => {
-        // If decode fails (e.g. broken image), we still reveal so alt text shows
-        return; 
+      return; 
     }).then(() => {
-        requestAnimationFrame(() => {
-            img.classList.add(CLASS_LOADED);
+      requestAnimationFrame(() => {
+        img.classList.add(CLASS_LOADED);
 
-            const parent = img.closest(".img-load-par");
-            if (parent) {
-                parent.classList.add(PARENT_CLASS_LOADED);
-                if (img.getAttribute("fetchpriority") === "high") {
-                    parent.classList.add(PARENT_CLASS_CRIT);
-                }
-            }
-            
-            if (observer) observer.unobserve(img);
-            img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-        });
+        const parent = img.closest(".img-load-par");
+        if (parent) {
+          parent.classList.add(PARENT_CLASS_LOADED);
+          if (img.getAttribute("fetchpriority") === "high") {
+            parent.classList.add(PARENT_CLASS_CRIT);
+          }
+        }
+        
+        if (observer) observer.unobserve(img);
+        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+      });
     });
   }
 
@@ -46,18 +63,14 @@ if (typeof window !== "undefined") {
   // 2. THE HANDSHAKE (The Logic)
   // ---------------------------------------------------------
   function attemptReveal(img) {
-    // CONDITION 1: Has the browser finished downloading it?
-    // We assume loaded if:
-    // A) .complete is true (Standard check)
-    // B) .naturalWidth > 0 (Fallback: Browser has parsed dimensions, so data exists)
     const isLoaded = img.complete || img.naturalWidth > 0;
-    
-    // CONDITION 2: Is the user actually looking at it?
     const isInView = img.dataset.inView === "true";
 
-    // If both are true, we show it.
     if (isLoaded && isInView) {
-      reveal(img);
+      // If image is complete AND has natural dimensions, it's fully cached
+      // Skip decode() for instant reveal
+      const isFullyCached = img.complete && img.naturalWidth > 0;
+      reveal(img, isFullyCached);
     }
   }
 
@@ -116,12 +129,8 @@ if (typeof window !== "undefined") {
 
       observer.observe(img);
 
-      // Check immediately. 
-      // This catches images that were cached or loaded before this script ran.
+      // Immediately reveal if already loaded and in viewport
       if (img.complete || img.naturalWidth > 0) {
-        // We simulate the "inView" check here just in case they are already visible
-        // But strictly speaking, the observer callback will handle the visibility check.
-        // However, checking the load state ensures we are ready when the observer fires.
         attemptReveal(img);
       }
     });
