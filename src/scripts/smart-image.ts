@@ -12,6 +12,7 @@ if (typeof window !== "undefined") {
 
   let io = null;
   let mo = null;
+  let lenisBound = false;
 
   const qsa = (root, sel) => Array.from(root.querySelectorAll(sel));
 
@@ -25,17 +26,16 @@ if (typeof window !== "undefined") {
     if (isCrit) parent.classList.add(PARENT_CLASS_ON_CRIT);
   }
 
-  // This adds the class that sets opacity: 1
+  // Fade-in + fire event
   function markLoaded(img) {
     if (img.classList.contains("lazy-loaded")) return;
-    
-    // Using rAF ensures the fade transition catches the paint cycle
+
     requestAnimationFrame(() => {
-		requestAnimationFrame(() => {
-			img.classList.add("lazy-loaded");
-			img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-			tagParentEl(img, isCritFetch(img));
-		});
+      requestAnimationFrame(() => {
+        img.classList.add("lazy-loaded");
+        img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
+        tagParentEl(img, isCritFetch(img));
+      });
     });
   }
 
@@ -45,50 +45,58 @@ if (typeof window !== "undefined") {
     parent.classList.add(PARENT_CLASS_ON_LOAD);
   }
 
-  // Global handler for network load events
+  // Handle <img> network events
   function onLoadedOrError(e) {
     const img = e.target;
     if (!img?.matches?.(SELECTOR_IMG)) return;
 
     if (e.type === "load") {
-        // If the image is ALREADY considered "in-view" by the observer,
-        // but was just waiting for the network, mark it now.
-        if (img.dataset.inView === "true") {
-            markLoaded(img);
-            // Cleanup observer if it was being watched
-            if (io) io.unobserve(img);
-        }
+      if (img.dataset.inView === "true") {
+        markLoaded(img);
+        if (io) io.unobserve(img);
+      }
     } else {
-        img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
+      img.dispatchEvent(new CustomEvent("smartimage:error", { bubbles: true }));
     }
   }
 
+  /* ------------------------------------------------------------
+     LENIS SYNC — THIS IS THE FIX
+     Forces IO to re-evaluate when Lenis moves content via transform
+  ------------------------------------------------------------ */
+  function bindLenis() {
+    if (lenisBound) return;
+
+    const lenis = window.lenis || window.__lenis || null;
+    if (!lenis || !io || typeof lenis.on !== "function") return;
+
+    lenis.on("scroll", () => {
+      // Forces IntersectionObserver to recalc with transformed content
+      io.takeRecords();
+    });
+
+    lenisBound = true;
+  }
+
   function initSmartImages() {
-    // 1. Create a single robust observer for EVERYTHING
+
+    // 1. Create IO
     if (!io && "IntersectionObserver" in window) {
       io = new IntersectionObserver(
         (entries) => {
           for (const ent of entries) {
             const img = ent.target;
-            
-            // Logic: Is it on screen?
+
             if (ent.isIntersecting) {
-                // Yes, it is in viewport.
-                
-                // Case A: Image is fully downloaded -> Show it.
-                if (img.complete && img.naturalWidth > 0) {
-                    markLoaded(img);
-                    io.unobserve(img); // Done with this image
-                } 
-                // Case B: In viewport, but still downloading -> Mark it as seen.
-                // We wait for the 'load' event (see onLoadedOrError) to actually fade it in.
-                else {
-                    img.dataset.inView = "true";
-                }
+              if (img.complete && img.naturalWidth > 0) {
+                markLoaded(img);
+                io.unobserve(img);
+              } else {
+                img.dataset.inView = "true";
+              }
             } else {
-                // If it scrolls OUT of view before loading, unmark it.
-                // This prevents off-screen fades if user scrolls past quickly.
-                img.dataset.inView = "false";
+              // Remove stale state — this fixes offscreen fade bugs
+              delete img.dataset.inView;
             }
           }
         },
@@ -96,24 +104,23 @@ if (typeof window !== "undefined") {
       );
     }
 
-    // 2. Observe ALL images (Lazy AND Eager)
-    // This ensures Eager images don't "pop" in if they are off-screen or 
-    // if the CSS hides them by default. They will follow the same fade logic.
+    // Bind Lenis AFTER IO exists
+    bindLenis();
+
+    // 2. Observe all images
     qsa(document, SELECTOR_IMG).forEach((img) => {
-        if (img.classList.contains("lazy-loaded")) return; // Skip if already done
-        if (io) io.observe(img);
-        else {
-             // Fallback if no IO support (rare) - just show loaded ones
-             if(img.complete) markLoaded(img);
-        }
+      if (img.classList.contains("lazy-loaded")) return;
+
+      if (io) io.observe(img);
+      else if (img.complete) markLoaded(img); // safe fallback
     });
 
-    // 3. Check videos
+    // 3. Videos
     document.querySelectorAll("video").forEach((v) => {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
 
-    // 4. MutationObserver for View Transitions / Client Routing
+    // 4. MutationObserver (Astro view transitions / client nav)
     if (mo) mo.disconnect();
     mo = new MutationObserver((muts) => {
       for (const m of muts) {
@@ -124,16 +131,18 @@ if (typeof window !== "undefined") {
   }
 
   function handleElement(el) {
-    // Observe new images injected into DOM
     qsa(el, SELECTOR_IMG).forEach((img) => {
-        if (io) io.observe(img);
+      if (io) io.observe(img);
     });
-    
+
     qsa(el, "video").forEach((v) => {
       if (v.readyState >= 2) markVideoLoaded(v);
     });
   }
 
+  /* ------------------------------------------------------------
+     Global event listeners (only once)
+  ------------------------------------------------------------ */
   if (!(window).__smartImageListenersAttached) {
     document.addEventListener("load", onLoadedOrError, true);
     document.addEventListener("error", onLoadedOrError, true);
@@ -146,6 +155,7 @@ if (typeof window !== "undefined") {
     (window).__smartImageListenersAttached = true;
   }
 
+  // Astro routing
   document.addEventListener("astro:page-load", initSmartImages);
 
   if (document.readyState === "interactive" || document.readyState === "complete") {
