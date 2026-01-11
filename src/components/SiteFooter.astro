@@ -1,0 +1,59 @@
+---
+import address from "../content/wp/schema-address.json";
+
+const hasAddress = address && address.streetAddress;
+
+---
+
+<div class="bg-darkgreen pt-14 pb-14 c-white">
+  <div class="hw-contain">
+    <div class="footer-top mb-5">
+      <div
+        class="address text-white/50 text-[1.1rem]"
+        {...(hasAddress
+          ? {
+              itemscope: true,
+              itemtype: "https://schema.org/PostalAddress",
+            }
+          : {})}
+      >
+        {hasAddress && (
+          <>
+            {address.name && (
+              <div class="address-title caps c-white relative -top-[1.5px] tracking-[.03em]" itemprop="name">
+                {address.name}
+              </div>
+            )}
+
+            <div class="address-lines">
+              <span itemprop="streetAddress">
+                {address.streetAddress}
+              </span>
+              <br />
+              <span itemprop="addressLocality">
+                {address.addressLocality}
+              </span>
+              ,{" "}
+              <span itemprop="addressRegion">
+                {address.addressRegion}
+              </span>{" "}
+              <span itemprop="postalCode">
+                {address.postalCode}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+
+    <div class="footer-bottom flex-wrap pt-7">
+      <a href="">
+        <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
+      </a>
+
+      <a class="ml-auto items-end" href="">
+        <img src="/images/equal-housing.svg" loading="lazy" alt="Equal Opportunity Housing" />
+      </a>
+    </div>
+  </div>
+</div>

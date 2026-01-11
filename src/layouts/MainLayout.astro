@@ -273,44 +273,71 @@ Astro.response.headers.set(
     });
   </script>
 
+
 	<script>
-	import Lenis from 'lenis';
+		// Replace the Lenis script block with this Locomotive Scroll implementation
 
-	let lenis;
+		import LocomotiveScroll from 'locomotive-scroll';
 
-	// Initialize Lenis
-	const initLenis = () => {
-		// Prevent creating multiple instances if one already exists
-		if (lenis) return;
+		let locoScroll;
 
-		lenis = new Lenis({
-		lerp: .2, // Smoothness (0-1). Lower is smoother.
-		smoothWheel: true, // Enable smooth scrolling for mouse wheel
+		// Initialize Locomotive Scroll
+		const initLocoScroll = () => {
+			// Prevent creating multiple instances
+			if (locoScroll) {
+				locoScroll.destroy();
+				locoScroll = null;
+			}
+
+			locoScroll = new LocomotiveScroll({
+				el: document.querySelector('[data-scroll-container]'),
+				smooth: true,
+				smartphone: {
+					smooth: true
+				},
+				tablet: {
+					smooth: true
+				},
+				lenisOptions: {
+					lerp: 0,
+					duration: .5,
+				}
+			});
+
+			// Update on window resize
+			window.addEventListener('resize', () => {
+				locoScroll.update();
+			});
+		};
+
+		// Run on initial load and after every View Transition swap
+		document.addEventListener('astro:page-load', () => {
+			// Small delay to ensure DOM is ready
+			setTimeout(initLocoScroll, 100);
 		});
 
-		// The animation loop
-		function raf(time) {
-		lenis.raf(time);
-		requestAnimationFrame(raf);
-		}
+		// Clean up before navigation
+		document.addEventListener('astro:before-preparation', () => {
+			if (locoScroll) {
+				locoScroll.destroy();
+				locoScroll = null;
+			}
+		});
 
-		requestAnimationFrame(raf);
-	};
-
-	// Run on initial load and after every View Transition swap
-	document.addEventListener('astro:page-load', initLenis);
-	
-	// Optional: Handle anchor links with smooth scroll
-	// This prevents the native jump and uses Lenis's smooth scroll instead
-	document.addEventListener('click', (e) => {
-		const target = e.target.closest('a[href^="#"]');
-		if (target) {
-		e.preventDefault();
-		const id = target.getAttribute('href');
-		if (id === '#') return;
-		lenis.scrollTo(id);
-		}
-	});
+		// Handle anchor links with smooth scroll
+		document.addEventListener('click', (e) => {
+			const target = e.target.closest('a[href^="#"]');
+			if (target && locoScroll) {
+				e.preventDefault();
+				const id = target.getAttribute('href');
+				if (id === '#') return;
+				
+				const element = document.querySelector(id);
+				if (element) {
+					locoScroll.scrollTo(element);
+				}
+			}
+		});
 	</script>
 </head>
 

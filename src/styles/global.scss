@@ -95,35 +95,13 @@ html:not(.ua-safari) .antiga {
 }
 
 
-
-
-
-
-html.lenis, html.lenis body {
-  height: auto;
+html, body {
+  height: 100%;
 }
 
-/* Recommended: Disable native smooth scrolling to let Lenis handle it.
-  If you leave this 'smooth', you might get a "fight" between the two. 
-*/
-html {
-  scroll-behavior: auto; 
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
+[data-scroll-container] {
+  min-height: 100vh;
+  overflow: hidden; /* Locomotive handles scrolling */
 }
 
 
@@ -1044,4 +1022,11 @@ ul.two-col-list {
 
 .mob-bottom-bar.is-hidden {
   transform: translateY(100%);
+}
+
+
+
+
+.footer-bottom {
+	border-top: 1px solid #9C9490;
 }

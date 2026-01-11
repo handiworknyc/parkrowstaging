@@ -12,6 +12,10 @@ const { prevLayout, nextLayout, ...props } = Astro.props;
 const currentIndex = vars.rowIndex;
 const isCritical = currentIndex === 1;
 
+const locoSpeedAttr = isCritical
+  ? { "data-scroll data-scroll-speed": "-.4" }
+  : {};
+
 // --- 1. Data Processing --- //
 const rawContent = vars.content || [];
 const hasContent = rawContent.length > 0;
@@ -201,7 +205,7 @@ const videoClasses = [
 ) : (
   /* --- LAYOUT: FULL WIDTH --- */
   <>
-    <div class:list={videoClasses}>
+    <div class:list={videoClasses} {...locoSpeedAttr}>
       {v && <CFVideo video={v} critical={isCritical} />}
     </div>
 

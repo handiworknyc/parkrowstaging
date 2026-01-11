@@ -86,6 +86,16 @@ function fileSlugFromUri(uri) {
 }
 
 /* -------------------------------------------
+   Fetch Schema Address
+------------------------------------------- */
+async function fetchSchemaAddress() {
+  const url = new URL("/wp-json/astro/v1/schema/address", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
+
+/* -------------------------------------------
 SEO-Friendly Download & Cache
 Format: "my-image-hash.jpg.webp"
 ------------------------------------------- */
@@ -374,6 +384,7 @@ async function run() {
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const publicDir = path.join(process.cwd(), "public");
+  const outSchemaAddress = path.join(process.cwd(), "src", "content", "wp", "schema-address.json");
   const imgCacheDir = path.join(publicDir, "img-cache");
 
   fs.mkdirSync(outPages, { recursive: true });
@@ -498,6 +509,34 @@ async function run() {
   } catch (e) {
     console.error("❌ Failed to sync Specials:", e.message || e);
   }
+
+  
+
+	/* -------- SCHEMA ADDRESS SYNC -------- */
+	try {
+	console.log("🏷 Fetching Schema Address…");
+	const schemaAddress = await fetchSchemaAddress();
+
+	const newHash = hashJSON(schemaAddress);
+	let oldHash = null;
+
+	if (fs.existsSync(outSchemaAddress)) {
+		try {
+		const old = JSON.parse(fs.readFileSync(outSchemaAddress, "utf8"));
+		oldHash = hashJSON(old);
+		} catch {}
+	}
+
+	if (newHash !== oldHash) {
+		fs.writeFileSync(outSchemaAddress, JSON.stringify(schemaAddress, null, 2));
+		console.log("✨ Schema address updated");
+	} else {
+		console.log("⏩ Schema address unchanged — skip write");
+	}
+	} catch (e) {
+	console.error("❌ Failed to sync Schema Address:", e.message || e);
+	}
+
 
   const mapFile = path.join(publicDir, "prefetch-map.json");
   fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
