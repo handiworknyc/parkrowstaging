@@ -21,7 +21,7 @@ const page = await getFlexiblePageByUri(uri);
 if (!page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
-}
+} 
 
 /* ---------------------------------------------------------
    LCP & PRELOAD CALCULATION
