@@ -81,7 +81,6 @@ const mobileBleedClass =
 	<div
 		class:list={[
 		"curvy-image-grid",
-		"max-[759px]:mb-16",
 		mobileBleedClass,
 
 		/* -------- Base -------- */
@@ -92,7 +91,7 @@ const mobileBleedClass =
 		"col-12",
 
 		/* -------- Non-quote only -------- */
-		!vars.quote && "min-[680px]:col-10",
+		!vars.quote && "min-[680px]:col-10 max-[759px]:mb-16",
 
 		/* -------- Alignment push -------- */
 		vars.align === "right"

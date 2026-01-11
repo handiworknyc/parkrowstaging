@@ -131,8 +131,7 @@ if (typeof window !== "undefined") {
       // Edge Case: If image is cached, 'load' event might never fire.
       // We manually check it on init.
       if (img.complete && img.naturalHeight > 0) {
-        // Note: We don't force reveal here. We let the Observer 
-        // trigger the 'inView' flag first.
+
       }
     });
   }
