@@ -57,6 +57,10 @@ html {
 }
 
 
+
+
+
+
 .modal-open body {
   overflow: hidden !important;
   height: 100% !important; /* Helps prevent rubber-banding on iOS */
@@ -91,6 +95,36 @@ html:not(.ua-safari) .antiga {
 }
 
 
+
+
+
+
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+/* Recommended: Disable native smooth scrolling to let Lenis handle it.
+  If you leave this 'smooth', you might get a "fight" between the two. 
+*/
+html {
+  scroll-behavior: auto; 
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
 
 
 
