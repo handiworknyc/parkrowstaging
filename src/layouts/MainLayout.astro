@@ -275,8 +275,6 @@ Astro.response.headers.set(
 
 
 	<script>
-		// Replace the Lenis script block with this Locomotive Scroll implementation
-
 		import LocomotiveScroll from 'locomotive-scroll';
 
 		let locoScroll;
@@ -292,17 +290,20 @@ Astro.response.headers.set(
 			locoScroll = new LocomotiveScroll({
 				el: document.querySelector('[data-scroll-container]'),
 				smooth: true,
+				lenisOptions: {
+					lerp: 0,
+					duration: .5,
+				},
 				smartphone: {
 					smooth: true
 				},
 				tablet: {
 					smooth: true
-				},
-				lenisOptions: {
-					lerp: 0,
-					duration: .5,
 				}
 			});
+
+			// Expose to window for smart-images integration
+			window.locoScroll = locoScroll;
 
 			// Update on window resize
 			window.addEventListener('resize', () => {

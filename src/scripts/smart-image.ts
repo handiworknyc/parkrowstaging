@@ -100,6 +100,31 @@ if (typeof window !== "undefined") {
     }, { rootMargin: IO_ROOT_MARGIN, threshold: 0.01 });
   }
 
+  // ---------------------------------------------------------
+  // LOCOMOTIVE SCROLL INTEGRATION (Event-driven)
+  // ---------------------------------------------------------
+  function setupLocoScrollListener() {
+    // Listen for custom event from main layout when LocoScroll is ready
+    document.addEventListener('loco:ready', (e) => {
+      const locoScroll = e.detail.instance;
+      console.log('[LocoScroll] Integration ready');
+      
+      // Throttle scroll checks for performance
+      let ticking = false;
+      
+      locoScroll.on('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const images = document.querySelectorAll(`${SELECTOR_IMG}:not(.${CLASS_LOADED})`);
+            images.forEach(attemptReveal);
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    });
+  }
+
   if (!window.__smartImageListenersAttached) {
     // Capture 'load' event
     document.addEventListener("load", (e) => {
@@ -122,7 +147,7 @@ if (typeof window !== "undefined") {
   }
 
   // ---------------------------------------------------------
-  // 4. INITIALIZATION (Astro Friendly)
+  // 4. INITIALIZATION (Astro + Locomotive Friendly)
   // ---------------------------------------------------------
   function initSmartImages() {
     console.log('[initSmartImages] Initializing...');
@@ -139,6 +164,9 @@ if (typeof window !== "undefined") {
       // Immediately check and reveal if conditions are met
       attemptReveal(img);
     });
+
+    // Setup Locomotive Scroll integration
+    setupLocoScrollListener();
   }
 
   document.addEventListener("astro:page-load", initSmartImages);
