@@ -301,12 +301,11 @@ document.addEventListener("astro:before-swap", () => {
 });
 
 document.addEventListener("astro:after-swap", () => {
-  alert("astro:after-swap fired!");
-  dbg("🔁 [sticky] Event: astro:after-swap");
+	dbg("🔁 [sticky] Event: astro:after-swap");
   (window as any).__stickyHeaderReinit?.();
 });
 
 document.addEventListener("astro:page-load", () => {
-  alert("astro:page-load fired!");
-  dbg("📄 [sticky] Event: astro:page-load");
+
+	dbg("📄 [sticky] Event: astro:page-load");
 });
