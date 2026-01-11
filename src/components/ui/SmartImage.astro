@@ -122,7 +122,7 @@ if (forceSize) {
 /* --------------------------------------------------------------------------
    CONFIG
 -------------------------------------------------------------------------- */
-const loading = "eager";
+const loading = critical ? "eager" : "lazy";
 const decoding = critical ? "sync" : "async";
 const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
 
