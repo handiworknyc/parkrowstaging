@@ -5,11 +5,11 @@ const hasAddress = address && address.streetAddress;
 
 ---
 
-<div class="bg-darkgreen pt-14 pb-14 c-white">
+<div class="bg-darkgreen pt-14 pb-14 c-white" id="footer">
   <div class="hw-contain">
-    <div class="footer-top mb-5">
+    <div class="footer-top mb-5 items-start text-[1.1rem] flex-wrap">
       <div
-        class="address text-white/50 text-[1.1rem]"
+        class="address text-white/50"
         {...(hasAddress
           ? {
               itemscope: true,
@@ -44,9 +44,23 @@ const hasAddress = address && address.streetAddress;
           </>
         )}
       </div>
+
+	  <div class="footer-somed ml-auto">
+		<div>
+			<a href="">
+				<img src="/images/fb.svg" loading="lazy" alt="Facebook profile" />
+			</a>
+			<a href="">
+				<img src="/images/insta.svg" class='insta' loading="lazy" alt="Instagram profile" />
+			</a>
+		</div>
+
+		<a class="caps press-link" href="">Press</a>
+	  </div>
     </div>
 
     <div class="footer-bottom flex-wrap pt-7">
+		
       <a href="">
         <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
       </a>

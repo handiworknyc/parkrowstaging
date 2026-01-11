@@ -1003,8 +1003,8 @@ ul.two-col-list {
 @media (max-width: 699px) {	
 	.mob-bottom-bar {
 		display: block;
-		position: fixed;
-		bottom: 0;
+		position: sticky;
+		bottom: -1px;
 		left: 0;
 		width: 100%;
 		padding-bottom: 2.25rem;
@@ -1020,7 +1020,7 @@ ul.two-col-list {
 }
 
 
-.mob-bottom-bar.is-hidden {
+.mob-bottom-bar.is-hidden:not(.footer-visible .mob-bottom-bar) {
   transform: translateY(100%);
 }
 
@@ -1029,4 +1029,30 @@ ul.two-col-list {
 
 .footer-bottom {
 	border-top: 1px solid #9C9490;
+}
+
+.press-link {
+	display: inline-block;
+	text-align: right;
+	margin-left: auto;
+	float: right;
+	margin-top: .5rem;
+	line-height: 1.25rem;
+	border-bottom: .5px solid var(--white);
+}
+
+.footer-somed a {
+	display: inline-block;
+	vertical-align: middle;
+	margin-left: 10px;
+}
+
+.footer-somed img {
+	height: 2rem;
+	width: 2rem;
+
+	&.insta {
+		height: 2.7rem;
+		width: 2.7rem;
+	}
 }

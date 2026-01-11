@@ -27,6 +27,7 @@ type StickyState = {
   lastY: number;
   ticking: boolean;
   observer?: MutationObserver;
+  footerObserver?: IntersectionObserver; // <--- Added this
 };
 
 declare global { interface Window { __stickyHeaderState?: StickyState } }
@@ -123,6 +124,37 @@ export default function initStickyHeader(
     el.classList.remove("is-hidden");
   }
 
+  // ---------------------------------------------------------
+  // NEW: Footer Observer Logic
+  // ---------------------------------------------------------
+  function watchFooter() {
+    // 1. Clean up existing observer if it exists (important for Astro swaps)
+    S.footerObserver?.disconnect();
+
+    const footer = document.querySelector("#footer");
+    if (!footer) return;
+
+    // 2. Create new observer
+    S.footerObserver = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      // 3. Toggle class on HTML
+      if (entry.isIntersecting) {
+        document.documentElement.classList.add("footer-visible");
+        dbg("[sticky] Footer entered viewport -> added .footer-visible");
+      } else {
+        document.documentElement.classList.remove("footer-visible");
+        dbg("[sticky] Footer left viewport -> removed .footer-visible");
+      }
+    }, {
+      root: null, // viewport
+	  rootMargin: "0px 0px 1000px 0px",
+      threshold: 0 // Fires as soon as 1px is visible
+    });
+
+    // 4. Start observing
+    S.footerObserver.observe(footer);
+  }
+
   function watchForHeaders() {
     const currentY = getY();
     S.lastY = currentY;
@@ -180,21 +212,26 @@ export default function initStickyHeader(
     requestAnimationFrame(onScrollRaf);
   }
 
+  function initAll() {
+    watchForHeaders();
+    watchFooter();
+  }
+
   // init
-  watchForHeaders();
+  initAll();
+  
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
 
-  window.addEventListener("astro:after-swap", watchForHeaders);
-  window.addEventListener("astro:page-load", watchForHeaders);
-  window.addEventListener("popstate", watchForHeaders);
+  window.addEventListener("astro:after-swap", initAll);
+  window.addEventListener("astro:page-load", initAll);
+  window.addEventListener("popstate", initAll);
 
   window.addEventListener("pageshow", e => {
-    if (e.persisted) watchForHeaders();
+    if (e.persisted) initAll();
     else requestAnimationFrame(onScrollRaf);
   });
 }
-
 
 initStickyHeader([
   { selector: "#header", bannerScroll: true },
