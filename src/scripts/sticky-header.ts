@@ -31,7 +31,7 @@ type StickyState = {
 
 declare global { interface Window { __stickyHeaderState?: StickyState } }
 
-function initStickyHeader(
+export default function initStickyHeader(
   config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
 ) {
   dbg("🚀 [sticky] initStickyHeader called");
