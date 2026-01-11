@@ -8,7 +8,7 @@ if (typeof window !== "undefined") {
   const PARENT_CLASS_CRIT = "crit-child-lazy-loaded";
   
   // Triggers slightly before element enters viewport
-  const IO_ROOT_MARGIN = "100px"; 
+  const IO_ROOT_MARGIN = "300px"; 
 
   let observer;
 
@@ -47,8 +47,12 @@ if (typeof window !== "undefined") {
   function attemptReveal(img) {
     // CONDITION 1: Has the browser finished downloading it?
     // We check .complete for cached images, or our custom data attribute for new loads
-    const isLoaded = img.complete && img.naturalHeight > 0;
-
+    const isLoaded = img.complete;
+	
+	console.log('hey hey');
+	console.log(img);
+	console.log(img.complete);
+	
     // CONDITION 2: Is the user actually looking at it?
     const isInView = img.dataset.inView === "true";
 
