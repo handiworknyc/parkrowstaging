@@ -1027,6 +1027,16 @@ ul.two-col-list {
   transform: translateY(100%);
 }
 
+.modal-opening,
+.modal-closing,
+.modal-open,
+.modal-opened {
+	.mob-bottom-bar {
+		transform: translateY(100%) !important
+	}
+}
+
+
 
 
 

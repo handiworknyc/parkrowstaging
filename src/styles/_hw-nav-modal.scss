@@ -71,7 +71,7 @@ html.modal-open body {
 		li {
 			backface-visibility: hidden;
 			will-change: transform, opacity;
-			font-size: calc(1.15rem + 3.5vh);
+			font-size: calc(1.05rem + 3.25vh);
 			opacity: 0;
 			transform: scale(.985) translateY(6px) translateZ(0);
 			width: 100%;
@@ -80,7 +80,7 @@ html.modal-open body {
 
 		a {
 			display: inline-block;
-			padding: .6vh 0;
+			padding: .4vh 0;
 			color: var(--white)
 		}
 		
@@ -98,6 +98,17 @@ html.modal-open body {
 	}
 
 
+	@media (min-width: 1000px) {
+		#main-nav[data-nav-modal] {
+			li {
+				font-size: calc(1.15rem + 3.5vh);
+			}
+			a {
+				padding: .6vh 0;
+			}
+			
+		}
+	}
 
 
 
