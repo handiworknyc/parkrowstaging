@@ -93,7 +93,7 @@ html.modal-open body {
 		}
 	}
 
-	html:not(.ua-safari) #main-nav[data-nav-modal] li {
+	.ua-chrome #main-nav[data-nav-modal] li {
 		filter: blur(.15px);
 	}
 

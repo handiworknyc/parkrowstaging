@@ -69,12 +69,15 @@ html {
 
 .antiga {
 	font-family: "Antiga";
-	//text-shadow: 0 0 .25px rgba(58, 42, 34, .05);
 }
 
-// html:not(.ua-safari) .antiga {
-// 	filter: blur(.15px);
-// }
+.ua-chrome .antiga {
+	text-shadow: 0 0 .25px rgba(58, 42, 34, .05);
+}
+
+.ua-chrome .antiga {
+ 	filter: blur(.15px);
+ }
 
 .figure {
 	font-family: 'Figure';
