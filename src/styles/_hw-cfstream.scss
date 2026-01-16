@@ -11,6 +11,9 @@
     backface-visibility: hidden;
     will-change: opacity;
 
+	video {
+		-webkit-transform: translateZ(0);
+	}
     /* Inner Elements */
     video,
     .video-js,

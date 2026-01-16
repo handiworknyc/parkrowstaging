@@ -3,6 +3,10 @@ import "videojs-contrib-quality-levels";
 
 let videoJsCssLoaded = false;
 
+const isIOS =
+  typeof navigator !== "undefined" &&
+  /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
 function ensureVideoJsCss() {
   if (!videoJsCssLoaded) {
     import("video.js/dist/video-js.css");
@@ -11,6 +15,15 @@ function ensureVideoJsCss() {
 }
 
 function waitForFirstFrame(videoEl, cb) {
+  // iOS Safari: events are unreliable
+  if (isIOS) {
+    // Give Safari a tick to actually start rendering
+    requestAnimationFrame(() => {
+      requestAnimationFrame(cb);
+    });
+    return;
+  }
+
   // Best case: frame-level guarantee
   if ("requestVideoFrameCallback" in videoEl) {
     videoEl.requestVideoFrameCallback(() => cb());
@@ -24,6 +37,7 @@ function waitForFirstFrame(videoEl, cb) {
   };
   videoEl.addEventListener("timeupdate", onTime, { once: true });
 }
+
 
 const players = new Map();
 const observers = new Map();
@@ -114,8 +128,11 @@ export function initCFVideo(videoId) {
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              player.play().catch(() => {});
-            } else {
+				const p = player.play();
+				if (p && typeof p.then === "function") {
+				p.catch(() => {});
+				}
+			} else {
               if (!player.paused()) player.pause();
             }
           });
