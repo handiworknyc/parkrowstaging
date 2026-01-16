@@ -2,11 +2,27 @@ import videojs from "video.js";
 import "videojs-contrib-quality-levels";
 
 let videoJsCssLoaded = false;
+
 function ensureVideoJsCss() {
   if (!videoJsCssLoaded) {
     import("video.js/dist/video-js.css");
     videoJsCssLoaded = true;
   }
+}
+
+function waitForFirstFrame(videoEl, cb) {
+  // Best case: frame-level guarantee
+  if ("requestVideoFrameCallback" in videoEl) {
+    videoEl.requestVideoFrameCallback(() => cb());
+    return;
+  }
+
+  // Fallback: time progression
+  const onTime = () => {
+    videoEl.removeEventListener("timeupdate", onTime);
+    cb();
+  };
+  videoEl.addEventListener("timeupdate", onTime, { once: true });
 }
 
 const players = new Map();
@@ -67,15 +83,17 @@ export function initCFVideo(videoId) {
   /* -----------------------------------------------------
      HARD PLAY GUARD
   ----------------------------------------------------- */
-  player.on("play", () => {
-    if (!playUnlocked) {
-      player.pause();
-      return;
-    }
+	player.on("playing", () => {
+	if (!playUnlocked) {
+		player.pause();
+		return;
+	}
 
-    wrap.classList.add("playing");
-    wrap.classList.remove("paused");
-  });
+	waitForFirstFrame(el, () => {
+		wrap.classList.add("playing");
+		wrap.classList.remove("paused");
+	});
+	});
 
   player.on("pause", () => {
     wrap.classList.remove("playing");
