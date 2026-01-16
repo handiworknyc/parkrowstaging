@@ -11,7 +11,6 @@ const isIOS =
   /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 function vlog(videoId, ...args) {
-  if (!DEBUG_IOS_VIDEO || !isIOS) return;
   console.log(`[CFVideo:${videoId}]`, ...args);
 }
 
@@ -130,7 +129,6 @@ export function initCFVideo(videoId) {
   /* -----------------------------------------------------
      video.js lifecycle logging (iOS)
   ----------------------------------------------------- */
-  if (isIOS) {
     player.on("ready", () => vlog(videoId, "vjs ready"));
     player.on("loadstart", () => vlog(videoId, "vjs loadstart"));
     player.on("waiting", () => vlog(videoId, "vjs waiting"));
@@ -147,7 +145,7 @@ export function initCFVideo(videoId) {
         vlog(videoId, "tech ERROR", tech.error());
       });
     }
-  }
+  
 
   /* -----------------------------------------------------
      Splash gate
@@ -205,7 +203,8 @@ export function initCFVideo(videoId) {
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              vlog(videoId, "intersection → play()");
+
+				vlog(videoId, "intersection → play()");
               const p = player.play();
 
               if (p && typeof p.then === "function") {
