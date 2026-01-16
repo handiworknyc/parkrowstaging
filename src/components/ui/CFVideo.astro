@@ -81,7 +81,7 @@ const ytAlt = ytImg?.alt || "";
           sizes="(max-width: 1200px) 60vw, 100vw"
           useSrcSet={usePosterSrcSet}
           forceSize={posterForceSize}
-          critical={critical}
+          critical={critical} /* ✅ Pass Critical */
         />
       )}
 
@@ -108,9 +108,10 @@ const ytAlt = ytImg?.alt || "";
         }
 
         videos.forEach((vid) => {
+            // @ts-ignore
             if (vid.dataset.initted === "true") return;
-
-			vid.dataset.initted = "true";
+            // @ts-ignore
+            vid.dataset.initted = "true";
 
             const id = vid.getAttribute('data-id');
 
