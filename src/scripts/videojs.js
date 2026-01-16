@@ -1,12 +1,25 @@
 import videojs from "video.js";
 import "videojs-contrib-quality-levels";
 
-let videoJsCssLoaded = false;
+/* -----------------------------------------------------
+   CONFIG
+----------------------------------------------------- */
+const DEBUG_IOS_VIDEO = true;
 
 const isIOS =
   typeof navigator !== "undefined" &&
   /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
+
+function vlog(videoId, ...args) {
+  if (!DEBUG_IOS_VIDEO || !isIOS) return;
+  console.log(`[CFVideo:${videoId}]`, ...args);
+}
+
+/* -----------------------------------------------------
+   CSS loader
+----------------------------------------------------- */
+let videoJsCssLoaded = false;
+
 function ensureVideoJsCss() {
   if (!videoJsCssLoaded) {
     import("video.js/dist/video-js.css");
@@ -14,23 +27,20 @@ function ensureVideoJsCss() {
   }
 }
 
+/* -----------------------------------------------------
+   Frame readiness helper
+----------------------------------------------------- */
 function waitForFirstFrame(videoEl, cb) {
-  // iOS Safari: events are unreliable
   if (isIOS) {
-    // Give Safari a tick to actually start rendering
-    requestAnimationFrame(() => {
-      requestAnimationFrame(cb);
-    });
+    requestAnimationFrame(() => requestAnimationFrame(cb));
     return;
   }
 
-  // Best case: frame-level guarantee
   if ("requestVideoFrameCallback" in videoEl) {
     videoEl.requestVideoFrameCallback(() => cb());
     return;
   }
 
-  // Fallback: time progression
   const onTime = () => {
     videoEl.removeEventListener("timeupdate", onTime);
     cb();
@@ -38,15 +48,16 @@ function waitForFirstFrame(videoEl, cb) {
   videoEl.addEventListener("timeupdate", onTime, { once: true });
 }
 
-
+/* -----------------------------------------------------
+   State
+----------------------------------------------------- */
 const players = new Map();
 const observers = new Map();
-
-/* -----------------------------------------------------
-   Splash gate (module-scoped)
------------------------------------------------------ */
 let firstVideoGranted = false;
 
+/* -----------------------------------------------------
+   INIT
+----------------------------------------------------- */
 export function initCFVideo(videoId) {
   const wrap = document.getElementById("cfvideo-" + videoId);
   if (!wrap) return;
@@ -60,6 +71,42 @@ export function initCFVideo(videoId) {
   const hasControls = el.classList.contains("show-controls-true");
   if (hasControls) ensureVideoJsCss();
 
+  vlog(videoId, "init", {
+    isIOS,
+    src: manifestSrc,
+    muted: el.muted,
+    playsinline: el.playsInline,
+  });
+
+  /* -----------------------------------------------------
+     Native <video> event logging (iOS)
+  ----------------------------------------------------- */
+  if (isIOS) {
+    [
+      "loadstart",
+      "loadedmetadata",
+      "loadeddata",
+      "canplay",
+      "canplaythrough",
+      "playing",
+      "pause",
+      "waiting",
+      "stalled",
+      "error",
+      "ended",
+      "timeupdate",
+    ].forEach((evt) => {
+      el.addEventListener(evt, () => {
+        vlog(videoId, `video event: ${evt}`, {
+          readyState: el.readyState,
+          networkState: el.networkState,
+          currentTime: el.currentTime,
+          paused: el.paused,
+        });
+      });
+    });
+  }
+
   const player = videojs(el, {
     controls: hasControls,
     loop: true,
@@ -69,7 +116,7 @@ export function initCFVideo(videoId) {
     playsinline: true,
     html5: {
       hls: {
-        overrideNative: true,
+        overrideNative: true, // logging phase — do not change yet
         useDevicePixelRatio: true,
         bandwidth: 16194304,
         limitRenditionByPlayerDimensions: false,
@@ -81,33 +128,61 @@ export function initCFVideo(videoId) {
   players.set(videoId, player);
 
   /* -----------------------------------------------------
-     SPLASH DECISION (ONCE PER VIDEO)
+     video.js lifecycle logging (iOS)
+  ----------------------------------------------------- */
+  if (isIOS) {
+    player.on("ready", () => vlog(videoId, "vjs ready"));
+    player.on("loadstart", () => vlog(videoId, "vjs loadstart"));
+    player.on("waiting", () => vlog(videoId, "vjs waiting"));
+    player.on("playing", () => vlog(videoId, "vjs playing"));
+    player.on("pause", () => vlog(videoId, "vjs pause"));
+
+    player.on("error", () => {
+      vlog(videoId, "vjs ERROR", player.error());
+    });
+
+    const tech = player.tech(true);
+    if (tech) {
+      tech.on("error", () => {
+        vlog(videoId, "tech ERROR", tech.error());
+      });
+    }
+  }
+
+  /* -----------------------------------------------------
+     Splash gate
   ----------------------------------------------------- */
   const splashActive = window.hwSplashActive === true;
   const allowDuringSplash = splashActive && !firstVideoGranted;
 
-  if (allowDuringSplash) {
-    firstVideoGranted = true;
-  }
+  if (allowDuringSplash) firstVideoGranted = true;
 
   let playUnlocked = !splashActive || allowDuringSplash;
+
+  vlog(videoId, "splash state", {
+    splashActive,
+    allowDuringSplash,
+    playUnlocked,
+  });
 
   wrap.classList.add("paused");
 
   /* -----------------------------------------------------
      HARD PLAY GUARD
   ----------------------------------------------------- */
-	player.on("playing", () => {
-	if (!playUnlocked) {
-		player.pause();
-		return;
-	}
+  player.on("playing", () => {
+    if (!playUnlocked) {
+      vlog(videoId, "blocked playing → pause()");
+      player.pause();
+      return;
+    }
 
-	waitForFirstFrame(el, () => {
-		wrap.classList.add("playing");
-		wrap.classList.remove("paused");
-	});
-	});
+    waitForFirstFrame(el, () => {
+      vlog(videoId, "first frame confirmed → fade in");
+      wrap.classList.add("playing");
+      wrap.classList.remove("paused");
+    });
+  });
 
   player.on("pause", () => {
     wrap.classList.remove("playing");
@@ -115,7 +190,7 @@ export function initCFVideo(videoId) {
   });
 
   /* -----------------------------------------------------
-     Scroll-to-play (observer only)
+     Scroll-to-play
   ----------------------------------------------------- */
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
@@ -124,16 +199,29 @@ export function initCFVideo(videoId) {
     const attachObserver = () => {
       if (observers.has(videoId)) return;
 
+      vlog(videoId, "observer attached", { threshold });
+
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-				const p = player.play();
-				if (p && typeof p.then === "function") {
-				p.catch(() => {});
-				}
-			} else {
-              if (!player.paused()) player.pause();
+              vlog(videoId, "intersection → play()");
+              const p = player.play();
+
+              if (p && typeof p.then === "function") {
+                p.then(() => {
+                  vlog(videoId, "play() promise resolved");
+                }).catch((err) => {
+                  vlog(videoId, "play() promise REJECTED", err);
+                });
+              } else {
+                vlog(videoId, "play() returned non-promise", p);
+              }
+            } else {
+              if (!player.paused()) {
+                vlog(videoId, "intersection exit → pause()");
+                player.pause();
+              }
             }
           });
         },
@@ -148,6 +236,7 @@ export function initCFVideo(videoId) {
       attachObserver();
     } else {
       const onUnlock = () => {
+        vlog(videoId, "splash dismissed → unlock playback");
         attachObserver();
         playUnlocked = true;
         window.removeEventListener("splash:dismiss", onUnlock);
@@ -161,7 +250,7 @@ export function initCFVideo(videoId) {
 }
 
 /* -----------------------------------------------------
-   Cleanup on Astro page swap
+   Cleanup
 ----------------------------------------------------- */
 export function destroyCFVideoPlayer(videoId) {
   if (observers.has(videoId)) {
