@@ -1,0 +1,395 @@
+---
+import CFVideo from "../ui/CFVideo.astro";
+
+const vars = { ...Astro.props };
+const v = vars.video;
+
+
+const { prevLayout, nextLayout, ...props } = Astro.props;
+
+
+const rawIndex = vars.rowIndex;
+const firstIsSplash = vars.firstIsSplash === true;
+
+const normalizedIndex =
+  firstIsSplash && rawIndex > 1 ? rawIndex - 1 : rawIndex;
+
+// Critical logic now uses normalized index
+const isCritical = normalizedIndex === 1;
+
+
+const locoSpeedAttr = isCritical
+  ? { "data-scroll data-scroll-speed": "-.4" }
+  : {};
+
+// --- 1. Data Processing --- //
+const rawContent = vars.content || [];
+const hasContent = rawContent.length > 0;
+
+const processedContent = rawContent.map((item) => ({
+  title: item.title || "",
+  text: item.text || "",
+  twoColList: item.two_col_list || false,
+  listItems: item.list
+    ? item.list.split(/\r?\n/).filter((li) => li.trim())
+    : [],
+}));
+
+// --- 2. Generate Content HTML (Columns) --- //
+const contentColumnsHTML = processedContent
+  .map((item, index) => {
+    let cssClass = "min-[1240px]:col-4 min-[990px]:col-5 max-[990px]:col-12 column-content";
+
+    if (processedContent.length === 1) {
+      cssClass = "min-[1024px]:col-5 column-content";
+    }  else if (index === 1) {
+		const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
+		cssClass = `column-content min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12`;
+	}
+
+    const ulClass = `section-text ${
+      item.twoColList ? "two-col-list" : ""
+    }`.trim();
+
+    return `
+      <div class="${cssClass}">
+        ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ""}
+        ${item.text ? `<div class='section-text'>${item.text}</div>` : ""}
+        ${
+          item.listItems.length > 0
+            ? `
+          <ul class='${ulClass}'>
+            ${item.listItems.map((li) => `<li>${li}</li>`).join("")}
+          </ul>
+        `
+            : ""
+        }
+      </div>
+    `;
+  })
+  .join("");
+
+// --- 3. CSS Class Generation --- //
+const caption = vars.caption || "";
+const captionPos = vars.caption_pos || "left";
+const alignMap = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+const captionAlignClass = alignMap[captionPos] || "text-left";
+
+let colClass = null;
+
+// ------------------------------------
+// Column widths
+// ------------------------------------
+if (vars.width === "11 columns") {
+  colClass = "min-[1400px]:col-11 col-12";
+}
+
+if (vars.width === "10 columns") {
+  colClass = "min-[1400px]:col-10 col-12";
+}
+
+if (vars.width === "9 columns") {
+  colClass = "min-[1400px]:col-9 min-[1240px]:col-10 col-12";
+
+  if (vars.align === "left") {
+    colClass += " max-[1400px]:min-[660px]:bleed-left max-[660px]:bleed-x";
+  }
+}
+
+// ------------------------------------
+// Static push map
+// ------------------------------------
+const PUSH_MAP = {
+  "1": "min-[1400px]:push-1",
+  "2": "min-[1400px]:push-2 max-[1400px]:min-[660px]:bleed-right max-[660px]:bleed-x max-[1400px]:align-right",
+  "3": "min-[700px]:push-3",
+  "4": "min-[700px]:push-4",
+  "5": "min-[700px]:push-5",
+};
+
+let pushClass = null;
+if (vars.width === "9 columns" && vars.push) {
+  pushClass = PUSH_MAP[vars.push] || null;
+}
+
+// ------------------------------------
+// Bleed flag (explicit bleed option)
+// ------------------------------------
+let bleedClass = null;
+if (vars.width !== "full" && vars.bleed === true) {
+  if (vars.align === "left") bleedClass = "bleed-left";
+  else if (vars.align === "right") bleedClass = "bleed-right";
+  else bleedClass = "bleed-x";
+}
+
+// ------------------------------------
+// Corner-based responsive bleed (≤1240px)
+// ------------------------------------
+let cornerBleedClass = null;
+
+if (vars.round_corner && vars.corner_pos && !vars.bleed) {
+  if (vars.corner_pos === "left") {
+    cornerBleedClass = "max-[1240px]:min-[660px]:bleed-right max-[660px]:bleed-x";
+  } else if (vars.corner_pos === "right") {
+    cornerBleedClass = "max-[1240px]:min-[660px]:bleed-left max-[660px]:bleed-x";
+  }
+}
+
+// ------------------------------------
+// ✅ Detect bleed-left at ≤1240px
+// ------------------------------------
+const needsLeftPadAt1240 =
+  bleedClass === "bleed-left" ||
+  cornerBleedClass === "max-[1240px]:min-[660px]:bleed-left max-[660px]:bleed-x";
+
+const leftPadClass = needsLeftPadAt1240
+  ? "max-[1240px]:pl-[var(--containerPadding)]"
+  : null;
+
+/* Caption wrapper */
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "max-[1300px]:mt-4 max-[1300px]:mb-4 min-[1300px]:mt-5",
+  captionAlignClass,
+  vars.bleed === true ? "hw-contain" : null,
+  leftPadClass,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const layoutClasses = [
+  colClass,
+  pushClass,
+  bleedClass,
+  cornerBleedClass,
+  vars.width !== "full" ? `align-${vars.align}` : null,
+];
+
+const videoClasses = [
+  "hw-bg-vid",
+  "hw-player-parent",
+  "img-load-par",
+  "pr",
+  "full-bleed-img-inner",
+  vars.round_corner && "round-corner",
+  `corner-pos-${vars.corner_pos}`,
+  !v?.[0]?.cf_stream_video && "no-video",
+];
+---
+
+{(
+  /* --- LAYOUT: FULL WIDTH --- */
+  <>
+	<div
+	class:list={[
+		...videoClasses,
+		"splash-video",
+	]}
+	data-splash-video
+	{...locoSpeedAttr}
+	>
+      {v && <CFVideo video={v} critical={isCritical} />}
+		
+		<div class="abs-full splash-content">
+			<svg class="splash-logo" width="277" height="304" viewBox="0 0 277 304" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<g clip-path="url(#clip0_25_1456)">
+			<path fill='white' d="M140.57 191.357H136.234V152.706C140.798 150.057 144.948 146.452 148.663 141.859C156.898 131.545 161.211 117.767 161.614 100.537C164.61 102.415 167.126 104.815 169.141 107.746C174.707 116.009 177.55 127.973 177.55 143.379C177.55 173.345 165.307 191.346 140.559 191.346M188.693 256.826V230.562C188.693 210.954 178.923 196.525 159.621 192.465C169.021 189.262 176.57 183.345 182.256 174.713C187.942 166.201 190.796 155.724 190.796 143.39C190.796 127.485 186.591 114.901 178.302 105.662C169.893 96.4114 158.379 91.8514 143.663 91.8514H121.518C123.25 95.1845 124.122 98.876 124.122 102.698V146.061C127.008 144.823 129.481 142.869 131.452 140.633C133.402 138.429 134.982 135.769 136.245 132.511V95.4234H140.581C143.402 95.4234 146.038 95.6188 148.51 95.9771C148.521 96.596 148.554 97.204 148.554 97.8337C148.554 114.727 145.46 128.418 139.404 138.895C133.348 149.373 124.187 154.682 112.064 154.682H107.728V40.9857H112.064C124.187 40.9857 133.348 46.284 139.404 56.772C144.164 65.0017 147.051 75.2508 148.086 87.4217C154.937 87.552 161.331 89.6583 161.32 89.4954C160.187 74.8817 155.994 62.9606 148.685 53.6886C140.025 42.8423 128.893 37.4137 115.157 37.4137H93.0123C94.6244 40.7468 95.485 44.4383 95.6157 48.26V214.233H107.739V158.123H115.157C118.283 158.123 121.268 157.83 124.133 157.255V268.66H136.256V194.918H145.656C166.32 194.918 176.581 206.134 176.581 228.706V257.065C176.581 265.077 183.018 270.386 193.04 270.386C190.197 267.433 188.704 262.862 188.704 256.826" fill="black"/>
+			<path fill='white' d="M230.902 253.634C208.943 282.449 178.106 299.787 138.642 299.787C99.1775 299.787 68.0681 282.449 46.1086 253.634C24.149 224.819 13.1801 191.064 13.1801 151.87C13.1801 112.675 24.1599 79.1811 46.1086 50.3663C68.0573 21.812 98.9052 4.46229 138.631 4.46229C178.356 4.46229 208.943 21.8011 230.891 50.3554C252.851 79.1703 263.82 112.925 263.82 151.859C263.82 190.793 252.84 224.808 230.891 253.623M236.316 44.6554C209.106 14.7983 176.701 0 138.62 0C100.539 0 67.8939 14.7983 40.684 44.6554C13.4851 74.5017 0 110.07 0 151.87C0 193.67 13.4851 229.487 40.684 259.345C67.8939 289.202 100.528 304 138.62 304C176.711 304 209.106 289.202 236.316 259.345C263.526 229.487 277 193.659 277 151.87C277 110.081 263.515 74.5017 236.316 44.6554Z" fill="black"/>
+			</g>
+			<defs>
+			<clipPath id="clip0_25_1456">
+			<rect width="277" height="304" fill="white"/>
+			</clipPath>
+			</defs>
+			</svg>
+
+			<div class="splash-down-arrow figure tac caps c-white">
+				Discover Park Row
+				<svg xmlns="http://www.w3.org/2000/svg" width="15" height="48" viewBox="0 0 15 48" fill="none">
+				<path d="M8.36401 1C8.36401 0.447715 7.9163 -2.41411e-08 7.36401 0C6.81173 2.41411e-08 6.36401 0.447715 6.36401 1L8.36401 1ZM6.65691 47.7071C7.04743 48.0976 7.6806 48.0976 8.07112 47.7071L14.4351 41.3431C14.8256 40.9526 14.8256 40.3195 14.4351 39.9289C14.0446 39.5384 13.4114 39.5384 13.0209 39.9289L7.36402 45.5858L1.70716 39.9289C1.31664 39.5384 0.683472 39.5384 0.292948 39.9289C-0.0975768 40.3195 -0.0975768 40.9526 0.292948 41.3431L6.65691 47.7071ZM6.36401 1L6.36402 47L8.36402 47L8.36401 1L6.36401 1Z" fill="white"/>
+				</svg>
+			</div>
+		</div>
+
+    </div>
+  </>
+)}
+
+<script is:client>
+  let splashDismissed = false;
+  let splashLoaded = false;
+
+  let cleanup = [];
+  let splashObserver = null;
+  let revealTimer = null;
+  let idleDismissTimer = null;
+
+  const REVEAL_DELAY = 850;
+  const IDLE_DISMISS_DELAY = 6500;
+
+  window.hwSplashActive = false;
+
+  function initSplashDismiss() {
+    if (!document.body.classList.contains("first-load")) return;
+    if (!document.body.classList.contains("home")) return;
+
+    window.hwSplashActive = true;
+
+    const splash = document.querySelector("[data-splash-video]");
+    const splashpar = document.querySelector(".splash_video-module");
+
+    if (!splash || !splashpar) return;
+
+    observeSplashLazyLoaded(splash, splashpar);
+  }
+
+  function observeSplashLazyLoaded(splash, splashpar) {
+    if (splashLoaded) return;
+
+    const markLoaded = () => {
+      if (splashLoaded) return;
+
+      splashLoaded = true;
+      document.documentElement.classList.add("splash-loaded");
+
+      clearTimeout(revealTimer);
+      revealTimer = setTimeout(revealHomeUI, REVEAL_DELAY);
+
+      attachDismissListeners(splash, splashpar);
+      startIdleDismissTimer(splashpar);
+
+      splashObserver?.disconnect();
+      splashObserver = null;
+    };
+
+    if (document.querySelector(".splash_video-module .child-lazy-loaded")) {
+      markLoaded();
+      return;
+    }
+
+    splashObserver = new MutationObserver(() => {
+      if (document.querySelector(".splash_video-module .child-lazy-loaded")) {
+        markLoaded();
+      }
+    });
+
+    splashObserver.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+
+  function startIdleDismissTimer(splashpar) {
+    clearTimeout(idleDismissTimer);
+
+    idleDismissTimer = setTimeout(() => {
+      if (splashDismissed) return;
+
+      splashDismissed = true;
+      splashpar.classList.add("splash-dismissed");
+
+      window.dispatchEvent(
+        new CustomEvent("splash:dismiss", {
+          detail: { source: "idle-timeout" },
+        })
+      );
+
+      cleanup.forEach((fn) => fn());
+      cleanup.length = 0;
+
+      idleDismissTimer = null;
+    }, IDLE_DISMISS_DELAY);
+  }
+
+  function attachDismissListeners(splash, splashpar) {
+    if (splashDismissed) return;
+
+    let dismissTimer = null;
+
+    const dismiss = () => {
+      if (splashDismissed) return;
+
+      splashDismissed = true;
+
+      clearTimeout(dismissTimer);
+      clearTimeout(idleDismissTimer);
+      idleDismissTimer = null;
+
+      dismissTimer = setTimeout(() => {
+        splashpar.classList.add("splash-dismissed");
+
+        window.dispatchEvent(
+          new CustomEvent("splash:dismiss", {
+            detail: { source: "scroll-intent" },
+          })
+        );
+
+        cleanup.forEach((fn) => fn());
+        cleanup.length = 0;
+
+        dismissTimer = null;
+      }, 350);
+    };
+
+    const onWheel = () => dismiss();
+    const onTouch = () => dismiss();
+    const onKey = (e) => {
+      if (
+        e.key === "ArrowDown" ||
+        e.key === "ArrowUp" ||
+        e.key === "PageDown" ||
+        e.key === "PageUp" ||
+        e.key === " "
+      ) {
+        dismiss();
+      }
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    window.addEventListener("keydown", onKey);
+
+    cleanup.push(
+      () => window.removeEventListener("wheel", onWheel),
+      () => window.removeEventListener("touchmove", onTouch),
+      () => window.removeEventListener("keydown", onKey)
+    );
+  }
+
+  function revealHomeUI() {
+    if (!document.body.classList.contains("home")) return;
+
+    const header = document.getElementById("header");
+    const secondModule = document.querySelector(
+      ".full_bleed_img-module.rowindex-2"
+    );
+
+    if (header) header.style.visibility = "visible";
+    if (secondModule) secondModule.style.visibility = "visible";
+  }
+
+  initSplashDismiss();
+  document.addEventListener("astro:page-load", initSplashDismiss);
+
+  document.addEventListener("astro:before-preparation", () => {
+    cleanup.forEach((fn) => fn());
+    cleanup.length = 0;
+
+    splashObserver?.disconnect();
+    splashObserver = null;
+
+    clearTimeout(revealTimer);
+    clearTimeout(idleDismissTimer);
+    revealTimer = null;
+    idleDismissTimer = null;
+
+    splashLoaded = false;
+    splashDismissed = false;
+  });
+</script>

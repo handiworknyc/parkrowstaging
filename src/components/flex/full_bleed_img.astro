@@ -12,7 +12,7 @@ const { prevLayout, nextLayout, ...props } = Astro.props;
 const currentIndex = vars.rowIndex;
 const isCritical = currentIndex === 1;
 
-const locoSpeedAttr = isCritical
+const locoSpeedAttr = isCritical || prevLayout.name === "splash_video"
   ? { "data-scroll data-scroll-speed": "-.4" }
   : {};
 

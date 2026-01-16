@@ -273,73 +273,147 @@ Astro.response.headers.set(
     });
   </script>
 
+<script>
+  import LocomotiveScroll from "locomotive-scroll";
 
-	<script>
-		import LocomotiveScroll from 'locomotive-scroll';
+  let locoScroll = null;
+  let scrollUnlocked = false;
+  let unlockTimer = null;
+  let splashUnlockTimer = null;
 
-		let locoScroll;
+  const SPLASH_FADE_DURATION = 800; // ms (match splash fade)
 
-		// Initialize Locomotive Scroll
-		const initLocoScroll = () => {
-			// Prevent creating multiple instances
-			if (locoScroll) {
-				locoScroll.destroy();
-				locoScroll = null;
-			}
+  /* ------------------------------------
+     HELPERS
+  ------------------------------------ */
+  function isHome() {
+    return document.body.classList.contains("home");
+  }
 
-			locoScroll = new LocomotiveScroll({
-				el: document.querySelector('[data-scroll-container]'),
-				smooth: true,
-				lenisOptions: {
-					lerp: 0,
-					duration: .5,
-				},
-				smartphone: {
-					smooth: true
-				},
-				tablet: {
-					smooth: true
-				}
-			});
+  function isFirstLoad() {
+    return document.body.classList.contains("first-load");
+  }
 
-			// Expose to window for smart-images integration
-			window.locoScroll = locoScroll;
+  /* ------------------------------------
+     SCROLL CONTROL
+  ------------------------------------ */
+  function unlockScroll(source = "unknown") {
+    if (!isFirstLoad()) return;
+    if (scrollUnlocked) return;
 
-			// Update on window resize
-			window.addEventListener('resize', () => {
-				locoScroll.update();
-			});
-		};
+    scrollUnlocked = true;
+    document.body.classList.add("scroll-unlocked");
 
-		// Run on initial load and after every View Transition swap
-		document.addEventListener('astro:page-load', () => {
-			// Small delay to ensure DOM is ready
-			setTimeout(initLocoScroll, 100);
-		});
+    clearTimeout(unlockTimer);
+    clearTimeout(splashUnlockTimer);
+    unlockTimer = null;
+    splashUnlockTimer = null;
 
-		// Clean up before navigation
-		document.addEventListener('astro:before-preparation', () => {
-			if (locoScroll) {
-				locoScroll.destroy();
-				locoScroll = null;
-			}
-		});
+    if (locoScroll) {
+      locoScroll.start();
+    }
+  }
 
-		// Handle anchor links with smooth scroll
-		document.addEventListener('click', (e) => {
-			const target = e.target.closest('a[href^="#"]');
-			if (target && locoScroll) {
-				e.preventDefault();
-				const id = target.getAttribute('href');
-				if (id === '#') return;
-				
-				const element = document.querySelector(id);
-				if (element) {
-					locoScroll.scrollTo(element);
-				}
-			}
-		});
-	</script>
+  /* ------------------------------------
+     INIT LOCOMOTIVE
+  ------------------------------------ */
+  function initLocoScroll() {
+    const el = document.querySelector("main");
+    if (!el) return;
+
+    if (locoScroll) {
+      locoScroll.destroy();
+      locoScroll = null;
+    }
+
+    locoScroll = new LocomotiveScroll({
+      el,
+      smooth: true,
+      lenisOptions: {
+        lerp: 0,
+        duration: 0.5,
+      },
+      smartphone: { smooth: true },
+      tablet: { smooth: true },
+    });
+
+    window.locoScroll = locoScroll;
+
+    // 🔒 Lock ONLY on first load + home
+    if (isHome() && isFirstLoad() && !scrollUnlocked) {
+      requestAnimationFrame(() => {
+        locoScroll.stop();
+      });
+
+      clearTimeout(unlockTimer);
+
+      // Absolute failsafe
+      unlockTimer = setTimeout(() => {
+        unlockScroll("timeout");
+      }, 6600);
+    } else {
+      // Never force lock/unlock on non-first loads
+      locoScroll.start();
+    }
+  }
+
+  /* ------------------------------------
+     ASTRO LIFECYCLE
+  ------------------------------------ */
+  document.addEventListener("astro:page-load", () => {
+    setTimeout(initLocoScroll, 50);
+  });
+
+  document.addEventListener("astro:before-preparation", () => {
+    locoScroll?.stop();
+  });
+
+  document.addEventListener("astro:after-swap", () => {
+    if (!locoScroll) return;
+
+    if (!isFirstLoad()) {
+      locoScroll.start();
+      return;
+    }
+
+    scrollUnlocked ? locoScroll.start() : locoScroll.stop();
+  });
+
+  /* ------------------------------------
+     SPLASH → SCROLL CONTRACT
+  ------------------------------------ */
+  window.addEventListener("splash:dismiss", (e) => {
+    if (!isHome() || !isFirstLoad() || scrollUnlocked) return;
+
+    clearTimeout(unlockTimer);
+    unlockTimer = null;
+
+    clearTimeout(splashUnlockTimer);
+    splashUnlockTimer = setTimeout(() => {
+      unlockScroll(e?.detail?.source || "splash");
+    }, SPLASH_FADE_DURATION);
+  });
+
+  /* ------------------------------------
+     ANCHOR LINKS
+  ------------------------------------ */
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || !locoScroll) return;
+
+    const id = a.getAttribute("href");
+    if (!id || id === "#") return;
+
+    const target = document.querySelector(id);
+    if (!target) return;
+
+    e.preventDefault();
+    locoScroll.scrollTo(target);
+  });
+</script>
+
+
+
 </head>
 
 <body class={`first-load ${bodyClasses}`}>

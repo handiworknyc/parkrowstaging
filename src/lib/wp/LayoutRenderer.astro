@@ -238,6 +238,8 @@ if (!taxContext) {
     nextSlug = stripSlashes(nextPage.uri).replace(/\//g, "-");
   }
 }
+
+const firstIsSplash = rows[0]?.name === "splash_video";
 ---
 
 {rows.length === 0 && (
@@ -315,9 +317,20 @@ const headerPlacementClass = placeHeaderBelow ? "header-below" : "header-at-top"
 
   const prevCls = prevLayoutClass(prevRow);
 
-  const sectionClass = `flex-bg ${row.meta.classes.join(
-    " "
-  )} ${prevCls} ${contentStatusClass} ${headerPlacementClass} ${nextSectionClass} ${imageOnlyClass}`.trim();
+  const splashClass = row.name === "splash_video" ? "full_bleed_img-module" : "";
+
+const isSecondRowAlsoRowOne = firstIsSplash && idx === 1;
+
+const sectionClass = `flex-bg
+  ${row.meta.classes.join(" ")}
+  ${prevCls}
+  ${contentStatusClass}
+  ${splashClass}
+  ${headerPlacementClass}
+  ${nextSectionClass}
+  ${imageOnlyClass}
+  rowindex-${isSecondRowAlsoRowOne ? 1 : rowindex}
+`.trim();
 
   const bgWrapClass = computeBgWrapClass(row, rowindex);
 

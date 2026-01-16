@@ -1,11 +1,6 @@
-// src/scripts/videojs.js
-
 import videojs from "video.js";
 import "videojs-contrib-quality-levels";
 
-/* -----------------------------------------------------
-   Lazy-load Video.js CSS when controls are enabled
------------------------------------------------------ */
 let videoJsCssLoaded = false;
 function ensureVideoJsCss() {
   if (!videoJsCssLoaded) {
@@ -18,25 +13,22 @@ const players = new Map();
 const observers = new Map();
 
 /* -----------------------------------------------------
-   Initialize CF Video
+   Splash gate (module-scoped)
 ----------------------------------------------------- */
+let firstVideoGranted = false;
+
 export function initCFVideo(videoId) {
-  const wrap = document.getElementById(`cfvideo-${videoId}`);
+  const wrap = document.getElementById("cfvideo-" + videoId);
   if (!wrap) return;
 
   const el = wrap.querySelector("video");
   const manifestSrc = wrap.dataset.src;
-
   if (!el || !manifestSrc) return;
-  if (players.has(videoId)) return players.get(videoId);
 
-  console.log("[CFVideo] INIT", videoId, manifestSrc);
+  if (players.has(videoId)) return players.get(videoId);
 
   const hasControls = el.classList.contains("show-controls-true");
   if (hasControls) ensureVideoJsCss();
-
-  // Always use HLS source
-  const initialSource = { src: manifestSrc, type: "application/x-mpegURL" };
 
   const player = videojs(el, {
     controls: hasControls,
@@ -45,60 +37,42 @@ export function initCFVideo(videoId) {
     muted: true,
     preload: "metadata",
     playsinline: true,
-
     html5: {
       hls: {
         overrideNative: true,
         useDevicePixelRatio: true,
-        bandwidth: 16194304, // Suggest high bandwidth to start
+        bandwidth: 16194304,
         limitRenditionByPlayerDimensions: false,
       },
     },
-
-    sources: [initialSource],
+    sources: [{ src: manifestSrc, type: "application/x-mpegURL" }],
   });
 
   players.set(videoId, player);
 
-  player.ready(() => {
-    if (!hasControls && player.controlBar) {
-      player.controls(false);
-      player.controlBar.hide();
-    }
-  });
-
   /* -----------------------------------------------------
-     Force max HLS resolution
+     SPLASH DECISION (ONCE PER VIDEO)
   ----------------------------------------------------- */
-  function forceMaxQuality() {
-    const q = player.qualityLevels?.();
-    if (!q) return;
+  const splashActive = window.hwSplashActive === true;
+  const allowDuringSplash = splashActive && !firstVideoGranted;
 
-    let best = 0;
-    let bestHeight = 0;
-
-    for (let i = 0; i < q.length; i++) {
-      if (q[i].height > bestHeight) {
-        bestHeight = q[i].height;
-        best = i;
-      }
-    }
-
-    for (let i = 0; i < q.length; i++) {
-      q[i].enabled = i === best;
-    }
+  if (allowDuringSplash) {
+    firstVideoGranted = true;
   }
 
-  player.on("loadedmetadata", forceMaxQuality);
-  player.on("loadeddata", forceMaxQuality);
-  player.on("resolutionchange", forceMaxQuality);
+  let playUnlocked = !splashActive || allowDuringSplash;
 
-  /* -----------------------------------------------------
-     UI state classes
-  ----------------------------------------------------- */
   wrap.classList.add("paused");
 
+  /* -----------------------------------------------------
+     HARD PLAY GUARD
+  ----------------------------------------------------- */
   player.on("play", () => {
+    if (!playUnlocked) {
+      player.pause();
+      return;
+    }
+
     wrap.classList.add("playing");
     wrap.classList.remove("paused");
   });
@@ -109,32 +83,46 @@ export function initCFVideo(videoId) {
   });
 
   /* -----------------------------------------------------
-     Scroll-to-play logic
+     Scroll-to-play (observer only)
   ----------------------------------------------------- */
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
 
-    if (observers.has(videoId)) observers.get(videoId).disconnect();
+    const attachObserver = () => {
+      if (observers.has(videoId)) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            player.play().catch(() => {});
-          } else {
-            if (!player.paused()) player.pause();
-          }
-        });
-      },
-      { threshold }
-    );
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              player.play().catch(() => {});
+            } else {
+              if (!player.paused()) player.pause();
+            }
+          });
+        },
+        { threshold }
+      );
 
-    observer.observe(parent);
-    observers.set(videoId, observer);
+      observer.observe(parent);
+      observers.set(videoId, observer);
+    };
+
+    if (!splashActive || allowDuringSplash) {
+      attachObserver();
+    } else {
+      const onUnlock = () => {
+        attachObserver();
+        playUnlocked = true;
+        window.removeEventListener("splash:dismiss", onUnlock);
+      };
+
+      window.addEventListener("splash:dismiss", onUnlock);
+    }
   }
 
-  return players.get(videoId);
+  return player;
 }
 
 /* -----------------------------------------------------
@@ -145,6 +133,7 @@ export function destroyCFVideoPlayer(videoId) {
     observers.get(videoId).disconnect();
     observers.delete(videoId);
   }
+
   if (players.has(videoId)) {
     const player = players.get(videoId);
     if (player && !player.isDisposed()) player.dispose();
@@ -154,8 +143,9 @@ export function destroyCFVideoPlayer(videoId) {
 
 if (typeof document !== "undefined") {
   document.addEventListener("astro:after-swap", () => {
-    players.forEach((player, id) => destroyCFVideoPlayer(id));
+    players.forEach((_, id) => destroyCFVideoPlayer(id));
     players.clear();
     observers.clear();
+    firstVideoGranted = false;
   });
 }

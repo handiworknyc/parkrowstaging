@@ -31,8 +31,8 @@
   {
     "path": "/penthouses/",
     "lcp": {
-      "href": "/img-cache/park-row-penthouses2-edcfefb5.jpg.webp",
-      "imagesrcset": "/img-cache/park-row-penthouses2-edcfefb5.jpg.webp 1600w, /img-cache/park-row-penthouses2-1500x840-030097c6.jpg.webp 1500w, /img-cache/park-row-penthouses2-1000x560-d3171fc1.jpg.webp 1000w, /img-cache/park-row-penthouses2-600x336-8af1db29.jpg.webp 600w",
+      "href": "/img-cache/flowers-and-vase-d194f031.jpg.webp",
+      "imagesrcset": "/img-cache/flowers-and-vase-d194f031.jpg.webp 1600w, /img-cache/flowers-and-vase-1500x891-817f2c89.jpg.webp 1500w, /img-cache/flowers-and-vase-1000x594-0834a8ef.jpg.webp 1000w, /img-cache/flowers-and-vase-600x356-091f5d16.jpg.webp 600w",
       "imagesizes": "(max-width: 1200px) 60vw, 100vw",
       "type": "image/webp"
     }
@@ -59,10 +59,10 @@
   },
   {
     "path": "/",
-    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/febcd96215f04d7443058c99c5135b54/manifest/video.m3u8",
+    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/ed18c619dfce78c765b6060654f7216b/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp",
-      "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-97e7b94d.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-1000x569-94a3d786.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1-600x342-c3792cef.jpg.webp 600w",
+      "href": "/img-cache/leaves-background-6751f1f6.jpg.webp",
+      "imagesrcset": "/img-cache/leaves-background-6751f1f6.jpg.webp 1440w, /img-cache/leaves-background-6751f1f6.jpg.webp 1440w, /img-cache/leaves-background-1000x625-c92c6985.jpg.webp 1000w, /img-cache/leaves-background-600x375-37c267dd.jpg.webp 600w",
       "imagesizes": "(max-width: 1200px) 60vw, 100vw",
       "type": "image/webp"
     }

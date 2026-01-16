@@ -481,7 +481,7 @@
       "caption_pos": "right",
       "align": "right",
       "title": "Health & Wellness",
-      "text": "<p>A light-filled fitness center, yoga studio, and outdoor pool framed by greenery nurture vitality and calm in equal measure.</p>\n",
+      "text": "<p>A light-filled fitness center, yoga studio, and outdoor pool framed by greenery nurture vitality and calm in equal measure.X</p>\n",
       "list": "Yoga mats\r\nAromatherapy\r\nMeditation\r\nFine herbs\r\nVegan food\r\nSoy milk\r\nKale burgers"
     },
     {
@@ -1452,5 +1452,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-12 16:39:58"
+  "_syncedAt": "2026-01-16 20:13:03"
 }
