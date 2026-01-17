@@ -369,9 +369,13 @@ const videoClasses = [
     const secondModule = document.querySelector(
       ".full_bleed_img-module.rowindex-2"
     );
+	const mobBottomBar = document.querySelector(".mob-bottom-bar");
 
     if (header) header.style.visibility = "visible";
     if (secondModule) secondModule.style.visibility = "visible";
+	if(mobBottomBar) mobBottomBar.style.visibility = "visible";
+
+	document.body.classList.remove("first-load");
   }
 
   initSplashDismiss();
