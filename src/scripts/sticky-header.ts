@@ -37,12 +37,18 @@ declare global {
   }
 }
 
+// ------------------------------------
+// MOBILE MEDIA QUERY
+// ------------------------------------
+const MOB_BP = "(max-width: 699px)";
+const mobMQ = window.matchMedia(MOB_BP);
+// ------------------------------------
+
 export default function initStickyHeader(
   config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
 ) {
   dbg("[sticky] init");
 
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const S =
     (window.__stickyHeaderState ??=
@@ -81,10 +87,7 @@ export default function initStickyHeader(
     if (!state || state.hidden === next) return;
 
     state.hidden = next;
-
     state.element.classList.toggle("is-hidden", next);
-
-    dbg("[sticky] setHidden:", key, next);
   }
 
   function onScrollRaf() {
@@ -100,10 +103,7 @@ export default function initStickyHeader(
 
       if (state.bannerScroll) {
         const progress = Math.min(1, Math.max(0, y / 100));
-        state.element.style.setProperty(
-          "--bannerScroll",
-          String(progress)
-        );
+        state.element.style.setProperty("--bannerScroll", String(progress));
       }
     });
 
@@ -155,24 +155,31 @@ export default function initStickyHeader(
 
   // ---------------------------------------------------------
   // MOBILE BOTTOM BAR — STICKY DETECTION
+  // (unchanged sentinel logic)
   // ---------------------------------------------------------
   function watchMobBottomBar() {
+    // always clean up first
     S.mobObserver?.disconnect();
+    S.mobObserver = undefined;
+
+    // ❌ desktop = nothing runs
+    if (!mobMQ.matches) {
+      document
+        .querySelector(".mob-bottom-bar")
+        ?.classList.remove("mob-bar-unstuck");
+      return;
+    }
 
     const bar = document.querySelector<HTMLElement>(".mob-bottom-bar");
     if (!bar) return;
 
-    let sentinel = bar.nextElementSibling as HTMLElement | null;
+    const sentinel = bar.nextElementSibling as HTMLElement | null;
+    if (!sentinel) return;
 
-	S.mobObserver = new IntersectionObserver(
+    S.mobObserver = new IntersectionObserver(
       ([entry]) => {
         const unstuck = entry.isIntersecting;
-
-        bar.classList.toggle(
-          "mob-bar-unstuck",
-          unstuck
-        );
-
+        bar.classList.toggle("mob-bar-unstuck", unstuck);
       },
       {
         root: null,
@@ -187,8 +194,7 @@ export default function initStickyHeader(
   // HEADER DISCOVERY
   // ---------------------------------------------------------
   function watchForHeaders() {
-    const currentY = getY();
-    S.lastY = currentY;
+    S.lastY = getY();
 
     configs.forEach(({ selector, bannerScroll = true }) => {
       const elements = document.querySelectorAll<HTMLElement>(selector);
@@ -232,8 +238,16 @@ export default function initStickyHeader(
 
   initAll();
 
+  // ------------------------------------
+  // EVENTS
+  // ------------------------------------
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
+
+  mobMQ.addEventListener("change", () => {
+    dbg("[mob-bottom] media query changed");
+    watchMobBottomBar();
+  });
 
   window.addEventListener("astro:after-swap", initAll);
   window.addEventListener("astro:page-load", initAll);
@@ -245,6 +259,9 @@ export default function initStickyHeader(
   });
 }
 
+// ------------------------------------
+// INIT
+// ------------------------------------
 initStickyHeader([
   { selector: "#header", bannerScroll: true },
   { selector: ".mob-bottom-bar", bannerScroll: false },
