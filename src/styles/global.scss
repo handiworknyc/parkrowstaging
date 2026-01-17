@@ -1172,14 +1172,14 @@ ul.two-col-list {
 }
 
 
-.html:not(.hw-is-mobile ) .splash-content {
+html:not(.hw-is-mobile ) .splash-content {
 	will-change: opacity, transform;
 	backface-visibility: hidden;
 	transform: scale(1.04);
 	transition: all 2.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.html:not(.hw-is-mobile ) .child-lazy-loaded .splash-content {
+html:not(.hw-is-mobile ) .child-lazy-loaded .splash-content {
 	transform: scale(1);
 }
 
