@@ -93,57 +93,62 @@ export function initCFVideo(videoId) {
   /* -----------------------------------------------------
      Splash gate
 ----------------------------------------------------- */
-  const splashActive = window.hwSplashActive === true;
-  const allowDuringSplash = splashActive && !firstVideoGranted;
+  const isFirstLoad = document.body.classList.contains("first-load");
+  const splashActive = isFirstLoad && window.hwSplashActive === true;
+
+  const allowDuringSplash =
+    isFirstLoad && splashActive && !firstVideoGranted;
+
   if (allowDuringSplash) firstVideoGranted = true;
 
-  let playUnlocked = !splashActive || allowDuringSplash;
+  let playUnlocked = !isFirstLoad || !splashActive || allowDuringSplash;
 
-  vlog(videoId, "splash", { splashActive, playUnlocked });
+  vlog(videoId, "splash", {
+    isFirstLoad,
+    splashActive,
+    playUnlocked,
+  });
 
   wrap.classList.add("paused");
 
   /* -----------------------------------------------------
      UI state
 ----------------------------------------------------- */
+  const setPlaying = () => {
+    wrap.classList.add("playing");
+    wrap.classList.remove("paused");
+  };
 
-const setPlaying = () => {
-  wrap.classList.add("playing");
-  wrap.classList.remove("paused");
-};
+  const setPaused = () => {
+    wrap.classList.remove("playing");
+    wrap.classList.add("paused");
+  };
 
-const setPaused = () => {
-  wrap.classList.remove("playing");
-  wrap.classList.add("paused");
-};
-
-if (isIOS) {
-  // ✅ iOS: never defer, never block, never wait
-  player.on("play", () => {
-    if (!playUnlocked) {
-      vlog(videoId, "play blocked (locked)");
-      player.pause();
-      return;
-    }
-    vlog(videoId, "iOS play → fade");
-    requestAnimationFrame(setPlaying);
-  });
-} else {
-  // ✅ Desktop: wait for actual rendered frame
-  player.on("playing", () => {
-    if (!playUnlocked) {
-      vlog(videoId, "blocked playing → pause()");
-      player.pause();
-      return;
-    }
-
-    waitForFirstFrame(el, () => {
-      vlog(videoId, "desktop first frame → fade");
-      setPlaying();
+  if (isIOS) {
+    // ✅ iOS: never pause inside play handler
+    player.on("play", () => {
+      if (!playUnlocked) {
+        vlog(videoId, "play blocked (locked)");
+        return;
+      }
+      vlog(videoId, "iOS play → fade");
+      requestAnimationFrame(setPlaying);
     });
-  });
-}
+  } else {
+    // ✅ Desktop: wait for actual rendered frame
+    player.on("playing", () => {
+      if (!playUnlocked) {
+        vlog(videoId, "blocked playing → pause()");
+        player.pause();
+        return;
+      }
 
+      waitForFirstFrame(el, () => {
+        vlog(videoId, "desktop first frame → fade");
+        setPlaying();
+      });
+    });
+  }
 
   player.on("pause", setPaused);
 
@@ -155,6 +160,7 @@ if (isIOS) {
     const parent = wrap.closest(".hw-player-parent") || wrap;
 
     let isIntersecting = false;
+    let unlockListenerAttached = false;
 
     const attachObserver = () => {
       if (observers.has(videoId)) return;
@@ -184,29 +190,36 @@ if (isIOS) {
 
     if (playUnlocked) {
       attachObserver();
-    } else {
+    } else if (isFirstLoad && !unlockListenerAttached) {
+      unlockListenerAttached = true;
+
       const onUnlock = () => {
-        vlog(videoId, "splash dismissed → unlock");
+        vlog(videoId, "splash dismissed → unlock (first load)");
         playUnlocked = true;
 
-        // 🔑 CRITICAL FIX:
-        // iOS requires a full source reset after blocked playback
-        vlog(videoId, "resetting source after unlock");
-        player.pause();
-        player.src({ src: manifestSrc, type: "application/x-mpegURL" });
-        player.load();
+        // iOS ONLY needs reset on first-load blocked playback
+        if (isIOS) {
+          vlog(videoId, "resetting source after unlock (iOS)");
+          player.pause();
+          player.src({ src: manifestSrc, type: "application/x-mpegURL" });
+          player.load();
+        }
 
         attachObserver();
 
         if (isIntersecting) {
-          vlog(videoId, "already visible → play after reload");
+          vlog(videoId, "already visible → play after unlock");
           player.play().catch(() => {});
         }
 
         window.removeEventListener("splash:dismiss", onUnlock);
+        unlockListenerAttached = false;
       };
 
       window.addEventListener("splash:dismiss", onUnlock);
+    } else {
+      // 🔑 NOT FIRST LOAD → never block
+      attachObserver();
     }
   }
 
