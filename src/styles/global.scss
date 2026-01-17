@@ -1159,17 +1159,28 @@ ul.two-col-list {
 .splash-content {
 	z-index: 3;
 	opacity: 0;
-	transform: scale(1.04);
-	will-change: transform, opacity;
+	will-change: opacity;
     backface-visibility: hidden;
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
+	transition: opacity 2.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+.child-lazy-loaded .splash-content {
+	opacity: 1;
+}
+
+
+.html:not(.hw-is-mobile ) .splash-content {
+	will-change: opacity, transform;
+	backface-visibility: hidden;
+	transform: scale(1.04);
 	transition: all 2.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.child-lazy-loaded .splash-content {
+.html:not(.hw-is-mobile ) .child-lazy-loaded .splash-content {
 	transform: scale(1);
-	opacity: 1;
 }
 
 @media (max-height: 949px) {
@@ -1182,6 +1193,6 @@ ul.two-col-list {
 /* Dismissed state */
 .splash-dismissed .splash-video {
   opacity: 0;
-  transform: scale(1.2);
+  transform: scale(1.06);
   pointer-events: none;
 }
