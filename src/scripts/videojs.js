@@ -71,12 +71,7 @@ export function initCFVideo(videoId) {
   const hasControls = el.classList.contains("show-controls-true");
   if (hasControls) ensureVideoJsCss();
 
-  vlog(videoId, "init", {
-    isIOS,
-    isMobile,
-    isIpad,
-    src: manifestSrc,
-  });
+  vlog(videoId, "init", { isIOS, isMobile, isIpad, src: manifestSrc });
 
   /* -----------------------------------------------------
      Native <video> event logging (mobile only)
@@ -113,7 +108,7 @@ export function initCFVideo(videoId) {
     playsinline: true,
     html5: {
       hls: {
-        overrideNative: true, // leave as-is; working behavior preserved
+        overrideNative: true,
         useDevicePixelRatio: true,
         bandwidth: 16194304,
         limitRenditionByPlayerDimensions: false,
@@ -139,7 +134,7 @@ export function initCFVideo(videoId) {
   wrap.classList.add("paused");
 
   /* -----------------------------------------------------
-     UI state rules
+     UI state helpers
 ----------------------------------------------------- */
   const setPlaying = () => {
     wrap.classList.add("playing");
@@ -152,7 +147,6 @@ export function initCFVideo(videoId) {
   };
 
   if (isIOS) {
-    // ✅ MATCHES YOUR WORKING VERSION
     player.on("play", () => {
       if (!playUnlocked) {
         vlog(videoId, "play while locked (iOS) – ignoring");
@@ -162,7 +156,6 @@ export function initCFVideo(videoId) {
       requestAnimationFrame(setPlaying);
     });
   } else {
-    // Desktop strict mode
     player.on("playing", () => {
       if (!playUnlocked) {
         vlog(videoId, "blocked playing → pause()");
@@ -180,11 +173,12 @@ export function initCFVideo(videoId) {
 
   /* -----------------------------------------------------
      Scroll-to-play
-     IMPORTANT: gate by NOT calling play() while locked
 ----------------------------------------------------- */
   if (wrap.dataset.scroll === "true") {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
+
+    let isIntersecting = false;
 
     const attachObserver = () => {
       if (observers.has(videoId)) return;
@@ -194,6 +188,8 @@ export function initCFVideo(videoId) {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
+            isIntersecting = entry.isIntersecting;
+
             if (entry.isIntersecting) {
               if (!playUnlocked) {
                 vlog(videoId, "intersection but locked");
@@ -223,8 +219,16 @@ export function initCFVideo(videoId) {
         vlog(videoId, "splash dismissed → unlock");
         playUnlocked = true;
         attachObserver();
+
+        // 🔑 FIX: already visible → play immediately
+        if (isIntersecting) {
+          vlog(videoId, "already intersecting on unlock → play()");
+          player.play().catch(() => {});
+        }
+
         window.removeEventListener("splash:dismiss", onUnlock);
       };
+
       window.addEventListener("splash:dismiss", onUnlock);
     }
   }
