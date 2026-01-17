@@ -1108,6 +1108,7 @@ ul.two-col-list {
   position: relative;
   overflow: hidden;
   opacity: 1;
+  transform: scale(1);
   will-change: opacity, transform;
   transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1193,6 +1194,6 @@ html:not(.hw-is-mobile) .child-lazy-loaded .splash-content {
 /* Dismissed state */
 .splash-dismissed .splash-video {
   opacity: 0;
-  transform: scale(1.06);
+  transform: scale(1.04);
   pointer-events: none;
 }
