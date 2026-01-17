@@ -16,6 +16,24 @@ function vlog(videoId, ...args) {
   console.log(`[CFVideo:${videoId}]`, ...args);
 }
 
+function waitForFirstFrame(videoEl, cb) {
+  if (isIOS) {
+    requestAnimationFrame(() => requestAnimationFrame(cb));
+    return;
+  }
+
+  if ("requestVideoFrameCallback" in videoEl) {
+    videoEl.requestVideoFrameCallback(() => cb());
+    return;
+  }
+
+  const onTime = () => {
+    videoEl.removeEventListener("timeupdate", onTime);
+    cb();
+  };
+  videoEl.addEventListener("timeupdate", onTime, { once: true });
+}
+
 /* -----------------------------------------------------
    CSS loader
 ----------------------------------------------------- */
@@ -88,26 +106,44 @@ export function initCFVideo(videoId) {
   /* -----------------------------------------------------
      UI state
 ----------------------------------------------------- */
-  const setPlaying = () => {
-    wrap.classList.add("playing");
-    wrap.classList.remove("paused");
-  };
 
-  const setPaused = () => {
-    wrap.classList.remove("playing");
-    wrap.classList.add("paused");
-  };
+const setPlaying = () => {
+  wrap.classList.add("playing");
+  wrap.classList.remove("paused");
+};
 
-  // ✅ iOS SAFE: play only after unlock
+const setPaused = () => {
+  wrap.classList.remove("playing");
+  wrap.classList.add("paused");
+};
+
+if (isIOS) {
+  // ✅ iOS: never defer, never block, never wait
   player.on("play", () => {
     if (!playUnlocked) {
       vlog(videoId, "play blocked (locked)");
       player.pause();
       return;
     }
-    vlog(videoId, "play → fade");
+    vlog(videoId, "iOS play → fade");
     requestAnimationFrame(setPlaying);
   });
+} else {
+  // ✅ Desktop: wait for actual rendered frame
+  player.on("playing", () => {
+    if (!playUnlocked) {
+      vlog(videoId, "blocked playing → pause()");
+      player.pause();
+      return;
+    }
+
+    waitForFirstFrame(el, () => {
+      vlog(videoId, "desktop first frame → fade");
+      setPlaying();
+    });
+  });
+}
+
 
   player.on("pause", setPaused);
 
