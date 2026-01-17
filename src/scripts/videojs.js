@@ -28,27 +28,6 @@ function ensureVideoJsCss() {
 }
 
 /* -----------------------------------------------------
-   Frame readiness helper (DESKTOP ONLY)
------------------------------------------------------ */
-function waitForFirstFrame(videoEl, cb) {
-  if (isIOS) {
-    requestAnimationFrame(() => requestAnimationFrame(cb));
-    return;
-  }
-
-  if ("requestVideoFrameCallback" in videoEl) {
-    videoEl.requestVideoFrameCallback(() => cb());
-    return;
-  }
-
-  const onTime = () => {
-    videoEl.removeEventListener("timeupdate", onTime);
-    cb();
-  };
-  videoEl.addEventListener("timeupdate", onTime, { once: true });
-}
-
-/* -----------------------------------------------------
    State
 ----------------------------------------------------- */
 const players = new Map();
@@ -72,32 +51,6 @@ export function initCFVideo(videoId) {
   if (hasControls) ensureVideoJsCss();
 
   vlog(videoId, "init", { isIOS, isMobile, isIpad, src: manifestSrc });
-
-  /* -----------------------------------------------------
-     Native <video> event logging (mobile only)
-  ----------------------------------------------------- */
-  if (isIOS) {
-    [
-      "loadstart",
-      "loadedmetadata",
-      "loadeddata",
-      "canplay",
-      "playing",
-      "play",
-      "pause",
-      "waiting",
-      "stalled",
-      "error",
-    ].forEach((evt) => {
-      el.addEventListener(evt, () => {
-        vlog(videoId, `video event: ${evt}`, {
-          readyState: el.readyState,
-          currentTime: el.currentTime,
-          paused: el.paused,
-        });
-      });
-    });
-  }
 
   const player = videojs(el, {
     controls: hasControls,
@@ -124,7 +77,6 @@ export function initCFVideo(videoId) {
 ----------------------------------------------------- */
   const splashActive = window.hwSplashActive === true;
   const allowDuringSplash = splashActive && !firstVideoGranted;
-
   if (allowDuringSplash) firstVideoGranted = true;
 
   let playUnlocked = !splashActive || allowDuringSplash;
@@ -134,7 +86,7 @@ export function initCFVideo(videoId) {
   wrap.classList.add("paused");
 
   /* -----------------------------------------------------
-     UI state helpers
+     UI state
 ----------------------------------------------------- */
   const setPlaying = () => {
     wrap.classList.add("playing");
@@ -146,28 +98,16 @@ export function initCFVideo(videoId) {
     wrap.classList.add("paused");
   };
 
-  if (isIOS) {
-    player.on("play", () => {
-      if (!playUnlocked) {
-        vlog(videoId, "play while locked (iOS) – ignoring");
-        return;
-      }
-      vlog(videoId, "iOS play → fade");
-      requestAnimationFrame(setPlaying);
-    });
-  } else {
-    player.on("playing", () => {
-      if (!playUnlocked) {
-        vlog(videoId, "blocked playing → pause()");
-        player.pause();
-        return;
-      }
-      waitForFirstFrame(el, () => {
-        vlog(videoId, "desktop first frame → fade");
-        setPlaying();
-      });
-    });
-  }
+  // ✅ iOS SAFE: play only after unlock
+  player.on("play", () => {
+    if (!playUnlocked) {
+      vlog(videoId, "play blocked (locked)");
+      player.pause();
+      return;
+    }
+    vlog(videoId, "play → fade");
+    requestAnimationFrame(setPlaying);
+  });
 
   player.on("pause", setPaused);
 
@@ -190,18 +130,12 @@ export function initCFVideo(videoId) {
           entries.forEach((entry) => {
             isIntersecting = entry.isIntersecting;
 
-            if (entry.isIntersecting) {
-              if (!playUnlocked) {
-                vlog(videoId, "intersection but locked");
-                return;
-              }
+            if (entry.isIntersecting && playUnlocked) {
               vlog(videoId, "intersection → play()");
               player.play().catch(() => {});
-            } else {
-              if (!player.paused()) {
-                vlog(videoId, "intersection exit → pause()");
-                player.pause();
-              }
+            } else if (!entry.isIntersecting && !player.paused()) {
+              vlog(videoId, "intersection exit → pause()");
+              player.pause();
             }
           });
         },
@@ -218,11 +152,18 @@ export function initCFVideo(videoId) {
       const onUnlock = () => {
         vlog(videoId, "splash dismissed → unlock");
         playUnlocked = true;
+
+        // 🔑 CRITICAL FIX:
+        // iOS requires a full source reset after blocked playback
+        vlog(videoId, "resetting source after unlock");
+        player.pause();
+        player.src({ src: manifestSrc, type: "application/x-mpegURL" });
+        player.load();
+
         attachObserver();
 
-        // 🔑 FIX: already visible → play immediately
         if (isIntersecting) {
-          vlog(videoId, "already intersecting on unlock → play()");
+          vlog(videoId, "already visible → play after reload");
           player.play().catch(() => {});
         }
 
