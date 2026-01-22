@@ -35,13 +35,17 @@ const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
 // Poster
 const ytImg = v.yt_img || null;
 
-console.log(ytImg.sizes);
+const sizesObj =
+  ytImg && typeof ytImg === "object"
+    ? ytImg.sizes ?? {}
+    : {};
+
 const smartImg = ytImg
   ? {
-      xl: ytImg.sizes?.intch_xl || ytImg.url,
-      large: ytImg.sizes?.intch_lg || ytImg.url,
-      med: ytImg.sizes?.intch_med || ytImg.url,
-      small: ytImg.sizes?.intch_sm || ytImg.url,
+      xl: sizesObj.intch_xl || ytImg.url,
+      large: sizesObj.intch_lg || ytImg.url,
+      med: sizesObj.intch_med || ytImg.url,
+      small: sizesObj.intch_sm || ytImg.url,
     }
   : null;
 
