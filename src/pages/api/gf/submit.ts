@@ -29,6 +29,21 @@ function authHeaders(): Record<string, string> {
   return pair ? { Authorization: `Basic ${toBase64(pair)}` } : {};
 }
 
+function gfAuthQuery(): string {
+  const key = (getEnv("GF_CONSUMER_KEY") || "").trim();
+  const secret = (getEnv("GF_CONSUMER_SECRET") || "").trim();
+
+  if (!key || !secret) return "";
+
+  const q = new URLSearchParams({
+    consumer_key: key,
+    consumer_secret: secret,
+  });
+
+  return q.toString();
+}
+
+
 // Build WP base from multiple envs (WORDPRESS_API_URL trims /graphql)
 function getWpBase(): string {
   const gql = (getEnv("WORDPRESS_API_URL") || "").trim(); // e.g. https://site/graphql
@@ -53,8 +68,12 @@ export async function POST({ request }: { request: Request }) {
   const reqId = Math.random().toString(36).slice(2, 8);
 
   try {
-    const wpUrl = `${WP_BASE}/wp-json/astro/v1/gf/submit`;
-    log(reqId, "incoming POST →", wpUrl, "hasAuth:", Boolean(getEnv("WP_AUTH_BASIC")));
+	const q = gfAuthQuery();
+	const wpUrl =
+	`${WP_BASE}/wp-json/astro/v1/gf/submit` +
+	(q ? `?${q}` : "");
+	
+	log(reqId, "incoming POST →", wpUrl, "hasAuth:", Boolean(getEnv("WP_AUTH_BASIC")));
 
     let body: any;
     try {

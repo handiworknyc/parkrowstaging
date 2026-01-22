@@ -141,7 +141,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 171,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 228,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-residences.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 342
             }
           },
           "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/254bcfd4b78a1f03901c774b8a0ac327/manifest/video.m3u8",
@@ -305,7 +314,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/table-top-564x600.png",
                   "gb-block-post-grid-square-width": 564,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/table-top.png",
+                  "gform-image-choice-sm-width": 200,
+                  "gform-image-choice-sm-height": 300,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/table-top.png",
+                  "gform-image-choice-md-width": 267,
+                  "gform-image-choice-md-height": 400,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/table-top.png",
+                  "gform-image-choice-lg-width": 401,
+                  "gform-image-choice-lg-height": 600
                 }
               },
               "cf_stream_video": "",
@@ -468,7 +486,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 200,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 267,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 400
             }
           },
           "cf_stream_video": "",
@@ -493,7 +520,7 @@
       "content": [
         {
           "title": "Living & Dining",
-          "text": "<p>Open, fluid layouts encourage connection and effortless entertaining. Natural textures meet refined detailing for warmth that feels contemporary yet enduring.</p>\n",
+          "text": "<p>Open, fluid layouts encourage connection and effortless entertaining. Natural textures meet refined detailing for warmth that feels contemporary yet enduring..</p>\n",
           "two_col_list": false,
           "list": ""
         },
@@ -643,7 +670,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-render-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-render-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 200,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-render-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 267,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-render-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 400
             }
           },
           "caption": ""
@@ -775,7 +811,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-sink-render-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-sink-render.jpg",
+              "gform-image-choice-sm-width": 240,
+              "gform-image-choice-sm-height": 300,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-sink-render.jpg",
+              "gform-image-choice-md-width": 320,
+              "gform-image-choice-md-height": 400,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-sink-render.jpg",
+              "gform-image-choice-lg-width": 480,
+              "gform-image-choice-lg-height": 600
             }
           },
           "caption": ""
@@ -907,7 +952,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bathroom-render-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bathroom-render.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 240,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bathroom-render.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 320,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bathroom-render.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 480
             }
           },
           "caption": ""
@@ -1039,7 +1093,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 278,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 370,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 555
             }
           },
           "caption": "a bathroom"
@@ -1171,7 +1234,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 200,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 267,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 400
             }
           },
           "caption": ""
@@ -1303,7 +1375,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 169,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 225,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 337
             }
           },
           "caption": ""
@@ -1435,7 +1516,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 120,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 160,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 239
             }
           },
           "caption": "a lounge"
@@ -1567,7 +1657,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 195,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 260,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 390
             }
           },
           "caption": "a kitchen"
@@ -1727,7 +1826,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 240,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 320,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 480
             }
           },
           "caption": ""
@@ -1859,7 +1967,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 240,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 320,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 480
             }
           },
           "caption": ""
@@ -1991,7 +2108,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape3-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape3.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 240,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape3.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 320,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-landscape3.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 480
             }
           },
           "caption": ""
@@ -2123,7 +2249,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 200,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 267,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/residences-2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 400
             }
           },
           "caption": ""
@@ -2255,7 +2390,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 195,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 260,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/kitchen-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 390
             }
           },
           "caption": ""
@@ -2415,7 +2559,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait.jpg",
+              "gform-image-choice-sm-width": 240,
+              "gform-image-choice-sm-height": 300,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait.jpg",
+              "gform-image-choice-md-width": 320,
+              "gform-image-choice-md-height": 400,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait.jpg",
+              "gform-image-choice-lg-width": 480,
+              "gform-image-choice-lg-height": 600
             }
           },
           "caption": ""
@@ -2547,7 +2700,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait2.jpg",
+              "gform-image-choice-sm-width": 240,
+              "gform-image-choice-sm-height": 300,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait2.jpg",
+              "gform-image-choice-md-width": 320,
+              "gform-image-choice-md-height": 400,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait2.jpg",
+              "gform-image-choice-lg-width": 480,
+              "gform-image-choice-lg-height": 600
             }
           },
           "caption": ""
@@ -2679,7 +2841,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait3-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait3.jpg",
+              "gform-image-choice-sm-width": 240,
+              "gform-image-choice-sm-height": 300,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait3.jpg",
+              "gform-image-choice-md-width": 320,
+              "gform-image-choice-md-height": 400,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/bathroom-portrait3.jpg",
+              "gform-image-choice-lg-width": 480,
+              "gform-image-choice-lg-height": 600
             }
           },
           "caption": ""
@@ -2811,7 +2982,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 278,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 370,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/luxury-bathroom.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 555
             }
           },
           "caption": ""
@@ -2943,7 +3123,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 120,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 160,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/park-row-lobby2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 239
             }
           },
           "caption": ""
@@ -2966,5 +3155,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-16 20:13:04"
+  "_syncedAt": "2026-01-22 19:03:06"
 }

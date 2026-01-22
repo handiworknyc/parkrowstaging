@@ -1,5 +1,5 @@
 import videojs from "video.js";
-import "videojs-contrib-quality-levels";
+//import "videojs-contrib-quality-levels";
 
 /* -----------------------------------------------------
    CONFIG
@@ -111,7 +111,7 @@ export function initCFVideo(videoId) {
 
   wrap.classList.add("paused");
 
-  /* -----------------------------------------------------
+/* -----------------------------------------------------
      UI state
 ----------------------------------------------------- */
   const setPlaying = () => {

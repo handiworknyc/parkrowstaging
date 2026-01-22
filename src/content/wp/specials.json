@@ -124,7 +124,16 @@
         "gb-block-post-grid-landscape-height": 400,
         "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-600x600.jpg",
         "gb-block-post-grid-square-width": 600,
-        "gb-block-post-grid-square-height": 600
+        "gb-block-post-grid-square-height": 600,
+        "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+        "gform-image-choice-sm-width": 300,
+        "gform-image-choice-sm-height": 169,
+        "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+        "gform-image-choice-md-width": 400,
+        "gform-image-choice-md-height": 225,
+        "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+        "gform-image-choice-lg-width": 600,
+        "gform-image-choice-lg-height": 337
       }
     }
   }

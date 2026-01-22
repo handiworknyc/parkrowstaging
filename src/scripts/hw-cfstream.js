@@ -315,7 +315,7 @@ HW.initVideos = function (selector = '.hw-vid-player') {
 			sourceEl.setAttribute("type", "video/mp4");
 		} else {
 			let bandwidthHint = (!HW.isMobile && !HW.isIpad) ? '?clientBandwidthHint=1000' : '';
-			sourceEl.setAttribute("src", `https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/${hwVidId}/manifest/video.m3u8${bandwidthHint}#t=0.1`);
+			sourceEl.setAttribute("src", `https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/${hwVidId}/manifest/video.m3u8${bandwidthHint}#t=0.1`);
 			sourceEl.setAttribute("type", "application/x-mpegURL");
 		}
 

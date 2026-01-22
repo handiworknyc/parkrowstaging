@@ -141,10 +141,19 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 171,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 228,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park_row_neighborhood.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 342
             }
           },
-          "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/3ff46ea83a1f1f1dafc06fbd03f86bea/manifest/video.m3u8",
+          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/860f7d85d8db2c9989a2c5b47c6e9835/manifest/video.m3u8",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -180,7 +189,7 @@
           "video": [
             {
               "yt_img": false,
-              "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/3913edb1796d8befde36e2ebc45f11a2/manifest/video.m3u8",
+              "cf_stream_video": "",
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -322,7 +331,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/collage-book-600x600.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/collage-book-scaled.jpg",
+                  "gform-image-choice-sm-width": 257,
+                  "gform-image-choice-sm-height": 300,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/collage-book-scaled.jpg",
+                  "gform-image-choice-md-width": 343,
+                  "gform-image-choice-md-height": 400,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/collage-book-scaled.jpg",
+                  "gform-image-choice-lg-width": 515,
+                  "gform-image-choice-lg-height": 600
                 }
               },
               "cf_stream_video": "",
@@ -467,7 +485,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-running-600x600.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-running.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 214,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-running.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 285,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-running.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 427
                 }
               },
               "cf_stream_video": "",
@@ -612,7 +639,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/park-panorama-600x400.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 400
+                  "gb-block-post-grid-square-height": 400,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/park-panorama.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 83,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/park-panorama.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 111,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/park-panorama.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 167
                 }
               },
               "cf_stream_video": "",
@@ -757,7 +793,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic-600x400.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 400
+                  "gb-block-post-grid-square-height": 400,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 169,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 225,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 338
                 }
               },
               "cf_stream_video": "",
@@ -902,7 +947,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic2-600x400.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 400
+                  "gb-block-post-grid-square-height": 400,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic2.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 169,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic2.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 225,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/picnic2.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 338
                 }
               },
               "cf_stream_video": "",
@@ -1047,7 +1101,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-panorama-600x400.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 400
+                  "gb-block-post-grid-square-height": 400,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-panorama.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 83,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-panorama.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 111,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/woman-panorama.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 167
                 }
               },
               "cf_stream_video": "",
@@ -1192,7 +1255,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/women-brunching.jpg",
                   "gb-block-post-grid-square-width": 561,
-                  "gb-block-post-grid-square-height": 400
+                  "gb-block-post-grid-square-height": 400,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/women-brunching.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 214,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/women-brunching.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 285,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/women-brunching.jpg",
+                  "gform-image-choice-lg-width": 561,
+                  "gform-image-choice-lg-height": 400
                 }
               },
               "cf_stream_video": "",
@@ -1337,7 +1409,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/dinner-time-600x600.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/dinner-time-scaled.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 187,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/dinner-time-scaled.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 249,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/dinner-time-scaled.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 374
                 }
               },
               "cf_stream_video": "",
@@ -1501,7 +1582,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/large-map-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/large-map.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 145,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/large-map.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 193,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/01/large-map.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 290
             }
           },
           "caption": "A caption for a slide"
@@ -1633,7 +1723,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/penthouse2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/penthouse2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 195,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/penthouse2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 260,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/penthouse2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 390
             }
           },
           "caption": "Another slide caption"
@@ -1765,7 +1864,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/woman-in-park-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/woman-in-park-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 197,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/woman-in-park-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 262,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/woman-in-park-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 393
             }
           },
           "caption": "A woman just walking"
@@ -1897,7 +2005,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 168,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 224,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-penthouses2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 336
             }
           },
           "caption": "A vase"
@@ -1905,5 +2022,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-16 20:13:00"
+  "_syncedAt": "2026-01-22 19:02:59"
 }

@@ -11,7 +11,7 @@
   },
   {
     "path": "/bellevue/",
-    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/3ff46ea83a1f1f1dafc06fbd03f86bea/manifest/video.m3u8",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/860f7d85d8db2c9989a2c5b47c6e9835/manifest/video.m3u8",
     "lcp": {
       "href": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp",
       "imagesrcset": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-1000x569-1b3bb200.jpg.webp 1000w, /img-cache/park_row_neighborhood-600x342-503407da.jpg.webp 600w",
@@ -49,7 +49,7 @@
   },
   {
     "path": "/building/",
-    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/95ca71e5f83721133687c0a12594a4c9/manifest/video.m3u8",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/80dcea932c6f052c59dee0382dfd3d1e/manifest/video.m3u8",
     "lcp": {
       "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp",
       "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1000x569-ae5f105a.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-600x342-f2345ef4.jpg.webp 600w",
@@ -59,7 +59,7 @@
   },
   {
     "path": "/",
-    "video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/ed18c619dfce78c765b6060654f7216b/manifest/video.m3u8",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/45b6029259380dd00872b71a4e120217/manifest/video.m3u8",
     "lcp": {
       "href": "/img-cache/leaves-background-6751f1f6.jpg.webp",
       "imagesrcset": "/img-cache/leaves-background-6751f1f6.jpg.webp 1440w, /img-cache/leaves-background-6751f1f6.jpg.webp 1440w, /img-cache/leaves-background-1000x625-c92c6985.jpg.webp 1000w, /img-cache/leaves-background-600x375-37c267dd.jpg.webp 600w",

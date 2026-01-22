@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../layouts/MainLayout.astro";
+import GravityForm from '@/components/gf/GravityForm';
+---
+
+<BaseLayout 
+	title="Contact"
+>
+  <section class="container py-24">
+    <h1 class="text-5xl font-semibold mb-6">
+      Contact Us
+    </h1>
+
+    <p class="max-w-xl mb-12 text-lg opacity-80">
+      Fill out the form below and our team will get back to you shortly.
+    </p>
+
+	<GravityForm formId={1} client:load />
+  </section>
+</BaseLayout >

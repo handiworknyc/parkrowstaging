@@ -141,7 +141,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 270,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 361,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/11/plants2.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 541
             }
           },
           "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/dd1c7b15001caa7d2c9818e7ea43b949/manifest/video.m3u8",
@@ -166,5 +175,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-16 20:13:00"
+  "_syncedAt": "2026-01-22 19:02:58"
 }

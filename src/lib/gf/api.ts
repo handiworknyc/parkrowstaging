@@ -56,6 +56,29 @@ function authHeaders(): Record<string, string> {
   return { Authorization: `Basic ${token}` };
 }
 
+/** Gravity Forms REST auth header (server-only). */
+function gfAuthHeaders(): Record<string, string> {
+  const key = (getEnv("GF_CONSUMER_KEY") || "").trim();
+  const secret = (getEnv("GF_CONSUMER_SECRET") || "").trim();
+  if (!key || !secret) return {};
+
+  let token = "";
+  try {
+    // Edge + Deno
+    // @ts-ignore
+    token = globalThis.btoa
+      ? globalThis.btoa(`${key}:${secret}`)
+      : Buffer.from(`${key}:${secret}`, "utf8").toString("base64");
+  } catch {
+    token = Buffer.from(`${key}:${secret}`, "utf8").toString("base64");
+  }
+
+  return {
+    Authorization: `Basic ${token}`,
+  };
+}
+
+
 /** Build the WP base from envs. Prefer WORDPRESS_API_URL (minus /graphql), else WP_BASE_URL. */
 function getWpBase(): string | null {
   const gql = (getEnv("WORDPRESS_API_URL") || "").trim(); // e.g. https://site/graphql
@@ -172,10 +195,17 @@ export async function submitJSON(
   try {
     res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(shouldUseProxy ? {} : authHeaders()), // 🔐 attach Basic Auth only for direct server→WP
-      },
+		headers: {
+		"Content-Type": "application/json",
+
+		// Server → WordPress direct call
+		...(shouldUseProxy
+			? {}
+			: {
+				...gfAuthHeaders(), // ✅ GF consumer key auth
+			}),
+		},
+
       credentials: shouldUseProxy ? "same-origin" : "omit",
       body: JSON.stringify({ formId, payload }),
       signal: options?.signal,

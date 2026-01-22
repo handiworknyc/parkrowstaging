@@ -141,7 +141,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 170,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 227,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/park-row-amenities.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 341
             }
           },
           "cf_stream_video": "",
@@ -302,7 +311,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/health-club-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/health-club.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 159,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/health-club.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 212,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/health-club.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 317
             }
           },
           "cf_stream_video": "",
@@ -463,7 +481,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/yoga-room-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/yoga-room.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 172,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/yoga-room.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 229,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/yoga-room.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 343
             }
           },
           "cf_stream_video": "",
@@ -480,8 +507,8 @@
       "caption": "Yoga mats for wellness",
       "caption_pos": "right",
       "align": "right",
-      "title": "Health & Wellness",
-      "text": "<p>A light-filled fitness center, yoga studio, and outdoor pool framed by greenery nurture vitality and calm in equal measure.X</p>\n",
+      "title": "Health & Wellness X",
+      "text": "<p>A light-filled fitness center, yoga studio, and outdoor pool framed by greenery nurture vitality and calm in equal measure.</p>\n",
       "list": "Yoga mats\r\nAromatherapy\r\nMeditation\r\nFine herbs\r\nVegan food\r\nSoy milk\r\nKale burgers"
     },
     {
@@ -624,7 +651,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/indoor-pool-600x600.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/indoor-pool.jpg",
+                  "gform-image-choice-sm-width": 300,
+                  "gform-image-choice-sm-height": 171,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/indoor-pool.jpg",
+                  "gform-image-choice-md-width": 400,
+                  "gform-image-choice-md-height": 227,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/indoor-pool.jpg",
+                  "gform-image-choice-lg-width": 600,
+                  "gform-image-choice-lg-height": 341
                 }
               },
               "cf_stream_video": "",
@@ -770,10 +806,19 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-swimming.jpg",
                   "gb-block-post-grid-square-width": 332,
-                  "gb-block-post-grid-square-height": 420
+                  "gb-block-post-grid-square-height": 420,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-swimming.jpg",
+                  "gform-image-choice-sm-width": 237,
+                  "gform-image-choice-sm-height": 300,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-swimming.jpg",
+                  "gform-image-choice-md-width": 316,
+                  "gform-image-choice-md-height": 400,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-swimming.jpg",
+                  "gform-image-choice-lg-width": 332,
+                  "gform-image-choice-lg-height": 420
                 }
               },
-              "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/66b34d8b22b2c127f4d970d41ea5b9c3/manifest/video.m3u8",
+              "cf_stream_video": "",
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -916,7 +961,16 @@
                   "gb-block-post-grid-landscape-height": 400,
                   "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-lounge-600x600.jpg",
                   "gb-block-post-grid-square-width": 600,
-                  "gb-block-post-grid-square-height": 600
+                  "gb-block-post-grid-square-height": 600,
+                  "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-lounge.jpg",
+                  "gform-image-choice-sm-width": 240,
+                  "gform-image-choice-sm-height": 300,
+                  "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-lounge.jpg",
+                  "gform-image-choice-md-width": 320,
+                  "gform-image-choice-md-height": 400,
+                  "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/pool-lounge.jpg",
+                  "gform-image-choice-lg-width": 480,
+                  "gform-image-choice-lg-height": 600
                 }
               },
               "cf_stream_video": "",
@@ -1079,7 +1133,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 169,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 225,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/amenities-social-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 337
             }
           },
           "cf_stream_video": "",
@@ -1253,7 +1316,16 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/private-dining-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/private-dining-scaled.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 173,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/private-dining-scaled.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 231,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/private-dining-scaled.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 346
             }
           },
           "cf_stream_video": "",
@@ -1427,10 +1499,19 @@
               "gb-block-post-grid-landscape-height": 400,
               "gb-block-post-grid-square": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bike-600x600.jpg",
               "gb-block-post-grid-square-width": 600,
-              "gb-block-post-grid-square-height": 600
+              "gb-block-post-grid-square-height": 600,
+              "gform-image-choice-sm": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bike.jpg",
+              "gform-image-choice-sm-width": 300,
+              "gform-image-choice-sm-height": 138,
+              "gform-image-choice-md": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bike.jpg",
+              "gform-image-choice-md-width": 400,
+              "gform-image-choice-md-height": 184,
+              "gform-image-choice-lg": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2025/12/bike.jpg",
+              "gform-image-choice-lg-width": 600,
+              "gform-image-choice-lg-height": 277
             }
           },
-          "cf_stream_video": "https://customer-u7ssw6pfj8oowdhj.cloudflarestream.com/e2e872dc101b4f9e32540ff5c4487d63/manifest/video.m3u8",
+          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/d8e4a2c2efc237a58654efd433ccccae/manifest/video.m3u8",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1452,5 +1533,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-16 20:13:03"
+  "_syncedAt": "2026-01-22 19:03:04"
 }
