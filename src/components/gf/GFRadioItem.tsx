@@ -2,18 +2,23 @@
 
 import React, { useRef } from 'react';
 import { useRadio } from 'react-aria';
+import type { RadioGroupState } from 'react-stately';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Props = {
-  label: string;
+  text: string;
   value: string;
-  state: any;
+  state: RadioGroupState;
 };
 
-export function GFRadioItem({ label, value, state }: Props) {
+export function GFRadioItem({ text, value, state }: Props) {
   const ref = useRef<HTMLInputElement>(null);
 
   const { inputProps } = useRadio(
-    { value, children: label },
+    {
+      value,
+      children: text,
+    },
     state,
     ref
   );
@@ -21,27 +26,54 @@ export function GFRadioItem({ label, value, state }: Props) {
   const isSelected = state.selectedValue === value;
 
   return (
-    <label className="flex items-center gap-3 cursor-pointer">
+    <label className="flex items-center gap-3 cursor-pointer select-none">
       <input
         {...inputProps}
         ref={ref}
-        className="sr-only"
+        className="sr-only peer"
+        aria-required={state.isRequired}
       />
 
+      {/* Radio */}
       <span
         className={`
-          h-5 w-5 rounded-full border border-gray-300
-          flex items-center justify-center
-          transition
-          ${isSelected ? 'border-emerald-600' : ''}
+          relative
+          h-5 w-5
+          rounded-full
+          border border-black
+          transition-colors
+          peer-focus-visible:outline
+          peer-focus-visible:outline-1
+          peer-focus-visible:outline-emerald-500
+          peer-focus-visible:outline-offset-2
         `}
       >
-        {isSelected && (
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
-        )}
+        <AnimatePresence>
+          {isSelected && (
+            <motion.span
+              key="dot"
+              className="
+                absolute
+                left-1/2 top-1/2
+                h-2.5 w-2.5
+                rounded-full
+                bg-emerald-600
+              "
+              initial={{ scale: 0, x: '-50%', y: '-50%' }}
+              animate={{ scale: 1, x: '-50%', y: '-50%' }}
+              exit={{ scale: 0, x: '-50%', y: '-50%' }}
+              transition={{
+                type: 'spring',
+                stiffness: 500,
+                damping: 30,
+                mass: 0.6,
+              }}
+            />
+          )}
+        </AnimatePresence>
       </span>
 
-      <span className="text-sm">{label}</span>
+      <span className="gf-radio-label">{text}</span>
     </label>
   );
 }

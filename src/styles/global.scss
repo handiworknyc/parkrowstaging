@@ -4,7 +4,7 @@
 @use "hw-type";
 @use "hw-iconvars" as *;
 @use "hw-iconfont";
-@use "hw-gform";
+@use "hw-form-theme.scss";
 @use "hw-marquee";
 @use "hw-post-content";
 @use "hw-cfstream";
@@ -722,10 +722,16 @@ ul.two-col-list {
 	padding-bottom: 8.5rem;
 }
 
+
 .page-title-wrap-inner {
 	flex-direction: column;
 	display: flex;
 	gap: 2.25rem;
+}
+
+.contact-us-title {
+	padding-top: calc(var(--headerHeight) + 5rem);
+	padding-bottom: 5rem;
 }
 
 

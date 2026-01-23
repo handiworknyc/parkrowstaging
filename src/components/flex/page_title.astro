@@ -5,17 +5,18 @@ const {
   h1 = "",
   h2 = "",
   description = "",
+  className = ""
 } = Astro.props;
 
-// Destructure layout settings with defaults
+// Destructure layout settings
 const {
   section_title = "",
   section_h2 = "",
   section_text = "",
   green_bg = false,
-  section_text_below = false
+  section_text_below = false,
+  section_class = ""
 } = layout_settings;
-
 
 // ------------------
 // FALLBACK LOGIC
@@ -24,11 +25,29 @@ const pageTitle   = h1 || section_title || "";
 const pageSubhead = h2 || section_h2 || "";
 const pageText    = description || section_text || "";
 
+// ------------------
+// STATE
+// ------------------
+const hasSubhead = !!pageSubhead;
+
+// ------------------
+// SLOT STATE (OPTIONAL)
+// ------------------
+const hasSlot = Astro.slots?.default;
+
+// ------------------
+// CLASS MERGE
+// ------------------
+const sectionClass = [
+  "page-title-wrap",
+  green_bg && "bg-green-600",
+  section_text_below && "text-below",
+  section_class,
+  className
+].filter(Boolean).join(" ");
 ---
 
-<section
-  class="page-title-wrap"
->
+<section class={sectionClass}>
   <div class="hw-contain text-center page-title-wrap-inner">
 
     {/* H1 */}
@@ -40,7 +59,7 @@ const pageText    = description || section_text || "";
 
     {/* H2 */}
     {pageSubhead && (
-      <h2 class="figure text-[1.75rem]">
+      <h2 class="figure text-[1.75rem] leading-[2.75rem] max-w-[25em] mx-auto">
         {pageSubhead}
       </h2>
     )}
@@ -48,9 +67,20 @@ const pageText    = description || section_text || "";
     {/* Description */}
     {pageText && (
       <div
-        class="text-[1.25rem]"
+        class={
+          hasSubhead
+            ? "text-[1.25rem] max-w-[25em] mx-auto"
+            : "figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto"
+        }
         set:html={pageText}
       />
+    )}
+
+    {/* ✅ OPTIONAL SLOT (confirmation message, etc.) */}
+    {hasSlot && (
+      <div class="figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto">
+        <slot />
+      </div>
     )}
 
   </div>

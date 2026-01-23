@@ -1,0 +1,22 @@
+{
+  "kind": "page",
+  "id": 45,
+  "uri": "/inquire/",
+  "title": "Inquire",
+  "layouts": [
+    {
+      "acf_fc_layout": "page_title",
+      "layout_settings": {
+        "section_title": "",
+        "section_h2": "",
+        "section_text": "",
+        "green_bg": false,
+        "section_text_below": false
+      },
+      "h1": "Register for More Information",
+      "h2": "",
+      "description": "To learn more about Park Row or schedule a private appointment in our Sales Gallery, please register below.  A member of our team will be in touch to share details, availability, and upcoming opportunities."
+    }
+  ],
+  "_syncedAt": "2026-01-23 20:24:20"
+}

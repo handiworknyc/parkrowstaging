@@ -3,13 +3,9 @@
 import React from 'react';
 import { useRadioGroup } from 'react-aria';
 import { useRadioGroupState } from 'react-stately';
-import FloatingField from './FloatingField';
 import { GFRadioItem } from './GFRadioItem';
 
-type Option = {
-  label: string;
-  value: string;
-};
+type Option = { text: string; value: string };
 
 type Props = {
   label: string;
@@ -17,49 +13,83 @@ type Props = {
   value?: string;
   onChange?: (val: string) => void;
   isRequired?: boolean;
-  floatingLabel?: boolean;
+
+  /** ✅ server validation */
+  error?: boolean;
+  errorMessage?: string;
 };
 
-export function GFRadioGroup({
+export default function GFRadioGroup({
   label,
   options,
   value,
   onChange,
   isRequired,
-  floatingLabel = false,
+
+  error = false,
+  errorMessage,
 }: Props) {
   const state = useRadioGroupState({
-    value,
+    ...(value !== undefined
+      ? { value }
+      : { defaultValue: options[0]?.value }),
     onChange,
     isRequired,
   });
 
-  const { radioGroupProps, labelProps } = useRadioGroup(
-    { label },
+  const { radioGroupProps } = useRadioGroup(
+    {
+      label,
+      isRequired,
+      validationState: error ? 'invalid' : 'valid',
+    },
     state
   );
 
   return (
-    <FloatingField
-      label={label}
-      floating={floatingLabel}
-      isFocused={false}
-      hasValue={!!value}
+    <fieldset
+      {...radioGroupProps}
+      className={[
+        'gf-field',
+        'field-radio',
+        error && 'gf-error',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <div {...radioGroupProps} className="space-y-3 pt-6">
-        <span {...labelProps} className="sr-only">
-          {label}
-        </span>
+      {/* accessibility only */}
+      <legend className="sr-only">{label}</legend>
 
-        {options.map((o) => (
-          <GFRadioItem
-            key={o.value}
-            label={o.label}
-            value={o.value}
-            state={state}
-          />
-        ))}
+      <div className="gf-radio-row">
+        <div className="gf-radio-label">
+          {label}
+          {isRequired && (
+            <span
+              className="gf-required-asterisk"
+              aria-hidden="true"
+            >
+              *
+            </span>
+          )}
+        </div>
+
+        <div className="gf-radio-options">
+          {options.map((o) => (
+            <GFRadioItem
+              key={o.value}
+              text={o.text}
+              value={o.value}
+              state={state}
+            />
+          ))}
+        </div>
       </div>
-    </FloatingField>
+
+      {error && errorMessage && (
+        <div className="gf-error-message sr-only">
+          {errorMessage}
+        </div>
+      )}
+    </fieldset>
   );
 }

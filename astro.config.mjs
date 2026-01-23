@@ -10,7 +10,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   // Needed so API routes run server-side and can store MP4 files
-  output: "static",
+  output: 'server',
 
   // Netlify SSR adapter
   adapter: netlify(),

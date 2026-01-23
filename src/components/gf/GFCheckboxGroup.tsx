@@ -3,11 +3,10 @@
 import React from 'react';
 import { useCheckboxGroup } from 'react-aria';
 import { useCheckboxGroupState } from 'react-stately';
-import FloatingField from './FloatingField';
 import { GFCheckboxItem } from './GFCheckboxItem';
 
 type Option = {
-  label: string;
+  text: string;
   value: string;
 };
 
@@ -17,16 +16,21 @@ type Props = {
   value?: string[];
   onChange?: (val: string[]) => void;
   isRequired?: boolean;
-  floatingLabel?: boolean;
+
+  /* ✅ server validation */
+  error?: boolean;
+  errorMessage?: string;
 };
 
-export function GFCheckboxGroup({
+export default function GFCheckboxGroup({
   label,
   options,
   value = [],
   onChange,
   isRequired,
-  floatingLabel = false,
+
+  error = false,
+  errorMessage,
 }: Props) {
   const state = useCheckboxGroupState({
     value,
@@ -34,39 +38,64 @@ export function GFCheckboxGroup({
     isRequired,
   });
 
-  const { groupProps, labelProps } = useCheckboxGroup(
-    { label },
+  const { groupProps } = useCheckboxGroup(
+    {
+      label,
+      isRequired,
+      validationState: error ? 'invalid' : 'valid',
+    },
     state
   );
 
   return (
-    <FloatingField
-      label={label}
-      floating={floatingLabel}
-      isFocused={false}
-      hasValue={value.length > 0}
+    <fieldset
+      {...groupProps}
+      className={[
+        'gf-field',
+        'field-checkbox',
+        error && 'gf-error',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <div {...groupProps} className="space-y-3 pt-6">
-        <span {...labelProps} className="sr-only">
+      {/* accessibility only */}
+      <legend className="sr-only">{label}</legend>
+
+      <div className="gf-checkbox-row">
+        {/* LEFT COLUMN */}
+        <div className="gf-checkbox-label">
           {label}
-        </span>
+          {isRequired && (
+            <span aria-hidden="true">*</span>
+          )}
+        </div>
 
-        {options.map((o) => (
-          <GFCheckboxItem
-            key={o.value}
-            label={o.label}
-            value={o.value}
-            isSelected={value.includes(o.value)}
-            onChange={(checked) => {
-              const next = checked
-                ? [...value, o.value]
-                : value.filter((v) => v !== o.value);
+        {/* RIGHT COLUMN */}
+        <div className="gf-checkbox-options">
+          {options.map((o) => (
+            <GFCheckboxItem
+              key={o.value}
+              value={o.value}
+              text={o.text}
+              isSelected={value.includes(o.value)}
+              isRequired={isRequired}
+              onChange={(checked) => {
+                const next = checked
+                  ? [...value, o.value]
+                  : value.filter((v) => v !== o.value);
 
-              onChange?.(next);
-            }}
-          />
-        ))}
+                onChange?.(next);
+              }}
+            />
+          ))}
+        </div>
       </div>
-    </FloatingField>
+
+      {error && errorMessage && (
+        <div className="gf-error-message sr-only">
+          {errorMessage}
+        </div>
+      )}
+    </fieldset>
   );
 }

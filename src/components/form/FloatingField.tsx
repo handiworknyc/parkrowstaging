@@ -1,45 +1,81 @@
 'use client';
 
 import React from 'react';
-import clsx from 'clsx';
 
 type Props = {
   label: string;
+  labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
   isFocused: boolean;
   hasValue: boolean;
   floating?: boolean;
+  isRequired?: boolean;
+
+  /* ✅ new */
+  hasError?: boolean;
+
   children: React.ReactNode;
 };
 
 export default function FloatingField({
   label,
+  labelProps,
   isFocused,
   hasValue,
   floating = false,
+  isRequired = false,
+  hasError = false,
   children,
 }: Props) {
+  const active = isFocused || hasValue;
+
+  const LabelContent = (
+    <>
+      {label}
+      {isRequired && (
+        <span
+          className="gf-required-asterisk"
+          aria-hidden="true"
+        >
+          *
+        </span>
+      )}
+    </>
+  );
+
+  const wrapperClass = [
+    floating ? 'gf-field-floating' : 'gf-field-standard',
+    hasError && 'gf-field-error',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   if (!floating) {
     return (
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">{label}</span>
+      <label
+        {...labelProps}
+        className={`flex flex-col gap-1 ${wrapperClass}`}
+      >
+        <span>{LabelContent}</span>
         {children}
       </label>
     );
   }
 
-  const active = isFocused || hasValue;
-
   return (
-    <label className="relative block">
+    <label
+      {...labelProps}
+      className={`relative block ${wrapperClass}`}
+    >
       <span
-        className={clsx(
-          'pointer-events-none absolute left-3 transition-all duration-200 origin-left',
-          active
-            ? 'top-1 text-xs scale-90 text-gray-500'
-            : 'top-1/2 -translate-y-1/2 text-sm text-gray-400'
-        )}
+        className={[
+          'gf-floating-label',
+          active && 'is-active',
+          hasError && 'is-error',
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
-        {label}
+        {LabelContent}
       </span>
 
       {children}

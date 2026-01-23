@@ -1,117 +1,181 @@
-// src/pages/api/gf/submit.ts
-export const prerender = false; // ensure runtime execution
+import type { APIRoute } from 'astro';
 
-const TAG = "[/api/gf/submit]";
-const LOG = (getEnv("LOG_GFSUBMIT") || "").trim() === "1";
-const log = (...a: any[]) => LOG && console.log(TAG, ...a);
-const err = (...a: any[]) => console.error(TAG, ...a);
+export const prerender = false;
 
-// Read env safely in both server & build contexts
+/* =========================================================
+   ENV HELPERS
+========================================================= */
+
 function getEnv(name: string): string {
-  const ime = (typeof import.meta !== "undefined" && (import.meta as any).env) || {};
-  const pe = (typeof process !== "undefined" && (process as any).env) || {};
-  return String(pe[name] ?? ime[name] ?? "");
+  const ime =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+  const pe =
+    (typeof process !== 'undefined' && (process as any).env) || {};
+  return String(pe[name] ?? ime[name] ?? '');
 }
 
-// Robust base64 (Node & Edge)
-function toBase64(s: string): string {
-  try {
-    return typeof btoa === "function" ? btoa(s) : Buffer.from(s, "utf8").toString("base64");
-  } catch {
-    // eslint-disable-next-line no-undef
-    return Buffer.from(s, "utf8").toString("base64");
-  }
+function toBasicHeader(value?: string): string | null {
+  if (!value) return null;
+  if (value.startsWith('Basic ')) return value;
+
+  return `Basic ${Buffer.from(value, 'utf8').toString('base64')}`;
 }
 
-// Optional Basic Auth header
-function authHeaders(): Record<string, string> {
-  const pair = (getEnv("WP_AUTH_BASIC") || "").trim(); // "user:pass"
-  return pair ? { Authorization: `Basic ${toBase64(pair)}` } : {};
-}
+/* =========================================================
+   WORDPRESS BASE
+========================================================= */
 
-function gfAuthQuery(): string {
-  const key = (getEnv("GF_CONSUMER_KEY") || "").trim();
-  const secret = (getEnv("GF_CONSUMER_SECRET") || "").trim();
-
-  if (!key || !secret) return "";
-
-  const q = new URLSearchParams({
-    consumer_key: key,
-    consumer_secret: secret,
-  });
-
-  return q.toString();
-}
-
-
-// Build WP base from multiple envs (WORDPRESS_API_URL trims /graphql)
 function getWpBase(): string {
-  const gql = (getEnv("WORDPRESS_API_URL") || "").trim(); // e.g. https://site/graphql
-  const fromGql = gql ? gql.replace(/\/graphql\/?$/i, "") : "";
-  const base = (getEnv("WP_BASE_URL") || getEnv("PUBLIC_WP_BASE_URL") || fromGql || "").replace(/\/+$/, "");
-  return base;
+  const gql = (getEnv('WORDPRESS_API_URL') || '').trim();
+  const fromGql = gql ? gql.replace(/\/graphql\/?$/i, '') : '';
+
+  return (
+    getEnv('WP_BASE_URL') ||
+    getEnv('PUBLIC_WP_BASE_URL') ||
+    fromGql ||
+    ''
+  ).replace(/\/+$/, '');
 }
+
 
 const WP_BASE = getWpBase();
-if (!WP_BASE) console.warn(TAG, "Missing WP_BASE_URL / PUBLIC_WP_BASE_URL / WORDPRESS_API_URL");
 
-// GET → simple probe
-export async function GET() {
-  return new Response(JSON.stringify({ ok: false, message: "Use POST" }), {
-    status: 405,
-    headers: { "content-type": "application/json" },
-  });
-}
+/* =========================================================
+   POST
+========================================================= */
 
-// POST → proxy to WP REST (astro/v1/gf/submit)
-export async function POST({ request }: { request: Request }) {
-  const reqId = Math.random().toString(36).slice(2, 8);
+export const POST: APIRoute = async ({ request }) => {
+  if (!WP_BASE) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Missing WP base URL',
+      }),
+      { status: 500 }
+    );
+  }
+
+  let body: unknown;
 
   try {
-	const q = gfAuthQuery();
-	const wpUrl =
-	`${WP_BASE}/wp-json/astro/v1/gf/submit` +
-	(q ? `?${q}` : "");
-	
-	log(reqId, "incoming POST →", wpUrl, "hasAuth:", Boolean(getEnv("WP_AUTH_BASIC")));
+    body = await request.json();
+  } catch {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Invalid JSON body.',
+      }),
+      { status: 400 }
+    );
+  }
 
-    let body: any;
-    try {
-      body = await request.json();
-    } catch (e) {
-      err(reqId, "bad JSON body:", e);
-      return new Response(JSON.stringify({ ok: false, message: "Bad JSON" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      });
-    }
+  if (!body || typeof body !== 'object') {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Invalid request body.',
+      }),
+      { status: 400 }
+    );
+  }
 
-    const upstream = await fetch(wpUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeaders(), // ✅ Basic Auth if configured
-      },
-      body: JSON.stringify(body),
-      // credentials: not needed server→server; avoid "include"
+  const { form_id, fields } = body as {
+    form_id?: number | string;
+    fields?: unknown;
+  };
+
+  if (
+    !form_id ||
+    !fields ||
+    typeof fields !== 'object' ||
+    Array.isArray(fields)
+  ) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Missing form_id or fields.',
+      }),
+      { status: 400 }
+    );
+  }
+
+  /* -------------------------------------------------------
+     Build payload exactly like Next.js
+  ------------------------------------------------------- */
+
+  const fieldsPayload = {
+    ...(fields as Record<string, string | string[]>),
+  };
+
+  const payload = {
+    form_id,
+    fields: fieldsPayload,
+    ...fieldsPayload,
+  };
+
+  /* -------------------------------------------------------
+     Headers
+  ------------------------------------------------------- */
+
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  const auth = toBasicHeader(getEnv('WP_AUTH_BASIC'));
+  if (auth) {
+    headers.Authorization = auth;
+  }
+
+  /* -------------------------------------------------------
+     WordPress endpoint
+  ------------------------------------------------------- */
+
+  const wpEndpoint =
+    `${WP_BASE}/wp-json/custom-gf/v1/submit`;
+
+  try {
+    const upstream = await fetch(wpEndpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      cache: 'no-store',
     });
 
-    const ct = upstream.headers.get("content-type") || "";
     const text = await upstream.text();
-    log(reqId, "← upstream", upstream.status, ct.split(";")[0], "len:", text.length, "head:", text.slice(0, 160));
+    const contentType =
+      upstream.headers.get('content-type') || 'application/json';
 
     return new Response(text, {
       status: upstream.status,
       headers: {
-        "content-type": ct || "application/json",
-        "x-gf-proxy": "astro",
+        'Content-Type': contentType,
+        'x-gf-proxy': 'astro',
       },
     });
-  } catch (e: any) {
-    err("proxy error:", e?.stack || e);
-    return new Response(JSON.stringify({ ok: false, message: "Proxy error" }), {
-      status: 500,
-      headers: { "content-type": "application/json" },
-    });
+  } catch (err) {
+    console.error('[api/gf/submit]', err);
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Proxy request failed',
+      }),
+      { status: 500 }
+    );
   }
-}
+};
+
+/* =========================================================
+   BLOCK GET
+========================================================= */
+
+export const GET: APIRoute = async () => {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Use POST',
+    }),
+    { status: 405 }
+  );
+};

@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { useSelect } from 'react-aria';
-import { useSelectState } from 'react-stately';
-import FloatingField from './FloatingField';
+import React, { useId } from 'react';
+import FloatingField from '../form/FloatingField';
 
 type Option = {
-  label: string;
+  text: string;
   value: string;
 };
 
@@ -15,54 +13,65 @@ type Props = {
   options: Option[];
   value?: string;
   onChange?: (val: string) => void;
-  floatingLabel?: boolean;
+  isRequired?: boolean;
+
+  /** ✅ server validation */
+  error?: boolean;
+  errorMessage?: string;
 };
 
-export function GFSelectField({
+export default function GFSelectField({
   label,
   options,
-  value,
+  value = '',
   onChange,
-  floatingLabel = false,
+  isRequired = false,
+
+  error = false,
+  errorMessage,
 }: Props) {
-  const ref = useRef<HTMLSelectElement>(null);
-
-  const state = useSelectState({
-    selectedKey: value,
-    onSelectionChange: (key) => onChange?.(String(key)),
-    items: options.map((o) => ({
-      key: o.value,
-      textValue: o.label,
-    })),
-  });
-
-  const { triggerProps, isFocused } = useSelect({}, state, ref);
+  const id = useId();
 
   return (
     <FloatingField
       label={label}
-      floating={floatingLabel}
-      isFocused={isFocused}
-      hasValue={!!value}
+      floating
+      isFocused={false}
+      hasValue={value !== ''}
+      isRequired={isRequired}
+      hasError={error}
     >
       <select
-        ref={ref}
-        {...triggerProps}
+        id={id}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className="
-          w-full rounded-lg border border-gray-300
-          px-3 pt-6 pb-2 bg-white
-          focus:outline-none focus:ring-2 focus:ring-emerald-500
-        "
+        required={isRequired}
+        aria-required={isRequired}
+        aria-invalid={error || undefined}
+        data-has-value={value !== '' ? 'true' : 'false'}
+        className={[
+          'input-select',
+          error && 'gf-error',
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
-        <option value="">Select…</option>
+        <option value="" disabled hidden>
+          Select…
+        </option>
+
         {options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {o.text}
           </option>
         ))}
       </select>
+
+      {error && errorMessage && (
+        <div className="gf-error-message sr-only">
+          {errorMessage}
+        </div>
+      )}
     </FloatingField>
   );
 }

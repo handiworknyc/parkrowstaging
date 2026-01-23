@@ -1,0 +1,486 @@
+:root {
+  --gf-radius: 0.5rem;
+  --gf-border: #000;
+  --gf-padding-y: 1rem;
+  --gf-padding-x: 1.25rem;
+  --gf-height: 5.25rem;
+
+  --gf-font: 16px;
+
+  /* unified label + field title size */
+  --gf-label-font: 16px;
+
+  /* floating label motion */
+  --gf-label-scale: 0.85;
+  --gf-label-offset-y: 0.65rem;
+}
+
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+
+.sr-only {
+	display: block !important;
+}
+
+.gf-form {
+	max-width: 680px;
+	margin: 0 auto;
+}
+/* =====================================================
+   BASE FIELD WRAPPER
+===================================================== */
+
+.gf-field {
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+/* =====================================================
+   STANDARD INPUTS
+===================================================== */
+
+.gf-field input,
+.gf-field select,
+.gf-field textarea {
+  width: 100%;
+  height: var(--gf-height);
+  padding: var(--gf-padding-y) var(--gf-padding-x);
+
+  font-size: var(--gf-font);
+  font-family: inherit;
+  color: #000;
+  background: #fff;
+
+  border-radius: var(--gf-radius);
+  border: 1px solid var(--gf-border);
+
+  box-sizing: border-box;
+  outline: none;
+
+  &:focus {
+	background-color: #F1F2F2;
+  }
+}
+
+.field-checkbox:focus-within,
+.field-radio:focus-within {
+  background-color: #F1F2F2;
+}
+
+.gf-radio-label {
+  font-size: var(--gf-font);
+  white-space: nowrap;
+}
+
+.gf-floating-label + select,
+.gf-floating-label + input {
+	padding-top: 1.75rem;
+	line-height: 2rem;
+	padding-bottom: 0;
+	overflow: visible;
+}
+
+/* =====================================================
+   FLOATING LABEL BASE
+===================================================== */
+
+.gf-floating-label {
+  position: absolute;
+  left: var(--gf-padding-x);
+
+  font-size: var(--gf-label-font);
+  color: #000;
+
+  transform-origin: left top;
+
+  transition:
+    transform 0.18s ease,
+    top 0.18s ease,
+    color 0.18s ease;
+}
+
+/* centered state */
+
+.gf-floating-label {
+  display: block;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* active (focused or filled) */
+
+.gf-floating-label.is-active {
+  top: var(--gf-label-offset-y);
+  transform: scale(var(--gf-label-scale));
+}
+
+
+
+.gf-floating-wrap {
+  position: relative;
+  display: block;
+}
+
+.gf-floating-label {
+  position: absolute;
+  left: var(--gf-padding-x);
+  top: 50%;
+  transform: translateY(-50%);
+  transform-origin: left top;
+
+  transition: transform 200ms ease, top 200ms ease;
+  pointer-events: none;
+}
+
+
+
+
+
+
+.gf-field {
+  position: relative;
+}
+
+/* label sits ON TOP of select */
+.gf-floating-label {
+  position: absolute;
+  left: var(--gf-padding-x);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+
+  font-size: var(--gf-label-font);
+  color: #555;
+
+  transition:
+    transform 0.2s ease,
+    font-size 0.2s ease,
+    top 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+
+
+
+
+
+
+/* =====================================================
+   TEXTAREA
+===================================================== */
+
+.field-textarea textarea {
+  min-height: calc(var(--gf-height) * 1.5);
+  resize: vertical;
+}
+
+/* =====================================================
+   SELECT DROPDOWN ARROW
+===================================================== */
+
+.gf-field select {
+  appearance: none;
+  font-size: var(--gf-label-font);
+
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='black' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 10px 6px;
+}
+
+.gf-field select.gf-error {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23dc2626' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+}
+
+
+
+
+/* hide placeholder text when empty */
+.input-select[data-has-value='false'] {
+  color: transparent;
+}
+
+/* keep arrow visible */
+.input-select[data-has-value='false'] {
+  text-shadow: 0 0 0 transparent;
+}
+
+/* show text once selected */
+.input-select[data-has-value='true'] {
+  color: #000;
+}
+
+
+
+
+
+/* =====================================================
+   RADIO + CHECKBOX — UNIFORM FIELD BOX
+===================================================== */
+
+.field-radio fieldset,
+.field-checkbox fieldset {
+  width: 100%;
+  height: var(--gf-height);
+
+  border: 1px solid var(--gf-border);
+  border-radius: var(--gf-radius);
+
+  padding: var(--gf-padding-y) var(--gf-padding-x);
+  margin: 0;
+
+  display: flex;
+  align-items: center;
+}
+
+/* =====================================================
+   GRID ROW (label left / options right)
+===================================================== */
+
+.gf-radio-row,
+.gf-checkbox-row {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: minmax(220px, 35%) 1fr;
+  column-gap: 1.5rem;
+
+  align-items: stretch;
+}
+
+/* =====================================================
+   LEFT LABEL (FIELD TITLE)
+===================================================== */
+
+.gf-radio-label,
+.gf-checkbox-label {
+  display: flex;
+  align-items: center;
+
+  font-size: var(--gf-label-font);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* =====================================================
+   RIGHT OPTIONS
+===================================================== */
+
+.gf-radio-options,
+.gf-checkbox-options {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 2.25rem;
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   OPTION LABELS
+===================================================== */
+
+.gf-radio-options label,
+.gf-checkbox-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  font-size: var(--gf-label-font);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   INPUT CONTROLS
+===================================================== */
+
+.field-radio input[type='radio'],
+.field-checkbox input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+
+  accent-color: #000;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   MOBILE STACKING
+===================================================== */
+
+@media (max-width: 700px) {
+  .gf-radio-row,
+  .gf-checkbox-row {
+    grid-template-columns: 1fr;
+    row-gap: 0.5rem;
+  }
+
+  .gf-radio-options,
+  .gf-checkbox-options {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+
+
+
+
+
+
+
+
+.gf-submit {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 1.6rem 0 2.5rem;
+	font-size: 17px;
+	border-radius: 3rem;
+	border: 1px solid hsla(20, 26%, 18%, 1);
+	background-color: hsla(302, 26%, 71%, 0.4);
+	
+	&:after {
+		position: relative;
+		top: 1px;
+		display: inline-flex;
+		align-items: center;
+		padding-left: 2px;
+		font-size: 28px;
+	}
+}
+
+
+
+
+
+
+
+
+
+/* =====================================================
+   GRAVITY FORM — ERROR STATES
+===================================================== */
+
+:root {
+  --gf-error: #dc2626;          /* red-600 */
+  --gf-error-bg: #fef2f2;       /* subtle red tint */
+}
+
+/* ---------------------------------------
+   INPUT / SELECT / TEXTAREA
+---------------------------------------- */
+
+.gf-input.gf-error,
+.gf-field textarea.gf-error {
+  border-color: var(--gf-error);
+  color: var(--gf-error);
+}
+
+.gf-floating-label.is-error {
+  color: var(--gf-error);
+}
+
+.gf-field select.gf-error {
+  border-color: var(--gf-error);
+}
+
+.gf-input.gf-error:focus,
+.gf-field select.gf-error:focus,
+.gf-field textarea.gf-error:focus {
+  border-color: var(--gf-error);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
+/* ---------------------------------------
+   FLOATING LABEL
+---------------------------------------- */
+
+.gf-floating-label.has-error,
+.gf-field .gf-floating-label.has-error {
+  color: var(--gf-error);
+}
+
+/* optional: red when active too */
+.gf-floating-label.is-active.has-error {
+  color: var(--gf-error);
+}
+
+/* ---------------------------------------
+   RADIO / CHECKBOX FIELD WRAPPER
+---------------------------------------- */
+
+.field-radio.gfield-error fieldset,
+.field-checkbox.gfield-error fieldset,
+.field-radio.has-error fieldset,
+.field-checkbox.has-error fieldset {
+  border-color: var(--gf-error);
+  background-color: var(--gf-error-bg);
+}
+
+/* left label text */
+.gf-radio-label,
+.gf-checkbox-label {
+  transition: color 0.2s ease;
+}
+
+.field-radio.has-error .gf-radio-label,
+.field-checkbox.has-error .gf-checkbox-label {
+  color: var(--gf-error);
+}
+
+/* ---------------------------------------
+   RADIO / CHECKBOX INPUT COLOR
+---------------------------------------- */
+
+.field-radio.has-error input[type='radio'],
+.field-checkbox.has-error input[type='checkbox'] {
+  accent-color: var(--gf-error);
+}
+
+/* ---------------------------------------
+   ERROR MESSAGE TEXT
+---------------------------------------- */
+
+.gf-error-message {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: var(--gf-error);
+}
+
+
+html {
+  --loaderFade: 1;
+}
+
+.contact-us-title,
+.gf-contact-terms,
+.gf-form {
+  opacity: var(--loaderFade);
+}
+
+body.gf-success-active .gf-form {
+	pointer-events: none;
+}
+
+.contact-form-section-wrap {
+	transition: all .5s;
+	position: relative;
+}
+
+body.gf-success-active .contact-form-section-wrap {
+	overflow: hidden;
+	max-height: var(--jsVhUnits100)
+}
+
+
+#gf-confirmation-text br + br {
+	display: none;
+}
+
+.gf-confirmation-message {
+	padding: 0 !important;
+}

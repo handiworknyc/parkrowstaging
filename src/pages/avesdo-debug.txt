@@ -1,0 +1,88 @@
+---
+const API_BASE = 'https://api.avesdo.com';
+
+const headers = {
+  Authorization: `Bearer ${import.meta.env.AVESDO}`,
+  Accept: 'application/json',
+};
+
+async function safeJson(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error('❌ NON-JSON RESPONSE');
+    console.error('STATUS:', res.status);
+    console.error('TEXT:', text);
+    return null;
+  }
+}
+
+// ----------------------------------
+// DEVELOPMENTS
+// ----------------------------------
+const devRes = await fetch(`${API_BASE}/v2/developments`, { headers });
+const developments = await safeJson(devRes);
+
+console.log('DEVELOPMENTS:', developments);
+
+// ----------------------------------
+// FIND PARK ROW
+// ----------------------------------
+const parkRow = developments?.find(
+  (d) => d.name === 'Park Row - Bellevue'
+);
+
+console.log('PARK ROW:', parkRow);
+
+// ----------------------------------
+// PROPERTIES
+// ----------------------------------
+let properties = [];
+
+if (parkRow?.id) {
+  const propRes = await fetch(
+    `${API_BASE}/v2/developments/${parkRow.id}/properties`,
+    { headers }
+  );
+
+  properties = await safeJson(propRes) || [];
+}
+
+console.log('PROPERTIES:', properties);
+
+// ----------------------------------
+// FLOORPLANS
+// ----------------------------------
+const floorplansByProperty = {};
+
+for (const property of properties) {
+  const fpRes = await fetch(
+    `${API_BASE}/v2/properties/${property.id}/floorplans`,
+    { headers }
+  );
+
+  const floorplans = await safeJson(fpRes);
+
+  floorplansByProperty[property.id] = {
+    property,
+    floorplans,
+  };
+
+  console.log(
+    `FLOORPLANS FOR PROPERTY ${property.id}`,
+    floorplans
+  );
+}
+---
+
+
+<h1>Park Row Floorplans</h1>
+
+{Object.values(floorplansByProperty).map(({ property, floorplans }) => (
+  <section>
+    <h2>{property.name}</h2>
+
+    <pre>{JSON.stringify(floorplans, null, 2)}</pre>
+  </section>
+))}
