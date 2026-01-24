@@ -254,7 +254,7 @@ export function initCFVideo(videoId) {
 
   wrap.classList.add("paused");
 
-    /* -----------------------------------------------------
+  /* -----------------------------------------------------
      UI state
   ----------------------------------------------------- */
   const setPlaying = () => {
@@ -269,19 +269,52 @@ export function initCFVideo(videoId) {
     wrap.classList.add("paused");
   };
 
+  // 🔑 Track if this is the first playback (for jank prevention)
+  let isFirstPlayback = true;
+
   if (isIOS) {
     const playHandler = () => {
       if (!playUnlocked) {
         vlog(videoId, "play blocked (locked)");
         return;
       }
-      vlog(videoId, "iOS play → fade");
-      requestAnimationFrame(setPlaying);
+
+      // 🔑 Only wait for frame on initial playback
+      if (isFirstPlayback) {
+        isFirstPlayback = false;
+        
+        // 🔑 iOS-specific: Wait for buffered data + triple rAF for compositing
+        if (el.readyState >= 3) {
+          // Already buffered
+          vlog(videoId, "iOS play → fade (buffered)");
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              requestAnimationFrame(setPlaying);
+            });
+          });
+        } else {
+          // Wait for buffer
+          vlog(videoId, "iOS play → waiting for buffer");
+          const onCanPlay = () => {
+            el.removeEventListener("canplay", onCanPlay);
+            vlog(videoId, "iOS canplay → fade");
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(setPlaying);
+              });
+            });
+          };
+          el.addEventListener("canplay", onCanPlay, { once: true });
+        }
+      } else {
+        // Subsequent plays: instant fade
+        vlog(videoId, "iOS play → fade (instant)");
+        requestAnimationFrame(setPlaying);
+      }
     };
     player.on("play", playHandler);
     trackListener(videoId, "play", playHandler);
   } else {
-    // 🔑 FIXED: Combined desktop playback + retry reset into ONE handler
     const playingHandler = () => {
       if (!playUnlocked) {
         vlog(videoId, "blocked playing → pause()");
@@ -292,10 +325,18 @@ export function initCFVideo(videoId) {
       // Reset retry count on successful playback
       playerRetries.set(videoId, 0);
 
-      waitForFirstFrame(el, () => {
-        vlog(videoId, "desktop first frame → fade");
+      // 🔑 Only wait for first frame on initial playback
+      if (isFirstPlayback) {
+        isFirstPlayback = false;
+        waitForFirstFrame(el, () => {
+          vlog(videoId, "desktop first frame → fade (initial)");
+          setPlaying();
+        });
+      } else {
+        // 🔑 Subsequent plays: instant fade (no jank risk)
+        vlog(videoId, "desktop playing → fade (instant)");
         setPlaying();
-      });
+      }
     };
     player.on("playing", playingHandler);
     trackListener(videoId, "playing", playingHandler);
@@ -366,8 +407,6 @@ export function initCFVideo(videoId) {
       attachObserver();
     }
   }
-
-  // 🔑 REMOVED: Duplicate playingHandler - now integrated above
 
   return player;
 }
