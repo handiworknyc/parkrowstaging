@@ -472,7 +472,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
           </button>
         </div>
 
-
+ 
       </motion.form>
 
       {showLoader && (
