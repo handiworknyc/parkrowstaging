@@ -5,13 +5,20 @@ import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
 import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
 export const prerender = true;
 
-// ✅ IMPORT HELPER FUNCTIONS
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage } from "../lib/wp/lcp"; 
-import { getPreloads } from "../lib/wp/preloads"; // <--- NEW IMPORT
+import { getPreloads } from "../lib/wp/preloads";
 
 export async function getStaticPaths() {
-  return getAllFlexiblePagePaths();
+  const allPaths = getAllFlexiblePagePaths();
+  
+  // ✅ Filter out /inquire/ so it doesn't conflict
+  return allPaths.filter(path => {
+    const slug = Array.isArray(path.params.slug) 
+      ? path.params.slug.join('/')
+      : path.params.slug;
+    return slug !== 'inquire';
+  });
 }
 
 const { slug = [] } = Astro.params;
@@ -23,21 +30,14 @@ if (!page) {
   Astro.response.statusText = "Not found";
 } 
 
-/* ---------------------------------------------------------
-   LCP & PRELOAD CALCULATION
---------------------------------------------------------- */
 let lcpData = null;
 let preloads = [];
 
 if (page && page.layouts) {
   const rows = normalizeLayouts(page.layouts);
-
   lcpData = getLcpImage(rows);
-  
-  // ✅ ONE LINE TO RULE THEM ALL
   preloads = getPreloads(rows);
 }
-
 ---
 
 {
