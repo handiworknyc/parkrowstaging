@@ -1,63 +1,78 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import GravityForm from './GravityForm';
 import type { GFFormSchema } from './GravityForm';
 
-type Props = { formId: number };
+/* =====================================================
+   STATIC FORM REGISTRY (NETLIFY SAFE)
+===================================================== */
 
-const formModules = import.meta.glob<true, string, { default: GFFormSchema }>(
-  '../../content/wp/forms/form-*.json',
-  { eager: true }
-);
+// ✅ Explicit imports — REQUIRED for Netlify SSR
+import form1 from '../../content/wp/forms/form-1.json';
+
+const FORMS: Record<number, GFFormSchema> = {
+  1: form1,
+};
+
+/* =====================================================
+   TYPES
+===================================================== */
+
+type Props = {
+  formId: number;
+};
+
+/* =====================================================
+   DEBUG HELPER
+===================================================== */
 
 function setDebug(data: any) {
   if (typeof window === 'undefined') return;
+
   (window as any).__GF_DEBUG__ = {
     ...(window as any).__GF_DEBUG__,
     ...data,
   };
 }
 
+/* =====================================================
+   COMPONENT
+===================================================== */
+
 export default function GravityFormWrapper({ formId }: Props) {
   const [clientReady, setClientReady] = useState(false);
 
+  /* -------------------------------------------
+     CLIENT CONFIRMATION
+  ------------------------------------------- */
   useEffect(() => {
     setClientReady(true);
 
-    const keys = Object.keys(formModules);
-    console.log('[GFWrapper] glob keys:', keys);
+    console.log('[GFWrapper] available forms:', Object.keys(FORMS));
 
     setDebug({
-      globKeys: keys,
-      formId,
+      availableForms: Object.keys(FORMS),
+      requestedFormId: formId,
     });
   }, [formId]);
 
+  /* -------------------------------------------
+     RESOLVE FORM
+  ------------------------------------------- */
   const form = useMemo(() => {
-    const want = `/form-${formId}.json`;
-
-    const hit = Object.entries(formModules).find(([path]) =>
-      path.replace(/\\/g, '/').endsWith(want)
-    );
-
-    const resolved = hit?.[1]?.default ?? null;
+    const resolved = FORMS[formId] ?? null;
 
     setDebug({
-      wanted: want,
-      resolvedPath: hit?.[0] ?? null,
+      resolvedFormId: formId,
       hasForm: !!resolved,
     });
 
     return resolved;
   }, [formId]);
 
-  if (!clientReady) {
-    return (
-      <div className="gf-debug p-4 border border-dashed">
-        Initializing form…
-      </div>
-    );
-  }
 
+  /* -------------------------------------------
+     MISSING FORM DEBUG
+  ------------------------------------------- */
   if (!form) {
     return (
       <div className="gf-debug p-4 border border-red-500 text-red-600">
@@ -66,17 +81,24 @@ export default function GravityFormWrapper({ formId }: Props) {
         </div>
 
         <div>
-          Requested: <code>form-{formId}.json</code>
+          Requested form ID: <code>{formId}</code>
         </div>
 
         <div className="mt-2 text-sm opacity-80">
-          Check DevTools →
-          <code className="ml-1">window.__GF_DEBUG__</code>
+          Available forms:{' '}
+          <code>{Object.keys(FORMS).join(', ') || 'none'}</code>
+        </div>
+
+        <div className="mt-2 text-sm opacity-80">
+          Inspect <code>window.__GF_DEBUG__</code> in DevTools.
         </div>
       </div>
     );
   }
 
+  /* -------------------------------------------
+     RENDER
+  ------------------------------------------- */
   return (
     <GravityForm
       form={form}
