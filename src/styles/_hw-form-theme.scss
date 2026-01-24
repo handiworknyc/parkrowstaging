@@ -235,6 +235,14 @@
   align-items: center;
 }
 
+@media (max-width: 599px) {
+	.field-radio fieldset,
+	.field-checkbox fieldset {
+		min-height: var(--gf-height);
+		height: auto;
+	}	
+}
+
 /* =====================================================
    GRID ROW (label left / options right)
 ===================================================== */
@@ -311,7 +319,7 @@
    MOBILE STACKING
 ===================================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 599px) {
   .gf-radio-row,
   .gf-checkbox-row {
     grid-template-columns: 1fr;
@@ -351,6 +359,8 @@
 		font-size: 28px;
 	}
 }
+
+
 
 
 

@@ -307,8 +307,8 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
 	const isDev = import.meta.env.DEV;
 	const endpoint = isDev 
-	? '/api/gf/submit'  // Works locally with Astro
-	: '/.netlify/functions/gf-submit';  // Works on Netlify
+		? '/api/gf/submit'  // Works locally with Astro
+		: '/.netlify/functions/gf-submit';  // Works on Netlify
 
 	const res = await fetch(endpoint, {
         method: 'POST',
