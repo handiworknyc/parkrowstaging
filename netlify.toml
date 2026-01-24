@@ -7,7 +7,7 @@
   port = 8888
   targetPort = 4321
 
-[build.environment]
-	NODE_ENV = "production"
-	DEBUG = "*"
-	NETLIFY_DEBUG = "true"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
