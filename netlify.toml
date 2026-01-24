@@ -6,3 +6,8 @@
   command = "npm run dev"
   port = 8888
   targetPort = 4321
+
+[build.environment]
+	NODE_ENV = "production"
+	DEBUG = "*"
+	NETLIFY_DEBUG = "true"

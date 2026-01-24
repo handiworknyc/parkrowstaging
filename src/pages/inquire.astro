@@ -3,22 +3,128 @@ import BaseLayout from "../layouts/MainLayout.astro";
 import GravityFormWrapper from "@/components/gf/GravityFormWrapper";
 import PageTitle from "@/components/flex/page_title.astro";
 
-import page from "@/content/wp/pages/inquire.json";
-import contactTerms from "@/content/wp/contact-terms.json";
+// ============================================
+// LOGGING HELPER
+// ============================================
+function log(message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logMsg = `[INQUIRY.ASTRO ${timestamp}] ${message}`;
+  
+  if (data !== undefined) {
+    console.log(logMsg, JSON.stringify(data, null, 2));
+  } else {
+    console.log(logMsg);
+  }
+}
+
+log('🚀 Starting inquiry.astro build/render');
+
+// ============================================
+// IMPORTS WITH ERROR HANDLING
+// ============================================
+let page: any = null;
+let contactTerms: any = null;
+let importErrors: string[] = [];
+
+try {
+  log('📦 Attempting to import page data...');
+  page = await import("@/content/wp/pages/inquire.json");
+  log('✅ Page data imported successfully', {
+    hasDefault: !!page.default,
+    hasLayouts: !!page?.default?.layouts,
+    layoutsLength: page?.default?.layouts?.length,
+    rawPageKeys: Object.keys(page)
+  });
+  // Handle default export
+  if (page.default) {
+    page = page.default;
+  }
+} catch (error) {
+  const errMsg = `❌ Failed to import page data: ${error}`;
+  log(errMsg);
+  importErrors.push(errMsg);
+  console.error(error);
+}
+
+try {
+  log('📦 Attempting to import contact terms...');
+  contactTerms = await import("@/content/wp/contact-terms.json");
+  log('✅ Contact terms imported successfully', {
+    hasDefault: !!contactTerms.default,
+    hasContactTerms: !!contactTerms?.default?.contact_terms,
+    rawTermsKeys: Object.keys(contactTerms)
+  });
+  // Handle default export
+  if (contactTerms.default) {
+    contactTerms = contactTerms.default;
+  }
+} catch (error) {
+  const errMsg = `❌ Failed to import contact terms: ${error}`;
+  log(errMsg);
+  importErrors.push(errMsg);
+  console.error(error);
+}
+
+// ============================================
+// PROCESS PAGE DATA
+// ============================================
+log('🔍 Processing page data...');
 
 const firstLayout = Array.isArray(page?.layouts)
   ? page.layouts[0]
   : null;
 
+log('First layout extracted', {
+  hasFirstLayout: !!firstLayout,
+  layoutName: firstLayout?.name,
+  layoutAcfType: firstLayout?.acf_fc_layout
+});
+
 const usePageTitle =
   firstLayout?.name === "page_title" ||
   firstLayout?.acf_fc_layout === "page_title";
 
+log('Page title decision', { usePageTitle });
+
 const titleData = firstLayout?.data || firstLayout || {};
+
+log('Title data prepared', {
+  hasTitleData: !!titleData,
+  titleDataKeys: Object.keys(titleData)
+});
+
+// ============================================
+// FINAL STATUS
+// ============================================
+log('📊 Final render status', {
+  hasPage: !!page,
+  hasContactTerms: !!contactTerms,
+  hasImportErrors: importErrors.length > 0,
+  usePageTitle,
+  environment: import.meta.env.MODE,
+  isSSR: import.meta.env.SSR
+});
+
+if (importErrors.length > 0) {
+  log('⚠️ Import errors summary', importErrors);
+}
 ---
 
 <BaseLayout title="Contact">
   <section class="hw-contain contact-form-section-wrap relative min-h-[var(--jsVhUnits100)]">
+
+    <!-- ================================
+         DEBUG INFO (visible in production)
+    ================================= -->
+    <div 
+      id="debug-info" 
+      style="display: none;"
+      data-has-page={!!page}
+      data-has-contact-terms={!!contactTerms}
+      data-use-page-title={usePageTitle}
+      data-import-errors={importErrors.join(' | ')}
+    >
+    </div>
 
     <!-- ================================
          DEFAULT PAGE TITLE
@@ -83,10 +189,39 @@ const titleData = firstLayout?.data || firstLayout || {};
 </BaseLayout>
 
 <!-- ====================================
+     CLIENT-SIDE DEBUG LOGGER
+===================================== -->
+<script>
+  // Log client-side environment
+  console.log('[CLIENT] 🌐 inquiry.astro loaded on client');
+  
+  const debugEl = document.getElementById('debug-info');
+  if (debugEl) {
+    console.log('[CLIENT] 📊 Debug info from server:', {
+      hasPage: debugEl.dataset.hasPage,
+      hasContactTerms: debugEl.dataset.hasContactTerms,
+      usePageTitle: debugEl.dataset.usePageTitle,
+      importErrors: debugEl.dataset.importErrors
+    });
+  }
+
+  // Make debug info visible in console
+  window.__INQUIRY_DEBUG__ = {
+    debugElement: debugEl?.dataset,
+    timestamp: new Date().toISOString()
+  };
+
+  console.log('[CLIENT] 🔍 window.__INQUIRY_DEBUG__:', window.__INQUIRY_DEBUG__);
+</script>
+
+<!-- ====================================
      CONFIRMATION TEXT BRIDGE
 ===================================== -->
 <script>
+  console.log('[CLIENT] 🔄 Setting up confirmation handler');
+  
   const el = document.getElementById('gf-confirmation-text');
+  console.log('[CLIENT] Confirmation element found:', !!el);
 
   let applied = false;
 
@@ -107,15 +242,20 @@ const titleData = firstLayout?.data || firstLayout || {};
   }
 
   function applyOnce() {
+    console.log('[CLIENT] 🎯 applyOnce called', { applied, hasEl: !!el });
+    
     if (applied) return;
     if (!el) return;
 
-    const msg = window.__GF_CONFIRMATION__;
+    const msg = (window as any).__GF_CONFIRMATION__;
+    console.log('[CLIENT] Confirmation message:', msg);
+    
     if (!msg) return;
 
     applied = true;
 
     el.innerHTML = sanitizeWithLineBreaks(msg);
+    console.log('[CLIENT] ✅ Confirmation text applied');
 
     window.removeEventListener('gf-confirmation', applyOnce);
   }
@@ -128,6 +268,8 @@ const titleData = firstLayout?.data || firstLayout || {};
 
   // listen until success fires
   window.addEventListener('gf-confirmation', applyOnce);
+  
+  console.log('[CLIENT] ✅ Confirmation listener registered');
 </script>
 
 
@@ -135,7 +277,6 @@ const titleData = firstLayout?.data || firstLayout || {};
   /* --------------------------------
      Base fade targets
   --------------------------------- */
-
 
   .gf-title-success {
     transition: opacity .7s ease;
