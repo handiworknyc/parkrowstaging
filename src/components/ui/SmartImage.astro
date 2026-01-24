@@ -1,18 +1,18 @@
 ---
 // src/components/ui/SmartImage.astro
-import fs from "node:fs";
-import path from "node:path";
-import { createHash } from "node:crypto";
 
-interface ImagesMap {
-  xl?: string;
-  large?: string;
-  med?: string | false;
-  small?: string | false;
+interface ImageSource {
+  url: string;
+  width: number;
 }
 
 interface Props {
-  images: ImagesMap;
+  images: {
+    xl?: string | ImageSource;
+    large?: string | ImageSource;
+    med?: string | ImageSource | false;
+    small?: string | ImageSource | false;
+  };
   sizes?: string;
   alt?: string;
   imgClass?: string;
@@ -31,92 +31,64 @@ const {
   fetchpriority = critical ? "high" : "auto",
   useSrcSet = true,
   forceSize,
-} = Astro.props as Props;
+} = Astro.props;
 
 /* --------------------------------------------------------------------------
-   HELPER: Get Local Path
+   HELPERS
 -------------------------------------------------------------------------- */
-function getLocalPath(url: string | undefined | false): string | null {
-  if (!url || typeof url !== "string") return null;
-  if (url.startsWith("/")) return url; 
-
-  try {
-    let processUrl = url;
-
-    // 1. STRIP .webp if it is a double extension
-    if (processUrl.toLowerCase().endsWith('.webp')) {
-      const withoutWebp = processUrl.slice(0, -5);
-      const extBefore = path.extname(withoutWebp);
-      if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
-          processUrl = withoutWebp;
-      }
+function extractUrl(img: string | ImageSource | undefined | false): string | null {
+  if (!img) return null;
+  if (typeof img === "string") {
+    // Filter out invalid strings
+    if (img === "false" || img === "undefined" || img === "null" || !img.trim()) {
+      return null;
     }
-
-    // 2. Generate Hash from CLEANED URL
-    const hash = createHash("md5").update(processUrl).digest("hex").slice(0, 8);
-    
-    // 3. Extract filename parts from CLEANED url
-    const urlObj = new URL(processUrl);
-    const basename = path.basename(urlObj.pathname); 
-    const ext = path.extname(basename); 
-    const nameWithoutExt = path.basename(basename, ext); 
-
-    // 4. Sanitize
-    const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
-
-    // 5. Append .webp to jpg/png
-    let finalExt = ext;
-    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
-        finalExt = `${ext}.webp`;
-    }
-
-    // 6. Final Filename
-    const filename = `${cleanName}-${hash}${finalExt}`;
-    
-    return `/img-cache/${filename}`;
-
-  } catch (err) {
-    console.warn(`[SmartImage] Error calculating path for ${url}`);
-    return url;
+    return img;
   }
+  return img.url || null;
 }
 
-/* --------------------------------------------------------------------------
-   1. RESOLVE ALL PATHS
--------------------------------------------------------------------------- */
-const xl = getLocalPath(images?.xl);
-const lg = getLocalPath(images?.large);
-const md = getLocalPath(images?.med);
-const sm = getLocalPath(images?.small);
+const DEFAULT_WIDTHS = {
+  xl: 1700,
+  large: 1400,
+  med: 1000,
+  small: 600,
+} as const;
 
 /* --------------------------------------------------------------------------
-   2. BUILD SRCSET
+   BUILD SRCSET
 -------------------------------------------------------------------------- */
-const allCandidates = [
-  { url: xl, w: "1700w" },
-  { url: lg, w: "1400w" },
-  { url: md, w: "1000w" },
-  { url: sm, w: "600w" }
-];
+const candidates = [
+  { url: extractUrl(images.xl), w: DEFAULT_WIDTHS.xl },
+  { url: extractUrl(images.large), w: DEFAULT_WIDTHS.large },
+  { url: extractUrl(images.med), w: DEFAULT_WIDTHS.med },
+  { url: extractUrl(images.small), w: DEFAULT_WIDTHS.small },
+].filter((c) => c.url);
 
-const validCandidates = allCandidates.filter(c => c.url);
-
-const generatedSrcSet = validCandidates.length > 0 
-  ? validCandidates.map(c => `${c.url} ${c.w}`).join(", ") 
+const srcSet = candidates.length > 0 
+  ? candidates.map((c) => `${c.url} ${c.w}w`).join(", ")
   : undefined;
 
 /* --------------------------------------------------------------------------
-   3. DETERMINE PRIMARY SRC
+   DETERMINE PRIMARY SRC
 -------------------------------------------------------------------------- */
-let srcToUse: string | null = null;
+let primarySrc: string | null = null;
 
 if (forceSize) {
-  if (forceSize === "xl") srcToUse = xl;
-  else if (forceSize === "large") srcToUse = lg;
-  else if (forceSize === "med") srcToUse = md;
-  else if (forceSize === "small") srcToUse = sm;
+  const sizeMap = {
+    xl: images.xl,
+    large: images.large,
+    med: images.med,
+    small: images.small,
+  };
+  primarySrc = extractUrl(sizeMap[forceSize]);
 } else {
-  srcToUse = xl || lg || md || sm || null;
+  // Fallback chain: xl → large → med → small
+  primarySrc = 
+    extractUrl(images.xl) || 
+    extractUrl(images.large) || 
+    extractUrl(images.med) || 
+    extractUrl(images.small);
 }
 
 /* --------------------------------------------------------------------------
@@ -126,19 +98,17 @@ const loading = critical ? "eager" : "lazy";
 const decoding = critical ? "sync" : "async";
 const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
 
-const finalSrcSet = (useSrcSet && !forceSize) ? generatedSrcSet : undefined;
-
-// Unique ID for critical script targeting
-const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : undefined;
+const useSrcSetAttr = useSrcSet && !forceSize && srcSet;
+const imgId = critical ? `crit-${crypto.randomUUID().slice(0, 8)}` : undefined;
 ---
 
-{srcToUse && (
+{primarySrc && (
   <>
     <img
       id={imgId}
-      src={finalSrcSet ? undefined : srcToUse}
-      srcset={finalSrcSet}
-      sizes={finalSrcSet ? sizes : undefined}
+      src={useSrcSetAttr ? undefined : primarySrc}
+      srcset={useSrcSetAttr || undefined}
+      sizes={useSrcSetAttr ? sizes : undefined}
       alt={alt}
       class={className}
       loading={loading}
@@ -146,47 +116,42 @@ const imgId = critical ? `crit-img-${Math.random().toString(36).slice(2, 8)}` : 
       fetchpriority={fetchpriority}
     />
 
-    {critical && (
-    <script is:inline define:vars={{ imgId }}>
-        (function() {
-        const img = document.getElementById(imgId);
-        if (!img) return;
+    {critical && imgId && (
+      <script is:inline define:vars={{ imgId }}>
+        (function () {
+          const img = document.getElementById(imgId);
+          if (!img) return;
 
-        function setLoaded() {
-            // Frame 1: Browser paints opacity: 0
+          const setLoaded = () => {
             requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                img.classList.add('lazy-loaded');
+              requestAnimationFrame(() => {
+                img.classList.add("lazy-loaded");
                 
-                    // console.log('CRITICAL LOADED');
-                    // 🚀 FIRE GLOBAL EVENT
-                    window.dispatchEvent(
-                        new CustomEvent('critImgLoaded', {
-                            detail: {
-                            id: imgId,
-                            src: img.currentSrc || img.src,
-                            width: img.naturalWidth,
-                            height: img.naturalHeight
-                            }
-                        })
-                    );
+                window.dispatchEvent(
+                  new CustomEvent("critImgLoaded", {
+                    detail: {
+                      id: imgId,
+                      src: img.currentSrc || img.src,
+                      width: img.naturalWidth,
+                      height: img.naturalHeight,
+                    },
+                  })
+                );
+              });
             });
-            });
-        }
+          };
 
-        if (img.complete && img.naturalWidth > 0) {
+          if (img.complete && img.naturalWidth > 0) {
             setLoaded();
-        } else {
-            if ('decode' in img) {
-            img.decode()
-                .then(setLoaded)
-                .catch(() => { img.onload = setLoaded; });
-            } else {
+          } else if ("decode" in img) {
+            img.decode().then(setLoaded).catch(() => {
+              img.onload = setLoaded;
+            });
+          } else {
             img.onload = setLoaded;
-            }
-        }
+          }
         })();
-    </script>
+      </script>
     )}
   </>
 )}

@@ -2,146 +2,150 @@
 import CFVideo from "../ui/CFVideo.astro";
 import CollageParallax from "../CollageParallax.jsx";
 
-const vars = { ...Astro.props };
-const { images = [] } = vars;
-
-function isImageMode(video) {
-  const v = video?.[0];
-  return !v?.cf_stream_video || v?.cf_stream_video === "";
+interface Props {
+  images?: Array<{
+    video?: any[];
+  }>;
 }
+
+const { images = [] } = Astro.props;
+
+/* ---------------- Helpers ---------------- */
+function isImageMode(video: any[] | undefined): boolean {
+  const v = video?.[0];
+  return !v?.cf_stream_video || v.cf_stream_video === "";
+}
+
+function hasVideo(index: number): boolean {
+  return !!images[index]?.video;
+}
+
+/* ---------------- Layout Configuration ---------------- */
+const LAYOUT_CONFIG = [
+  // Row 1: 3 items
+  {
+    rowClass: "row flex justify-[flex-end]",
+    items: [
+      {
+        index: 0,
+        cellClass: "col-5 push-1 photo-collage-cell ml-auto",
+        wrapClass: "pr img-load-par rounded-tl-[9rem] ofh",
+        strength: 11,
+        posterSize: "small",
+      },
+      {
+        index: 1,
+        cellClass: "col-3 photo-collage-cell ml-auto",
+        wrapClass: "pr img-load-par",
+        strength: 11,
+        posterSize: "small",
+      },
+      {
+        index: 2,
+        cellClass: "col-3 photo-collage-cell bleed-right",
+        wrapClass: "pr img-load-par",
+        strength: 11,
+        posterSize: "small",
+      },
+    ],
+  },
+  // Row 2: Full width inverted
+  {
+    rowClass: "row flex",
+    items: [
+      {
+        index: 3,
+        cellClass: "photo-collage-cell bleed-x w-full",
+        wrapClass: "pr img-load-par",
+        strength: 20,
+        invert: true,
+      },
+    ],
+  },
+  // Row 3: 2 items
+  {
+    rowClass: "row flex",
+    items: [
+      {
+        index: 4,
+        cellClass: "photo-collage-cell col-6 bleed-left",
+        wrapClass: "pr img-load-par",
+        posterSize: "med",
+      },
+      {
+        index: 5,
+        cellClass: "photo-collage-cell col-6 bleed-right",
+        wrapClass: "pr img-load-par",
+        strength: 20,
+        posterSize: "med",
+      },
+    ],
+  },
+  // Row 4: Full width inverted
+  {
+    rowClass: "row flex",
+    items: [
+      {
+        index: 6,
+        cellClass: "photo-collage-cell bleed-x w-full",
+        wrapClass: "pr img-load-par",
+        invert: true,
+      },
+    ],
+  },
+  // Row 5: 2 items
+  {
+    rowClass: "row flex",
+    items: [
+      {
+        index: 7,
+        cellClass: "photo-collage-cell col-5 bleed-left",
+        wrapClass: "pr img-load-par",
+        strength: 12,
+        posterSize: "med",
+      },
+      {
+        index: 8,
+        cellClass: "photo-collage-cell col-6",
+        wrapClass: "pr rounded-br-[9rem] ofh img-load-par",
+        strength: 12,
+        posterSize: "med",
+      },
+    ],
+  },
+] as const;
 ---
+
 <div class="photo-collage hw-contain">
+  {LAYOUT_CONFIG.map((row) => {
+    const visibleItems = row.items.filter((item) => hasVideo(item.index));
+    if (visibleItems.length === 0) return null;
 
-  {/* ---------- ROW 1 : #1–3 (Normal Direction) ---------- */}
-  <div class="row flex justify-[flex-end]">
-    {images.slice(0, 3).map((img, i) => {
-      const video = img?.video;
-      if (!video) return null;
+    return (
+      <div class={row.rowClass}>
+        {visibleItems.map((item) => {
+          const video = images[item.index].video;
+          const isImage = isImageMode(video);
+          const parallaxProps = {
+            strength: item.strength,
+            invert: item.invert,
+          };
 
-      const classMap = [
-        "col-5 push-1 photo-collage-cell ml-auto",
-        "col-3 photo-collage-cell ml-auto",
-        "col-3 photo-collage-cell bleed-right"
-      ];
-      // Only first item in first row needs rounding
-      const wrapClass = `pr img-load-par ${i === 0 ? "rounded-tl-[9rem] ofh" : ""}`;
-
-      return (
-        <div class={classMap[i]}>
-          <div class={wrapClass}>
-            {isImageMode(video) ? (
-              <CollageParallax strength='11' client:load>
-                <CFVideo video={video} posterForceSize="small" />
-              </CollageParallax>
-            ) : (
-              <CFVideo video={video} posterForceSize="small" />
-            )}
-          </div>
-        </div>
-      );
-    })}
-  </div>
-
-  {/* ---------- ROW 2 : #4 (Inverted Direction) ---------- */}
-  {images[3]?.video && (
-    <div class="row flex">
-      <div class="photo-collage-cell bleed-x w-full">
-        <div class="pr img-load-par">
-          {isImageMode(images[3].video) ? (
-            // Added `invert` prop here
-            <CollageParallax client:load strength={20} invert>
-              <CFVideo video={images[3].video} />
-            </CollageParallax>
-          ) : (
-            <CFVideo video={images[3].video} />
-          )}
-        </div>
+          return (
+            <div class={item.cellClass}>
+              <div class={item.wrapClass}>
+                {isImage ? (
+                  <CollageParallax client:load {...parallaxProps}>
+                    <CFVideo video={video} posterForceSize={item.posterSize} />
+                  </CollageParallax>
+                ) : (
+                  <CFVideo video={video} posterForceSize={item.posterSize} />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  )}
-
-  {/* ---------- ROW 3 : #5–6 (Normal Direction) ---------- */}
-  {(images[4]?.video || images[5]?.video) && (
-    <div class="row flex">
-      {images[4]?.video && (
-        <div class="photo-collage-cell col-6 bleed-left">
-          <div class="pr img-load-par">
-            {isImageMode(images[4].video) ? (
-              <CollageParallax client:load>
-                <CFVideo video={images[4].video} posterForceSize="med" />
-              </CollageParallax>
-            ) : (
-              <CFVideo video={images[4].video} posterForceSize="med" />
-            )}
-          </div>
-        </div>
-      )}
-
-      {images[5]?.video && (
-        <div class="photo-collage-cell col-6 bleed-right">
-          <div class="pr img-load-par">
-            {isImageMode(images[5].video) ? (
-              <CollageParallax client:load strength={20}>
-                <CFVideo video={images[5].video} posterForceSize="med" />
-              </CollageParallax>
-            ) : (
-              <CFVideo video={images[5].video} posterForceSize="med" />
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )}
-
-  {/* ---------- ROW 4 : #7 (Inverted Direction) ---------- */}
-  {images[6]?.video && (
-    <div class="row flex">
-      <div class="photo-collage-cell bleed-x w-full">
-        <div class="pr img-load-par">
-          {isImageMode(images[6].video) ? (
-            // Added `invert` prop here
-            <CollageParallax client:load invert>
-              <CFVideo video={images[6].video} />
-            </CollageParallax>
-          ) : (
-            <CFVideo video={images[6].video} />
-          )}
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* ---------- ROW 5 : #8–9 (Normal Direction) ---------- */}
-  {(images[7]?.video || images[8]?.video) && (
-    <div class="row flex">
-      {images[7]?.video && (
-        <div class="photo-collage-cell col-5 bleed-left">
-          <div class="pr img-load-par">
-            {isImageMode(images[7].video) ? (
-              <CollageParallax client:load strength="12">
-                <CFVideo video={images[7].video} posterForceSize="med" />
-              </CollageParallax>
-            ) : (
-              <CFVideo video={images[7].video} posterForceSize="med" />
-            )}
-          </div>
-        </div>
-      )}
-
-      {images[8]?.video && (
-        <div class="photo-collage-cell col-6">
-          <div class="pr rounded-br-[9rem] ofh img-load-par">
-            {isImageMode(images[8].video) ? (
-              <CollageParallax client:load strength="12">
-                <CFVideo video={images[8].video} posterForceSize="med" />
-              </CollageParallax>
-            ) : (
-              <CFVideo video={images[8].video} posterForceSize="med" />
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )}
-
+    );
+  })}
 </div>

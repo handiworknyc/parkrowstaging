@@ -1,15 +1,14 @@
 // /src/scripts/sticky-header.ts
 
-// ------------------------------------
-// DEBUG FLAG
-// ------------------------------------
 const DEBUG = false;
 
 function dbg(...args: any[]) {
-  if (DEBUG) console.log(...args);
+  if (DEBUG) console.log('[StickyHeader]', ...args);
 }
-// ------------------------------------
 
+// ------------------------------------
+// TYPES
+// ------------------------------------
 type HeaderConfig = {
   selector: string;
   bannerScroll?: boolean;
@@ -38,229 +37,286 @@ declare global {
 }
 
 // ------------------------------------
-// MOBILE MEDIA QUERY
+// CONSTANTS
 // ------------------------------------
-const MOB_BP = "(max-width: 699px)";
-const mobMQ = window.matchMedia(MOB_BP);
+const CONFIG = {
+  HIDE_AFTER: 64,
+  DOWN_THRESHOLD: 12,
+  UP_THRESHOLD: 6,
+  MOB_BREAKPOINT: 699,
+  FOOTER_ROOT_MARGIN: "0px 0px 300px 0px",
+  BANNER_SCROLL_MAX: 100,
+} as const;
+
+const MOB_MQ = window.matchMedia(`(max-width: ${CONFIG.MOB_BREAKPOINT}px)`);
+
 // ------------------------------------
+// HELPERS
+// ------------------------------------
+function getScrollY(): number {
+  return (
+    (document.scrollingElement || document.documentElement).scrollTop ||
+    window.scrollY ||
+    0
+  );
+}
 
-export default function initStickyHeader(
-  config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
-) {
-  dbg("[sticky] init");
-
-
-  const S =
-    (window.__stickyHeaderState ??=
-      {
-        installed: false,
-        headers: new Map(),
-        lastY: 0,
-        ticking: false,
-      });
-
-  if (S.installed) return;
-  S.installed = true;
-
-  const configs: HeaderConfig[] = (
-    Array.isArray(config) ? config : [config]
-  ).map((item) =>
+function normalizeConfig(
+  config: string | string[] | HeaderConfig | HeaderConfig[]
+): HeaderConfig[] {
+  const configs = Array.isArray(config) ? config : [config];
+  
+  return configs.map((item) =>
     typeof item === "string"
       ? { selector: item, bannerScroll: true }
       : { bannerScroll: true, ...item }
   );
+}
 
-  const HIDE_AFTER = 64;
-  const DOWN_THRESHOLD = 12;
-  const UP_THRESHOLD = 6;
+// ------------------------------------
+// STATE MANAGEMENT
+// ------------------------------------
+function getState(): StickyState {
+  return (window.__stickyHeaderState ??= {
+    installed: false,
+    headers: new Map(),
+    lastY: 0,
+    ticking: false,
+  });
+}
 
-  const scroller = document.scrollingElement || document.documentElement;
+function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
+  const headerState = state.headers.get(key);
+  if (!headerState || headerState.hidden === hidden) return;
 
-  const getY = () =>
-    scroller?.scrollTop ||
-    document.documentElement.scrollTop ||
-    window.scrollY ||
-    0;
+  headerState.hidden = hidden;
+  headerState.element.classList.toggle("is-hidden", hidden);
+}
 
-  function setHidden(key: string, next: boolean) {
-    const state = S.headers.get(key);
-    if (!state || state.hidden === next) return;
+function updateBannerScroll(element: HTMLElement, scrollY: number) {
+  const progress = Math.min(1, Math.max(0, scrollY / CONFIG.BANNER_SCROLL_MAX));
+  element.style.setProperty("--bannerScroll", String(progress));
+}
 
-    state.hidden = next;
-    state.element.classList.toggle("is-hidden", next);
-  }
-
+// ------------------------------------
+// SCROLL LOGIC
+// ------------------------------------
+function createScrollHandler(state: StickyState) {
   function onScrollRaf() {
-    const y = getY();
-    const dy = y - S.lastY;
+    const y = getScrollY();
+    const dy = y - state.lastY;
 
-    const shouldHide = dy > DOWN_THRESHOLD && y > HIDE_AFTER;
-    const shouldShow = dy < -UP_THRESHOLD || y <= 0;
+    const shouldHide = dy > CONFIG.DOWN_THRESHOLD && y > CONFIG.HIDE_AFTER;
+    const shouldShow = dy < -CONFIG.UP_THRESHOLD || y <= 0;
 
-    S.headers.forEach((state, key) => {
-      if (shouldHide) setHidden(key, true);
-      else if (shouldShow) setHidden(key, false);
+    state.headers.forEach((headerState, key) => {
+      if (shouldHide) {
+        setHeaderHidden(state, key, true);
+      } else if (shouldShow) {
+        setHeaderHidden(state, key, false);
+      }
 
-      if (state.bannerScroll) {
-        const progress = Math.min(1, Math.max(0, y / 100));
-        state.element.style.setProperty("--bannerScroll", String(progress));
+      if (headerState.bannerScroll) {
+        updateBannerScroll(headerState.element, y);
       }
     });
 
-    S.lastY = y;
-    S.ticking = false;
+    state.lastY = y;
+    state.ticking = false;
   }
 
   function onScroll() {
-    if (S.ticking) return;
-    S.ticking = true;
+    if (state.ticking) return;
+    state.ticking = true;
     requestAnimationFrame(onScrollRaf);
   }
 
-  function bindHeader(el: HTMLElement, key: string, bannerScroll: boolean) {
-    S.headers.set(key, {
-      element: el,
-      hidden: false,
-      bannerScroll,
-    });
+  return { onScroll, onScrollRaf };
+}
 
-    el.classList.remove("is-hidden");
-  }
-
-  // ---------------------------------------------------------
-  // FOOTER VISIBILITY
-  // ---------------------------------------------------------
-  function watchFooter() {
-    S.footerObserver?.disconnect();
-
-    const footer = document.querySelector("#footer");
-    if (!footer) return;
-
-    S.footerObserver = new IntersectionObserver(
-      ([entry]) => {
-        document.documentElement.classList.toggle(
-          "footer-visible",
-          entry.isIntersecting
-        );
-      },
-      {
-        root: null,
-        rootMargin: "0px 0px 300px 0px",
-        threshold: 0,
-      }
-    );
-
-    S.footerObserver.observe(footer);
-  }
-
-  // ---------------------------------------------------------
-  // MOBILE BOTTOM BAR — STICKY DETECTION
-  // (unchanged sentinel logic)
-  // ---------------------------------------------------------
-  function watchMobBottomBar() {
-    // always clean up first
-    S.mobObserver?.disconnect();
-    S.mobObserver = undefined;
-
-    // ❌ desktop = nothing runs
-    if (!mobMQ.matches) {
-      document
-        .querySelector(".mob-bottom-bar")
-        ?.classList.remove("mob-bar-unstuck");
-      return;
-    }
-
-    const bar = document.querySelector<HTMLElement>(".mob-bottom-bar");
-    if (!bar) return;
-
-    const sentinel = bar.nextElementSibling as HTMLElement | null;
-    if (!sentinel) return;
-
-    S.mobObserver = new IntersectionObserver(
-      ([entry]) => {
-        const unstuck = entry.isIntersecting;
-        bar.classList.toggle("mob-bar-unstuck", unstuck);
-      },
-      {
-        root: null,
-        threshold: 0,
-      }
-    );
-
-    S.mobObserver.observe(sentinel);
-  }
-
-  // ---------------------------------------------------------
-  // HEADER DISCOVERY
-  // ---------------------------------------------------------
-  function watchForHeaders() {
-    S.lastY = getY();
-
-    configs.forEach(({ selector, bannerScroll = true }) => {
-      const elements = document.querySelectorAll<HTMLElement>(selector);
-
-      elements.forEach((el, idx) => {
-        const key = `${selector}[${idx}]`;
-        const existing = S.headers.get(key);
-
-        if (!existing || existing.element !== el) {
-          bindHeader(el, key, bannerScroll);
-        }
-      });
-    });
-
-    S.headers.forEach((state, key) => {
-      if (!document.body.contains(state.element)) {
-        S.headers.delete(key);
-      }
-    });
-
-    S.observer?.disconnect();
-
-    S.observer = new MutationObserver(() => {
-      watchForHeaders();
-      watchMobBottomBar();
-    });
-
-    S.observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
-
-    requestAnimationFrame(onScrollRaf);
-  }
-
-  function initAll() {
-    watchForHeaders();
-    watchFooter();
-    watchMobBottomBar();
-  }
-
-  initAll();
-
-  // ------------------------------------
-  // EVENTS
-  // ------------------------------------
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
-
-  mobMQ.addEventListener("change", () => {
-    dbg("[mob-bottom] media query changed");
-    watchMobBottomBar();
+// ------------------------------------
+// HEADER BINDING
+// ------------------------------------
+function bindHeader(
+  state: StickyState,
+  el: HTMLElement,
+  key: string,
+  bannerScroll: boolean
+) {
+  state.headers.set(key, {
+    element: el,
+    hidden: false,
+    bannerScroll,
   });
 
-  window.addEventListener("astro:after-swap", initAll);
-  window.addEventListener("astro:page-load", initAll);
-  window.addEventListener("popstate", initAll);
+  el.classList.remove("is-hidden");
+}
 
-  window.addEventListener("pageshow", (e) => {
-    if (e.persisted) initAll();
-    else requestAnimationFrame(onScrollRaf);
+function cleanupStaleHeaders(state: StickyState) {
+  state.headers.forEach((headerState, key) => {
+    if (!document.body.contains(headerState.element)) {
+      state.headers.delete(key);
+    }
   });
 }
 
 // ------------------------------------
-// INIT
+// OBSERVERS
+// ------------------------------------
+function watchFooter(state: StickyState) {
+  state.footerObserver?.disconnect();
+
+  const footer = document.querySelector("#footer");
+  if (!footer) return;
+
+  state.footerObserver = new IntersectionObserver(
+    ([entry]) => {
+      document.documentElement.classList.toggle(
+        "footer-visible",
+        entry.isIntersecting
+      );
+    },
+    {
+      rootMargin: CONFIG.FOOTER_ROOT_MARGIN,
+      threshold: 0,
+    }
+  );
+
+  state.footerObserver.observe(footer);
+}
+
+function watchMobBottomBar(state: StickyState) {
+  state.mobObserver?.disconnect();
+  state.mobObserver = undefined;
+
+  if (!MOB_MQ.matches) {
+    document
+      .querySelector(".mob-bottom-bar")
+      ?.classList.remove("mob-bar-unstuck");
+    return;
+  }
+
+  const bar = document.querySelector<HTMLElement>(".mob-bottom-bar");
+  if (!bar) return;
+
+  const sentinel = bar.nextElementSibling as HTMLElement | null;
+  if (!sentinel) return;
+
+  state.mobObserver = new IntersectionObserver(
+    ([entry]) => {
+      bar.classList.toggle("mob-bar-unstuck", entry.isIntersecting);
+    },
+    { threshold: 0 }
+  );
+
+  state.mobObserver.observe(sentinel);
+}
+
+function watchForHeaders(
+  state: StickyState,
+  configs: HeaderConfig[],
+  onScrollRaf: () => void
+) {
+  state.lastY = getScrollY();
+
+  configs.forEach(({ selector, bannerScroll = true }) => {
+    const elements = document.querySelectorAll<HTMLElement>(selector);
+
+    elements.forEach((el, idx) => {
+      const key = `${selector}[${idx}]`;
+      const existing = state.headers.get(key);
+
+      if (!existing || existing.element !== el) {
+        bindHeader(state, el, key, bannerScroll);
+      }
+    });
+  });
+
+  cleanupStaleHeaders(state);
+
+  state.observer?.disconnect();
+
+  state.observer = new MutationObserver(() => {
+    watchForHeaders(state, configs, onScrollRaf);
+    watchMobBottomBar(state);
+  });
+
+  state.observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+
+  requestAnimationFrame(onScrollRaf);
+}
+
+// ------------------------------------
+// INITIALIZATION
+// ------------------------------------
+function initAll(
+  state: StickyState,
+  configs: HeaderConfig[],
+  onScrollRaf: () => void
+) {
+  watchForHeaders(state, configs, onScrollRaf);
+  watchFooter(state);
+  watchMobBottomBar(state);
+}
+
+function attachEventListeners(
+  state: StickyState,
+  configs: HeaderConfig[],
+  onScroll: () => void,
+  onScrollRaf: () => void
+) {
+  const reinit = () => initAll(state, configs, onScrollRaf);
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+
+  MOB_MQ.addEventListener("change", () => {
+    dbg("media query changed");
+    watchMobBottomBar(state);
+  });
+
+  window.addEventListener("astro:after-swap", reinit);
+  window.addEventListener("astro:page-load", reinit);
+  window.addEventListener("popstate", reinit);
+
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      reinit();
+    } else {
+      requestAnimationFrame(onScrollRaf);
+    }
+  });
+}
+
+// ------------------------------------
+// MAIN EXPORT
+// ------------------------------------
+export default function initStickyHeader(
+  config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
+) {
+  dbg("init");
+
+  const state = getState();
+
+  if (state.installed) {
+    dbg("already installed, skipping");
+    return;
+  }
+
+  state.installed = true;
+
+  const configs = normalizeConfig(config);
+  const { onScroll, onScrollRaf } = createScrollHandler(state);
+
+  initAll(state, configs, onScrollRaf);
+  attachEventListeners(state, configs, onScroll, onScrollRaf);
+}
+
+// ------------------------------------
+// AUTO-INIT
 // ------------------------------------
 initStickyHeader([
   { selector: "#header", bannerScroll: true },

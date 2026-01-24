@@ -349,14 +349,32 @@
 	border-radius: 3rem;
 	border: 1px solid hsla(20, 26%, 18%, 1);
 	background-color: hsla(302, 26%, 71%, 0.4);
-	
+
+	span,
+	&,
+	&:after {
+		transition: all .2s ;
+		will-change: transform;
+	}
+
 	&:after {
 		position: relative;
 		top: 1px;
 		display: inline-flex;
 		align-items: center;
-		padding-left: 2px;
+		padding-left: 0px;
 		font-size: 28px;
+	}
+
+	&:hover {
+		transform: scale(.97);
+
+		span {
+			transform: scale(1.03);		
+		}
+		&:after {
+			transform: translateX(1px)
+		}
 	}
 }
 

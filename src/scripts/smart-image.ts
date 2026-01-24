@@ -1,177 +1,201 @@
 // src/scripts/smart-images.js
 
 if (typeof window !== "undefined") {
-
-  const SELECTOR_IMG = "img.hw-lazy-img";
-  const CLASS_LOADED = "lazy-loaded"; 
-  const PARENT_CLASS_LOADED = "child-lazy-loaded";
-  const PARENT_CLASS_CRIT = "crit-child-lazy-loaded";
-  
-  const IO_ROOT_MARGIN = "300px"; 
+  const CONFIG = {
+    SELECTOR_IMG: "img.hw-lazy-img",
+    CLASS_LOADED: "lazy-loaded",
+    PARENT_CLASS_LOADED: "child-lazy-loaded",
+    PARENT_CLASS_CRIT: "crit-child-lazy-loaded",
+    ROOT_MARGIN: "300px",
+  };
 
   let observer;
 
   // ---------------------------------------------------------
-  // Check if element is actually in viewport RIGHT NOW
+  // Viewport Detection
   // ---------------------------------------------------------
   function isInViewport(el) {
     const rect = el.getBoundingClientRect();
-    const margin = parseInt(IO_ROOT_MARGIN);
-    const inView = (
-      rect.top < (window.innerHeight + margin) &&
+    const margin = parseInt(CONFIG.ROOT_MARGIN);
+    
+    return (
+      rect.top < window.innerHeight + margin &&
       rect.bottom > -margin &&
-      rect.left < (window.innerWidth + margin) &&
+      rect.left < window.innerWidth + margin &&
       rect.right > -margin
     );
-    console.log('[isInViewport]', el.src?.slice(-30), 'inView:', inView, 'rect:', rect);
-    return inView;
   }
 
   // ---------------------------------------------------------
-  // 1. THE REVEALER (The destination)
+  // Image State Checks
   // ---------------------------------------------------------
-  function reveal(img) {
-    if (img.classList.contains(CLASS_LOADED)) return;
+  function isImageLoaded(img) {
+    return img.complete && img.naturalWidth > 0;
+  }
 
-    console.log('[reveal] REVEALING:', img.src?.slice(-30));
+  function isImageInView(img) {
+    return img.dataset.inView === "true" || isInViewport(img);
+  }
+
+  function shouldReveal(img) {
+    return (
+      !img.classList.contains(CONFIG.CLASS_LOADED) &&
+      isImageLoaded(img) &&
+      isImageInView(img)
+    );
+  }
+
+  // ---------------------------------------------------------
+  // Reveal Logic
+  // ---------------------------------------------------------
+  function markParentLoaded(img) {
+    const parent = img.closest(".img-load-par");
+    if (!parent) return;
+
+    parent.classList.add(CONFIG.PARENT_CLASS_LOADED);
+    
+    if (img.getAttribute("fetchpriority") === "high") {
+      parent.classList.add(CONFIG.PARENT_CLASS_CRIT);
+    }
+  }
+
+  function reveal(img) {
+    if (img.classList.contains(CONFIG.CLASS_LOADED)) return;
 
     requestAnimationFrame(() => {
-      img.classList.add(CLASS_LOADED);
-
-      const parent = img.closest(".img-load-par");
-      if (parent) {
-        parent.classList.add(PARENT_CLASS_LOADED);
-        if (img.getAttribute("fetchpriority") === "high") {
-          parent.classList.add(PARENT_CLASS_CRIT);
-        }
-      }
+      img.classList.add(CONFIG.CLASS_LOADED);
+      markParentLoaded(img);
       
       if (observer) observer.unobserve(img);
-      img.dispatchEvent(new CustomEvent("smartimage:loaded", { bubbles: true }));
-      console.log('[reveal] COMPLETE:', img.src?.slice(-30));
+      
+      img.dispatchEvent(
+        new CustomEvent("smartimage:loaded", { bubbles: true })
+      );
     });
   }
 
-  // ---------------------------------------------------------
-  // 2. THE HANDSHAKE (The Logic)
-  // ---------------------------------------------------------
   function attemptReveal(img) {
-    // CONDITION 1: Has the browser finished downloading it?
-    const isLoaded = img.complete && img.naturalWidth > 0;
-    
-    // CONDITION 2: Is the user actually looking at it?
-    // Check BOTH the dataset flag AND do a synchronous viewport check
-    const isInView = img.dataset.inView === "true" || isInViewport(img);
-
-    console.log('[attemptReveal]', img.src?.slice(-30), {
-      isLoaded,
-      complete: img.complete,
-      naturalWidth: img.naturalWidth,
-      datasetInView: img.dataset.inView,
-      isInView,
-      willReveal: isLoaded && isInView
-    });
-
-    // If both are true, show immediately
-    if (isLoaded && isInView) {
+    if (shouldReveal(img)) {
       reveal(img);
     }
   }
 
   // ---------------------------------------------------------
-  // 3. THE TRIGGERS
+  // Intersection Observer
   // ---------------------------------------------------------
-  
-  function initObserver() {
-    if (observer) observer.disconnect();
-
-    observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const img = entry.target;
-        console.log('[IntersectionObserver]', img.src?.slice(-30), 'isIntersecting:', entry.isIntersecting);
-
-        if (entry.isIntersecting) {
-          img.dataset.inView = "true";
-          attemptReveal(img);
-        } else {
-          img.dataset.inView = "false";
-        }
-      });
-    }, { rootMargin: IO_ROOT_MARGIN, threshold: 0.01 });
-  }
-
-  // ---------------------------------------------------------
-  // LOCOMOTIVE SCROLL INTEGRATION (Event-driven)
-  // ---------------------------------------------------------
-  function setupLocoScrollListener() {
-    // Listen for custom event from main layout when LocoScroll is ready
-    document.addEventListener('loco:ready', (e) => {
-      const locoScroll = e.detail.instance;
-      console.log('[LocoScroll] Integration ready');
+  function handleIntersection(entries) {
+    entries.forEach((entry) => {
+      const img = entry.target;
+      img.dataset.inView = entry.isIntersecting ? "true" : "false";
       
-      // Throttle scroll checks for performance
-      let ticking = false;
-      
-      locoScroll.on('scroll', () => {
-        if (!ticking) {
-          window.requestAnimationFrame(() => {
-            const images = document.querySelectorAll(`${SELECTOR_IMG}:not(.${CLASS_LOADED})`);
-            images.forEach(attemptReveal);
-            ticking = false;
-          });
-          ticking = true;
-        }
-      });
+      if (entry.isIntersecting) {
+        attemptReveal(img);
+      }
     });
   }
 
-  if (!window.__smartImageListenersAttached) {
-    // Capture 'load' event
-    document.addEventListener("load", (e) => {
-      const img = e.target;
-      if (img.matches?.(SELECTOR_IMG)) {
-        attemptReveal(img);
-      }
-    }, true);
+  function initObserver() {
+    if (observer) observer.disconnect();
 
-    // Handle Video ready state
-    document.addEventListener("loadeddata", (e) => {
-      const v = e.target;
-      if (v.tagName === "VIDEO") {
-        const parent = v.closest(".img-load-par");
-        if (parent) parent.classList.add(PARENT_CLASS_LOADED);
-      }
-    }, true);
+    observer = new IntersectionObserver(handleIntersection, {
+      rootMargin: CONFIG.ROOT_MARGIN,
+      threshold: 0.01,
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Locomotive Scroll Integration
+  // ---------------------------------------------------------
+  function createThrottledReveal() {
+    let ticking = false;
+
+    return () => {
+      if (ticking) return;
+
+      ticking = true;
+      requestAnimationFrame(() => {
+        const images = document.querySelectorAll(
+          `${CONFIG.SELECTOR_IMG}:not(.${CONFIG.CLASS_LOADED})`
+        );
+        images.forEach(attemptReveal);
+        ticking = false;
+      });
+    };
+  }
+
+  function setupLocoScrollListener() {
+    if (locoScrollAttached) return;
+
+    document.addEventListener("loco:ready", (e) => {
+      const locoScroll = e.detail.instance;
+      
+      // Locomotive Scroll v5 doesn't need special handling
+      // IntersectionObserver already works with virtual scroll
+      // Just trigger a manual check on raf updates
+      locoScrollAttached = true;
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Event Listeners (Set up once)
+  // ---------------------------------------------------------
+  function attachGlobalListeners() {
+    if (window.__smartImageListenersAttached) return;
+
+    // Image load events
+    document.addEventListener(
+      "load",
+      (e) => {
+        if (e.target.matches?.(CONFIG.SELECTOR_IMG)) {
+          attemptReveal(e.target);
+        }
+      },
+      true
+    );
+
+    // Video ready state
+    document.addEventListener(
+      "loadeddata",
+      (e) => {
+        if (e.target.tagName !== "VIDEO") return;
+        
+        const parent = e.target.closest(".img-load-par");
+        if (parent) {
+          parent.classList.add(CONFIG.PARENT_CLASS_LOADED);
+        }
+      },
+      true
+    );
 
     window.__smartImageListenersAttached = true;
   }
 
   // ---------------------------------------------------------
-  // 4. INITIALIZATION (Astro + Locomotive Friendly)
+  // Initialization
   // ---------------------------------------------------------
   function initSmartImages() {
-    console.log('[initSmartImages] Initializing...');
     initObserver();
+    attachGlobalListeners();
 
-    const images = document.querySelectorAll(SELECTOR_IMG);
-    console.log('[initSmartImages] Found', images.length, 'lazy images');
-    
+    const images = document.querySelectorAll(CONFIG.SELECTOR_IMG);
+
     images.forEach((img) => {
-      if (img.classList.contains(CLASS_LOADED)) return;
+      if (img.classList.contains(CONFIG.CLASS_LOADED)) return;
 
       observer.observe(img);
-
-      // Immediately check and reveal if conditions are met
       attemptReveal(img);
     });
-
-    // Setup Locomotive Scroll integration
-    setupLocoScrollListener();
   }
 
+  // ---------------------------------------------------------
+  // Run on page load (Astro compatible)
+  // ---------------------------------------------------------
   document.addEventListener("astro:page-load", initSmartImages);
-  
-  if (document.readyState === "interactive" || document.readyState === "complete") {
-    setTimeout(initSmartImages, 0);
+
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    initSmartImages();
   }
 }

@@ -1,123 +1,133 @@
-import * as React from "react";
-import { useState, useEffect, useCallback } from "react";
-
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-
 import SlideNavigation from "../ui/SlideNavigation";
-import { getWpImage } from "../../lib/wp/get-wp-image.js";
 
-/* ------------------ Standard Slide Component ------------------ */
-const Slide = React.memo(function Slide({ image, index }) {
-  const localSrc = getWpImage(image.src);
-
-  return (
-    <figure
-      className={`slide-figure ${image.caption ? "has-caption" : ""}`}
-    >
-      <div className="image-wrapper">
-        <img
-          draggable={false}
-          className="photo"
-          src={localSrc}
-          alt={image.alt || `Slide ${index + 1}`}
-          decoding="async"
-          loading="eager"
-          style={{
-            aspectRatio: image.aspectRatio || "16/9",
-          }}
-        />
-        {image.caption && (
-          <figcaption className="slide-caption">
-            {image.caption}
-          </figcaption>
-        )}
-      </div>
-    </figure>
-  );
-});
+/* ------------------ Slide Component ------------------ */
+const Slide = React.memo(
+  function Slide({ image, index }) {
+    return (
+      <figure className={image.caption ? "slide-figure has-caption" : "slide-figure"}>
+        <div className="image-wrapper">
+          <img
+            draggable={false}
+            className="photo"
+            src={image.src}
+            alt={image.alt}
+            decoding="async"
+            loading="eager"
+            style={{
+              aspectRatio: image.aspectRatio,
+            }}
+          />
+          {image.caption && (
+            <figcaption className="slide-caption">{image.caption}</figcaption>
+          )}
+        </div>
+      </figure>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison - only re-render if image data actually changed
+    return (
+      prevProps.image.src === nextProps.image.src &&
+      prevProps.image.caption === nextProps.image.caption &&
+      prevProps.image.alt === nextProps.image.alt
+    );
+  }
+);
 
 /* ------------------ Main Component ------------------ */
 export default function ImageCarousel({ images }) {
-  if (!Array.isArray(images) || images.length === 0) return null;
-
   const [api, setApi] = useState(null);
-  const [current, setCurrent] = useState(0);
   const [ready, setReady] = useState(false);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(true);
+  const [navState, setNavState] = useState({
+    current: 0,
+    canPrev: false,
+    canNext: true,
+  });
+
+  // Memoize carousel options to prevent recreation on every render
+  const carouselOpts = useMemo(
+    () => ({
+      align: "center",
+      loop: true,
+      skipSnaps: false,
+      dragFree: false,
+      duration: 35,
+      watchSlides: true,
+    }),
+    []
+  );
+
+  // Single state update for navigation (reduces re-renders)
+  const updateNav = useCallback(() => {
+    if (!api) return;
+
+    setNavState({
+      current: api.selectedScrollSnap() + 1,
+      canPrev: api.canScrollPrev(),
+      canNext: api.canScrollNext(),
+    });
+  }, [api]);
 
   useEffect(() => {
     if (!api) return;
 
-    // 1. Define the ready handler
-    const onReady = () => {
+    let mounted = true;
+
+    const handleReady = () => {
+      if (!mounted) return;
       setReady(true);
-      // Clean up listener to avoid memory leaks
-      api.off("slidesInView", onReady);
-      api.off("reInit", onReady);
     };
 
-    // 2. Event Listeners (The "API way")
-    // 'slidesInView' fires when Embla has finished calculating which slides are visible.
-    // 'reInit' fires if the window resizes or DOM changes, ensuring we stay ready.
-    api.on("slidesInView", onReady);
-    api.on("reInit", onReady);
-
-    // 3. Initial Check
-    // If Embla initialized extremely fast (before this Effect ran),
-    // the event might have already fired. We check manually:
-    if (api.slidesInView().length > 0) {
-       onReady();
+    // Check if already ready
+    if (api.slidesInView?.().length > 0) {
+      handleReady();
+    } else {
+      api.on("slidesInView", handleReady);
+      api.on("reInit", handleReady);
     }
 
-    // 4. Standard Navigation Listeners
-    setCurrent(api.selectedScrollSnap() + 1);
-    setCanPrev(api.canScrollPrev());
-    setCanNext(api.canScrollNext());
+    // Initial navigation state
+    updateNav();
+    api.on("select", updateNav);
 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-      setCanPrev(api.canScrollPrev());
-      setCanNext(api.canScrollNext());
-    });
-    
-    // Cleanup on unmount
     return () => {
-      api.off("slidesInView", onReady);
-      api.off("reInit", onReady);
+      mounted = false;
+      api.off("slidesInView", handleReady);
+      api.off("reInit", handleReady);
+      api.off("select", updateNav);
     };
+  }, [api, updateNav]);
+
+  const handlePrev = useCallback(() => {
+    api?.scrollPrev();
   }, [api]);
 
-  const handlePrev = useCallback(() => api?.scrollPrev(), [api]);
-  const handleNext = useCallback(() => api?.scrollNext(), [api]);
+  const handleNext = useCallback(() => {
+    api?.scrollNext();
+  }, [api]);
+
+  // Early return after hooks (React rules)
+  if (!Array.isArray(images) || images.length === 0) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[ImageCarousel] No images provided");
+    }
+    return null;
+  }
 
   return (
-    <article
-      className="carousel-wrapper"
-      data-ready={ready}
-    >
+    <article className="carousel-wrapper" data-ready={ready}>
       <div className="carousel-container">
-        <Carousel
-          setApi={setApi}
-          className="w-full mx-auto"
-          opts={{
-            align: "center",
-            loop: true,
-            skipSnaps: false,
-            dragFree: false,
-            duration: 35,
-            // Optimization: Watch slides to ensure events fire on visibility changes
-            watchSlides: true 
-          }}
-        >
+        <Carousel setApi={setApi} className="w-full mx-auto" opts={carouselOpts}>
           <CarouselContent className="-ml-5">
             {images.map((image, index) => (
               <CarouselItem
-                key={image.id || index}
+                key={image.id}
                 className="pl-5 basis-[85%] min-[1400px]:basis-[60%]"
               >
                 <Slide image={image} index={index} />
@@ -129,13 +139,12 @@ export default function ImageCarousel({ images }) {
             <SlideNavigation
               onNext={handleNext}
               onPrev={handlePrev}
-              canNext={canNext}
-              canPrev={canPrev}
+              canNext={navState.canNext}
+              canPrev={navState.canPrev}
             />
           </div>
         </Carousel>
       </div>
-
     </article>
   );
 }

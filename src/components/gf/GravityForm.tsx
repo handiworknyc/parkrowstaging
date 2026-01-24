@@ -492,7 +492,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
             className="mt-14 gf-submit icon-after icon-arrow-right"
             disabled={submitting}
           >
-            {submitting ? 'Sending…' : 'Submit'}
+            <span>{submitting ? 'Sending…' : 'Submit'}</span>
           </button>
         </div>
       </motion.form>

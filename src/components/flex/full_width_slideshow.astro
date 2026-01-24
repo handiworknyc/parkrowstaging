@@ -1,6 +1,5 @@
 ---
 import FadeSlideshow from "../react/FadeSlideshow.jsx";
-import { getWpImage } from "../../lib/wp/get-wp-image.js";
 
 // 1. Get the raw props
 const { images } = Astro.props;
@@ -17,10 +16,10 @@ const formattedSlides = Array.isArray(images)
       const srcSM   = rawImg.sizes?.intch_sm  || rawImg.url;
 
       const smartImg = {
-        xl:    srcXL  ? getWpImage(srcXL)  : null,
-        large: srcLG  ? getWpImage(srcLG)  : null,
-        med:   srcMED ? getWpImage(srcMED) : null,
-        small: srcSM  ? getWpImage(srcSM)  : null,
+        xl:    srcXL  ? srcXL  : null,
+        large: srcLG  ? srcLG : null,
+        med:   srcMED ? srcMED : null,
+        small: srcSM  ? srcSM  : null,
       };
 
       return {

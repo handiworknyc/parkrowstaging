@@ -3,21 +3,15 @@
 import { ClientRouter } from "astro:transitions";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
-import PromoPopup from "../components/PromoPopup.astro";    
+import PromoPopup from "../components/PromoPopup.astro";
+
 import videoJsUrl from "/src/scripts/videojs.js?url";
-
-// Critical CSS
-import "../styles/global.scss";
-
-// Below-the-fold CSS
 import belowCssUrl from "@/styles/below.scss?url";
-
-// URL for critical script
 import headerCriticalUrl from "@/scripts/header-critical.js?url";
 
-const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+import "../styles/global.scss";
 
-/* ---------------- Props Interface ---------------- */
+/* ---------------- Types ---------------- */
 interface PreloadItem {
   href: string;
   imagesrcset?: string;
@@ -30,13 +24,12 @@ interface Props {
   description?: string;
   lcp?: PreloadItem | null;
   lcpVideo?: {
-    href: string; // HLS (.m3u8) URL only
+    href: string;
   } | null;
-
-  // carousel = string[], full_width_slideshow = PreloadItem[]
   preloads?: (string | PreloadItem)[];
 }
 
+/* ---------------- Props & Config ---------------- */
 const {
   title = "",
   description = "",
@@ -45,19 +38,16 @@ const {
   preloads = [],
 } = Astro.props;
 
+const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
+
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
 const bodyClasses = segments.length ? segments.join(" ") : "home";
 
-Astro.response.headers.set(
-  "Cache-Control",
-  "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000"
-);
-
-Astro.response.headers.set(
-  "Netlify-CDN-Cache-Control",
-  "public, max-age=2700, stale-while-revalidate=12000"
-);
+const cacheControl = "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
+Astro.response.headers.set("Cache-Control", cacheControl);
+Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 ---
 
 <html lang="en" style="view-transition-name: main-content">
@@ -67,10 +57,9 @@ Astro.response.headers.set(
   <meta name="viewport" content="width=device-width" />
   <meta name="generator" content={Astro.generator} />
   <title>{title}</title>
-
   {description && <meta name="description" content={description} />}
 
-  {/* 🚀 LCP PRELOAD (CURRENT PAGE) */}
+  {/* LCP Image Preload */}
   {lcp && (
     <link 
       rel="preload"
@@ -85,95 +74,79 @@ Astro.response.headers.set(
 
   <link rel="modulepreload" href={videoJsUrl} />
 
-  {/* ────────────────────────────────────────────────────────────────
-      LCP VIDEO (HLS WARMUP)
-  ───────────────────────────────────────────────────────────────── */}
+  {/* LCP Video (HLS Warmup) */}
   {lcpVideo && (
     <>
-      <link rel="preconnect"
-        href="https://customer-iyfwlpktwxjf4onx.cloudflarestream.com"
-        crossorigin />
-
-      <link rel="dns-prefetch"
-        href="https://customer-iyfwlpktwxjf4onx.cloudflarestream.com" />
-
-      <link rel="prefetch"
-        as="fetch"
-        href={lcpVideo.href}
-        crossorigin="anonymous" />
+      <link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
+      <link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
+      <link rel="prefetch" as="fetch" href={lcpVideo.href} crossorigin="anonymous" />
     </>
   )}
 
-{/* ────────────────────────────────────────────────────────────────
-    CAROUSEL + FULL WIDTH SLIDESHOW PRELOADER (WITH LOGGING)
-──────────────────────────────────────────────────────────────── */}
-<script is:inline define:vars={{ preloads }}>
-  window.addEventListener("critImgLoaded", () => {
-    console.log("[Preload] critImgLoaded fired");
-    console.log("[Preload] Incoming preloads:", preloads);
+  {/* Carousel/Slideshow Preloader */}
+  <script is:inline define:vars={{ preloads }}>
+    const DEBUG = false;
+    const log = (...args) => DEBUG && console.log("[Preload]", ...args);
 
-    if (!preloads || preloads.length === 0) {
-      console.warn("[Preload] No preload items found");
-      return;
-    }
+    window.addEventListener("critImgLoaded", () => {
+      log("critImgLoaded fired");
+      log("Incoming preloads:", preloads);
 
-    const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+      if (!preloads?.length) {
+        log("No preload items found");
+        return;
+      }
 
-    run(() => {
-      console.log("[Preload] Starting preload queue…");
+      const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
 
-      preloads.forEach((p, i) => {
-        if (!p) {
-          console.warn(`[Preload] Skipping empty preload at index ${i}`);
-          return;
-        }
+      run(() => {
+        log("Starting preload queue...");
 
-        // ─────────────────────────────
-        // Legacy carousel preload
-        // ─────────────────────────────
-        if (typeof p === "string") {
-          console.log(`[Preload][Carousel]`, p);
-          const img = new Image();
-          img.src = p;
-          return;
-        }
+        preloads.forEach((p, i) => {
+          if (!p) {
+            log(`Skipping empty preload at index ${i}`);
+            return;
+          }
 
-        // ─────────────────────────────
-        // SRCSET slideshow preload
-        // ─────────────────────────────
-        if (p.href) {
-          console.log(`[Preload][Slideshow]`, {
-            href: p.href,
-            srcset: p.imagesrcset,
-            sizes: p.imagesizes,
-            type: p.type
-          });
+          // Legacy carousel (string URL)
+          if (typeof p === "string") {
+            log("[Carousel]", p);
+            const img = new Image();
+            img.src = p;
+            return;
+          }
 
-          const link = document.createElement("link");
-          link.rel = "preload";
-          link.as = "image";
-          link.href = p.href;
+          // Slideshow (srcset)
+          if (p.href) {
+            log("[Slideshow]", {
+              href: p.href,
+              srcset: p.imagesrcset,
+              sizes: p.imagesizes,
+              type: p.type
+            });
 
-          if (p.imagesrcset) link.setAttribute("imagesrcset", p.imagesrcset);
-          if (p.imagesizes) link.setAttribute("imagesizes", p.imagesizes);
-          if (p.type) link.setAttribute("type", p.type);
+            const link = document.createElement("link");
+            link.rel = "preload";
+            link.as = "image";
+            link.href = p.href;
 
-          document.head.appendChild(link);
-          return;
-        }
+            if (p.imagesrcset) link.setAttribute("imagesrcset", p.imagesrcset);
+            if (p.imagesizes) link.setAttribute("imagesizes", p.imagesizes);
+            if (p.type) link.setAttribute("type", p.type);
 
-        console.warn("[Preload] Unknown preload entry:", p);
+            document.head.appendChild(link);
+            return;
+          }
+
+          log("Unknown preload entry:", p);
+        });
+
+        log("Queue complete");
       });
+    }, { once: true });
+  </script>
 
-      console.log("[Preload] Queue complete");
-    });
-  }, { once: true });
-</script>
-
-
-  {/* ────────────────────────────────────────────────────────────────
-      PREFETCH MAP LOGIC (SRCSET PARSER)
-  ───────────────────────────────────────────────────────────────── */}
+  {/* Prefetch Map Logic */}
   <script is:client>
     (async () => {
       function getBestImage(srcset) {
@@ -183,8 +156,7 @@ Astro.response.headers.set(
           const parts = s.trim().split(/\s+/);
           const url = parts[0];
           const wDesc = parts.length > 1 ? parts[1] : null;
-          let width = 0;
-          if (wDesc && wDesc.endsWith("w")) width = parseInt(wDesc, 10);
+          const width = wDesc?.endsWith("w") ? parseInt(wDesc, 10) : 0;
           return { url, width };
         });
 
@@ -195,53 +167,45 @@ Astro.response.headers.set(
       }
 
       try {
-        const req = await fetch("/prefetch-map.json", { cache: "no-store" });
-        if (!req.ok) return;
+        const res = await fetch("/prefetch-map.json", { cache: "no-store" });
+        if (!res.ok) return;
 
-        const map = await req.json();
+        const map = await res.json();
         const assets = new Set();
 
         map.forEach((entry) => {
           if (!entry.lcp) return;
 
-          if (entry.lcp.imagesrcset) {
-            const bestUrl = getBestImage(entry.lcp.imagesrcset);
-            if (bestUrl) assets.add(bestUrl);
-          } else if (entry.lcp.href) {
-            assets.add(entry.lcp.href);
-          }
+          const url = entry.lcp.imagesrcset 
+            ? getBestImage(entry.lcp.imagesrcset)
+            : entry.lcp.href;
 
+          if (url) assets.add(url);
           if (entry.video) assets.add(entry.video);
         });
 
         window.__PREFETCH_ASSETS__ = Array.from(assets);
-        console.log("[Prefetch] Asset list prepared:", window.__PREFETCH_ASSETS__);
       } catch (err) {
         console.warn("Prefetch map failed:", err);
       }
     })();
   </script>
 
-  {/* ────────────────────────────────────────────────────────────────
-      SW PREFETCH HANDSHAKE
-  ───────────────────────────────────────────────────────────────── */}
+  {/* Service Worker Prefetch */}
   <script is:client>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").then((reg) => {
         navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data === "request-prefetch-list") {
-            if (window.__PREFETCH_ASSETS__?.length) {
-              reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
-            }
+          if (event.data === "request-prefetch-list" && window.__PREFETCH_ASSETS__?.length) {
+            reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
           }
         });
 
-        function notifySW(worker) {
-          worker.postMessage("prefetch");
-        }
+        const notifySW = (worker) => worker.postMessage("prefetch");
 
-        if (reg.active) notifySW(reg.active);
-        else {
+        if (reg.active) {
+          notifySW(reg.active);
+        } else {
           reg.addEventListener("updatefound", () => {
             const w = reg.installing;
             w.addEventListener("statechange", () => {
@@ -273,147 +237,129 @@ Astro.response.headers.set(
     });
   </script>
 
-<script>
-  import LocomotiveScroll from "locomotive-scroll";
+  {/* Locomotive Scroll */}
+  <script>
+    import LocomotiveScroll from "locomotive-scroll";
 
-  let locoScroll = null;
-  let scrollUnlocked = false;
-  let unlockTimer = null;
-  let splashUnlockTimer = null;
+    const CONFIG = {
+      SPLASH_FADE_DURATION: 800,
+      UNLOCK_TIMEOUT: 6600,
+      LOCO_INIT_DELAY: 50,
+    };
 
-  const SPLASH_FADE_DURATION = 800; // ms (match splash fade)
+    const state = {
+      locoScroll: null,
+      scrollUnlocked: false,
+      unlockTimer: null,
+      splashUnlockTimer: null,
+    };
 
-  /* ------------------------------------
-     HELPERS
-  ------------------------------------ */
-  function isHome() {
-    return document.body.classList.contains("home");
-  }
+    /* Helpers */
+    const isHome = () => document.body.classList.contains("home");
+    const isFirstLoad = () => document.body.classList.contains("first-load");
 
-  function isFirstLoad() {
-    return document.body.classList.contains("first-load");
-  }
-
-  /* ------------------------------------
-     SCROLL CONTROL
-  ------------------------------------ */
-  function unlockScroll(source = "unknown") {
-    if (!isFirstLoad()) return;
-    if (scrollUnlocked) return;
-
-    scrollUnlocked = true;
-    document.body.classList.add("scroll-unlocked");
-
-    clearTimeout(unlockTimer);
-    clearTimeout(splashUnlockTimer);
-    unlockTimer = null;
-    splashUnlockTimer = null;
-
-    if (locoScroll) {
-      locoScroll.start();
-    }
-  }
-
-  /* ------------------------------------
-     INIT LOCOMOTIVE
-  ------------------------------------ */
-  function initLocoScroll() {
-    const el = document.querySelector("main");
-    if (!el) return;
-
-    if (locoScroll) {
-      locoScroll.destroy();
-      locoScroll = null;
+    function clearTimers() {
+      clearTimeout(state.unlockTimer);
+      clearTimeout(state.splashUnlockTimer);
+      state.unlockTimer = null;
+      state.splashUnlockTimer = null;
     }
 
-    locoScroll = new LocomotiveScroll({
-      el,
-      smooth: true,
-      lenisOptions: {
-        lerp: 0,
-        duration: 0.5,
-      },
-      smartphone: { smooth: true },
-      tablet: { smooth: true },
-    });
+    function unlockScroll(source = "unknown") {
+      if (!isFirstLoad() || state.scrollUnlocked) return;
 
-    window.locoScroll = locoScroll;
+      state.scrollUnlocked = true;
+      document.body.classList.add("scroll-unlocked");
+      clearTimers();
 
-    // 🔒 Lock ONLY on first load + home
-    if (isHome() && isFirstLoad() && !scrollUnlocked) {
-      requestAnimationFrame(() => {
-        locoScroll.stop();
+      state.locoScroll?.start();
+    }
+
+    function initLocoScroll() {
+      const el = document.querySelector("main");
+      if (!el) return;
+
+      state.locoScroll?.destroy();
+
+      state.locoScroll = new LocomotiveScroll({
+        el,
+        smooth: true,
+        lenisOptions: {
+          lerp: 0,
+          duration: 0.5,
+        },
+        smartphone: { smooth: true },
+        tablet: { smooth: true },
       });
 
-      clearTimeout(unlockTimer);
+      window.locoScroll = state.locoScroll;
 
-      // Absolute failsafe
-      unlockTimer = setTimeout(() => {
-        unlockScroll("timeout");
-      }, 6600);
-    } else {
-      // Never force lock/unlock on non-first loads
-      locoScroll.start();
-    }
-  }
+      // Dispatch ready event for other scripts
+      document.dispatchEvent(
+        new CustomEvent("loco:ready", { 
+          detail: { instance: state.locoScroll } 
+        })
+      );
 
-  /* ------------------------------------
-     ASTRO LIFECYCLE
-  ------------------------------------ */
-  document.addEventListener("astro:page-load", () => {
-    setTimeout(initLocoScroll, 50);
-  });
+      // Lock only on first load + home
+      if (isHome() && isFirstLoad() && !state.scrollUnlocked) {
+        requestAnimationFrame(() => {
+          state.locoScroll.stop();
+        });
 
-  document.addEventListener("astro:before-preparation", () => {
-    locoScroll?.stop();
-  });
-
-  document.addEventListener("astro:after-swap", () => {
-    if (!locoScroll) return;
-
-    if (!isFirstLoad()) {
-      locoScroll.start();
-      return;
+        clearTimers();
+        state.unlockTimer = setTimeout(() => {
+          unlockScroll("timeout");
+        }, CONFIG.UNLOCK_TIMEOUT);
+      } else {
+        state.locoScroll.start();
+      }
     }
 
-    scrollUnlocked ? locoScroll.start() : locoScroll.stop();
-  });
+    /* Astro Lifecycle */
+    document.addEventListener("astro:page-load", () => {
+      setTimeout(initLocoScroll, CONFIG.LOCO_INIT_DELAY);
+    });
 
-  /* ------------------------------------
-     SPLASH → SCROLL CONTRACT
-  ------------------------------------ */
-  window.addEventListener("splash:dismiss", (e) => {
-    if (!isHome() || !isFirstLoad() || scrollUnlocked) return;
+    document.addEventListener("astro:before-preparation", () => {
+      state.locoScroll?.stop();
+    });
 
-    clearTimeout(unlockTimer);
-    unlockTimer = null;
+    document.addEventListener("astro:after-swap", () => {
+      if (!state.locoScroll) return;
 
-    clearTimeout(splashUnlockTimer);
-    splashUnlockTimer = setTimeout(() => {
-      unlockScroll(e?.detail?.source || "splash");
-    }, SPLASH_FADE_DURATION);
-  }); 
+      if (!isFirstLoad()) {
+        state.locoScroll.start();
+      } else {
+        state.scrollUnlocked ? state.locoScroll.start() : state.locoScroll.stop();
+      }
+    });
 
-  /* ------------------------------------
-     ANCHOR LINKS
-  ------------------------------------ */
-  document.addEventListener("click", (e) => {
-    const a = e.target.closest('a[href^="#"]');
-    if (!a || !locoScroll) return;
+    /* Splash Integration */
+    window.addEventListener("splash:dismiss", (e) => {
+      if (!isHome() || !isFirstLoad() || state.scrollUnlocked) return;
 
-    const id = a.getAttribute("href");
-    if (!id || id === "#") return;
+      clearTimers();
+      state.splashUnlockTimer = setTimeout(() => {
+        unlockScroll(e?.detail?.source || "splash");
+      }, CONFIG.SPLASH_FADE_DURATION);
+    });
 
-    const target = document.querySelector(id);
-    if (!target) return;
+    /* Anchor Link Handling */
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a || !state.locoScroll) return;
 
-    e.preventDefault();
-    locoScroll.scrollTo(target);
-  });
-</script>
+      const id = a.getAttribute("href");
+      if (!id || id === "#") return;
 
+      const target = document.querySelector(id);
+      if (!target) return;
 
-
+      e.preventDefault();
+      state.locoScroll.scrollTo(target);
+    });
+  </script>
 </head>
 
 <body class={`first-load ${bodyClasses}`}>
@@ -424,24 +370,25 @@ Astro.response.headers.set(
       <slot />
     </div>
 
-	<div class="mob-bottom-bar" transition:persist>
-		<div class="hw-contain flex-wrap items-center">
-			<a class="icon-arrow-right icon-after border-btn white">
-				Inquire
-			</a>
+    <div class="mob-bottom-bar" transition:persist>
+      <div class="hw-contain flex-wrap items-center">
+        <a class="icon-arrow-right icon-after border-btn white">
+          Inquire
+        </a>
+        <a class="ml-auto c-white mob-bar-phone" href="tel:425-555-1234">
+          425-555-1234
+        </a>
+      </div>
+    </div>
 
-			<a class='ml-auto c-white mob-bar-phone' href="tel:">425-555-1234</a>
-		</div>
-	</div>
-
-	<div id="mob-bottom-sentinel"></div>
+    <div id="mob-bottom-sentinel"></div>
   </main>
-
 
   <SiteFooter />
 
   <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
 
+  {/* Safari View Transitions Fallback */}
   <script is:client>
     if (window.__isSafari) {
       document.documentElement.classList.add("disable-vt");
@@ -451,13 +398,13 @@ Astro.response.headers.set(
         if (!a) return;
 
         const url = a.getAttribute("href");
-        if (
-          (url.startsWith("http") && !url.startsWith(location.origin)) ||
-          url.startsWith("#") ||
-          url.startsWith("mailto:") ||
-          url.startsWith("tel:") ||
-          url.startsWith("javascript:")
-        ) return;
+        const isExternal = url.startsWith("http") && !url.startsWith(location.origin);
+        const isSpecial = url.startsWith("#") || 
+                         url.startsWith("mailto:") || 
+                         url.startsWith("tel:") || 
+                         url.startsWith("javascript:");
+
+        if (isExternal || isSpecial) return;
 
         e.preventDefault();
         window.location.href = url;

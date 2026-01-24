@@ -1,7 +1,6 @@
 ---
 // src/components/PromoPopup.astro
 import specials from "../content/wp/specials.json";
-import { getWpImage } from "../lib/wp/get-wp-image.js";
 
 const activeSpecial = specials && specials.length > 0 ? specials[0] : null;
 
@@ -25,7 +24,7 @@ if (show_on && Array.isArray(show_on) && show_on.length > 0) {
 const { title, text, show_once, image } = activeSpecial;
 
 // Resolve the main image using your helper
-const resolvedImage = getWpImage(image.sizes.intch_med);
+const resolvedImage = image.sizes.intch_med;
 
 // LOGIC: Prefer the specific 1000px WebP ('intch_med') for this modal size.
 // If not found, fall back to the helper's result, then the raw URL.

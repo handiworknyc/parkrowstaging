@@ -1,67 +1,107 @@
 ---
 import ImageCarousel from "../react/ImageCarousel.jsx";
 
-const vars = { ...Astro.props };
-const { label_above = "" } = vars;
+/* ---------------- Props ---------------- */
+interface Props {
+  label_above?: string;
+  content?: any[];
+  images?: any[];
+  caption?: string;
+  caption_pos?: "left" | "center" | "right";
+  bleed?: boolean;
+}
 
-// --- 1. Data Processing: Content --- //
-const rawContent = vars.content || [];
-const hasContent = rawContent.length > 0;
+const {
+  label_above = "",
+  content = [],
+  images = [],
+  caption = "",
+  caption_pos = "left",
+  bleed = false,
+} = Astro.props;
 
-const processedContent = rawContent.map((item) => ({
-  title: item.title || "",
-  text: item.text || "",
-  twoColList: item.two_col_list || false, 
-  listItems: item.list ? item.list.split(/\r?\n/).filter((li) => li.trim()) : []
-}));
-
-// --- 2. Data Processing: Images --- //
-const rawData = vars.images || [];
-
-const carouselImages = rawData.map((item, index) => {
-  // ⚠️ CRITICAL FIX: The actual image data is inside item.image
-  const imgData = item.image || {}; 
-  
-  // 1. Get the intch_med URL string safely
-  // We check imgData.sizes because that's where the WP data lives
-  const mediumUrl = imgData.sizes ? imgData.sizes.intch_med : null;
-  
-  return {
-    id: imgData.ID || imgData.id || index, // Fallback to index if ID missing
-    // 2. Use mediumUrl if found, else fallback to full URL
-    src: mediumUrl || imgData.url,
-    alt: imgData.alt || imgData.title || "",
-    // 3. Extract the caption from the wrapper object (item.caption), not the inner image object
-    caption: item.caption || "", 
-    aspectRatio: (imgData.width && imgData.height) ? (imgData.width / imgData.height) : (4/3) 
-  };
-});
-
-// --- 3. HTML Generation --- //
-const contentColumnsHTML = processedContent.map((item, index) => {
-  let cssClass = "min-[1050px]:col-4 min-[990px]:col-5 col-12 column-content";
-  if (processedContent.length === 1) cssClass = "min-[990px]:col-5 max-[990px]:col-12 column-content";
-
-  else if (index === 1) {
-	const mobileMt = !item.title ? "max-[990px]:mt-6" : "max-[990px]:mt-20";
-	cssClass = `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12 column-content`;
+/* ---------------- Helpers ---------------- */
+function getColumnClass(index: number, total: number): string {
+  if (total === 1) {
+    return "min-[990px]:col-5 max-[990px]:col-12 column-content";
   }
+  
+  if (index === 1) {
+    const mobileMt = content[1]?.title ? "max-[990px]:mt-20" : "max-[990px]:mt-6";
+    return `min-[1050px]:col-4 min-[990px]:col-5 min-[1050px]:push-2 min-[990px]:push-1 ${mobileMt} max-[990px]:col-12 column-content`;
+  }
+  
+  return "min-[1050px]:col-4 min-[990px]:col-5 col-12 column-content";
+}
 
-  const ulClass = `section-text ${item.twoColList ? 'two-col-list' : ''}`.trim();
-  return `
-    <div class="${cssClass}">
-      ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ''}
-      ${item.text ? `<div class='section-text'>${item.text}</div>` : ''}
-      ${item.listItems.length > 0 ? `<ul class='${ulClass}'>${item.listItems.map(li => `<li>${li}</li>`).join('')}</ul>` : ''}
-    </div>
-  `;
-}).join('');
+/* ---------------- Data Processing ---------------- */
+const processedContent = Array.isArray(content)
+  ? content.map((item) => ({
+      title: item.title || "",
+      text: item.text || "",
+      twoColList: item.two_col_list || false,
+      listItems: item.list
+        ? item.list.split(/\r?\n/).filter((li: string) => li.trim())
+        : [],
+    }))
+  : [];
 
-// --- 4. CSS Classes --- //
-const globalCaption = vars.caption || "";
-const captionPos = vars.caption_pos || "left";
-const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
-const captionWrapperClass = ["full-bleed-caption", "mt-5", alignMap[captionPos] || "text-left", vars.bleed === true ? "hw-contain" : null].filter(Boolean).join(" ");
+const carouselImages = Array.isArray(images)
+  ? images.map((item, index) => {
+      const imgData = item.image || {};
+      const mediumUrl = imgData.sizes?.intch_med;
+
+      return {
+        id: imgData.ID || imgData.id || index,
+        src: mediumUrl || imgData.url,
+        alt: imgData.alt || imgData.title || `Image ${index + 1}`,
+        caption: item.caption || "",
+        aspectRatio:
+          imgData.width && imgData.height
+            ? imgData.width / imgData.height
+            : 4 / 3,
+      };
+    })
+  : [];
+
+/* ---------------- HTML Generation ---------------- */
+const contentColumnsHTML = processedContent
+  .map((item, index) => {
+    const cssClass = getColumnClass(index, processedContent.length);
+    const ulClass = `section-text ${item.twoColList ? "two-col-list" : ""}`.trim();
+
+    return `
+      <div class="${cssClass}">
+        ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ""}
+        ${item.text ? `<div class='section-text'>${item.text}</div>` : ""}
+        ${
+          item.listItems.length > 0
+            ? `<ul class='${ulClass}'>${item.listItems.map((li: string) => `<li>${li}</li>`).join("")}</ul>`
+            : ""
+        }
+      </div>
+    `;
+  })
+  .join("");
+
+/* ---------------- CSS Classes ---------------- */
+const alignmentMap = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+} as const;
+
+const captionWrapperClass = [
+  "full-bleed-caption",
+  "mt-5",
+  alignmentMap[caption_pos] || "text-left",
+  bleed ? "hw-contain" : null,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const hasContent = processedContent.length > 0;
+const hasImages = carouselImages.length > 0;
 ---
 
 {label_above && (
@@ -70,25 +110,29 @@ const captionWrapperClass = ["full-bleed-caption", "mt-5", alignMap[captionPos] 
   </div>
 )}
 
-{/* --- CAROUSEL SECTION --- */}
-<div class="w-full relative block">
-  {carouselImages.length > 0 && (
-    <ImageCarousel client:visible images={carouselImages} />
-  )}
-</div>
+{/* Carousel Section */}
+{hasImages && (
+  <div class="w-full relative block" style="min-height: 400px;">
+    <ImageCarousel
+      client:load
+      images={carouselImages}
+      transition:name={`carousel-${Astro.url.pathname}`}
+    />
+  </div>
+)}
 
-{/* --- TEXT CONTENT --- */}
-{(globalCaption || hasContent) && (
-   <div class={`hw-contain ${captionWrapperClass}`}>
-     <div class="row">
-       <div class="min-[1240px]:push-1 col-12">
-         {globalCaption && <div>{globalCaption}</div>}
-         {hasContent && (
-            <div class="full-bleed-content-wrap mt-16">
-              <div class="row" set:html={contentColumnsHTML} />
-            </div>
-         )}
-       </div>
-     </div>
-   </div>
+{/* Text Content */}
+{(caption || hasContent) && (
+  <div class={`hw-contain ${captionWrapperClass}`}>
+    <div class="row">
+      <div class="min-[1240px]:push-1 col-12">
+        {caption && <div set:html={caption} />}
+        {hasContent && (
+          <div class="full-bleed-content-wrap mt-16">
+            <div class="row" set:html={contentColumnsHTML} />
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
 )}

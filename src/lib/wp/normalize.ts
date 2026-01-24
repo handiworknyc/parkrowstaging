@@ -5,10 +5,10 @@ type AnyRec = Record<string, any>;
 
 export type RawRow = AnyRec & {
   acf_fc_layout?: string;
-  name?: string;     // if you already normalized server-side
+  name?: string;
   key?: string;
-  section_content?: AnyRec[]; // nested repeater in your JSON, if present
-  bg_color?: AnyRec;          // if you surface settings/bg in your JSON
+  section_content?: AnyRec[];
+  bg_color?: AnyRec;
 };
 
 export type NormRow = {
@@ -16,16 +16,17 @@ export type NormRow = {
   key: string;
   data: AnyRec;
   meta: {
-    id?: string;           // value (no #)
-    classes: string[];     // wrapper classes
-    preHtml?: string;      // rendered “section_content”
-    index: number;         // 1-based
+    id?: string;
+    classes: string[];
+    preHtml?: string;
+    index: number;
     next?: { name?: string; bg?: string };
     flags: {
       hasSecContent: boolean;
       isLast: boolean;
       isHeroNoBg: boolean;
     };
+    ofh?: boolean;
   };
 };
 
@@ -34,7 +35,6 @@ function getLayoutName(raw: RawRow) {
 }
 
 function computeIdFromRow(raw: AnyRec): string | undefined {
-  // PHP: prefers section_id, else title, else special cases
   const sectionId = raw.section_id;
   const title = raw.title;
 
@@ -59,7 +59,7 @@ function renderSectionContent(rows: AnyRec[] | undefined): { html?: string; has:
     const sectitle = r?.title ?? "";
     const sectext = r?.text ?? "";
     const seclabel = r?.label ?? "";
-    const seclink = r?.link; // { url, title }
+    const seclink = r?.link;
     const ctaBelow = !!r?.cta_below;
 
     const labelHtml = seclabel
@@ -94,7 +94,6 @@ function renderSectionContent(rows: AnyRec[] | undefined): { html?: string; has:
   return { html: out.join(""), has: out.length > 0 };
 }
 
-// very light bg/hero flags similar to your PHP
 function computeFlags(name: string, raw: AnyRec): { isHeroNoBg: boolean } {
   let isHeroNoBg = false;
   if (name === "hero_text" && raw?.add_yt !== true && !raw?.image) {
@@ -106,7 +105,6 @@ function computeFlags(name: string, raw: AnyRec): { isHeroNoBg: boolean } {
 export function normalizeLayouts(rawLayouts: RawRow[]): NormRow[] {
   if (!Array.isArray(rawLayouts)) return [];
 
-  // Pre-scan to determine next layout names/colors
   const names = rawLayouts.map((r) => getLayoutName(r));
 
   return rawLayouts.map((raw, idx) => {
@@ -114,10 +112,8 @@ export function normalizeLayouts(rawLayouts: RawRow[]): NormRow[] {
     const index = idx + 1;
     const nextName = names[idx + 1];
 
-    // section_content -> preHtml
     const { html: preHtml, has: hasSecContent } = renderSectionContent(raw.section_content);
 
-    // Row bg/theme — adapt to your JSON: keep simple, string or nested
     const themeLabel =
       typeof raw?.bg_color === "string"
         ? raw.bg_color
@@ -133,7 +129,6 @@ export function normalizeLayouts(rawLayouts: RawRow[]): NormRow[] {
       `rowindex-${index}`,
       bgClass ? `has-bg ${bgClass}` : "",
       isHeroNoBg ? "hero-no-bg" : "",
-      // emulate “next-<name>” class
       nextName ? `next-${nextName}` : "",
     ].filter(Boolean);
 
@@ -146,17 +141,19 @@ export function normalizeLayouts(rawLayouts: RawRow[]): NormRow[] {
       flags: { hasSecContent, isLast: !nextName, isHeroNoBg },
     };
 
-    // strip known meta keys from data
     const {
       acf_fc_layout, name: _n, key: _k,
       section_content, bg_color,
       ...data
     } = raw;
 
+    // ✅ Image URLs are ALREADY transformed in sync-flex-rest.js
+    // No transformation needed here - data comes pre-processed from JSON files
+
     return {
       name,
       key: raw.key || `${name}-${index}`,
-      data,
+      data, // ← Just use the data as-is
       meta,
     };
   });

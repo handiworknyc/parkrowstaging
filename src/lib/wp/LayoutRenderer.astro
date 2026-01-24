@@ -2,17 +2,13 @@
 /**
  * src/lib/wp/LayoutRenderer.astro
  * Static JSON flexible layout renderer
- * (Removed runtime WordPress fetch)
- * Preserves working section title DOM
  */
 
 import { normalizeLayouts } from "./normalize";
 import type { NormRow } from "./normalize";
-
-// ✅ IMPORT PAGE ORDER
 import pageOrder from "../../content/wp/page-order.json";
 
-/* ---------------- Props ---------------- */
+/* ---------------- Types ---------------- */
 interface Props {
   layouts?: any[];
   taxContext?: string | null;
@@ -20,138 +16,58 @@ interface Props {
   pageSlug?: string | null;
 }
 
-let {
+interface LayoutSettings {
+  section_title?: string;
+  section_h2?: string;
+  section_text?: string;
+  green_bg?: boolean;
+  section_text_below?: boolean;
+  bg_color?: string;
+}
+
+interface CommonContext {
+  postId: number | null;
+  currentPost: any;
+  termId: null;
+  taxonomy: null;
+  currentTerm: null;
+  rowIndex: number;
+  prevLayout: NormRow | null;
+  nextLayout: NormRow | null;
+}
+
+/* ---------------- Props ---------------- */
+const {
   layouts = [],
   taxContext = null,
   pageId = null,
   pageSlug = null,
 } = Astro.props as Props;
 
-/* ---------------- Helpers ---------------- */
-function safeHtml(val: any): string {
-  if (!val) return "";
-  if (typeof val === "string") return val;
-  if (typeof val === "object" && val.htmlParts) {
-    return Array.isArray(val.htmlParts) ? val.htmlParts.join("") : "";
-  }
-  return "";
-}
-
-function ensureWebpDeep(obj: any): any {
-  if (!obj) return obj;
-  if (typeof obj === "string") {
-    return obj.replace(/\.(jpg|png)$/i, (ext) => `${ext}.webp`);
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(ensureWebpDeep);
-  }
-  if (typeof obj === "object") {
-    const out: any = {};
-    for (const [key, val] of Object.entries(obj)) {
-      out[key] = ensureWebpDeep(val);
-    }
-    return out;
-  }
-  return obj;
-}
-
-/* ---------------- Data Prep (STATIC ONLY) ---------------- */
-const postId = pageId ?? null;
-const currentPost: any = null;
-
-const effectiveLayouts = Array.isArray(layouts) ? layouts : [];
-const rows: NormRow[] = normalizeLayouts(effectiveLayouts);
-
-/* ---------------- Component Map ---------------- */
+/* ---------------- Component Loading ---------------- */
 const modules = import.meta.glob("/src/components/flex/*.astro", {
   eager: true,
 });
+
 const COMPONENT_MAP: Record<string, any> = {};
 
-const toKebab = (s: string) =>
-  s
-    .replace(/[_\s]+/g, "-")
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .toLowerCase();
-
-const toSnake = (s: string) =>
-  s
-    .replace(/[-\s]+/g, "_")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase();
-
-const toCamel = (s: string) => {
-  const base = s.replace(/[-_ ]+(\w)/g, (_, c) =>
-    c ? c.toUpperCase() : ""
-  );
-  return base.charAt(0).toLowerCase() + base.slice(1);
-};
-
-for (const [p, mod] of Object.entries(modules)) {
-  const file = p.split("/").pop()?.replace(/\.astro$/i, "") || "";
-  const component = (mod as any).default;
-  COMPONENT_MAP[file] = component;
-  COMPONENT_MAP[toKebab(file)] = component;
-  COMPONENT_MAP[toSnake(file)] = component;
-  COMPONENT_MAP[toCamel(file)] = component;
+for (const [path, mod] of Object.entries(modules)) {
+  const filename = path.split("/").pop()?.replace(/\.astro$/i, "") || "";
+  COMPONENT_MAP[filename] = (mod as any).default;
 }
 
 function getComponent(name: string) {
-  return (
-    COMPONENT_MAP[name] ||
-    COMPONENT_MAP[toKebab(name)] ||
-    COMPONENT_MAP[toSnake(name)] ||
-    null
-  );
+  return COMPONENT_MAP[name] || null;
 }
 
-/* ---------------- Render Helpers ---------------- */
-const firstLayout = rows[0]?.name ?? "";
-
-function isAltBgContext(): boolean {
-  return (
-    taxContext === "service" ||
-    taxContext === "service-area" ||
-    firstLayout === "service_area_banner"
-  );
+/* ---------------- Helper Functions ---------------- */
+function safeHtml(val: any): string {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  return val?.htmlParts?.join?.("") ?? "";
 }
 
-function computeBgWrapClass(row: NormRow, rowindex: number): string | null {
-  const ls = (row as any)?.data?.layout_settings ?? {};
-  const bgColor: string =
-    typeof ls?.bg_color === "string" ? ls.bg_color.trim() : "";
-
-  if (bgColor && bgColor !== "none") {
-    if (/\bbg-1\b/.test(bgColor.toLowerCase())) return bgColor;
-    return `${bgColor}bg-1`;
-  }
-
-  if (isAltBgContext() && rowindex >= 2) {
-    return rowindex % 2 === 0 ? "whitebg-1" : "mintbg-1";
-  }
-  return null;
-}
-
-function prevLayoutClass(prevRow: NormRow | null): string {
-  if (!prevRow?.name) return "";
-  return `prev-${toKebab(prevRow.name)}`;
-}
-
-const commonCtxBase = {
-  postId,
-  currentPost,
-  termId: null,
-  taxonomy: null,
-  currentTerm: null,
-};
-
-/* ---------------------------------------------------------
-   NEXT PAGE CALCULATIONS
---------------------------------------------------------- */
-let nextPage: any = null;
-let nextSlug = "none";
-
-function stripSlashes(str: string) {
+function stripSlashes(str: string): string {
   try {
     if (str.startsWith("http")) {
       const u = new URL(str);
@@ -163,27 +79,111 @@ function stripSlashes(str: string) {
   }
 }
 
-if (!taxContext) {
-  const currentPathClean = stripSlashes(decodeURIComponent(Astro.url.pathname));
+function toKebab(s: string): string {
+  return s.replace(/_/g, "-");
+}
+
+function isAltBgContext(taxContext: string | null, firstLayout: string): boolean {
+  return (
+    taxContext === "service" ||
+    taxContext === "service-area" ||
+    firstLayout === "service_area_banner"
+  );
+}
+
+function computeBgWrapClass(
+  row: NormRow,
+  rowindex: number,
+  altBgContext: boolean
+): string | null {
+  const ls = row.data?.layout_settings as LayoutSettings | undefined;
+  const bgColor = typeof ls?.bg_color === "string" ? ls.bg_color.trim() : "";
+
+  if (bgColor && bgColor !== "none") {
+    return /\bbg-1\b/.test(bgColor.toLowerCase()) ? bgColor : `${bgColor}bg-1`;
+  }
+
+  if (altBgContext && rowindex >= 2) {
+    return rowindex % 2 === 0 ? "whitebg-1" : "mintbg-1";
+  }
+
+  return null;
+}
+
+function buildSectionClasses(
+  row: NormRow,
+  idx: number,
+  prevRow: NormRow | null,
+  hasHeaderContent: boolean,
+  placeHeaderBelow: boolean,
+  nextHasSectionContent: boolean,
+  firstIsSplash: boolean
+): string {
+  const rowindex = idx + 1;
+  const isFullBleedImage = row.name === "full_bleed_img";
+  const rawContent = row.data?.content || [];
+  const isSecondRowAlsoRowOne = firstIsSplash && idx === 1;
+
+  const classes = [
+    "flex-bg",
+    ...row.meta.classes,
+    prevRow?.name ? `prev-${toKebab(prevRow.name)}` : "",
+    hasHeaderContent ? "has-section-content" : "no-section-content",
+    row.name === "splash_video" ? "full_bleed_img-module" : "",
+    placeHeaderBelow ? "header-below" : "header-at-top",
+    nextHasSectionContent ? "next-has-section-content" : "next-no-section-content",
+    isFullBleedImage && rawContent.length === 0 ? "image-only" : "",
+    `rowindex-${isSecondRowAlsoRowOne ? 1 : rowindex}`,
+  ];
+
+  return classes.filter(Boolean).join(" ");
+}
+
+function isLongSectionTitle(title: string): boolean {
+  const lines = title
+    .split(/<br\s*\/?>/i)
+    .map((l) => l.replace(/<[^>]+>/g, "").trim());
+  return lines.some((l) => l.length >= 18);
+}
+
+/* ---------------- Navigation Helper ---------------- */
+function getNextPage(currentPath: string) {
+  if (taxContext) return null;
+
+  const currentPathClean = stripSlashes(decodeURIComponent(currentPath));
   const reversedPageOrder = [...pageOrder].reverse();
 
   const currentIndex = reversedPageOrder.findIndex(
     (p) => stripSlashes(p.uri) === currentPathClean
   );
 
-  if (currentIndex >= 0) {
-    nextPage =
-      currentIndex < reversedPageOrder.length - 1
-        ? reversedPageOrder[currentIndex + 1]
-        : reversedPageOrder[0];
-  }
+  if (currentIndex === -1) return null;
 
-  if (nextPage) {
-    nextSlug = stripSlashes(nextPage.uri).replace(/\//g, "-");
-  }
+  const nextPage =
+    currentIndex < reversedPageOrder.length - 1
+      ? reversedPageOrder[currentIndex + 1]
+      : reversedPageOrder[0];
+
+  return {
+    page: nextPage,
+    slug: stripSlashes(nextPage.uri).replace(/\//g, "-"),
+  };
 }
 
-const firstIsSplash = rows[0]?.name === "splash_video";
+/* ---------------- Data Prep ---------------- */
+const rows = normalizeLayouts(Array.isArray(layouts) ? layouts : []);
+const firstLayout = rows[0]?.name ?? "";
+const firstIsSplash = firstLayout === "splash_video";
+const altBgContext = isAltBgContext(taxContext, firstLayout);
+const nextPageData = getNextPage(Astro.url.pathname);
+
+const commonCtxBase = {
+  postId: pageId ?? null,
+  currentPost: null,
+  termId: null,
+  taxonomy: null,
+  currentTerm: null,
+};
 ---
 
 {rows.length === 0 && (
@@ -193,26 +193,19 @@ const firstIsSplash = rows[0]?.name === "splash_video";
 )}
 
 {rows.map((row, idx) => {
-  row.data = ensureWebpDeep(row.data);
-
   const Comp = getComponent(row.name);
   const rowindex = idx + 1;
-
   const prevRow = idx > 0 ? rows[idx - 1] : null;
   const nextRow = idx < rows.length - 1 ? rows[idx + 1] : null;
 
-  const nextLs = nextRow?.data?.layout_settings || {};
+  const nextLs = nextRow?.data?.layout_settings as LayoutSettings | undefined;
   const nextHasSectionContent = !!(
     nextLs?.section_title ||
     nextLs?.section_h2 ||
     nextLs?.section_text
   );
 
-  const nextSectionClass = nextHasSectionContent
-    ? "next-has-section-content"
-    : "next-no-section-content";
-
-  const commonCtx = {
+  const commonCtx: CommonContext = {
     ...commonCtxBase,
     rowIndex: rowindex,
     prevLayout: prevRow,
@@ -220,68 +213,39 @@ const firstIsSplash = rows[0]?.name === "splash_video";
   };
 
   const preHtmlString = safeHtml(row.meta.preHtml);
-
-  const ls = row.data?.layout_settings || {};
+  const ls = row.data?.layout_settings as LayoutSettings | undefined;
 
   const {
-    section_title,
-    section_h2,
-    section_text,
-    green_bg,
-    section_text_below,
-  } = ls;
-
-  const placeHeaderBelow = section_text_below === true;
-
-  let isLongTitle = false;
-
-  if (section_title) {
-    const lines = section_title
-      .split(/<br\s*\/?>/i)
-      .map((l) => l.replace(/<[^>]+>/g, "").trim());
-
-    isLongTitle = lines.some((l) => l.length >= 18);
-  }
+    section_title = "",
+    section_h2 = "",
+    section_text = "",
+    green_bg = false,
+    section_text_below = false,
+  } = ls || {};
 
   const hasHeaderContent = !!(section_title || section_h2 || section_text);
-  const contentStatusClass = hasHeaderContent
-    ? "has-section-content"
-    : "no-section-content";
+  const placeHeaderBelow = section_text_below === true;
+  const isLongTitle = section_title ? isLongSectionTitle(section_title) : false;
 
-  const headerPlacementClass = placeHeaderBelow
-    ? "header-below"
-    : "header-at-top";
+  const sectionClass = buildSectionClasses(
+    row,
+    idx,
+    prevRow,
+    hasHeaderContent,
+    placeHeaderBelow,
+    nextHasSectionContent,
+    firstIsSplash
+  );
 
+  const bgWrapClass = computeBgWrapClass(row, rowindex, altBgContext);
   const bgColorClass = green_bg ? "bg-green c-white" : "";
-
-  const isFullBleedImage = row.name === "full_bleed_img";
-  const rawContent = row.data?.content || [];
-  const imageOnlyClass =
-    isFullBleedImage && rawContent.length === 0 ? "image-only" : "";
-
-  const prevCls = prevLayoutClass(prevRow);
-
-  const splashClass =
-    row.name === "splash_video" ? "full_bleed_img-module" : "";
-
-  const isSecondRowAlsoRowOne = firstIsSplash && idx === 1;
-
-  const sectionClass = `flex-bg
-    ${row.meta.classes.join(" ")}
-    ${prevCls}
-    ${contentStatusClass}
-    ${splashClass}
-    ${headerPlacementClass}
-    ${nextSectionClass}
-    ${imageOnlyClass}
-    rowindex-${isSecondRowAlsoRowOne ? 1 : rowindex}
-  `.trim();
-
-  const bgWrapClass = computeBgWrapClass(row, rowindex);
-
-  const headerWrapperClass = `flex-section-content hw-contain ${bgColorClass} ${
-    !(section_h2 || section_text) ? "title-only" : ""
-  }`.trim();
+  
+  const headerWrapperClass = [
+    "flex-section-content",
+    "hw-contain",
+    bgColorClass,
+    !(section_h2 || section_text) ? "title-only" : "",
+  ].filter(Boolean).join(" ");
 
   const headerContent = hasHeaderContent ? (
     <div class={headerWrapperClass}>
@@ -320,20 +284,16 @@ const firstIsSplash = rows[0]?.name === "splash_video";
 
       {bgWrapClass ? (
         <div class={bgWrapClass}>
-          <div
-            class={`flex-bg-inner z-[100] pr ${
-              row.meta?.ofh ? "ofh" : ""
-            }`}
-          >
+          <div class={`flex-bg-inner z-[100] pr ${row.meta?.ofh ? "ofh" : ""}`}>
             {!placeHeaderBelow && headerContent}
-            {Comp ? <Comp {...row.data} {...commonCtx} /> : null}
+            {Comp && <Comp {...row.data} {...commonCtx} />}
             {placeHeaderBelow && headerContent}
           </div>
         </div>
       ) : (
         <>
           {!placeHeaderBelow && headerContent}
-          {Comp ? <Comp {...row.data} {...commonCtx} /> : null}
+          {Comp && <Comp {...row.data} {...commonCtx} />}
           {placeHeaderBelow && headerContent}
         </>
       )}
@@ -341,14 +301,14 @@ const firstIsSplash = rows[0]?.name === "splash_video";
   );
 })}
 
-{nextPage && (
+{nextPageData && (
   <section
-    id={`next-link-${nextSlug}`}
+    id={`next-link-${nextPageData.slug}`}
     class="next-page-section py-20 text-right"
   >
     <div class="hw-contain">
-      <a href={nextPage.uri} class="figure c-pink caps next-link">
-        {nextPage.title}
+      <a href={nextPageData.page.uri} class="figure c-pink caps next-link">
+        {nextPageData.page.title}
       </a>
     </div>
   </section>

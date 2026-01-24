@@ -1,19 +1,27 @@
 "use client";
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useRef } from "react";
-import { getWpImage } from "../lib/wp/get-wp-image.js"; // Adjust path to where you saved the helper
+import { useRef, useMemo } from "react";
 
-export default function CollageParallax({ 
+const DEFAULT_CONFIG = {
+  strength: 5,
+  scaleMax: 1.1,
+  springConfig: {
+    mass: 0.4,
+    stiffness: 150,
+    damping: 25,
+    restDelta: 0.001,
+  },
+};
+
+export default function CollageParallax({
   children,
-  // New Image Props
   src,
   alt = "",
-  className = "", // Applied to the inner motion element
-  // Parallax Props
-  strength = 5, 
-  scaleMax = 1.1,
-  invert = false 
+  className = "",
+  strength = DEFAULT_CONFIG.strength,
+  scaleMax = DEFAULT_CONFIG.scaleMax,
+  invert = false,
 }) {
   const ref = useRef(null);
 
@@ -22,62 +30,63 @@ export default function CollageParallax({
     offset: ["start end", "end start"],
   });
 
-  // Inertia configuration
-  const smoothProgress = useSpring(scrollYProgress, {
-    mass: 0.4,
-    stiffness: 150,
-    damping: 25,
-    restDelta: 0.001
-  });
+  // Smooth scroll with spring physics
+  const smoothProgress = useSpring(scrollYProgress, DEFAULT_CONFIG.springConfig);
 
-  const xRange = invert ? [strength, -strength] : [-strength, strength];
-  
-  // Apply transforms
-  const x = useTransform(smoothProgress, [0, 1], xRange);
-  const scale = useTransform(smoothProgress, [0, 1.06], [1.06, scaleMax]);
+  // Memoize transform ranges to prevent recreation on every render
+  const transforms = useMemo(() => {
+    const xRange = invert ? [strength, -strength] : [-strength, strength];
+    
+    return {
+      x: useTransform(smoothProgress, [0, 1], xRange),
+      scale: useTransform(smoothProgress, [0, 1.06], [1.06, scaleMax]),
+    };
+  }, [smoothProgress, strength, scaleMax, invert]);
 
-  // Convert src if present
-  const localSrc = src ? getWpImage(src) : null;
+  // Memoize styles to prevent recreation
+  const containerStyle = useMemo(
+    () => ({
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      overflow: "hidden",
+    }),
+    []
+  );
+
+  const motionStyle = useMemo(
+    () => ({
+      x: transforms.x,
+      scale: transforms.scale,
+      width: "100%",
+      height: "100%",
+      display: "block",
+      willChange: "transform",
+    }),
+    [transforms.x, transforms.scale]
+  );
+
+  const imageStyle = useMemo(
+    () => ({
+      ...motionStyle,
+      objectFit: "cover",
+    }),
+    [motionStyle]
+  );
 
   return (
-    <div
-      ref={ref}
-      style={{
-        width: "100%",
-        height: "100%",
-        position: "relative",
-        overflow: "hidden", 
-      }}
-    >
+    <div ref={ref} style={containerStyle}>
       {src ? (
-        /* MODE A: Smart Image (Auto-cached) */
         <motion.img
-          src={localSrc}
+          src={src}
           alt={alt}
           className={className}
-          style={{
-            x,
-            scale,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-            willChange: "transform",
-          }}
+          style={imageStyle}
+          loading="lazy"
+          decoding="async"
         />
       ) : (
-        /* MODE B: Wrapper (Backwards compatible) */
-        <motion.div
-          className={className}
-          style={{
-            x,
-            scale,
-            width: "100%",
-            height: "100%",
-            display: "block",
-            willChange: "transform",
-          }}
-        >
+        <motion.div className={className} style={motionStyle}>
           {children}
         </motion.div>
       )}
