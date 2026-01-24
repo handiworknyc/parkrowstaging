@@ -305,7 +305,12 @@ export default function GravityForm({ form, onSuccess }: Props) {
         submissionValues[base] = values[base] ?? '';
       }
 
-      const res = await fetch('/api/gf/submit', {
+	const isDev = import.meta.env.DEV;
+	const endpoint = isDev 
+	? '/api/gf/submit'  // Works locally with Astro
+	: '/.netlify/functions/gf-submit';  // Works on Netlify
+
+	const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
