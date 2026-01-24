@@ -20,9 +20,11 @@ import LogoLoader from './LogoLoader';
 
 type GFChoice = { label: string; value: string };
 
+type GFFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox' | 'radio' | 'select';
+
 type GFField = {
   id: number;
-  type: string;
+  type: GFFieldType;
   label: string;
   isRequired?: boolean;
   placeholder?: string;
@@ -36,22 +38,34 @@ export type GFFormSchema = {
   fields: GFField[];
 };
 
-
 type Props = {
   form: GFFormSchema;
   onSuccess?: (message: string) => void;
 };
 
+/* =====================================================
+   CONSTANTS
+===================================================== */
+
+const CONSTANTS = {
+  SCROLL_OFFSET: 120,
+  ANIMATION_DURATION: 0.8,
+  PHONE_DIGITS_REQUIRED: 10,
+  EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  SMOOTH_EASE: [0.25, 0.1, 0.25, 1] as const,
+} as const;
 
 /* =====================================================
    UTILS
 ===================================================== */
 
-function safeJsonParse(text: string) {
+function safeJsonParse(text: string): 
+  | { ok: true; data: any }
+  | { ok: false; error: unknown } {
   try {
-    return { ok: true as const, data: JSON.parse(text) };
+    return { ok: true, data: JSON.parse(text) };
   } catch (err) {
-    return { ok: false as const, error: err };
+    return { ok: false, error: err };
   }
 }
 
@@ -80,7 +94,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
   const [animationReady, setAnimationReady] = useState(false);
   const [requestReady, setRequestReady] = useState(false);
 
-  /** 🔥 new — explicit animation lifecycle */
   const [loaderPhase, setLoaderPhase] = useState<
     'idle' | 'filling' | 'readyToFade'
   >('idle');
@@ -88,29 +101,32 @@ export default function GravityForm({ form, onSuccess }: Props) {
   const submitCountRef = useRef(0);
   const didAutoFocusRef = useRef(false);
 
+  useEffect(() => {
+	return () => {
+		document.body.classList.remove('gf-success-active');
+		delete (window as any).__GF_CONFIRMATION__;
+	};
+	}, []);
+
   /* =====================================================
-     COORDINATION LOGIC (FIXED)
+     COORDINATION LOGIC (OPTIMIZED)
   ===================================================== */
 
-  useEffect(() => {
-    if (!animationReady) return;
-    if (!requestReady) return;
-    if (!pendingMessage) return;
+	useEffect(() => {
+	if (!animationReady || !requestReady || !pendingMessage) return;
 
 	onSuccess?.(pendingMessage);
 
 	setPendingMessage(null);
 	setSubmitting(false);
 	setIsSuccess(true);
-
-    /** ✅ animation now fades ONLY when both are ready */
-    setLoaderPhase('readyToFade');
+	setLoaderPhase('readyToFade');
 
 	(window as any).__GF_CONFIRMATION__ = pendingMessage;
 	window.dispatchEvent(new Event('gf-confirmation'));
 
-    document.body.classList.add('gf-success-active');
-  }, [animationReady, requestReady, pendingMessage]);
+	document.body.classList.add('gf-success-active');
+	}, [animationReady, requestReady, pendingMessage, onSuccess]);
 
   /* =====================================================
      SCROLL TO TOP WHEN LOADER APPEARS
@@ -144,7 +160,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
      FIELD STATE
   ===================================================== */
 
-  function set(id: number, val: any) {
+  const set = useCallback((id: number, val: any) => {
     const key = `input_${id}`;
 
     setValues((v) => ({ ...v, [key]: val }));
@@ -155,7 +171,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
       delete next[key];
       return next;
     });
-  }
+  }, []);
 
   /* =====================================================
      AUTO-FOCUS FIRST ERROR
@@ -184,13 +200,11 @@ export default function GravityForm({ form, onSuccess }: Props) {
           : b
       );
 
-      const OFFSET = 120;
-
       window.scrollTo({
         top:
           window.scrollY +
           top.getBoundingClientRect().top -
-          OFFSET,
+          CONSTANTS.SCROLL_OFFSET,
         behavior: 'smooth',
       });
 
@@ -203,10 +217,10 @@ export default function GravityForm({ form, onSuccess }: Props) {
   }, [fieldErrors]);
 
   /* =====================================================
-     CLIENT VALIDATION
+     CLIENT VALIDATION (OPTIMIZED)
   ===================================================== */
 
-  function validateClientSide(): Record<string, string> {
+  const validateClientSide = useCallback((): Record<string, string> => {
     const errors: Record<string, string> = {};
 
     for (const field of form.fields) {
@@ -227,9 +241,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
       }
 
       if (field.type === 'email' && val) {
-        if (
-          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val))
-        ) {
+        if (!CONSTANTS.EMAIL_REGEX.test(String(val))) {
           errors[key] = 'Please enter a valid email address.';
         }
       }
@@ -241,21 +253,25 @@ export default function GravityForm({ form, onSuccess }: Props) {
             : val
         ).replace(/\D/g, '');
 
-        if (digits.length !== 10) {
-          errors[key] =
-            'Please enter a valid 10-digit phone number.';
+        if (digits.length !== CONSTANTS.PHONE_DIGITS_REQUIRED) {
+          errors[key] = `Please enter a valid ${CONSTANTS.PHONE_DIGITS_REQUIRED}-digit phone number.`;
         }
       }
     }
 
+    // ✅ Reset auto-focus flag when new errors are generated
+    if (Object.keys(errors).length > 0) {
+      didAutoFocusRef.current = false;
+    }
+
     return errors;
-  }
+  }, [form.fields, values]);
 
   /* =====================================================
-     SUBMIT
+     SUBMIT (OPTIMIZED)
   ===================================================== */
 
-  async function submit(e: React.FormEvent) {
+  const submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting || !form?.id) return;
 
@@ -271,15 +287,12 @@ export default function GravityForm({ form, onSuccess }: Props) {
     setSubmitting(true);
     setShowLoader(true);
     setLoaderPhase('filling');
-
     setIsSuccess(false);
     setMessage(null);
     setPendingMessage(null);
-
     setAnimationReady(false);
     setRequestReady(false);
     setFieldErrors({});
-    didAutoFocusRef.current = false;
 
     try {
       const submissionValues: Record<string, any> = {};
@@ -305,12 +318,12 @@ export default function GravityForm({ form, onSuccess }: Props) {
         submissionValues[base] = values[base] ?? '';
       }
 
-	const isDev = import.meta.env.DEV;
-	const endpoint = isDev 
-		? '/api/gf/submit'  // Works locally with Astro
-		: '/.netlify/functions/gf-submit';  // Works on Netlify
+      const isDev = import.meta.env.DEV;
+      const endpoint = isDev 
+        ? '/api/gf/submit'
+        : '/.netlify/functions/gf-submit';
 
-	const res = await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -339,16 +352,21 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
       setRequestReady(true);
     } catch (err: any) {
-      setMessage(err?.message || 'Submission failed.');
+      console.error('Form submission error:', err);
+      
+      setMessage(
+        err?.message || 
+        'Unable to submit form. Please try again.'
+      );
       setSubmitting(false);
+      setShowLoader(false);
+      setLoaderPhase('idle');
     }
-  }
+  }, [submitting, form, values, validateClientSide]);
 
   /* =====================================================
      RENDER
   ===================================================== */
-
-  const SMOOTH_EASE = [0.25, 0.1, 0.25, 1];
 
   return (
     <>
@@ -356,18 +374,19 @@ export default function GravityForm({ form, onSuccess }: Props) {
         onSubmit={submit}
         className="gf-form flex flex-col justify-center"
         noValidate
+        aria-busy={submitting}
         animate={{
           maxHeight: isSuccess
             ? 'calc(var(--jsVhUnits100) - var(--headerHeight))'
             : 'auto',
         }}
-        transition={{ duration: 0.8, ease: SMOOTH_EASE }}
-		onAnimationComplete={() => {
-			if (!isSuccess) return;
+        transition={{ duration: CONSTANTS.ANIMATION_DURATION, ease: CONSTANTS.SMOOTH_EASE }}
+        onAnimationComplete={() => {
+          if (!isSuccess) return;
 
-			// ✅ force layout recalculation
-			window.dispatchEvent(new Event('resize'));
-		}}
+          // ✅ force layout recalculation
+          window.dispatchEvent(new Event('resize'));
+        }}
       >
         {form.fields.map((f) => {
           const key = `input_${f.id}`;
@@ -476,8 +495,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
             {submitting ? 'Sending…' : 'Submit'}
           </button>
         </div>
-
- 
       </motion.form>
 
       {showLoader && (
