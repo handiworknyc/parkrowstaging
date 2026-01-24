@@ -1,34 +1,71 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import GravityForm from './GravityForm';
 import type { GFFormSchema } from './GravityForm';
 
-type Props = {
-  formId: number;
-};
+type Props = { formId: number };
 
-/* ================================================
-   STATIC JSON REGISTRY (BUILD-TIME)
-================================================ */
-const formModules = import.meta.glob<
-  true,
-  string,
-  { default: GFFormSchema }
->(
+const formModules = import.meta.glob<true, string, { default: GFFormSchema }>(
   '../../content/wp/forms/form-*.json',
   { eager: true }
 );
 
-export default function GravityFormWrapper({ formId }: Props) {
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+function setDebug(data: any) {
+  if (typeof window === 'undefined') return;
+  (window as any).__GF_DEBUG__ = {
+    ...(window as any).__GF_DEBUG__,
+    ...data,
+  };
+}
 
-  const form = useMemo(() => {
-    const key = `../../content/wp/forms/form-${formId}.json`;
-    return formModules[key]?.default ?? null;
+export default function GravityFormWrapper({ formId }: Props) {
+  const [clientReady, setClientReady] = useState(false);
+
+  useEffect(() => {
+    setClientReady(true);
+
+    // dump keys once on client
+    const keys = Object.keys(formModules);
+    console.log('[GFWrapper] glob keys:', keys);
+    setDebug({ globKeys: keys, formId });
   }, [formId]);
 
+  const form = useMemo(() => {
+    const want = `/form-${formId}.json`;
+
+    const hit = Object.entries(formModules).find(([path]) =>
+      path.replace(/\\/g, '/').endsWith(want)
+    );
+
+    const resolved = hit?.[1]?.default ?? null;
+
+    setDebug({
+      wanted: want,
+      resolvedPath: hit?.[0] ?? null,
+      hasForm: !!resolved,
+    });
+
+    return resolved;
+  }, [formId]);
+
+  if (!clientReady) {
+    return (
+      <div className="gf-debug p-4 border border-dashed">
+        Initializing form…
+      </div>
+    );
+  }
+
   if (!form) {
-    console.error(`Missing Gravity Form JSON: form-${formId}.json`);
-    return null;
+    return (
+      <div className="gf-debug p-4 border border-red-500 text-red-600">
+        <div className="font-bold mb-2">GravityFormWrapper: form JSON not found</div>
+        <div>Requested: <code>form-{formId}.json</code></div>
+        <div className="mt-2 text-sm opacity-80">
+          Open DevTools → Console and search for <code>[GFWrapper]</code>.
+          Also inspect <code>window.__GF_DEBUG__</code>.
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -37,7 +74,6 @@ export default function GravityFormWrapper({ formId }: Props) {
       onSuccess={(msg) => {
         (window as any).__GF_CONFIRMATION__ = msg;
         window.dispatchEvent(new Event('gf-confirmation'));
-        setSuccessMessage(msg);
       }}
     />
   );
