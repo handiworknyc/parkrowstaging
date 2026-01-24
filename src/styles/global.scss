@@ -1190,9 +1190,11 @@ ul.two-col-list {
 	transform: translateZ(0);
 	-webkit-backface-visibility: hidden;
 	transition: opacity 2.5s cubic-bezier(0.22, 1, 0.36, 1);
+	transition-delay: .65s;
 }
 
 
+.crit-child-lazy-loaded .splash-content,
 .child-lazy-loaded .splash-content {
 	opacity: 1;
 }

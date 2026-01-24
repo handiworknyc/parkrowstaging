@@ -39,7 +39,11 @@ const {
 } = Astro.props;
 
 const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+
+// Video Configuration
+const VIDEO_HINT_PARAM = "?clientBandwidthHint=1000"; 
 const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
+const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
 
 const pathname = Astro.url.pathname;
 const segments = pathname.split("/").filter(Boolean);
@@ -53,6 +57,17 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 <html lang="en" style="view-transition-name: main-content">
 <head>
   <meta charset="utf-8" />
+
+  {/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
+  <link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
+    
+  {/* ⚡️ PRIORITY 2: Import VideoJS immediately (Execution/Parsing) */}
+  {/* This forces the browser to parse the heavy library NOW, not later */}
+  <script>
+      import "/src/scripts/videojs.js";
+  </script>
+
+    
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width" />
   <meta name="generator" content={Astro.generator} />
@@ -72,24 +87,28 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
     />
   )}
 
-  <link rel="modulepreload" href={videoJsUrl} />
+  {/* LCP Video (Full Warmup) */}
+  {lcpVideo && (
+    <>
+        {/* 1. Manifest Domain */}
+        <link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
+        <link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
 
-	{/* LCP Video (HLS Warmup) */}
-	{lcpVideo && (
-	<>
-		<link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
-		<link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
-		{/* 🔑 CHANGED: prefetch → preload, added fetchpriority */}
-		<link 
-		rel="preload" 
-		as="fetch" 
-		href={lcpVideo.href} 
-		type="application/vnd.apple.mpegurl"
-		fetchpriority="high"
-		crossorigin
-		/>
-	</>
-	)}
+        {/* 2. ⚡️ Segment Domain (The Heavy Lifter) */}
+        <link rel="preconnect" href={CLOUDFLARE_DELIVERY_DOMAIN} crossorigin />
+        <link rel="dns-prefetch" href={CLOUDFLARE_DELIVERY_DOMAIN} />
+
+        {/* 3. ⚡️ Exact Match Preload (Fixing URL Mismatch) */}
+        <link 
+        rel="preload" 
+        as="fetch" 
+        href={lcpVideo.href.includes('?') ? lcpVideo.href : `${lcpVideo.href}${VIDEO_HINT_PARAM}`}
+        type="application/vnd.apple.mpegurl"
+        fetchpriority="high"
+        crossorigin
+        />
+    </>
+  )}
 
   {/* Carousel/Slideshow Preloader */}
   <script is:inline define:vars={{ preloads }}>
@@ -245,7 +264,6 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
     });
   </script>
 
-  {/* Locomotive Scroll */}
   <script>
     import LocomotiveScroll from "locomotive-scroll";
 

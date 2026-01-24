@@ -125,7 +125,26 @@ const imgId = critical ? `crit-${crypto.randomUUID().slice(0, 8)}` : undefined;
           const setLoaded = () => {
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
-                img.classList.add("lazy-loaded");
+				img.classList.add("lazy-loaded");
+
+				const parent = img.closest(".img-load-par");
+
+				if (parent) {
+					parent.classList.add("child-lazy-loaded");
+					parent.classList.add("crit-child-lazy-loaded");
+				}
+
+				window.dispatchEvent(
+					new CustomEvent("critImgLoaded", {
+						detail: {
+						id: imgId,
+						src: img.currentSrc || img.src,
+						width: img.naturalWidth,
+						height: img.naturalHeight,
+						},
+					})
+				);
+
                 
                 window.dispatchEvent(
                   new CustomEvent("critImgLoaded", {
