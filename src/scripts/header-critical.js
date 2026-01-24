@@ -726,17 +726,50 @@ HW.triggerEvent = function(el, type){
 	}
 };
 
-// Set JS VH units
-/*
-HW.setVhUnitsLoading = true;
 
-document.documentElement.classList.add('vhUnits-loading');
-*/
 
-HW.setVhUnits = function() {
-  const winHeight = window.innerHeight;
-  document.documentElement.style.setProperty('--jsVhUnits100', winHeight + 'px');
+
+HW._lastVh = 0;
+
+HW.getViewportHeight = function () {
+  return Math.round(
+    window.visualViewport?.height || window.innerHeight
+  );
 };
+
+HW.setVhUnits = function () {
+  const height = HW.getViewportHeight();
+  if (height === HW._lastVh) return;
+
+  HW._lastVh = height;
+
+  document.documentElement.style.setProperty(
+    '--jsVhUnits100',
+    height + 'px'
+  );
+};
+
+HW.bindVhUnits = function () {
+  HW.setVhUnits();
+
+  window.addEventListener('resize', HW.setVhUnits);
+  window.addEventListener('orientationchange', HW.setVhUnits);
+
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', HW.setVhUnits);
+    visualViewport.addEventListener('scroll', HW.setVhUnits);
+  }
+
+  // Safari final correction pass
+  document.addEventListener('DOMContentLoaded', HW.setVhUnits);
+};
+
+// bind immediately
+HW.bindVhUnits();
+
+
+
+
 
 HW.insertPrefetch = function(url, type) {
 	var hint = document.createElement("link");
@@ -1064,10 +1097,8 @@ if (document.readyState === "loading") {
 window.addEventListener('DOMContentLoaded', function(){
 	HW.windowWidth = window.innerWidth;		
 	HW.windowHeight = HW.getWinDims().height;
-		 
-	HW.setVhUnits();
-	
-	HW.roundVwProps();
+		 	
+	//HW.roundVwProps();
 });
 
 window.addEventListener('criticalDomReady', function(){
