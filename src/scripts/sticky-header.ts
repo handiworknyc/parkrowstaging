@@ -190,26 +190,30 @@ function watchMobBottomBar(state: StickyState) {
   state.mobObserver = undefined;
 
   if (!MOB_MQ.matches) {
-    document
-      .querySelector(".mob-bottom-bar")
-      ?.classList.remove("mob-bar-unstuck");
+    document.querySelector(".mob-bottom-bar")?.classList.remove("mob-bar-unstuck");
     return;
   }
 
   const bar = document.querySelector<HTMLElement>(".mob-bottom-bar");
   if (!bar) return;
 
-  const sentinel = bar.nextElementSibling as HTMLElement | null;
-  if (!sentinel) return;
-
+  // Observe the bar itself with a negative top margin
+  // When stuck, the bar's top edge is at the bottom of viewport
+  // When unstuck, it's below viewport
   state.mobObserver = new IntersectionObserver(
     ([entry]) => {
-      bar.classList.toggle("mob-bar-unstuck", entry.isIntersecting);
+      // When intersectionRatio < 1, element is partially out of view (stuck)
+      // When intersectionRatio === 1, element is fully in view (unstuck/natural position)
+      const isStuck = entry.intersectionRatio < 1;
+      bar.classList.toggle("mob-bar-unstuck", !isStuck);
     },
-    { threshold: 0 }
+    { 
+      threshold: [0, 1],
+      rootMargin: "0px 0px -1px 0px" // Account for the bottom: -1px
+    }
   );
 
-  state.mobObserver.observe(sentinel);
+  state.mobObserver.observe(bar);
 }
 
 function watchForHeaders(
