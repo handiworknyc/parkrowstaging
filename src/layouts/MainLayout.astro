@@ -74,14 +74,22 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 
   <link rel="modulepreload" href={videoJsUrl} />
 
-  {/* LCP Video (HLS Warmup) */}
-  {lcpVideo && (
-    <>
-      <link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
-      <link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
-      <link rel="prefetch" as="fetch" href={lcpVideo.href} crossorigin="anonymous" />
-    </>
-  )}
+	{/* LCP Video (HLS Warmup) */}
+	{lcpVideo && (
+	<>
+		<link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
+		<link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
+		{/* 🔑 CHANGED: prefetch → preload, added fetchpriority */}
+		<link 
+		rel="preload" 
+		as="fetch" 
+		href={lcpVideo.href} 
+		type="application/vnd.apple.mpegurl"
+		fetchpriority="high"
+		crossorigin
+		/>
+	</>
+	)}
 
   {/* Carousel/Slideshow Preloader */}
   <script is:inline define:vars={{ preloads }}>

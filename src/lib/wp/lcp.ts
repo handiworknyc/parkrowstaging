@@ -1,82 +1,37 @@
-import { createHash } from "node:crypto";
-import path from "node:path";
 import type { NormRow } from "./normalize";
 
+const OPTIMAL_BANDWIDTH_KBPS = 25000;
+
 /**
- * Transforms a WordPress URL into the local cached path.
- * * EXACT MATCH of sync-flex-rest.js logic:
- * 1. Check if already local
- * 2. Strip .webp if double extension
- * 3. Hash CLEANED URL
- * 4. Sanitize Filename
- * 5. Reconstruct: cleanName-hash.jpg.webp
+ * Responsive sizes optimized for hero video posters
  */
-export function toLocalCache(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  
-  // ✅ 1. If already local (because sync-flex-rest ran first), return as is
-  if (url.startsWith("/")) return url;
-
-  try {
-    let processUrl = url;
-
-    // ✅ 2. STRIP .webp if it is a double extension (e.g. image.jpg.webp)
-    if (processUrl.toLowerCase().endsWith('.webp')) {
-      const withoutWebp = processUrl.slice(0, -5); 
-      const extBefore = path.extname(withoutWebp);
-      if (['.jpg', '.jpeg', '.png'].includes(extBefore.toLowerCase())) {
-          processUrl = withoutWebp;
-      }
-    }
-
-    // ✅ 3. Generate hash based on the CLEANED URL
-    const hash = createHash("md5").update(processUrl).digest("hex").slice(0, 8);
-
-    // 4. Extract parts from CLEANED URL
-    // We use a dummy base because 'url' might be a relative path or just a string
-    const urlObj = new URL(processUrl, "https://example.com"); 
-    const pathname = urlObj.pathname; 
-    const basename = path.basename(pathname);
-
-    const ext = path.extname(basename); 
-    const nameWithoutExt = path.basename(basename, ext); 
-
-    // 5. Sanitize the name 
-    const cleanName = nameWithoutExt.replace(/[^a-z0-9-_]/gi, "-").toLowerCase();
-
-    // ✅ 6. Handle WebP appending
-    let finalExt = ext;
-    if (['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase())) {
-        finalExt = `${ext}.webp`;
-    }
-
-    // 7. Construct final filename
-    const filename = `${cleanName}-${hash}${finalExt}`;
-
-    return `/img-cache/${filename}`;
-
-  } catch (err) {
-    console.warn("Could not convert to local cache path:", url);
-    return undefined;
-  }
+function getResponsiveSizes(): string {
+  return [
+    '(max-width: 640px) 100vw',
+    '(max-width: 1024px) 90vw',
+    '(max-width: 1440px) 80vw',
+    '1400px'
+  ].join(', ');
 }
 
+/**
+ * Get LCP image data for hero video poster
+ */
 export function getLcpImage(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 
   const firstData = rows[0].data || {};
 
-  // HERO VIDEO POSTER
   if (Array.isArray(firstData.video) && firstData.video[0]?.yt_img) {
     const raw = firstData.video[0].yt_img;
     const sizes = raw.sizes || {};
 
     const candidates = [
-      { url: toLocalCache(sizes.intch_xl || raw.url), w: sizes["intch_xl-width"] },
-      { url: toLocalCache(sizes.intch_lg),            w: sizes["intch_lg-width"] },
-      { url: toLocalCache(sizes.intch_med),           w: sizes["intch_med-width"] },
-      { url: toLocalCache(sizes.intch_sm),            w: sizes["intch_sm-width"] }
-    ].filter(c => c.url && c.w);
+      { url: sizes.intch_xl || raw.url, w: sizes["intch_xl-width"] || 2048 },
+      { url: sizes.intch_lg,            w: sizes["intch_lg-width"] || 1600 },
+      { url: sizes.intch_med,           w: sizes["intch_med-width"] || 1200 },
+      { url: sizes.intch_sm,            w: sizes["intch_sm-width"] || 800 }
+    ].filter(c => c.url);
 
     if (!candidates.length) return null;
 
@@ -85,7 +40,7 @@ export function getLcpImage(rows: NormRow[]) {
     return {
       href: candidates[0].url as string,
       imagesrcset: srcsetParts.join(", "),
-      imagesizes: "(max-width: 1200px) 60vw, 100vw",
+      imagesizes: getResponsiveSizes(),
       type: "image/webp"
     };
   }
@@ -93,6 +48,10 @@ export function getLcpImage(rows: NormRow[]) {
   return null;
 }
 
+/**
+ * Get LCP video data for hero video
+ * Returns object matching your MainLayout lcpVideo prop
+ */
 export function getLcpVideo(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 
@@ -103,9 +62,9 @@ export function getLcpVideo(rows: NormRow[]) {
 
   if (v.cf_stream_video) {
     return {
-      href: `${v.cf_stream_video}?clientBandwidthHint=1000`,
-      type: "application/vnd.apple.mpegurl"
+      href: `${v.cf_stream_video}?clientBandwidthHint=${OPTIMAL_BANDWIDTH_KBPS}`
     };
   }
+  
   return null;
 }

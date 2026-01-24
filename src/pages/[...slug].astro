@@ -6,13 +6,12 @@ import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
 export const prerender = true;
 
 import { normalizeLayouts } from "../lib/wp/normalize";
-import { getLcpImage } from "../lib/wp/lcp"; 
+import { getLcpImage, getLcpVideo } from "../lib/wp/lcp"; 
 import { getPreloads } from "../lib/wp/preloads";
 
 export async function getStaticPaths() {
   const allPaths = getAllFlexiblePagePaths();
   
-  // ✅ Filter out /inquire/ so it doesn't conflict
   return allPaths.filter(path => {
     const slug = Array.isArray(path.params.slug) 
       ? path.params.slug.join('/')
@@ -31,11 +30,13 @@ if (!page) {
 } 
 
 let lcpData = null;
+let lcpVideoData = null; // 🔑 NEW
 let preloads = [];
 
 if (page && page.layouts) {
   const rows = normalizeLayouts(page.layouts);
   lcpData = getLcpImage(rows);
+  lcpVideoData = getLcpVideo(rows); // 🔑 NEW
   preloads = getPreloads(rows);
 }
 ---
@@ -44,7 +45,8 @@ if (page && page.layouts) {
   page ? (
     <BaseLayout 
       title={page.title} 
-      lcp={lcpData} 
+      lcp={lcpData}
+      lcpVideo={lcpVideoData}
       preloads={preloads}
     >
       <LayoutRenderer layouts={page.layouts || []} />

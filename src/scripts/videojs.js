@@ -254,7 +254,7 @@ export function initCFVideo(videoId) {
 
   wrap.classList.add("paused");
 
-  /* -----------------------------------------------------
+    /* -----------------------------------------------------
      UI state
   ----------------------------------------------------- */
   const setPlaying = () => {
@@ -281,12 +281,16 @@ export function initCFVideo(videoId) {
     player.on("play", playHandler);
     trackListener(videoId, "play", playHandler);
   } else {
+    // 🔑 FIXED: Combined desktop playback + retry reset into ONE handler
     const playingHandler = () => {
       if (!playUnlocked) {
         vlog(videoId, "blocked playing → pause()");
         player.pause();
         return;
       }
+
+      // Reset retry count on successful playback
+      playerRetries.set(videoId, 0);
 
       waitForFirstFrame(el, () => {
         vlog(videoId, "desktop first frame → fade");
@@ -310,20 +314,17 @@ export function initCFVideo(videoId) {
 
     let isIntersecting = false;
     let unlockListenerAttached = false;
-    let wasPlayingBeforeHidden = false; // 🔑 Remember state
 
     const handleIntersection = (intersecting) => {
       isIntersecting = intersecting;
 
       if (intersecting && playUnlocked) {
         vlog(videoId, "intersection → play()");
-        wasPlayingBeforeHidden = false;
         player.play().catch((err) => {
           vlog(videoId, "play failed:", err);
         });
       } else if (!intersecting && !player.paused()) {
         vlog(videoId, "intersection exit → pause()");
-        wasPlayingBeforeHidden = true;
         player.pause();
       }
     };
@@ -366,12 +367,7 @@ export function initCFVideo(videoId) {
     }
   }
 
-  // 🔑 Reset retry count on successful playback
-  const playingHandler = () => {
-    playerRetries.set(videoId, 0);
-  };
-  player.on("playing", playingHandler);
-  trackListener(videoId, "playing", playingHandler);
+  // 🔑 REMOVED: Duplicate playingHandler - now integrated above
 
   return player;
 }
