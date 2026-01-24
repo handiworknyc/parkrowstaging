@@ -1,100 +1,126 @@
 ---
-// CFVideo.astro
 import SmartImage from "../ui/SmartImage.astro";
 
-interface Props {
-  video?: any[]; 
-  usePosterSrcSet?: boolean;
-  posterForceSize?: "xl" | "large" | "med" | "small";
-  critical?: boolean; // ✅ Added Prop
+/* ---------------- Types ---------------- */
+interface VideoData {
+  id?: string;
+  cf_stream_video?: string;
+  yt_hover?: boolean;
+  show_controls?: boolean;
+  yt_img?: {
+    url: string;
+    alt?: string;
+    sizes?: {
+      intch_xl?: string;
+      intch_lg?: string;
+      intch_med?: string;
+      intch_sm?: string;
+    };
+  };
 }
 
+interface Props {
+  video?: VideoData[];
+  usePosterSrcSet?: boolean;
+  posterForceSize?: "xl" | "large" | "med" | "small";
+  critical?: boolean;
+}
+
+/* ---------------- Props ---------------- */
 const {
   video,
   usePosterSrcSet = true,
-  posterForceSize = undefined,
-  critical = false // ✅ Default false
-} = Astro.props as Props;
+  posterForceSize,
+  critical = false,
+} = Astro.props;
 
-const v = video?.[0] ?? {};
+/* ---------------- Constants ---------------- */
+const VIDEO_CONFIG = {
+  PLAY_ON_SCROLL: true,
+  SCROLL_THRESHOLD: 0.6,
+  BANDWIDTH_HINT: 1000,
+  DEFAULT_SIZES: "(max-width: 1200px) 60vw, 100vw",
+} as const;
 
-const src = v.cf_stream_video || "";
-const playOnHover = v.yt_hover === true;
-const showControls = v.show_controls ?? false;
-const playOnScroll = true;
-const threshold = 0.6;
+/* ---------------- Helpers ---------------- */
+function generateVideoId(videoData: VideoData): string {
+  const seed = videoData.id || videoData.cf_stream_video || "";
+  const random = Math.random().toString(36).slice(2, 8);
+  const rawId = `${seed}-${random}`;
+  
+  return rawId.replace(/[^a-z0-9]/gi, "").slice(-12);
+}
 
-// Generate safe ID
-let rawId =
-  (v.id || v.cf_stream_video || "") +
-  "-" +
-  Math.random().toString(36).slice(2, 8);
+function extractPosterImages(ytImg: VideoData["yt_img"]) {
+  if (!ytImg) return null;
 
-const videoId = String(rawId).replace(/[^a-z0-9]/gi, "").slice(-12);
+  const sizes = ytImg.sizes || {};
+  const fallbackUrl = ytImg.url;
 
-// Poster
-const ytImg = v.yt_img || null;
+  return {
+    xl: sizes.intch_xl || fallbackUrl,
+    large: sizes.intch_lg || fallbackUrl,
+    med: sizes.intch_med || fallbackUrl,
+    small: sizes.intch_sm || fallbackUrl,
+  };
+}
 
-const sizesObj =
-  ytImg && typeof ytImg === "object"
-    ? ytImg.sizes ?? {}
-    : {};
+/* ---------------- Data Extraction ---------------- */
+const videoData = video?.[0];
+if (!videoData) {
+  throw new Error("[CFVideo] No video data provided");
+}
 
-const smartImg = ytImg
-  ? {
-      xl: sizesObj.intch_xl || ytImg.url,
-      large: sizesObj.intch_lg || ytImg.url,
-      med: sizesObj.intch_med || ytImg.url,
-      small: sizesObj.intch_sm || ytImg.url,
-    }
-  : null;
+const streamUrl = videoData.cf_stream_video || "";
+const playOnHover = videoData.yt_hover === true;
+const showControls = videoData.show_controls ?? false;
+const posterImages = extractPosterImages(videoData.yt_img);
+const posterAlt = videoData.yt_img?.alt || "";
 
-const ytAlt = ytImg?.alt || "";
+const videoId = generateVideoId(videoData);
+const videoSrc = streamUrl 
+  ? `${streamUrl}?clientBandwidthHint=${VIDEO_CONFIG.BANDWIDTH_HINT}`
+  : "";
+
+/* ---------------- Component Config ---------------- */
+const posterProps = {
+  images: posterImages,
+  alt: posterAlt,
+  imgClass: "abs-full of-cover hw-vid-poster-img",
+  sizes: VIDEO_CONFIG.DEFAULT_SIZES,
+  useSrcSet: usePosterSrcSet,
+  forceSize: posterForceSize,
+  critical,
+};
 ---
 
-{/* Fallback image only if NO video */}
-{!src && smartImg && (
-  <SmartImage
-    images={smartImg}
-    alt={ytAlt}
-    imgClass="abs-full of-cover hw-vid-poster-img"
-    sizes="(max-width: 1200px) 60vw, 100vw"
-    useSrcSet={usePosterSrcSet}
-    forceSize={posterForceSize}
-    critical={critical} /* ✅ Pass Critical */
-  />
+{/* Fallback: Image only (no video) */}
+{!streamUrl && posterImages && (
+  <SmartImage {...posterProps} />
 )}
 
-{src && (
+{/* Video player */}
+{streamUrl && (
   <>
     <div
       id={`cfvideo-${videoId}`}
       class="hw-vid-wrap loading"
       data-id={videoId}
-      data-src={`${src}?clientBandwidthHint=1000`}
+      data-src={videoSrc}
       data-hover={playOnHover}
-      data-scroll={playOnScroll}
-      data-threshold={threshold}
+      data-scroll={VIDEO_CONFIG.PLAY_ON_SCROLL}
+      data-threshold={VIDEO_CONFIG.SCROLL_THRESHOLD}
     >
-
-      {/* Poster only when controls are OFF */}
-      {smartImg && !showControls && (
-        <SmartImage
-          images={smartImg}
-          alt={ytAlt}
-          imgClass="abs-full hw-vid-poster-img"
-          sizes="(max-width: 1200px) 60vw, 100vw"
-          useSrcSet={usePosterSrcSet}
-          forceSize={posterForceSize}
-          critical={critical} /* ✅ Pass Critical */
-        />
+      {/* Poster (only when controls are disabled) */}
+      {posterImages && !showControls && (
+        <SmartImage {...posterProps} imgClass="abs-full hw-vid-poster-img" />
       )}
 
       <video
         class={`abs-full video-js hw-vid-player vjs-default-skin show-controls-${showControls}`}
         muted
         autoplay
-        playsinline 
+        playsinline
         preload="auto"
         disablePictureInPicture
         controlsList="nodownload noplaybackrate noremoteplayback"
@@ -104,44 +130,59 @@ const ytAlt = ytImg?.alt || "";
     <script>
       import { initCFVideo } from "/src/scripts/videojs.js";
 
-      const initVideoComponents = () => {
-        const videos = document.querySelectorAll('.hw-vid-wrap');
-        const shouldAnimate = document.body.classList.contains('first-load');
-
-        if (!window.hwSessionLoaded) {
-           window.hwSessionLoaded = true;
-        }
-
-        videos.forEach((vid) => {
-            // @ts-ignore
-            if (vid.dataset.initted === "true") return;
-            // @ts-ignore
-            vid.dataset.initted = "true";
-
-            const id = vid.getAttribute('data-id');
-
-            if (shouldAnimate) {
-                const onTransitionEnd = (e) => {
-                    if (e.propertyName === 'opacity' && e.target === vid) {
-                        vid.classList.remove('loading');
-                        document.body.classList.remove('first-load');
-                        vid.removeEventListener('transitionend', onTransitionEnd);
-                    }
-                };
-                vid.addEventListener('transitionend', onTransitionEnd);
-            } else {
-                vid.classList.remove('loading');
-            }
-
-            if (id) {
-                requestAnimationFrame(() => {
-                    initCFVideo(id);
-                });
-            }
-        });
+      const CONFIG = {
+        SELECTOR: ".hw-vid-wrap",
+        FIRST_LOAD_CLASS: "first-load",
+        LOADING_CLASS: "loading",
+        INITTED_ATTR: "data-initted",
       };
 
-      document.addEventListener('astro:page-load', initVideoComponents);
+      function isFirstLoad(): boolean {
+        return document.body.classList.contains(CONFIG.FIRST_LOAD_CLASS);
+      }
+
+      function removeLoadingState(element: HTMLElement, animated: boolean): void {
+        if (!animated) {
+          element.classList.remove(CONFIG.LOADING_CLASS);
+          return;
+        }
+
+        const handleTransitionEnd = (e: TransitionEvent) => {
+          if (e.propertyName === "opacity" && e.target === element) {
+            element.classList.remove(CONFIG.LOADING_CLASS);
+            document.body.classList.remove(CONFIG.FIRST_LOAD_CLASS);
+            element.removeEventListener("transitionend", handleTransitionEnd);
+          }
+        };
+
+        element.addEventListener("transitionend", handleTransitionEnd);
+      }
+
+      function initVideo(element: HTMLElement): void {
+        const id = element.getAttribute("data-id");
+        if (!id) return;
+
+        const shouldAnimate = isFirstLoad();
+        removeLoadingState(element, shouldAnimate);
+
+        requestAnimationFrame(() => {
+          initCFVideo(id);
+        });
+      }
+
+      function initAllVideos(): void {
+        const videos = document.querySelectorAll<HTMLElement>(CONFIG.SELECTOR);
+
+        videos.forEach((video) => {
+          // Skip already initialized videos
+          if (video.getAttribute(CONFIG.INITTED_ATTR) === "true") return;
+          
+          video.setAttribute(CONFIG.INITTED_ATTR, "true");
+          initVideo(video);
+        });
+      }
+
+      document.addEventListener("astro:page-load", initAllVideos);
     </script>
   </>
 )}
