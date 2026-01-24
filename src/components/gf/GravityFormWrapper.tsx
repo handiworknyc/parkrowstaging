@@ -23,10 +23,13 @@ export default function GravityFormWrapper({ formId }: Props) {
   useEffect(() => {
     setClientReady(true);
 
-    // dump keys once on client
     const keys = Object.keys(formModules);
     console.log('[GFWrapper] glob keys:', keys);
-    setDebug({ globKeys: keys, formId });
+
+    setDebug({
+      globKeys: keys,
+      formId,
+    });
   }, [formId]);
 
   const form = useMemo(() => {
@@ -58,11 +61,17 @@ export default function GravityFormWrapper({ formId }: Props) {
   if (!form) {
     return (
       <div className="gf-debug p-4 border border-red-500 text-red-600">
-        <div className="font-bold mb-2">GravityFormWrapper: form JSON not found</div>
-        <div>Requested: <code>form-{formId}.json</code></div>
+        <div className="font-bold mb-2">
+          GravityFormWrapper: form JSON not found
+        </div>
+
+        <div>
+          Requested: <code>form-{formId}.json</code>
+        </div>
+
         <div className="mt-2 text-sm opacity-80">
-          Open DevTools → Console and search for <code>[GFWrapper]</code>.
-          Also inspect <code>window.__GF_DEBUG__</code>.
+          Check DevTools →
+          <code className="ml-1">window.__GF_DEBUG__</code>
         </div>
       </div>
     );
