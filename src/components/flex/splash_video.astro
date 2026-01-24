@@ -236,6 +236,8 @@ const videoClasses = [
     if (!document.body.classList.contains("first-load")) return;
     if (!document.body.classList.contains("home")) return;
 
+	window.scrollTo(0, 0);
+	
     window.hwSplashActive = true;
 
     const splash = document.querySelector("[data-splash-video]");
@@ -322,7 +324,7 @@ const videoClasses = [
 
       dismissTimer = setTimeout(() => {
         splashpar.classList.add("splash-dismissed");
-
+		
         window.dispatchEvent(
           new CustomEvent("splash:dismiss", {
             detail: { source: "scroll-intent" },
