@@ -279,6 +279,9 @@ export function initCFVideo(videoId) {
         return;
       }
 
+      // 🔑 Reset retry count on successful playback
+      playerRetries.set(videoId, 0);
+
       // 🔑 Only wait for frame on initial playback
       if (isFirstPlayback) {
         isFirstPlayback = false;
