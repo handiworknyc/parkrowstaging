@@ -264,128 +264,133 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
     });
   </script>
 
-  <script>
-    import LocomotiveScroll from "locomotive-scroll";
+<script>
+  import LocomotiveScroll from "locomotive-scroll";
+  import {
+    initScrollLock,
+    unlockScroll,
+    isScrollLocked
+  } from "../scripts/scroll-lock";
 
-    const CONFIG = {
-      SPLASH_FADE_DURATION: 900,
-      UNLOCK_TIMEOUT: 6600,
-      LOCO_INIT_DELAY: 50,
-    };
+  // ------------------------------------
+  // DEVICE FLAGS
+  // ------------------------------------
+  const isMobile =
+    typeof HW !== "undefined" && HW.isMobile === true;
 
-    const state = {
-      locoScroll: null,
-      scrollUnlocked: false,
-      unlockTimer: null,
-      splashUnlockTimer: null,
-    };
+  const isIpad =
+    typeof HW !== "undefined" && HW.isIpad === true;
 
-    /* Helpers */
-    const isHome = () => document.body.classList.contains("home");
-    const isFirstLoad = () => document.body.classList.contains("first-load");
+  const isIOS = isMobile || isIpad;
 
-    function clearTimers() {
-      clearTimeout(state.unlockTimer);
-      clearTimeout(state.splashUnlockTimer);
-      state.unlockTimer = null;
-      state.splashUnlockTimer = null;
+  // ------------------------------------
+  // CONFIGURATION
+  // ------------------------------------
+  const CONFIG = {
+    LOCO_INIT_DELAY: 50,
+    ENABLE_LOCO_ON_MOBILE: false,
+  };
+
+  // ------------------------------------
+  // STATE
+  // ------------------------------------
+  let locoScroll = null;
+
+  // ------------------------------------
+  // HELPERS
+  // ------------------------------------
+  const isHome = () => document.body.classList.contains("home");
+  const isFirstLoad = () => document.body.classList.contains("first-load");
+
+  function shouldUseLocomotiveScroll() {
+    if (!isIOS) return true;
+    return CONFIG.ENABLE_LOCO_ON_MOBILE;
+  }
+
+  // ------------------------------------
+  // LOCOMOTIVE SCROLL
+  // ------------------------------------
+  function initLocoScroll() {
+    const el = document.querySelector("main");
+    if (!el) return;
+
+    if (!shouldUseLocomotiveScroll()) {
+      console.log("[Loco] Disabled on iOS — native scroll");
+      initScrollLock();
+      return;
     }
 
-    function unlockScroll(source = "unknown") {
-      if (!isFirstLoad() || state.scrollUnlocked) return;
+    locoScroll?.destroy();
 
-      state.scrollUnlocked = true;
-      document.body.classList.add("scroll-unlocked");
-      clearTimers();
+    locoScroll = new LocomotiveScroll({
+      el,
+      smooth: true,
+      lenisOptions: {
+        lerp: 0,
+        duration: 0.5,
+      },
+      smartphone: { smooth: true },
+      tablet: { smooth: true },
+    });
 
-      state.locoScroll?.start();
+    window.locoScroll = locoScroll;
+
+    document.dispatchEvent(
+      new CustomEvent("loco:ready", {
+        detail: { instance: locoScroll }
+      })
+    );
+
+    initScrollLock(locoScroll);
+  }
+
+  // ------------------------------------
+  // ASTRO LIFECYCLE
+  // ------------------------------------
+  document.addEventListener("astro:page-load", () => {
+    setTimeout(initLocoScroll, CONFIG.LOCO_INIT_DELAY);
+  });
+
+  document.addEventListener("astro:before-preparation", () => {
+    locoScroll?.stop();
+  });
+
+  document.addEventListener("astro:after-swap", () => {
+    if (!locoScroll) return;
+
+    if (!isFirstLoad() || !isScrollLocked()) {
+      locoScroll.start();
+    } else {
+      locoScroll.stop();
     }
+  });
 
-    function initLocoScroll() {
-      const el = document.querySelector("main");
-      if (!el) return;
+  // ------------------------------------
+  // ANCHOR LINKS
+  // ------------------------------------
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
 
-      state.locoScroll?.destroy();
+    const id = a.getAttribute("href");
+    if (!id || id === "#") return;
 
-      state.locoScroll = new LocomotiveScroll({
-        el,
-        smooth: true,
-        lenisOptions: {
-          lerp: 0,
-          duration: 0.5,
-        },
-        smartphone: { smooth: true },
-        tablet: { smooth: true },
-      });
+    const target = document.querySelector(id);
+    if (!target) return;
 
-      window.locoScroll = state.locoScroll;
+    e.preventDefault();
 
-      // Dispatch ready event for other scripts
-      document.dispatchEvent(
-        new CustomEvent("loco:ready", { 
-          detail: { instance: state.locoScroll } 
-        })
-      );
+    if (isScrollLocked()) return;
 
-      // Lock only on first load + home
-      if (isHome() && isFirstLoad() && !state.scrollUnlocked) {
-        requestAnimationFrame(() => {
-          state.locoScroll.stop();
-        });
-
-        clearTimers();
-        state.unlockTimer = setTimeout(() => {
-          unlockScroll("timeout");
-        }, CONFIG.UNLOCK_TIMEOUT);
-      } else {
-        state.locoScroll.start();
-      }
+    if (locoScroll && shouldUseLocomotiveScroll()) {
+      locoScroll.scrollTo(target);
+    } else {
+      target.scrollIntoView({ behavior: "smooth" });
     }
+  });
+</script>
 
-    /* Astro Lifecycle */
-    document.addEventListener("astro:page-load", () => {
-      setTimeout(initLocoScroll, CONFIG.LOCO_INIT_DELAY);
-    });
 
-    document.addEventListener("astro:before-preparation", () => {
-      state.locoScroll?.stop();
-    });
-
-    document.addEventListener("astro:after-swap", () => {
-      if (!state.locoScroll) return;
-
-      if (!isFirstLoad()) {
-        state.locoScroll.start();
-      } else {
-        state.scrollUnlocked ? state.locoScroll.start() : state.locoScroll.stop();
-      }
-    });
-
-    /* Splash Integration */
-    window.addEventListener("splash:dismiss", (e) => {
-      if (!isHome() || !isFirstLoad() || state.scrollUnlocked) return;
-
-      clearTimers();
-      state.splashUnlockTimer = setTimeout(() => {
-        unlockScroll(e?.detail?.source || "splash");
-      }, CONFIG.SPLASH_FADE_DURATION);
-    });
-
-    /* Anchor Link Handling */
-    document.addEventListener("click", (e) => {
-      const a = e.target.closest('a[href^="#"]');
-      if (!a || !state.locoScroll) return;
-
-      const id = a.getAttribute("href");
-      if (!id || id === "#") return;
-
-      const target = document.querySelector(id);
-      if (!target) return;
-
-      e.preventDefault();
-      state.locoScroll.scrollTo(target);
-    });
-  </script>
 </head>
 
 <body class={`first-load ${bodyClasses}`}>
@@ -439,5 +444,9 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
   </script>
 
   <PromoPopup />
+
+  <script>
+	  import "../scripts/sticky-bottom";
+  </script>
 </body>
 </html>

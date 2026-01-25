@@ -728,44 +728,67 @@ HW.triggerEvent = function(el, type){
 
 
 
+// BEST SOLUTION: VH Units with Threshold
 
-HW._lastVh = 0;
+// HW._lastVh = 0;
+// HW._vhResizeTimeout = null;
+// HW._vhScrollTimeout = null;
 
-HW.getViewportHeight = function () {
-  return Math.round(
-    window.visualViewport?.height || window.innerHeight
-  );
-};
+// HW.getViewportHeight = function () {
+//   return Math.round(
+//     window.visualViewport?.height || window.innerHeight
+//   );
+// };
 
-HW.setVhUnits = function () {
-  const height = HW.getViewportHeight();
-  if (height === HW._lastVh) return;
+// HW.setVhUnits = function (force = false) {
+//   const height = HW.getViewportHeight();
+  
+//   // Only update if changed by more than 5px (prevents spam from micro-adjustments)
+//   const delta = Math.abs(height - HW._lastVh);
+//   if (!force && delta < 5) return;
+  
+//   console.log('VH UNITS UPDATE:', height, 'delta:', delta);
+//   HW._lastVh = height;
 
-  HW._lastVh = height;
+//   document.documentElement.style.setProperty(
+//     '--jsVhUnits100',
+//     height + 'px'
+//   );
+// };
 
-  document.documentElement.style.setProperty(
-    '--jsVhUnits100',
-    height + 'px'
-  );
-};
+// HW.bindVhUnits = function () {
+//   HW.setVhUnits(true); // Force initial
 
-HW.bindVhUnits = function () {
-  HW.setVhUnits();
+//   // Debounced resize handler
+//   const handleResize = () => {
+//     if (HW._vhResizeTimeout) clearTimeout(HW._vhResizeTimeout);
+//     HW._vhResizeTimeout = setTimeout(() => {
+//       HW.setVhUnits();
+//       HW._vhResizeTimeout = null;
+//     }, 150);
+//   };
 
-  window.addEventListener('resize', HW.setVhUnits);
-  window.addEventListener('orientationchange', HW.setVhUnits);
+//   // Heavily debounced scroll handler
+//   const handleScroll = () => {
+//     if (HW._vhScrollTimeout) clearTimeout(HW._vhScrollTimeout);
+//     HW._vhScrollTimeout = setTimeout(() => {
+//       HW.setVhUnits();
+//       HW._vhScrollTimeout = null;
+//     }, 300);
+//   };
 
-  if (window.visualViewport) {
-    visualViewport.addEventListener('resize', HW.setVhUnits);
-    visualViewport.addEventListener('scroll', HW.setVhUnits);
-  }
+//   window.addEventListener('resize', handleResize);
+//   window.addEventListener('orientationchange', () => HW.setVhUnits(true)); // Force
 
-  // Safari final correction pass
-  document.addEventListener('DOMContentLoaded', HW.setVhUnits);
-};
+//   if (window.visualViewport) {
+//     visualViewport.addEventListener('resize', handleResize);
+//     visualViewport.addEventListener('scroll', handleScroll);
+//   }
 
-// bind immediately
-HW.bindVhUnits();
+//   document.addEventListener('DOMContentLoaded', () => HW.setVhUnits(true)); // Force
+// };
+
+// HW.bindVhUnits();
 
 
 

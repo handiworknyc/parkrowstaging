@@ -1,4 +1,5 @@
 // /src/scripts/sticky-header.ts
+// Mob bottom bar now handled by mob-bottom-bar-scrolltrigger.ts
 
 const DEBUG = false;
 
@@ -27,7 +28,6 @@ type StickyState = {
   ticking: boolean;
   observer?: MutationObserver;
   footerObserver?: IntersectionObserver;
-  mobObserver?: IntersectionObserver;
 };
 
 declare global {
@@ -43,12 +43,9 @@ const CONFIG = {
   HIDE_AFTER: 64,
   DOWN_THRESHOLD: 12,
   UP_THRESHOLD: 6,
-  MOB_BREAKPOINT: 699,
   FOOTER_ROOT_MARGIN: "0px 0px 300px 0px",
   BANNER_SCROLL_MAX: 100,
 } as const;
-
-const MOB_MQ = window.matchMedia(`(max-width: ${CONFIG.MOB_BREAKPOINT}px)`);
 
 // ------------------------------------
 // HELPERS
@@ -185,37 +182,6 @@ function watchFooter(state: StickyState) {
   state.footerObserver.observe(footer);
 }
 
-function watchMobBottomBar(state: StickyState) {
-  state.mobObserver?.disconnect();
-  state.mobObserver = undefined;
-
-  if (!MOB_MQ.matches) {
-    document.querySelector(".mob-bottom-bar")?.classList.remove("mob-bar-unstuck");
-    return;
-  }
-
-  const bar = document.querySelector<HTMLElement>(".mob-bottom-bar");
-  if (!bar) return;
-
-  // Observe the bar itself with a negative top margin
-  // When stuck, the bar's top edge is at the bottom of viewport
-  // When unstuck, it's below viewport
-  state.mobObserver = new IntersectionObserver(
-    ([entry]) => {
-      // When intersectionRatio < 1, element is partially out of view (stuck)
-      // When intersectionRatio === 1, element is fully in view (unstuck/natural position)
-      const isStuck = entry.intersectionRatio < 1;
-      bar.classList.toggle("mob-bar-unstuck", !isStuck);
-    },
-    { 
-      threshold: [0, 1],
-      rootMargin: "0px 0px -1px 0px" // Account for the bottom: -1px
-    }
-  );
-
-  state.mobObserver.observe(bar);
-}
-
 function watchForHeaders(
   state: StickyState,
   configs: HeaderConfig[],
@@ -242,7 +208,6 @@ function watchForHeaders(
 
   state.observer = new MutationObserver(() => {
     watchForHeaders(state, configs, onScrollRaf);
-    watchMobBottomBar(state);
   });
 
   state.observer.observe(document.documentElement, {
@@ -263,7 +228,6 @@ function initAll(
 ) {
   watchForHeaders(state, configs, onScrollRaf);
   watchFooter(state);
-  watchMobBottomBar(state);
 }
 
 function attachEventListeners(
@@ -276,11 +240,6 @@ function attachEventListeners(
 
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
-
-  MOB_MQ.addEventListener("change", () => {
-    dbg("media query changed");
-    watchMobBottomBar(state);
-  });
 
   window.addEventListener("astro:after-swap", reinit);
   window.addEventListener("astro:page-load", reinit);
@@ -324,5 +283,5 @@ export default function initStickyHeader(
 // ------------------------------------
 initStickyHeader([
   { selector: "#header", bannerScroll: true },
-  { selector: ".mob-bottom-bar", bannerScroll: false },
+  // Mob bottom bar now handled by GSAP ScrollTrigger
 ]);

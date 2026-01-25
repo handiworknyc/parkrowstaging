@@ -218,7 +218,7 @@ const videoClasses = [
   </>
 )}
 
-<script is:client>
+<script>
   let splashDismissed = false;
   let splashLoaded = false;
 
@@ -236,8 +236,9 @@ const videoClasses = [
     if (!document.body.classList.contains("first-load")) return;
     if (!document.body.classList.contains("home")) return;
 
-	window.scrollTo(0, 0);
-	
+    window.scrollTo(0, 0);
+    
+    // Set this BEFORE scroll-lock initializes
     window.hwSplashActive = true;
 
     const splash = document.querySelector("[data-splash-video]");
@@ -294,6 +295,9 @@ const videoClasses = [
 
       splashDismissed = true;
       splashpar.classList.add("splash-dismissed");
+      
+      // Mark splash as inactive
+      window.hwSplashActive = false;
 
       window.dispatchEvent(
         new CustomEvent("splash:dismiss", {
@@ -316,6 +320,7 @@ const videoClasses = [
     const dismiss = () => {
       if (splashDismissed) return;
 
+      console.log("[Splash] Dismiss triggered");
       splashDismissed = true;
 
       clearTimeout(dismissTimer);
@@ -324,7 +329,11 @@ const videoClasses = [
 
       dismissTimer = setTimeout(() => {
         splashpar.classList.add("splash-dismissed");
-		
+        
+        // Mark splash as inactive
+        window.hwSplashActive = false;
+        
+        console.log("[Splash] Dispatching splash:dismiss event");
         window.dispatchEvent(
           new CustomEvent("splash:dismiss", {
             detail: { source: "scroll-intent" },
@@ -335,11 +344,20 @@ const videoClasses = [
         cleanup.length = 0;
 
         dismissTimer = null;
-      }, 150);
+      },300);
     };
 
-    const onWheel = () => dismiss();
-    const onTouch = () => dismiss();
+    // CHANGED: Use passive listeners since scroll-lock handles prevention
+    const onWheel = (e) => {
+      console.log("[Splash] Wheel detected");
+      dismiss();
+    };
+    
+    const onTouch = (e) => {
+      console.log("[Splash] Touch detected");
+      dismiss();
+    };
+    
     const onKey = (e) => {
       if (
         e.key === "ArrowDown" ||
@@ -348,10 +366,12 @@ const videoClasses = [
         e.key === "PageUp" ||
         e.key === " "
       ) {
+        console.log("[Splash] Key detected:", e.key);
         dismiss();
       }
     };
 
+    // Passive is fine - scroll-lock will prevent actual scrolling
     window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("touchmove", onTouch, { passive: true });
     window.addEventListener("keydown", onKey);
@@ -361,6 +381,8 @@ const videoClasses = [
       () => window.removeEventListener("touchmove", onTouch),
       () => window.removeEventListener("keydown", onKey)
     );
+    
+    console.log("[Splash] Dismiss listeners attached");
   }
 
   function revealHomeUI() {
@@ -370,14 +392,18 @@ const videoClasses = [
     const secondModule = document.querySelector(
       ".full_bleed_img-module.rowindex-2"
     );
-	const mobBottomBar = document.querySelector(".mob-bottom-bar");
+    const mobBottomBar = document.querySelector(".mob-bottom-bar");
 
     if (header) header.style.visibility = "visible";
     if (secondModule) secondModule.style.visibility = "visible";
-	if (mobBottomBar) mobBottomBar.style.visibility = "visible";
+    if (mobBottomBar) mobBottomBar.style.visibility = "visible";
+    
+    console.log("[Splash] UI revealed");
   }
 
+  // Run before Locomotive initializes
   initSplashDismiss();
+  
   document.addEventListener("astro:page-load", initSplashDismiss);
 
   document.addEventListener("astro:before-preparation", () => {
@@ -394,5 +420,6 @@ const videoClasses = [
 
     splashLoaded = false;
     splashDismissed = false;
+    window.hwSplashActive = false;
   });
 </script>

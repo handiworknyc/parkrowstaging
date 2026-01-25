@@ -1014,72 +1014,92 @@ ul.two-col-list {
 
 
 
-
-
-
-
-
-.mob-bottom-bar {
-	display: none;
-}
-
-@media (max-width: 699px) {	
-	.mob-bottom-bar {
-		display: block;
-		position: sticky;
-		bottom: -1px;
-		left: 0;
-		width: 100%;
-		padding-bottom: 2.25rem;
-		padding-top: 2.25rem;
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
-		background-color: rgba(0,0,0,.35);
-		backface-visibility: hidden;
-		z-index: 9998;
-	}
-}
+/* 
+  INSTANT-RESPONSE MOBILE BOTTOM BAR
+  Optimized for zero perceived delay on re-attach
+*/
 
 .mob-bottom-bar {
-  transition: transform 0.35s var(--cubicBez);
-  transform: translateY(1px);
+  display: none;
 }
 
+@media (max-width: 699px) {
+  .mob-bottom-bar {
+    display: block;
+    position: sticky;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    padding-bottom: 2.25rem;
+    padding-top: 2.25rem;
+    
+    /* GPU Acceleration - Critical for smooth transforms */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0) translateY(1px);
+    will-change: transform; /* Keeps GPU layer ready */
+    
+    /* Backdrop */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.35);
+    
+    z-index: 9998;
+    
+    /* FASTER transitions for instant feel */
+    transition: transform 0.2s cubic-bezier(0.2, 0.0, 0, 1.0), /* Faster, snappier easing */
+                background-color 0.3s ease-out,
+                backdrop-filter 0.3s ease-out;
+  }
+  
+  /* When unstuck - disable transform transition for instant unstick */
+  .mob-bottom-bar.mob-bar-unstuck {
+    transition: background-color 0.3s ease-out,
+                backdrop-filter 0.3s ease-out,
+                color 0.3s ease-out,
+                border-color 0.3s ease-out;
+    /* NO transform transition = instant unstick */
+  }
+}
 
+/* Hide on scroll down (when NOT at footer) */
 .mob-bottom-bar.is-hidden:not(.footer-visible .mob-bottom-bar) {
-  transform: translateY(100%);
+  transform: translateZ(0) translateY(100%);
 }
 
+/* Modal states */
 .modal-opening,
 .modal-closing,
 .modal-open,
 .modal-opened {
-	.mob-bottom-bar {
-		z-index: 0;
-	}
-	.mob-bottom-bar:not(.mob-bar-unstuck) {
-		transform: translateY(100%) !important
-	}
+  .mob-bottom-bar {
+    z-index: 0;
+  }
+  
+  .mob-bottom-bar:not(.mob-bar-unstuck) {
+    transform: translateZ(0) translateY(100%) !important;
+  }
 }
 
-
+/* Links - instant hover response */
 .mob-bottom-bar a {
-	transition: background-color 0.35s var(--cubicBez), color 0.35s var(--cubicBez), border-color 0.35s var(--cubicBez);
+  transition: background-color 0.15s ease-out,
+              color 0.15s ease-out,
+              border-color 0.15s ease-out;
 }
 
+/* Unstuck state (at footer) */
 .mob-bottom-bar.mob-bar-unstuck {
-	background: rgba(0,0,0,0);
-	backdrop-filter: none;
-	-webkit-backdrop-filter: none;
-	.border-btn:after,
-	a {
-		color: var(--green) !important;
-		border-color: var(--green) !important;
-	}
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  
+  .border-btn:after,
+  a {
+    color: var(--green) !important;
+    border-color: var(--green) !important;
+  }
 }
-
-
-
 
 
 .footer-bottom {
@@ -1223,7 +1243,7 @@ html:not(.hw-is-mobile) .child-lazy-loaded .splash-content {
 
 /* Dismissed state */
 .splash-dismissed .splash-video {
-  transition: all .7s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
   transform: scale(1.04);
   pointer-events: none;
