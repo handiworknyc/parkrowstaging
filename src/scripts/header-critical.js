@@ -438,18 +438,11 @@ HW.triggerEvent = function(el, type){
 
 
 
-
-
-
 // ------------------------------------
-// VH UNITS — UPDATE ONLY WHEN WIDTH CHANGES
-// ------------------------------------
-// ------------------------------------
-// VH UNITS — UPDATE ONLY WHEN WIDTH CHANGES
+// VH UNITS — UPDATE ONLY ON MOBILE
 // ------------------------------------
 
 HW._lastVw = 0;
-HW._lastVh = 0;
 HW._vhResizeTimeout = null;
 HW._vhScrollTimeout = null;
 
@@ -463,18 +456,13 @@ HW.getViewport = function () {
 };
 
 HW.setVhUnits = function (force = false) {
+  // Only run on mobile
+  if (!HW.isMobile) return;
+
   const { width, height } = HW.getViewport();
 
-  // Different behavior for mobile vs desktop
-  if (!force) {
-    if (HW.isMobile) {
-      // Mobile: only update when width changes
-      if (width === HW._lastVw) return;
-    } else {
-      // Desktop: update when width OR height changes
-      if (width === HW._lastVw && height === HW._lastVh) return;
-    }
-  }
+  // Only update when width actually changes
+  if (!force && width === HW._lastVw) return;
 
   console.log(
     'VH UNITS UPDATE:',
@@ -483,7 +471,6 @@ HW.setVhUnits = function (force = false) {
   );
 
   HW._lastVw = width;
-  HW._lastVh = height;
 
   document.documentElement.style.setProperty(
     '--jsVhUnits100',
@@ -492,8 +479,18 @@ HW.setVhUnits = function (force = false) {
 };
 
 HW.bindVhUnits = function () {
-  // Initial measurement (immediate - prevents flash)
-  HW.setVhUnits(true);
+  // Only set up on mobile
+  if (!HW.isMobile) return;
+
+  // Wait for DOM to be ready before initial measurement
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      HW.setVhUnits(true);
+    });
+  } else {
+    // DOM already loaded
+    HW.setVhUnits(true);
+  }
 
   // -----------------------------
   // Resize (debounced)
@@ -521,10 +518,6 @@ HW.bindVhUnits = function () {
 // Init
 // ------------------------------------
 HW.bindVhUnits();
-
-
-
-
 
 
 
