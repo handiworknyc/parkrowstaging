@@ -30,6 +30,7 @@ type ScrollLockState = {
   splashTimer: ReturnType<typeof setTimeout> | null;
   locoScroll: any | null;
   useNativeLock: boolean;
+  earlyLockActive: boolean;
 };
 
 const state: ScrollLockState = {
@@ -38,6 +39,8 @@ const state: ScrollLockState = {
   splashTimer: null,
   locoScroll: null,
   useNativeLock: false,
+  earlyLockActive: typeof window !== "undefined" && 
+                   typeof (window as any).__removeScrollLock === "function",
 };
 
 // ------------------------------------
@@ -128,53 +131,93 @@ function unlockNativeScroll(): void {
 // UNIFIED LOCK / UNLOCK
 // ------------------------------------
 export function lockScroll(): void {
-  if (state.locked) return;
+  if (state.locked) {
+    log("Already locked, skipping");
+    return;
+  }
 
   state.locked = true;
-  document.body.classList.add("scroll-locked");
+  
+  // Don't add class if early lock already added it
+  if (!state.earlyLockActive) {
+    document.body.classList.add("scroll-locked");
+  }
 
   if (state.locoScroll) {
     state.useNativeLock = false;
     requestAnimationFrame(() => state.locoScroll?.stop());
-  } else {
+  } else if (!state.earlyLockActive) {
+    // Only apply native lock if early lock didn't already do it
     state.useNativeLock = true;
     lockNativeScroll();
   }
+  
+  log("Lock applied", { useNativeLock: state.useNativeLock, earlyLockActive: state.earlyLockActive });
 }
 
 export function unlockScroll(source = "unknown"): void {
-  if (!state.locked) return;
+  if (!state.locked && !state.earlyLockActive) {
+    log("Not locked, skipping unlock");
+    return;
+  }
 
   log("Unlock scroll:", source);
 
   state.locked = false;
-  document.body.classList.remove("scroll-locked");
-  document.body.classList.add("scroll-unlocked");
+  
+  // Remove early lock if it exists
+  if (state.earlyLockActive && typeof (window as any).__removeScrollLock === "function") {
+    log("Removing early lock");
+    (window as any).__removeScrollLock();
+    state.earlyLockActive = false;
+  } else {
+    // Normal unlock path
+    document.body.classList.remove("scroll-locked");
+    document.body.classList.add("scroll-unlocked");
+    
+    if (state.useNativeLock) {
+      unlockNativeScroll();
+    } else if (state.locoScroll) {
+      state.locoScroll.start();
+    }
+  }
 
   clearTimers();
-
-  if (state.useNativeLock) {
-    unlockNativeScroll();
-  } else if (state.locoScroll) {
-    state.locoScroll.start();
-  }
+  
+  log("Unlock complete");
 }
 
 // ------------------------------------
 // INITIALIZATION
 // ------------------------------------
 export function initScrollLock(locoInstance?: any): void {
+  log("initScrollLock called", { 
+    hasLoco: !!locoInstance,
+    isHome: isHome(),
+    isFirstLoad: isFirstLoad(),
+    currentlyLocked: state.locked,
+    earlyLockActive: state.earlyLockActive
+  });
+  
   state.locoScroll = locoInstance || null;
 
-  if (!shouldLock()) return;
-
-  const splashActive = (window as any).hwSplashActive === true;
-
-  lockScroll();
-
-  if (CONFIG.WAIT_FOR_SPLASH && splashActive) {
-    log("Waiting for splash dismiss");
+  if (!shouldLock()) {
+    log("Should not lock, exiting");
     return;
+  }
+
+  // If early lock is active, just mark as locked and set up unlock timer
+  if (state.earlyLockActive) {
+    log("Early lock detected, setting locked state");
+    state.locked = true;
+    
+    // If we have Locomotive and not on iOS, stop it
+    if (locoInstance && !isIOS) {
+      locoInstance.stop();
+    }
+  } else if (!state.locked) {
+    // No early lock, apply lock now
+    lockScroll();
   }
 
   clearTimers();
@@ -182,6 +225,8 @@ export function initScrollLock(locoInstance?: any): void {
   state.unlockTimer = setTimeout(() => {
     unlockScroll("timeout");
   }, CONFIG.UNLOCK_TIMEOUT);
+  
+  log("Lock initialized with timeout");
 }
 
 // ------------------------------------
@@ -189,7 +234,15 @@ export function initScrollLock(locoInstance?: any): void {
 // ------------------------------------
 export function setupSplashListener(): void {
   window.addEventListener("splash:dismiss", (e: any) => {
-    if (!shouldLock() || !state.locked) return;
+    log("splash:dismiss event received", { 
+      shouldLock: shouldLock(),
+      locked: state.locked 
+    });
+    
+    if (!shouldLock() || !state.locked) {
+      log("Ignoring splash:dismiss - conditions not met");
+      return;
+    }
 
     clearTimers();
 
@@ -197,6 +250,8 @@ export function setupSplashListener(): void {
       unlockScroll(e?.detail?.source || "splash");
     }, CONFIG.SPLASH_FADE_DURATION);
   });
+  
+  log("Splash listener setup complete");
 }
 
 // ------------------------------------
