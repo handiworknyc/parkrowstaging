@@ -244,5 +244,32 @@ const headerMenu = _cachedHeaderMenu;
     });
   }
 
+// Add this to your SiteNav.astro <script> section, after initNav:
+
+  document.addEventListener("astro:page-load", initNav);
+
+  // Conditionally animate header based on visibility state
+  document.addEventListener("astro:before-preparation", () => {
+    const header = document.querySelector("#header");
+    if (header) {
+      const wasHidden = header.classList.contains("is-hidden");
+      
+      // Mark if header should slide in
+      if (wasHidden) {
+        document.documentElement.classList.add("header-should-slide");
+      } else {
+        document.documentElement.classList.remove("header-should-slide");
+      }
+      
+      // Always remove is-hidden so header is visible for transition
+      header.classList.remove("is-hidden");
+    }
+  });
+
+  // Clean up the marker class after transition
+  document.addEventListener("astro:after-swap", () => {
+    document.documentElement.classList.remove("header-should-slide");
+  });
+  
   document.addEventListener("astro:page-load", initNav);
 </script>
