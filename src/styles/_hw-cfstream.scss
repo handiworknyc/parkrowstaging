@@ -90,7 +90,7 @@
    ========================================================================== */
 
 /* 1. Reset for NON-first-load (instant visibility) */
-body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
+html:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
     opacity: 0 !important;
     transition: none !important;
 }
