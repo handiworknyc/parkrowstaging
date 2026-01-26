@@ -79,7 +79,7 @@ export function initCFVideo(videoId) {
 
   const isCriticalVideo =
     wrap.dataset.critical === "true";
-
+ 
   /* -----------------------------------------------------
      FETCH PRIORITY (ONE PER PAGE)
   ----------------------------------------------------- */
