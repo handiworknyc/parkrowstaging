@@ -508,24 +508,28 @@ ul.section-text li::before {
 	background-color: #fff;
 }
 
+
+
+/* Updated 16/9 aspect ratio rules with container queries */
+.full_bleed_img-module:not(.rowindex-1) .full-bleed-column, 
+.full-width-slideshow-wrap {
+	container-type: inline-size;
+}
+
 .full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
-.full-bleed-img-inner  {
+.full-bleed-img-inner {
 	position: relative;
-	min-height: round(nearest, 47vw, 1rem); 
+	min-height: round(nearest, calc(100cqw * 8 / 16), 1rem); 
+	max-height: round(nearest, calc(100cqw * 8 / 16), 1rem);
 }
 
 .full-width-slideshow-wrap {
-	max-height: round(nearest, 56.25vw, 1rem);
+	max-height: round(nearest, calc(100cqw * 8 / 16), 1rem);
 }
 
 
-@media (min-width: 1440px) and (max-height: 999px) and (max-width: 1799px) {
-	.full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
-	.full-bleed-img-inner  {
-		min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
-	}
 
-}
+
 
 .rowindex-1:not(.splash_video-module) .full-bleed-img-inner {
 	margin-top: var(--headerHeight);
@@ -548,12 +552,14 @@ ul.section-text li::before {
 
 
 
-
-
 /* ============================================
    ASPECT RATIO LAYOUTS (16/7.5)
    Add this to your global.scss
    ============================================ */
+
+:root {
+  --aspect-ratio-height: 8;
+}
 
 @media (min-width: 1800px) and (min-height: 1000px) {
   /* Container query contexts */
@@ -566,9 +572,9 @@ ul.section-text li::before {
   .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner,
   .txt-img-column .full-bleed-img-inner {
     width: 100%;
-    min-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
-    max-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
-    height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+    min-height: round(nearest, calc(100cqw * var(--aspect-ratio-height) / 16), 1rem);
+    max-height: round(nearest, calc(100cqw * var(--aspect-ratio-height) / 16), 1rem);
+    height: round(nearest, calc(100cqw * var(--aspect-ratio-height) / 16), 1rem);
   }
 
   /* Ensure images/videos fill the container */
@@ -587,15 +593,13 @@ ul.section-text li::before {
   @media (min-width: 1800px) and (min-height: 1000px) {
     .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner,
     .txt-img-column .full-bleed-img-inner {
-      aspect-ratio: 16 / 7.5;
+      aspect-ratio: calc(16 / var(--aspect-ratio-height));
       height: auto;
       min-height: auto;
       max-height: none;
     }
   }
 }
-
-
 
 
 
