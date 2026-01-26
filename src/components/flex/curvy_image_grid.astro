@@ -231,4 +231,59 @@ const mobileBleedClass =
 .split-img-bottom :global(img) {
     object-position: center bottom !important;
 }
+
+/* Grid row height: grid-span-2 determines row height at 16/9 */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr; /* All rows match height */
+  gap: 1rem;
+}
+
+/* The grid-span-2 item sets 16/9 aspect ratio, rounded to nearest rem */
+.grid-container .grid-item.grid-span-2 .hw-bg-vid {
+  width: 100%;
+  /* Calculate 16/9 height and round to nearest rem */
+  min-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+  max-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+  aspect-ratio: 16 / 7.5;
+}
+
+/* Make grid-span-2 items container queries aware */
+.grid-container .grid-item.grid-span-2 {
+  container-type: inline-size;
+}
+
+/* grid-span-1 items fill the row height set by grid-span-2 */
+.grid-container .grid-item.grid-span-1 .hw-bg-vid {
+  height: 100%;
+  width: 100%;
+}
+
+/* Ensure images/videos cover their containers */
+.grid-container .hw-bg-vid :global(img),
+.grid-container .hw-bg-vid :global(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Remove mobile fixed height on desktop */
+@media (min-width: 760px) {
+  .grid-container .grid-item.grid-span-1 .hw-bg-vid {
+    height: 100% !important;
+  }
+  
+  .grid-container .grid-item.grid-span-2 .hw-bg-vid {
+    height: auto !important;
+  }
+}
+
+/* Keep mobile fixed height */
+@media (max-width: 759px) {
+  .grid-container .hw-bg-vid {
+    height: 12rem !important;
+    aspect-ratio: auto;
+  }
+}
 </style>

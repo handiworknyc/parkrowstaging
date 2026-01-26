@@ -63,7 +63,7 @@ export default {
             const cols = {};
             const pushes = {};
             const pulls = {};
-            const colPaddings = {}; // New object for padding
+            const colPaddings = {};
             const bleeds = {};
 
             const pad = "var(--containerPadding)";
@@ -72,15 +72,9 @@ export default {
 
             /* ---------------------------------------------------------
                1. MATH SETUP (VIEWPORT BASED)
-               We rely on min(100vw, maxW) to ensure the grid doesn't 
-               explode on large screens.
             --------------------------------------------------------- */
             
-            // The actual width of the container on screen
             const effectiveWidth = `min(100vw, ${maxW})`;
-
-            // The width of a single column (pure width, no gutter)
-            // Formula: (ContainerWidth - 2*Padding - 11*Gutters) / 12
             const oneColUnit = `((${effectiveWidth} - (${pad} * 2) - (${gut} * 11)) / 12)`;
 
             /* ---------------------------------------------------------
@@ -105,29 +99,39 @@ export default {
 
             /* ---------------------------------------------------------
                4. SMART BLEED UTILITIES
-               These use the --col-width variable calculated in the loop below.
+               Stop applying negative margins above container max-width
             --------------------------------------------------------- */
-            const bleedBase = {
-                '&[class]': {
-                    // Width = Current Column Width + Container Padding
-                    width: `calc(var(--col-width) + ${pad})`,
-                }
-            };
-
+            
+            // Below max-width: use viewport-based calculation
             bleeds['.bleed-left'] = {
-                ...bleedBase,
-                '&[class]': {
-                    ...bleedBase['&[class]'],
-                    marginLeft: `calc(${pad} * -1)`,
+                '@media (max-width: 2000px)': {
+                    '&[class]': {
+                        width: `calc(var(--col-width) + ${pad})`,
+                        marginLeft: `calc(${pad} * -1)`,
+                    }
+                },
+                // Above max-width: container is centered, use container-based calculation
+                '@media (min-width: 2001px)': {
+                    '&[class]': {
+                        width: `var(--col-width)`,
+                    }
                 }
             };
 
             bleeds['.bleed-right'] = {
-                ...bleedBase,
-                '&[class]': {
-                    ...bleedBase['&[class]'],
-                    marginRight: `calc(${pad} * -1)`,
-                    marginLeft: 'auto'
+                '@media (max-width: 2000px)': {
+                    '&[class]': {
+                        width: `calc(var(--col-width) + ${pad})`,
+                        marginRight: `calc(${pad} * -1)`,
+                        marginLeft: 'auto'
+                    }
+                },
+                // Above max-width: container is centered, use container-based calculation
+                '@media (min-width: 2001px)': {
+                    '&[class]': {
+                        width: `var(--col-width)`,
+                        marginLeft: 'auto'
+                    }
                 }
             };
 
@@ -135,31 +139,23 @@ export default {
                5. COLUMN LOOP (1-12)
             --------------------------------------------------------- */
             for (let i = 1; i <= 12; i++) {
-                
-                // --- WIDTH CALCULATION ---
-                // Correct Math: (Unit * i) + (Gutter * (i - 1))
                 const standardColWidth = `((${oneColUnit} * ${i}) + (${gut} * (${i})))`;
 
                 cols[`.col-${i}`] = { 
                     '--col-width': `calc(${standardColWidth})`,
                     width: `var(--col-width)`,
-					minWidth: `var(--col-width)`,
+                    minWidth: `var(--col-width)`,
                 };
 
-                // --- PUSH / PULL / PADDING ---
-                // Push logic: Move over by (Width of i columns) + (The gutter after them)
-                // Math: (Unit * i) + (Gutter * i)
                 const spacingCalc = `((${oneColUnit} * ${i}) + (${gut} * ${i}))`;
 
                 pushes[`.push-${i}`] = { marginLeft: `calc(${spacingCalc})` };
                 pulls[`.pull-${i}`] = { marginLeft: `calc(${spacingCalc} * -1)` };
 
-                // New Padding Classes
                 colPaddings[`.pl-col-${i}`] = { paddingLeft: `calc(${spacingCalc}) !important` };
                 colPaddings[`.pr-col-${i}`] = { paddingRight: `calc(${spacingCalc}) !important` };
             }
             
-            // Half push/pull/padding
             const halfPushCalc = `((${oneColUnit} * 0.5) + (${gut} * 0.5))`;
 
             pushes['.push-h'] = { marginLeft: `calc(${halfPushCalc})` };
@@ -177,7 +173,7 @@ export default {
             addUtilities(cols);
             addUtilities(pushes);
             addUtilities(pulls);
-            addUtilities(colPaddings); // Added here
+            addUtilities(colPaddings);
             addUtilities(bleeds);
             addUtilities(aligns);
         },

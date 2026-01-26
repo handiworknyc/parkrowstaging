@@ -128,7 +128,7 @@ export default function ImageCarousel({ images }) {
             {images.map((image, index) => (
               <CarouselItem
                 key={image.id}
-                className="pl-5 basis-[85%] min-[1400px]:basis-[60%]"
+                className="pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
               >
                 <Slide image={image} index={index} />
               </CarouselItem>

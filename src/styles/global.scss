@@ -35,15 +35,6 @@
     padding-right: .75rem;
     box-sizing: border-box;
   }
-  /* FULL BLEED LEFT */
-  .bleed-left {
-    margin-left: calc(var(--containerPadding) * -1);
-  }
-
-  /* FULL BLEED RIGHT */
-  .bleed-right {
-    margin-right: calc(var(--containerPadding) * -1);
-  }
 }
 
 
@@ -124,6 +115,7 @@ html, body {
 		}
 	}
 	
+	.full_bleed_img-module.rowindex-1,
 	.header-inner {
 		background-color: var(--green);
 	}
@@ -131,6 +123,7 @@ html, body {
 	.nav-toggle:not(.active) span {
 		background: var(--white) !important;
 	}
+	
 }
 
 
@@ -526,7 +519,7 @@ ul.section-text li::before {
 }
 
 
-@media (min-width: 1440px) {
+@media (min-width: 1440px) and (max-height: 999px) and (max-width: 1799px) {
 	.full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
 	.full-bleed-img-inner  {
 		min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
@@ -543,6 +536,84 @@ ul.section-text li::before {
 	margin-top: 0 !important;
 	min-height: var(--jsVhUnits100);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================
+   ASPECT RATIO LAYOUTS (16/7.5)
+   Add this to your global.scss
+   ============================================ */
+
+@media (min-width: 1800px) and (min-height: 1000px) {
+  /* Container query contexts */
+  .full_bleed_img-module:not(.rowindex-1) .full-bleed-column,
+  .txt-img-column {
+    container-type: inline-size;
+  }
+
+  /* Apply height constraints to full-bleed-img-inner */
+  .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner,
+  .txt-img-column .full-bleed-img-inner {
+    width: 100%;
+    min-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+    max-height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+    height: round(nearest, calc(100cqw * 7.5 / 16), 1rem);
+  }
+
+  /* Ensure images/videos fill the container */
+  .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner img,
+  .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner video,
+  .txt-img-column .full-bleed-img-inner img,
+  .txt-img-column .full-bleed-img-inner video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Fallback for browsers that don't support round() */
+@supports not (height: round(nearest, 10px, 1px)) {
+  @media (min-width: 1800px) and (min-height: 1000px) {
+    .full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner,
+    .txt-img-column .full-bleed-img-inner {
+      aspect-ratio: 16 / 7.5;
+      height: auto;
+      min-height: auto;
+      max-height: none;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .rowindex-1.splash_video-module {
 	position: fixed;
@@ -578,14 +649,14 @@ ul.section-text li::before {
 	.round-corner.corner-pos-left img:first-child:last-child,
 	.round-corner.corner-pos-left .hw-vid-wrap,
 	.round-corner.align-right .hw-vid-wrap {
-		border-top-left-radius: calc(var(--jsVhUnits100)/2);
+		border-top-left-radius: 27rem
 	}
 
 
 	.round-corner.corner-pos-right img:first-child:last-child,
 	.round-corner.corner-pos-right .hw-vid-wrap,
 	.round-corner.align-left .hw-vid-wrap {
-		border-top-right-radius: calc(var(--jsVhUnits100)/2);
+		border-top-right-radius: 27rem
 	}	
 }
 
@@ -659,7 +730,7 @@ ul.two-col-list {
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: auto;
   gap: .75rem;
-  min-height: round(nearest, 90vw, 1rem); 
+  //min-height: round(nearest, 90vw, 1rem); 
 
   .hw-bg-vid {
 	height: 100%;
@@ -668,7 +739,7 @@ ul.two-col-list {
 
 @media (max-width: 759px) {
 	.grid-container.is-quote-true {
-		min-height: round(nearest, 70vw, 1rem); 
+		//min-height: round(nearest, 70vw, 1rem); 
 		border-top-left-radius: round(nearest, 25vw, 1rem);
 		border-bottom-right-radius: round(nearest, 25vw, 1rem);
   	}
@@ -678,7 +749,7 @@ ul.two-col-list {
 	.grid-container {
 	  border-top-left-radius: round(nearest, 9vw, 1rem);
 	  border-bottom-right-radius: round(nearest, 9vw, 1rem);
-	  min-height: round(nearest, 46vw, 1rem); 
+	  //min-height: round(nearest, 46vw, 1rem); 
 	}
 }
 
@@ -697,7 +768,7 @@ ul.two-col-list {
 	.grid-container {
 		border-top-left-radius: round(nearest, calc(var(--jsVhUnits100) * .185), 1rem);
 		border-bottom-right-radius: round(nearest, calc(var(--jsVhUnits100) * .185), 1rem);
-		min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
+		//min-height: round(nearest, calc(var(--jsVhUnits100) * .75), 1rem); 
 	}
 }
 
@@ -723,24 +794,6 @@ ul.two-col-list {
 	.grid-item.grid-span-2 {
 		grid-column: span 2;
 	}
-
-	// .grid-span-4 {
-	// 	grid-column: span 2;
-	// 	grid-row: span 2;
-	// 	position: relative;
-
-	// 	&:after {
-	// 		content: '';
-	// 		position: absolute;
-	// 		height: .75rem;
-	// 		width: 100%;
-	// 		top: 50%;
-	// 		background-color: #fff;
-	// 		transform: translateY(-50%);
-	// 		z-index: 2;
-	// 	}
-	// }
-
 }
 
 
@@ -756,7 +809,6 @@ ul.two-col-list {
   flex-direction: row-reverse;
   justify-content: flex-end
 }
-
 
 
 
@@ -790,6 +842,14 @@ ul.two-col-list {
 }
 
 
+
+@media (min-width: 2001px) {
+	.photo-collage-cell.bleed-x {
+		max-width: 2000px !important;
+		margin: 0 auto;
+		padding: 0 .75rem !important;
+	}
+}
 
 
 
@@ -971,6 +1031,13 @@ ul.two-col-list {
     object-fit: cover;
     display: block;
     pointer-events: none;
+}
+
+@media (min-width: 1800px) {
+	.carousel-module .photo {
+		height: calc(var(--jsVhUnits100, 100vh) * 0.65);
+		max-height: round(nearest, 40vw, 1rem); 
+	}
 }
 
 /* --- Captions --- */
