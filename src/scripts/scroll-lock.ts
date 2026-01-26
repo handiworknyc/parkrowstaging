@@ -47,11 +47,11 @@ const state: ScrollLockState = {
 // HELPERS
 // ------------------------------------
 function isHome(): boolean {
-  return document.body.classList.contains("home");
+  return HW.$html.classList.contains("home");
 }
 
 function isFirstLoad(): boolean {
-  return document.body.classList.contains("first-load");
+  return HW.$html.classList.contains("first-load");
 }
 
 function shouldLock(): boolean {

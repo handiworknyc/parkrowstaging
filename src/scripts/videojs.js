@@ -40,7 +40,7 @@ const players = new Map();
 const observers = new Map();
 
 function isFirstLoadSplashActive() {
-  const isFirstLoad = document.body.classList.contains("first-load");
+  const isFirstLoad = HW.$html.classList.contains("first-load");
   const splashActive = isFirstLoad && window.hwSplashActive === true;
   return { isFirstLoad, splashActive };
 }

@@ -182,7 +182,7 @@ const videoClasses = [
 ---
 
 <script>
-  if (document.body.classList.contains("first-load")) {
+  if (HW.$html.classList.contains("first-load")) {
     window.hwSplashActive = true;
   }
 
@@ -240,8 +240,8 @@ const videoClasses = [
   const IDLE_DISMISS_DELAY = 6500;
 
   function initSplashDismiss() {
-    if (!document.body.classList.contains("first-load")) return;
-    if (!document.body.classList.contains("home")) return;
+    if (!HW.$html.classList.contains("first-load")) return;
+    if (!HW.$html.classList.contains("home")) return;
 
     window.scrollTo(0, 0);
     
@@ -390,7 +390,7 @@ const videoClasses = [
   }
 
   function revealHomeUI() {
-    if (!document.body.classList.contains("home")) return;
+    if (!HW.$html.classList.contains("home")) return;
 
     const header = document.getElementById("header");
     const secondModule = document.querySelector(

@@ -124,7 +124,8 @@ body:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
 }
 
 /* Show Fallback when ready */
-.show-me.rowindex-1 .no-video.hw-bg-vid {
+.first-load .rowindex-1 .no-video.hw-bg-vid.child-lazy-loaded,
+.rowindex-1 .no-video.hw-bg-vid.child-lazy-loaded {
     opacity: 1;
 }
 

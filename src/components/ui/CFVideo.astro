@@ -143,7 +143,7 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
       };
 
       function isFirstLoad(): boolean {
-        return document.body.classList.contains(CONFIG.FIRST_LOAD_CLASS);
+        return HW.$html.classList.contains(CONFIG.FIRST_LOAD_CLASS);
       }
 
       function removeLoadingState(element: HTMLElement, animated: boolean): void {
@@ -158,7 +158,7 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         const handleTransitionEnd = (e: TransitionEvent) => {
           if (e.propertyName === "opacity" && e.target === element) {
             element.classList.remove(CONFIG.LOADING_CLASS);
-            document.body.classList.remove(CONFIG.FIRST_LOAD_CLASS);
+            HW.$html.classList.remove(CONFIG.FIRST_LOAD_CLASS);
             element.removeEventListener("transitionend", handleTransitionEnd);
           }
         };

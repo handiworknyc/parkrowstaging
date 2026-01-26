@@ -54,19 +54,22 @@ Astro.response.headers.set("Cache-Control", cacheControl);
 Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 ---
 
-<html lang="en" style="view-transition-name: main-content">
+<html lang="en" style="view-transition-name: main-content" class={`first-load ${bodyClasses}`}>
 <head>
   <meta charset="utf-8" />
 
   {/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
   <script is:inline>
+	window.HW = {};
+	HW.$html = document.documentElement;
+
     (function() {
       const DEBUG = false;
       const log = (...args) => DEBUG && console.log("[EarlyScrollLock]", ...args);
       
       // Check if we should lock
-      const isHome = document.body.classList.contains("home");
-      const isFirstLoad = document.body.classList.contains("first-load");
+      const isHome = HW.$html.classList.contains("home");
+      const isFirstLoad = HW.$html.classList.contains("first-load");
       
       if (!isHome || !isFirstLoad) {
         log("Not home or not first load, skipping");
@@ -326,7 +329,7 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 
   <script>
     document.addEventListener("astro:before-swap", (ev) => {
-      ev.newDocument.body.classList.remove("first-load");
+      ev.newDocument.documentElement.classList.remove("first-load");
     });
   </script>
 
@@ -365,8 +368,8 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
   // ------------------------------------
   // HELPERS
   // ------------------------------------
-  const isHome = () => document.body.classList.contains("home");
-  const isFirstLoad = () => document.body.classList.contains("first-load");
+  const isHome = () => HW.$html.classList.contains("home");
+  const isFirstLoad = () => HW.$html.classList.contains("first-load");
 
   function shouldUseLocomotiveScroll() {
     if (!isIOS) return true;
@@ -459,7 +462,7 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 
 </head>
 
-<body class={`first-load ${bodyClasses}`}>
+<body>
   <main>
     <SiteNav />
 
