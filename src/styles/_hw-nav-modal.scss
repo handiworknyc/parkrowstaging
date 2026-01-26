@@ -148,6 +148,7 @@ html.modal-open body {
 
 
 .nav-toggle-wrap {
+	backface-visibility: hidden;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -163,6 +164,7 @@ html.modal-open body {
 }
 
 .nav-toggle {
+  transform: translateZ(0);
   display: block;
   position: relative;
   width: 53px;
@@ -181,13 +183,13 @@ html.modal-open body {
   left: 10px;
   top: 10px;
   width: 33px;
-  height: 1.25px;
+  height: 1px;
   background: var(--brown);
   border-radius: 3px;
   will-change: transform, opacity, background, top;
   transform-origin: 50% 50%;
-  
-  /* CLOSING SEQUENCE (Default) */
+  transform: translateZ(0);
+
   transition: 
     top 0.3s 0.1s var(--ease-elastic),
     transform 0.3s var(--ease-elastic),
@@ -213,7 +215,8 @@ html.modal-open body {
 
 .nav-toggle.active span {
   background: var(--white);
-  
+  will-change: transform, opacity, background, top;
+
   /* OPENING SEQUENCE */
   transition: 
     top 0.3s var(--ease-elastic),

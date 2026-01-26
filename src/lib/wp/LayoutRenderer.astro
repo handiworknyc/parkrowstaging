@@ -236,47 +236,53 @@ const commonCtxBase = {
     nextHasSectionContent,
     firstIsSplash
   );
+const bgWrapClass = computeBgWrapClass(row, rowindex, altBgContext);
+const bgColorClass = green_bg ? "bg-green c-white" : "";
 
-  const bgWrapClass = computeBgWrapClass(row, rowindex, altBgContext);
-  const bgColorClass = green_bg ? "bg-green c-white" : "";
-  
-  const headerWrapperClass = [
-    "flex-section-content",
-    "hw-contain",
-    bgColorClass,
-    !(section_h2 || section_text) ? "title-only" : "",
-  ].filter(Boolean).join(" ");
+const headerInnerClass = [
+  "flex-section-content",
+  "hw-contain",
+  !(section_h2 || section_text) ? "title-only" : "",
+].filter(Boolean).join(" ");
 
-  const headerContent = hasHeaderContent ? (
-    <div class={headerWrapperClass}>
-      <div class="row">
-        <div class="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
-          <div class="row">
-            {section_title && (
-              <h2
-                class={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
-                  isLongTitle ? "long-title" : ""
-                }`}
-                set:html={section_title}
+const headerInner = (
+  <div class={headerInnerClass}>
+    <div class="row">
+      <div class="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
+        <div class="row">
+          {section_title && (
+            <h2
+              class={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
+                isLongTitle ? "long-title" : ""
+              }`}
+              set:html={section_title}
+            />
+          )}
+
+          <div class="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
+            {section_h2 && (
+              <h3
+                class="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
+                set:html={section_h2}
               />
             )}
 
-            <div class="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
-              {section_h2 && (
-                <h3
-                  class="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
-                  set:html={section_h2}
-                />
-              )}
-              {section_text && (
-                <div class="section-text" set:html={section_text} />
-              )}
-            </div>
+            {section_text && (
+              <div class="section-text" set:html={section_text} />
+            )}
           </div>
         </div>
       </div>
     </div>
-  ) : null;
+  </div>
+);
+
+const headerContent = hasHeaderContent
+  ? bgColorClass
+    ? <div class={bgColorClass}>{headerInner}</div>
+    : headerInner
+  : null;
+
 
   return (
     <section id={row.meta.id || undefined} class={sectionClass}>
