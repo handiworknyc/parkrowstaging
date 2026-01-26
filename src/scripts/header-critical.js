@@ -482,15 +482,7 @@ HW.bindVhUnits = function () {
   // Only set up on mobile
   if (!HW.isMobile) return;
 
-  // Wait for DOM to be ready before initial measurement
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      HW.setVhUnits(true);
-    });
-  } else {
-    // DOM already loaded
-    HW.setVhUnits(true);
-  }
+  HW.setVhUnits(true);
 
   // -----------------------------
   // Resize (debounced)
