@@ -113,8 +113,7 @@ export function initCFVideo(videoId) {
   const shouldDelaySource =
     isFirstLoad &&
     splashActive &&
-    !isSplashVideo &&
-    window.__HW_SPLASH_PLAYING__ !== true;
+    !isSplashVideo;
 
   // Select target bandwidth based on device
   const targetBandwidth = isMobile ? BANDWIDTH_MOBILE : BANDWIDTH_HIGH;
@@ -129,11 +128,12 @@ export function initCFVideo(videoId) {
     targetBandwidth, // Logged for debugging
     src: manifestSrc,
   });
+  
 
   const player = videojs(el, {
     controls: hasControls,
     loop: true,
-    autoplay: false,
+    preload: shouldDelaySource ? false : true,
     muted: true,
     playsinline: true,
 
@@ -157,9 +157,11 @@ export function initCFVideo(videoId) {
       : [{ src: manifestSrc, type: "application/x-mpegURL" }],
   });
 
+
   players.set(videoId, player);
 
   let playUnlocked = !shouldDelaySource;
+
 
   wrap.classList.add("paused");
 
@@ -252,12 +254,6 @@ export function initCFVideo(videoId) {
     if (playUnlocked) {
       attachObserver();
     } else {
-      window.addEventListener(
-        "splash:playing",
-        () => attachSourceNow("splash:playing"),
-        { once: true }
-      );
-
       window.addEventListener(
         "splash:dismiss",
         () => attachSourceNow("splash:dismiss"),

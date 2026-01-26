@@ -181,6 +181,15 @@ const videoClasses = [
 ];
 ---
 
+<script>
+  if (document.body.classList.contains("first-load")) {
+    window.hwSplashActive = true;
+  }
+
+  window.__HW_SPLASH_PLAYING__ = false;
+  window.__HW_FETCH_PRIORITY_ASSIGNED__ = false;
+</script>
+
 {(
   /* --- LAYOUT: FULL WIDTH --- */
   <>
@@ -230,17 +239,12 @@ const videoClasses = [
   const REVEAL_DELAY = 850;
   const IDLE_DISMISS_DELAY = 6500;
 
-  window.hwSplashActive = false;
-
   function initSplashDismiss() {
     if (!document.body.classList.contains("first-load")) return;
     if (!document.body.classList.contains("home")) return;
 
     window.scrollTo(0, 0);
     
-    // Set this BEFORE scroll-lock initializes
-    window.hwSplashActive = true;
-
     const splash = document.querySelector("[data-splash-video]");
     const splashpar = document.querySelector(".splash_video-module");
 

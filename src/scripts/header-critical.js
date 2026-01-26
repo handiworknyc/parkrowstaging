@@ -1,64 +1,7 @@
 window.HW = {};
 HW.$html = document.documentElement;
 
-var siteurl = '/',
-    thessd = '/src',
-    thessdpar = '/src',
-    hwParJsDir = '/src/scripts/',
-    hwJsDir = '/src/scripts/',
-    hwCssDir = '/src/styles/',
-    hwJsPlugDir = thessdpar + '/src/scripts/plugins/';
-    
-function elFilter(els, theclass, not = false){
-	
-	var arr = Array.prototype.slice.call(els, theclass);
-	var divs = arr.filter(el => {
-		if(not == true) {
-			return !el.classList.contains(theclass);			
-		} else {
-			return el.classList.contains(theclass);
-		}
-	});	
-}
-
-
-HW.unwrap = function(a){for(var b=a.parentNode;a.firstChild;)b.insertBefore(a.firstChild,a);b.removeChild(a)}
-
-HW.elFilter = function(els, theclass, not = false){
-	
-	var arr = Array.prototype.slice.call(els, theclass);
-	var divs = arr.filter(el => {
-		if(not == true) {
-			return !el.classList.contains(theclass);			
-		} else {
-			return el.classList.contains(theclass);
-		}
-	});	
-};
-
-var isIE = /*@cc_on!@*/false || !!document.documentMode;
-
-var siteurlRel = siteurl.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "");
-
-document.documentElement.className += ' not-swup'; 
-
-if(isIE == false) {
-	document.documentElement.className += ' not-ie'; 
-}
-
 HW.localhost = 'localhost';
-
-HW.stripTrailingSlash = function(a){return a.replace(/\/$/,"")};
-
-HW.insertAfter = function(a,b){b.parentNode.insertBefore(a,b.nextSibling)}
-
-HW.und = function($var) {
-	if(typeof $var == 'undefined') {
-		return true;
-	} else {
-		return false;
-	}
-};
 
 
 HW.getTransitionDuration = function(el, with_delay){
@@ -70,128 +13,9 @@ HW.getTransitionDuration = function(el, with_delay){
 	duration = (duration.indexOf("ms")>-1) ? parseFloat(duration) : parseFloat(duration)*1000;
 	delay = (delay.indexOf("ms")>-1) ? parseFloat(delay) : parseFloat(delay)*1000;
 	
-	
 	if(with_delay) return (duration + delay);
 	else return duration;
 }
-
-
-HW.setFullBleedDims = function(offset, myContainer = null, ratio = {w: 16, h: 9}, theMaxHeight = false) {
-	// Video's intrinsic dimensions
-
-	// Intrinsic Ratio
-	// Will be more than 1 if W > H and less if W < H
-	
-	if(ratio == null) {
-		ratio = {w: 16, h: 9}
-	}
-	
-	var videoRatio = (ratio.w / ratio.h).toFixed(2);
-
-	// Get the container's computed styles
-	//
-	// Also calculate the min dimensions required (this will be
-	// the container dimentions)
-	
-	var offsetY = 0,
-		offsetX = 0,
-		offsetYAlt = 0,
-		offsetXAlt = 0,
-		offsetYAlt2 = 0,
-		offsetXAlt2 = 0;
-		
-	if(typeof offset !== 'undefined' && offset !== null && typeof offset === 'object') {
-		
-		if(typeof offset.offsetY !== 'undefined') {
-			offsetY = offset.offsetY;
-		}
-
-		if(typeof offset.offsetX !== 'undefined') {
-			offsetX = offset.offsetX;
-		}
-
-		if(typeof offset.offsetXAlt !== 'undefined') {
-			offsetXAlt = offset.offsetXAlt;
-		}
-		
-		if(typeof offset.offsetYAlt !== 'undefined') {
-			offsetYAlt = offset.offsetYAlt;
-		}	
-
-		if(typeof offset.offsetXAlt2 !== 'undefined') {
-			offsetXAlt2 = offset.offsetXAlt2;
-		}
-		
-		if(typeof offset.offsetYAlt2 !== 'undefined') {
-			offsetYAlt2 = offset.offsetYAlt2;
-		}	
-	}
-		
-	var minH = (window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight),
-		minW = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-	
-	minH = minH + offsetYAlt;
-	minW = minW + offsetXAlt;
-	
-
-	if(typeof myContainer !== 'undefined' && myContainer !== null) {
-		minH = myContainer.offsetHeight + offsetYAlt,
-		minW = myContainer.offsetWidth + offsetXAlt;
-	}
-	
-	// What's the min:intrinsic dimensions
-	//
-	// The idea is to get which of the container dimension
-	// has a higher value when compared with the equivalents
-	// of the video. Imagine a 1200x700 container and
-	// 1000x500 video. Then in order to find the right balance
-	// and do minimum scaling, we have to find the dimension
-	// with higher ratio.
-	//
-	// Ex: 1200/1000 = 1.2 and 700/500 = 1.4 - So it is best to
-	// scale 500 to 700 and then calculate what should be the
-	// right width. If we scale 1000 to 1200 then the height
-	// will become 600 proportionately.
-	var widthRatio = minW / ratio.w,
-		heightRatio = minH / ratio.h;
-
-		
-	var myOrient = 'l';
-	
-	// Whichever ratio is more, the scaling
-	// has to be done over that dimension
-	if(theMaxHeight == false) {
-		if (widthRatio > heightRatio) {
-			var newWidth = minW;
-			var newHeight = Math.ceil(newWidth / videoRatio);
-		} else {
-			var newHeight = minH;
-			var newWidth = Math.ceil(newHeight * videoRatio);
-			
-			myOrient = 'p';
-		}	    
-	} else {
-		if (widthRatio < heightRatio) {
-			var newWidth = minW;
-			var newHeight = Math.ceil(newWidth / videoRatio);
-		} else {
-			var newHeight = minH;
-			var newWidth = Math.ceil(newHeight * videoRatio);
-			
-			myOrient = 'p';
-		}
-
-	}
-	
-	return {
-		'width': newWidth + offsetXAlt2,
-		'height': newHeight + offsetYAlt2,
-		'orient': myOrient
-	};
-};
-
-
-
 
 HW.getHiddenProp = function() {
 	var prefixes = ['webkit','moz','ms','o'];
@@ -442,45 +266,6 @@ HW.roundVwProps = function(){
 
 
 
-
-
-
-
-function createElementFromHTML(htmlString) {
-	var div = document.createElement("div");
-	div.innerHTML = htmlString.trim();
-	
-	// Change this to div.childNodes to support multiple top-level nodes
-	return div.firstChild; 
-}
-
-
-var debounce = function (fn) {
-
-	// Setup a timer
-	var timeout;
-
-	// Return a function to run debounced
-	return function () {
-
-		// Setup the arguments
-		var context = this;
-		var args = arguments;
-
-		// If there's a timer, cancel it
-		if (timeout) {
-			window.cancelAnimationFrame(timeout);
-		}
-
-		// Setup the new requestAnimationFrame()
-		timeout = window.requestAnimationFrame(function () {
-			fn.apply(context, args);
-		});
-
-	}
-
-};
-
 function findEmpty(element) {
   var results = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   var child = element.firstChild;
@@ -548,78 +333,6 @@ HW.setVendor = function(el, property, value) {
 }
 
 HW.tempVars = {};
-
-HW.toType = function(a){return{}.toString.call(a).match(/\s([a-zA-Z]+)/)[1].toLowerCase()};
-
-
-let passiveSupported = false;
-
-try {
-  const options = {
-	get passive() { // This function will be called when the browser
-					//   attempts to access the passive property.
-	  passiveSupported = true;
-	  return false;
-	}
-  };
-
-  window.addEventListener("test", null, options);
-  window.removeEventListener("test", null, options);
-} catch(err) {
-  passiveSupported = false;
-}
-
-
-window.requestAnimFrame = (function() {
-	return  window.requestAnimationFrame       || 
-		window.webkitRequestAnimationFrame || 
-		window.mozRequestAnimationFrame    || 
-		window.oRequestAnimationFrame      || 
-		window.msRequestAnimationFrame     || 
-		function(/* function */ callback, /* DOMElement */ element){
-			window.setTimeout(callback, 1000 / 60);
-		};
-})();
-
-
-HW.requestTimeout = function(fn, delay) {
-	if(typeof fn == 'undefined') {
-		return;
-	}
-	if( !window.requestAnimationFrame      	&& 
-		!window.webkitRequestAnimationFrame && 
-		!(window.mozRequestAnimationFrame && window.mozCancelRequestAnimationFrame) && // Firefox 5 ships without cancel support
-		!window.oRequestAnimationFrame      && 
-		!window.msRequestAnimationFrame )
-		return window.setTimeout(fn, delay);
-			
-	var start = new Date().getTime(),
-		handle = new Object();
-		
-	function loop(){
-		var current = new Date().getTime(),
-			delta = current - start;
-			
-		delta >= delay ? fn.call() : handle.value = requestAnimFrame(loop);
-	};
-	
-	handle.value = requestAnimFrame(loop);
-	return handle;
-};
-
-/**
- * Behaves the same as clearTimeout except uses cancelRequestAnimationFrame() where possible for better performance
- * @param {int|object} fn The callback function
- */
-HW.clearRequestTimeout = function(handle) {
-	window.cancelAnimationFrame ? window.cancelAnimationFrame(handle.value) :
-	window.webkitCancelAnimationFrame ? window.webkitCancelAnimationFrame(handle.value) :
-	window.webkitCancelRequestAnimationFrame ? window.webkitCancelRequestAnimationFrame(handle.value) : /* Support for legacy API */
-	window.mozCancelRequestAnimationFrame ? window.mozCancelRequestAnimationFrame(handle.value) :
-	window.oCancelRequestAnimationFrame	? window.oCancelRequestAnimationFrame(handle.value) :
-	window.msCancelRequestAnimationFrame ? window.msCancelRequestAnimationFrame(handle.value) :
-	clearTimeout(handle);
-};
 
 HW.ipadCheck = function(){
 	if (navigator.userAgent.match(/Mac/) && navigator.maxTouchPoints && navigator.maxTouchPoints > 2) {
@@ -728,126 +441,100 @@ HW.triggerEvent = function(el, type){
 
 
 
-// BEST SOLUTION: VH Units with Threshold
-
-// HW._lastVh = 0;
-// HW._vhResizeTimeout = null;
-// HW._vhScrollTimeout = null;
-
-// HW.getViewportHeight = function () {
-//   return Math.round(
-//     window.visualViewport?.height || window.innerHeight
-//   );
-// };
-
-// HW.setVhUnits = function (force = false) {
-//   const height = HW.getViewportHeight();
-  
-//   // Only update if changed by more than 5px (prevents spam from micro-adjustments)
-//   const delta = Math.abs(height - HW._lastVh);
-//   if (!force && delta < 5) return;
-  
-//   console.log('VH UNITS UPDATE:', height, 'delta:', delta);
-//   HW._lastVh = height;
-
-//   document.documentElement.style.setProperty(
-//     '--jsVhUnits100',
-//     height + 'px'
-//   );
-// };
-
-// HW.bindVhUnits = function () {
-//   HW.setVhUnits(true); // Force initial
-
-//   // Debounced resize handler
-//   const handleResize = () => {
-//     if (HW._vhResizeTimeout) clearTimeout(HW._vhResizeTimeout);
-//     HW._vhResizeTimeout = setTimeout(() => {
-//       HW.setVhUnits();
-//       HW._vhResizeTimeout = null;
-//     }, 150);
-//   };
-
-//   // Heavily debounced scroll handler
-//   const handleScroll = () => {
-//     if (HW._vhScrollTimeout) clearTimeout(HW._vhScrollTimeout);
-//     HW._vhScrollTimeout = setTimeout(() => {
-//       HW.setVhUnits();
-//       HW._vhScrollTimeout = null;
-//     }, 300);
-//   };
-
-//   window.addEventListener('resize', handleResize);
-//   window.addEventListener('orientationchange', () => HW.setVhUnits(true)); // Force
-
-//   if (window.visualViewport) {
-//     visualViewport.addEventListener('resize', handleResize);
-//     visualViewport.addEventListener('scroll', handleScroll);
-//   }
-
-//   document.addEventListener('DOMContentLoaded', () => HW.setVhUnits(true)); // Force
-// };
-
-// HW.bindVhUnits();
 
 
 
+// ------------------------------------
+// VH UNITS — UPDATE ONLY WHEN WIDTH CHANGES
+// ------------------------------------
 
+HW._lastVw = 0;
+HW._vhResizeTimeout = null;
+HW._vhScrollTimeout = null;
 
-HW.insertPrefetch = function(url, type) {
-	var hint = document.createElement("link");
-	hint.setAttribute("as",type);
-	hint.setAttribute("rel","prefetch");
-	hint.setAttribute("href",url);
-	document.getElementsByTagName("head")[0].appendChild(hint);
+HW.getViewport = function () {
+  const vv = window.visualViewport;
+
+  return {
+    width: Math.round(vv?.width || window.innerWidth),
+    height: Math.round(vv?.height || window.innerHeight),
+  };
 };
 
-HW.insertPreload = function(url, type, myas) {
-	var hint = document.createElement("link");
-	var extension = url.split('.').pop().toLowerCase();
+HW.setVhUnits = function (force = false) {
+  const { width, height } = HW.getViewport();
 
-	// Map file extension to MIME type
-	switch(extension) {
-		case 'js':
-			type = 'application/javascript';
-			break;
-		case 'css':
-			type = 'text/css';
-			break;
-		case 'png':
-			type = 'image/png';
-			break;
-		case 'jpg':
-		case 'jpeg':
-			type = 'image/jpeg';
-			break;
-		case 'gif':
-			type = 'image/gif';
-			break;
-		case 'woff':
-		case 'woff2':
-			type = 'font/woff2';
-			break;
-		case 'ttf':
-			type = 'font/ttf';
-			break;
-		case 'svg':
-			type = 'image/svg+xml';
-			break;
-		case 'json':
-			type = 'application/json';
-			break;
-		default:
-			type = 'application/octet-stream'; // fallback for unknown types
-	}
+  // ✅ Only update when width actually changes
+  if (!force && width === HW._lastVw) return;
 
-	hint.setAttribute("as", myas);
-	hint.setAttribute("type", type);
-	hint.setAttribute("rel", "preload");
-	hint.setAttribute("href", url);
-	hint.setAttribute("crossorigin", "anonymous");
-	document.getElementsByTagName("head")[0].appendChild(hint);
+  console.log(
+    'VH UNITS UPDATE:',
+    'width:', width,
+    'height:', height
+  );
+
+  HW._lastVw = width;
+
+  document.documentElement.style.setProperty(
+    '--jsVhUnits100',
+    height + 'px'
+  );
 };
+
+HW.bindVhUnits = function () {
+  // Initial measurement
+  HW.setVhUnits(true);
+
+  // -----------------------------
+  // Resize (debounced)
+  // -----------------------------
+  const handleResize = () => {
+    if (HW._vhResizeTimeout) {
+      clearTimeout(HW._vhResizeTimeout);
+    }
+
+    HW._vhResizeTimeout = setTimeout(() => {
+      HW.setVhUnits();
+      HW._vhResizeTimeout = null;
+    }, 150);
+  };
+
+  // -----------------------------
+  // Scroll (heavily debounced)
+  // -----------------------------
+  const handleScroll = () => {
+    if (HW._vhScrollTimeout) {
+      clearTimeout(HW._vhScrollTimeout);
+    }
+
+    HW._vhScrollTimeout = setTimeout(() => {
+      HW.setVhUnits();
+      HW._vhScrollTimeout = null;
+    }, 300);
+  };
+
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('orientationchange', () => HW.setVhUnits(true));
+
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', handleResize);
+    visualViewport.addEventListener('scroll', handleScroll);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    HW.setVhUnits(true);
+  });
+};
+
+// ------------------------------------
+// Init
+// ------------------------------------
+HW.bindVhUnits();
+
+
+
+
+
 
 
 HW.hasIntObs = true;
@@ -855,93 +542,6 @@ HW.hasIntObs = true;
 document.documentElement.className += ' js no-iconfont';
 
 
-HW.clickEvent = (function() {
-  if ('ontouchstart' in document.documentElement === true)
-	return 'touchstart';
-  else
-	return 'click';
-})();
-
-HW.hoverEvent = (function() {
-  if ('ontouchstart' in document.documentElement === true)
-	return 'touchstart';
-  else
-	return 'hover';
-})();
-
-
-HW.on = function (event, elem, callback, capture) {
-	if (typeof (elem) === 'function') {
-		capture = callback;
-		callback = elem;
-		elem = window;
-	}
-	capture = capture ? true : false;
-	elem = typeof elem === 'string' ? document.querySelector(elem) : elem;
-	if (!elem) return;
-	elem.addEventListener(event, callback, capture);
-};
-
-HW.off = function (event, elem, callback, capture) {
-	if (typeof (elem) === 'function') {
-		capture = callback;
-		callback = elem;
-		elem = window;
-	}
-	capture = capture ? true : false;
-	elem = typeof elem === 'string' ? document.querySelector(elem) : elem;
-	if (!elem) return;
-	elem.removeEventListener(event, callback, capture);
-};
-
-
-HW.isVisible = function (el) {
-	while (el) {
-		if (el === document) {
-			return true;
-		}
-
-		var $style = window.getComputedStyle(el, null);
-
-		if (!el) {
-			return false;
-		} else if (!$style) {
-			return false;
-		} else if ($style.display === 'none') {
-			return false;
-		} else if ($style.visibility === 'hidden') {
-			return false;
-		} else if (+$style.opacity === 0) {
-			return false;
-		} else if (($style.display === 'block' || $style.display === 'inline-block') &&
-			$style.height === '0px' && $style.overflow === 'hidden') {
-			return false;
-		} else {
-			return $style.position === 'fixed' || HW.isVisible(el.parentNode);
-		}
-	}
-};
-
-HW.percentVisible = function elementVisibleInPercent(element) {
-	return new Promise(function(resolve, reject){
-		var observer = new IntersectionObserver(function(entries){
-			loop(entries, function(entry){
-				resolve(Math.floor(entry.intersectionRatio * 100));
-				clearTimeout(timeout);
-				observer.disconnect();
-			});
-		}, {
-			threshold: .7,
-			rootMargin: '-84px 0px 0px 0px'
-		});
-
-		observer.observe(element);
-		// Probably not needed, but in case something goes wrong.
-		var timeout = HW.requestTimeout(reject, 500);
-	});
-};
-
-
 
 	
 	
@@ -952,49 +552,7 @@ HW.percentVisible = function elementVisibleInPercent(element) {
 
 
 
-function addSourceToVideo(element, src, type, codecs) {
-	var source = document.createElement('source');
 
-	source.src = src;
-	source.type = type;
-	
-	if(codecs !== null) {
-		source.codecs = codecs;
-	}
-	
-	element.appendChild(source);
-}
-
-
-
-
-
-
-HW.domReady = function(callback){
-	if (
-		document.readyState === "complete" ||
-		(document.readyState !== "loading" && !document.documentElement.doScroll)
-	) {
-	  callback();
-	} else {
-	  document.addEventListener("DOMContentLoaded", callback);
-	}
-};
-
-(function () {
-  if ( typeof window.CustomEvent === "function" ) return false; //If not IE
-
-  function CustomEvent ( event, params ) {
-	params = params || { bubbles: false, cancelable: false, detail: undefined };
-	var evt = document.createEvent( 'CustomEvent' );
-	evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
-	return evt;
-   }
-
-  CustomEvent.prototype = window.Event.prototype;
-
-  window.CustomEvent = CustomEvent;
-})();
 
 
 
@@ -1021,56 +579,6 @@ HW.setElementHeightVar = function(selector) {
 
 
 
-HW.flickityReady = new CustomEvent('flickityReady');
-
-
-HW.fpsReady = new CustomEvent('fpsReady');
-HW.isFpsReady = false;
-
-
-HW.hwDomReady = new CustomEvent('hwDomReady');
-
-HW.hwContentAppended = new CustomEvent('hwContentAppended');
-HW.polyLoaded = new CustomEvent('polyLoaded');
-HW.loadLozad = new CustomEvent('loadLozad');
-
-HW.loadjsReady = new CustomEvent('loadjsReady');
-
-HW.module1Ready = new CustomEvent('module1Ready');
-HW.criticalDomReady = new CustomEvent('criticalDomReady');
-HW.criticalLoadedAll = new CustomEvent('criticalLoadedAll');
-
-HW.intchReady = new CustomEvent('intchReady');
-HW.intchLoadedAll = new CustomEvent('intchLoadedAll');
-
-HW.criticalImgLoaded = new CustomEvent('criticalImgLoaded');
-HW.opacitySlideLoaded = new CustomEvent('opacitySlideLoaded');
-HW.hwGformLoaded = new CustomEvent('hwGformLoaded');
-
-HW.themeFooter = new CustomEvent('themeFooter');
-
-HW.jsVhUnitsLoaded = new CustomEvent('jsVhUnitsLoaded');
-
-HW.firstForm = new CustomEvent('firstForm');
-
-HW.postLoadDone = new CustomEvent('postLoadDone');
-
-HW.isPostLoadDone = false;
-HW.isModule1Ready = false;
-HW.isCriticalDomReady = false;
-HW.isTaxAlphaLoaded = false;
-HW.isIntchReady = false;
-HW.isCriticalLoadedAll = false;
-HW.criticalImgLoadedOnce = false;
-HW.isHwGformLoaded = false;
-HW.gmapsLoaded = false;
-HW.isSwup = false;
-HW.firstLoad = true;
-
-window.addEventListener('criticalDomReady', function(){
-	HW.isCriticalDomReady = true;
-});
-
 
 /*
 HW.loadFontsRest = function(){
@@ -1084,73 +592,15 @@ HW.loadFontsRest = function(){
 window.addEventListener('criticalImgLoaded', HW.loadFontsRest);
 */
 
-!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.sal=t():e.sal=t()}(this,(function(){return(()=>{"use strict";var e={d:(t,n)=>{for(var r in n)e.o(n,r)&&!e.o(t,r)&&Object.defineProperty(t,r,{enumerable:!0,get:n[r]})},o:(e,t)=>Object.prototype.hasOwnProperty.call(e,t)},t={};function n(e,t){var n=Object.keys(e);if(Object.getOwnPropertySymbols){var r=Object.getOwnPropertySymbols(e);t&&(r=r.filter((function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable}))),n.push.apply(n,r)}return n}function r(e){for(var t=1;t<arguments.length;t++){var r=null!=arguments[t]?arguments[t]:{};t%2?n(Object(r),!0).forEach((function(t){o(e,t,r[t])})):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(r)):n(Object(r)).forEach((function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(r,t))}))}return e}function o(e,t,n){return t in e?Object.defineProperty(e,t,{value:n,enumerable:!0,configurable:!0,writable:!0}):e[t]=n,e}e.d(t,{default:()=>j});var a="Sal was not initialised! Probably it is used in SSR.",s="Your browser does not support IntersectionObserver!\nGet a polyfill from here:\nhttps://github.com/w3c/IntersectionObserver/tree/master/polyfill",i={root:null,rootMargin:"0% 50%",threshold:.5,animateClassName:"sal-animate",disabledClassName:"sal-disabled",enterEventName:"sal:in",exitEventName:"sal:out",selector:"[data-sal]",once:!0,disabled:!1},l=[],c=null,u=function(e){e&&e!==i&&(i=r(r({},i),e))},d=function(e){e.classList.remove(i.animateClassName)},f=function(e,t){var n=new CustomEvent(e,{bubbles:!0,detail:t});t.target.dispatchEvent(n)},b=function(){document.body.classList.add(i.disabledClassName)},p=function(){c.disconnect(),c=null},m=function(){return i.disabled||"function"==typeof i.disabled&&i.disabled()},v=function(e,t){e.forEach((function(e){var n=e.target,r=void 0!==n.dataset.salRepeat,o=void 0!==n.dataset.salOnce,a=r||!(o||i.once);e.intersectionRatio>=i.threshold?(function(e){e.target.classList.add(i.animateClassName),f(i.enterEventName,e)}(e),a||t.unobserve(n)):a&&function(e){d(e.target),f(i.exitEventName,e)}(e)}))},y=function(){var e=[].filter.call(document.querySelectorAll(i.selector),(function(e){return!function(e){return e.classList.contains(i.animateClassName)}(e,i.animateClassName)}));return e.forEach((function(e){return c.observe(e)})),e},O=function(){b(),p()},h=function(){document.body.classList.remove(i.disabledClassName),c=new IntersectionObserver(v,{root:i.root,rootMargin:i.rootMargin,threshold:i.threshold}),l=y()},g=function(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};p(),Array.from(document.querySelectorAll(i.selector)).forEach(d),u(e),h()},w=function(){var e=y();l.push(e)};const j=function(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:i;if(u(e),"undefined"==typeof window)return console.warn(a),{elements:l,disable:O,enable:h,reset:g,update:w};if(!window.IntersectionObserver)throw b(),Error(s);return m()?b():h(),{elements:l,disable:O,enable:h,reset:g,update:w}};return t.default})()}));
-
-
-var doSal = function () {
-	HW.theSal = sal({
-    selector: "[data-sal]",
-    threshold: 0.15,
-    once: true,
-  });
-
-  var delay = 50;
-
-  if ($$(".rowindex-1.form_module").length > 0) {
-    delay = 50;
-  }
-
-  if ($$(".rowindex-1").length > 0) {
-    HW.requestTimeout(function () {
-      $$(".rowindex-1")[0].classList.add("show-me");
-    }, delay);
-  }
-};
-
-// Run when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", doSal, { once: true });
-} else {
-  doSal();
-}
 
 
 
 
-window.addEventListener('DOMContentLoaded', function(){
-	HW.windowWidth = window.innerWidth;		
-	HW.windowHeight = HW.getWinDims().height;
-		 	
-	//HW.roundVwProps();
-});
+
 
 window.addEventListener('criticalDomReady', function(){
-	
-	//loadjs([hwJsPlugDir + 'nativebootstrap.js'], 'nativebootstrap');
-
 	document.addEventListener("touchstart", function(){}, true);
 });
-
-
-
-HW.filterByParent = function(selector, parent) {
-	const elements = document.querySelectorAll(selector);
-	const filteredElements = [];
-
-	elements.forEach(element => {
-		if (element.parentElement === parent) {
-			filteredElements.push(element);
-		}
-	});
-
-	return filteredElements;
-}
-
-HW.wrapChars = function(){
-	HW.hwRequire('gsap', function(){
-		HW.theWrappedChars = new SplitText(".type-in:not(.has-type-in) .wrap-chars", { type: "chars", charsClass: "anim-char" });
-	});
-};
 
 
 
@@ -1183,107 +633,10 @@ HW.whichtrans = function(){
 
 HW.transEvt = HW.whichtrans();
 
-HW.isInt = function(data){
-	if(typeof data==='number' && (data%1)===0) {
-		return true;
-	}
-	
-	return false;
-};
 
 
 
 
-
-HW.simulateClick = function (elem) {
-	// Create our event (with options)
-	var evt = new MouseEvent('click', {
-		bubbles: true,
-		cancelable: true,
-		view: window
-	});
-	// If cancelled, don't dispatch our event
-	var canceled = !elem.dispatchEvent(evt);
-};
-
-
-
-
-
-
-
-
-
-
-
-HW.emptyEl = function(element) {
-
-  // Get the element's children as an array
-  var children = Array.prototype.slice.call(element.childNodes);
-
-	// Remove each child node
-	children.forEach(function (child) {
-
-		element.removeChild(child);
-	});
-}
-
-HW.strToFrag = function(strHTML) {
-	return document.createRange().createContextualFragment(strHTML);
-}
-
-function insertAfter(a,b){b.parentNode.insertBefore(a,b.nextSibling)}
-
-function unwrap(a){for(var b=a.parentNode;a.firstChild;)b.insertBefore(a.firstChild,a);b.removeChild(a)}
-
-
-function offset(a){a=a.getBoundingClientRect();return{top:a.top+(window.pageYOffset||document.documentElement.scrollTop),left:a.left+(window.pageXOffset||document.documentElement.scrollLeft)}};
-
-var debounce = function (fn) {
-
-	// Setup a timer
-	var timeout;
-
-	// Return a function to run debounced
-	return function () {
-
-		// Setup the arguments
-		var context = this;
-		var args = arguments;
-
-		// If there's a timer, cancel it
-		if (timeout) {
-			window.cancelAnimationFrame(timeout);
-		}
-
-		if(typeof fn !== 'undefined') {
-			// Setup the new requestAnimationFrame()
-			timeout = window.requestAnimationFrame(function () {
-				if(typeof fn !== 'undefined') {
-					fn.apply(context, args);				
-				}
-			});
-		}
-
-	}
-
-};
-
-
-
-
-
-
-
-
-
-HW.cleanUrl = function(myhref){
-	myhref = HW.stripTrailingSlash(myhref);
-	myhref = myhref.replace(window.siteurlRel, "");
-	myhref = myhref.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "");
-	
-	return myhref;	
-};
 
 
 
