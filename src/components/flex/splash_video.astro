@@ -298,7 +298,7 @@ const videoClasses = [
       if (splashDismissed) return;
 
       splashDismissed = true;
-      splashpar.classList.add("splash-dismissed");
+      HW.$html.classList.add("splash-dismissed");
       
       // Mark splash as inactive
       window.hwSplashActive = false;
@@ -332,7 +332,7 @@ const videoClasses = [
       idleDismissTimer = null;
 
       dismissTimer = setTimeout(() => {
-        splashpar.classList.add("splash-dismissed");
+        HW.$html.classList.add("splash-dismissed");
         
         // Mark splash as inactive
         window.hwSplashActive = false;

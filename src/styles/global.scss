@@ -1140,7 +1140,14 @@ ul.two-col-list {
 
 
 
-
+html.first-load.home:not(.splash-dismissed) {
+	&,
+	body {
+		position: fixed;
+		height: 100vh;
+		overflow: hidden;
+	}
+}
 
 .splash_video-module {
 	pointer-events: none;
@@ -1161,7 +1168,7 @@ ul.two-col-list {
   transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.splash-dismissed {
+.splash-dismissed .splash_video-module {
 	pointer-events: none;
 }
 
