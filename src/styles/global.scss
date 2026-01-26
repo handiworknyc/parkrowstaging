@@ -704,6 +704,24 @@ ul.two-col-list {
 	}
 }
 
+@media (min-width: 2001px) {
+	.txt_img-module {
+		.full-bleed-caption.text-right {
+			right: 0;
+			padding-right: .75rem;
+		}
+
+		
+		.full-bleed-caption.text-left {
+			left: 0;
+			padding-left: .75rem;
+		}
+	}
+
+	[class*='bleed-left'] .full-bleed-caption {
+		padding: 0;
+	}
+}
 @media (max-width: 1024px) {
 	.section-text-wrap *,
 	.column-content * {
