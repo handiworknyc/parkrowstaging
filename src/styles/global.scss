@@ -557,8 +557,13 @@ ul.section-text li::before {
    Add this to your global.scss
    ============================================ */
 
-:root {
+.full-bleed-column,
+.txt-img-column {
   --aspect-ratio-height: 8;
+}
+
+.full_bleed_img-module:not(.rowindex-1) > .full-bleed-img-inner {
+  --aspect-ratio-height: 6.5;
 }
 
 @media (min-width: 1800px) and (min-height: 1000px) {
@@ -725,6 +730,15 @@ ul.two-col-list {
 	[class*='bleed-right'] .full-bleed-caption,
 	[class*='bleed-left'] .full-bleed-caption {
 		padding: 0;
+	}
+
+	.full_bleed_img-module {
+		container-type: inline-size;
+	}
+	
+	.full_bleed_img-module + .full_bleed_img-module.rowindex-3 {
+		max-width: calc( var(--containerMaxW) - (2 * var(--containerPadding)));
+		margin: 0 auto;
 	}
 }
 @media (max-width: 1024px) {
