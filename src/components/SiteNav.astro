@@ -343,17 +343,23 @@ const headerMenu = _cachedHeaderMenu;
     }
   });
 
-  document.addEventListener("astro:after-swap", () => {
-		log('astro:after-swap fired');
-	
-		// DON'T clean up immediately - wait for CSS animation to finish
-		// The 0.6s header animation needs to complete first
-		setTimeout(() => {
-			log('DELAYED CLEANUP after animation');
-			cleanupTransitionState('astro:after-swap-delayed');
-		}, 650); // 600ms animation + 50ms buffer
-	});
+document.addEventListener("astro:after-swap", () => {
+  log('astro:after-swap fired');
 
+  // Cancel the 800ms safety timeout since we're handling cleanup properly
+  if (cleanupTimeout) {
+    log('canceling safety timeout in favor of delayed cleanup');
+    clearTimeout(cleanupTimeout);
+    cleanupTimeout = null;
+  }
+
+  // DON'T clean up immediately - wait for CSS animation to finish
+  // The 0.6s header animation needs to complete first
+  cleanupTimeout = window.setTimeout(() => {
+    log('DELAYED CLEANUP after animation');
+    cleanupTransitionState('astro:after-swap-delayed');
+  }, 650); // 600ms animation + 50ms buffer
+});
   document.addEventListener("astro:page-load", () => {
     log('astro:page-load fired');
     initNav();
