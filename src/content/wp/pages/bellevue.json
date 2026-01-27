@@ -172,6 +172,7 @@
       "align": "",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": false
     },
     {
@@ -2022,5 +2023,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 12:24:23"
+  "_syncedAt": "2026-01-27 14:49:55"
 }

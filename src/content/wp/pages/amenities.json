@@ -172,6 +172,7 @@
       "align": "",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": false
     },
     {
@@ -342,6 +343,7 @@
       "align": "left",
       "push": "none",
       "bleed": true,
+      "panorama": false,
       "content": false
     },
     {
@@ -1164,6 +1166,7 @@
       "align": "center",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": [
         {
           "title": "Social Gathering & Community",
@@ -1347,6 +1350,7 @@
       "align": "center",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": [
         {
           "title": "Private Dining<br />\r\n& Entertaining",
@@ -1530,8 +1534,9 @@
       "align": "",
       "push": "",
       "bleed": true,
+      "panorama": false,
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-27 12:24:23"
+  "_syncedAt": "2026-01-27 14:49:55"
 }

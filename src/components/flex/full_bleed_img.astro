@@ -12,6 +12,9 @@ const { prevLayout, nextLayout, ...props } = Astro.props;
 const currentIndex = vars.rowIndex;
 const isCritical = currentIndex === 1;
 
+// ✅ 2. Detect panorama mode
+const isPanorama = vars.panorama === true;
+
 const locoSpeedAttr = isCritical || prevLayout.name === "splash_video"
   ? { "data-scroll data-scroll-speed": "-.4" }
   : {};
@@ -182,7 +185,7 @@ const videoClasses = [
     <div class="row">
       <div class:list={layoutClasses}>
         <div class:list={videoClasses}>
-          {v && <CFVideo video={v} critical={isCritical} />}
+          {v && <CFVideo video={v} critical={isCritical} panorama={isPanorama} />}
         </div>
 
         {caption && <div class={captionWrapperClass}>{caption}</div>}
@@ -209,7 +212,7 @@ const videoClasses = [
 
   <div class="full-bleed-column">
     <div class:list={videoClasses} {...locoSpeedAttr}>
-      {v && <CFVideo video={v} critical={isCritical} />}
+      {v && <CFVideo video={v} critical={isCritical} panorama={isPanorama} />}
     </div>
 
     {(caption || hasContent) && (

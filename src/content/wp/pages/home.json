@@ -333,6 +333,7 @@
       "align": "right",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": false
     },
     {
@@ -503,6 +504,7 @@
       "align": "",
       "push": "",
       "bleed": true,
+      "panorama": false,
       "content": [
         {
           "title": "A new way to live in balance.",
@@ -1663,5 +1665,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 12:24:24"
+  "_syncedAt": "2026-01-27 14:49:57"
 }

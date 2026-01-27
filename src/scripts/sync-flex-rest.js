@@ -154,8 +154,9 @@ async function fetchSchemaAddress() {
 /* -------------------------------------------
    SEO-Friendly Download & Cache
    Format: "my-image-hash.jpg.webp"
+   isPanorama = true → 5000px limit, 4MB limit
 ------------------------------------------- */
-async function downloadAndCache(url, outputDir) {
+async function downloadAndCache(url, outputDir, isPanorama = false) {
   if (!url || typeof url !== 'string') return null;
 
   try {
@@ -214,13 +215,23 @@ async function downloadAndCache(url, outputDir) {
       fs.writeFileSync(tempInput, buffer);
 
       try {
-        await execFileP(cwebp, [
-          tempInput, 
-          '-size', '2097152', 
-          '-q', '95', 
-          '-o', localPath
-        ]);
-        console.log(`✨ Converted & Cached (Max 2MB): ${filename}`);
+        const cwebpArgs = [tempInput];
+        
+        // Panorama images: 5000px width limit, 4MB size limit
+        if (isPanorama) {
+          cwebpArgs.push('-resize', '5000', '0');
+          cwebpArgs.push('-size', '4194304'); // 4MB in bytes
+        } else {
+          // Standard images: 2MB limit
+          cwebpArgs.push('-size', '2097152');
+        }
+        
+        cwebpArgs.push('-q', '95', '-o', localPath);
+        
+        await execFileP(cwebp, cwebpArgs);
+        
+        const sizeLabel = isPanorama ? '5000px/4MB' : '2MB';
+        console.log(`✨ Converted & Cached (${sizeLabel}): ${filename}`);
       } catch (err) {
         console.warn(`⚠️ Conversion failed for ${filename}, saving original.`, err.message);
         fs.writeFileSync(localPath, buffer);
@@ -241,16 +252,20 @@ async function downloadAndCache(url, outputDir) {
 
 /* -------------------------------------------
    RECURSIVE IMAGE FINDER
+   Returns Set of { url, isPanorama } objects
 ------------------------------------------- */
-function recurseFindImages(obj, collected = new Set()) {
+function recurseFindImages(obj, collected = new Set(), parentContext = {}) {
   if (!obj || typeof obj !== 'object') return collected;
+
+  // Use panorama flag from parent context (passed down from layout)
+  const isPanorama = parentContext.isPanorama || false;
 
   // 1. Check if object looks like a WP Image (has 'url')
   if (typeof obj.url === 'string') {
     
     // A. Add Full Size (always)
     if (obj.url.match(/\.(jpeg|jpg|png|webp|gif)$/i)) {
-      collected.add(obj.url);
+      collected.add(JSON.stringify({ url: obj.url, isPanorama }));
     }
 
     // B. Check 'sizes' for intch_ candidates
@@ -258,22 +273,22 @@ function recurseFindImages(obj, collected = new Set()) {
       for (const [key, val] of Object.entries(obj.sizes)) {
         if (key.startsWith('intch_')) {
           if (typeof val === 'string') {
-            collected.add(val);
+            collected.add(JSON.stringify({ url: val, isPanorama }));
           } 
           else if (val && typeof val === 'object' && typeof val.url === 'string') {
-            collected.add(val.url);
+            collected.add(JSON.stringify({ url: val.url, isPanorama }));
           }
           else if (val && typeof val === 'object' && typeof val.source_url === 'string') {
-             collected.add(val.source_url);
+            collected.add(JSON.stringify({ url: val.source_url, isPanorama }));
           }
         }
       }
     }
   }
 
-  // 2. Recurse through all children (arrays or objects)
+  // 2. Recurse through all children (arrays or objects), passing down the same context
   for (const val of Object.values(obj)) {
-    recurseFindImages(val, collected);
+    recurseFindImages(val, collected, parentContext);
   }
 
   return collected;
@@ -536,13 +551,32 @@ async function run() {
       
       pageManifest.push({ uri: cleanPath, title: pageTitle });
 
-      // 1. Collect ALL image URLs from this page
-      const imageUrls = recurseFindImages(data);
+      // 1. Collect ALL image URLs from this page (with isPanorama context)
+      const imageUrlStrings = new Set();
+      
+      // Process each layout to detect panorama flag at the layout level
+      for (const layout of layouts) {
+        const isPanoramaLayout = layout.panorama === true || layout.panorama === 'true' || layout.panorama === 1;
+        if (isPanoramaLayout) {
+          console.log(`🔍 PANORAMA DETECTED on page ${uri} - layout type: ${layout.acf_fc_layout}`);
+        }
+        const context = isPanoramaLayout ? { isPanorama: true } : {};
+        recurseFindImages(layout, imageUrlStrings, context);
+      }
+      
+      // Parse JSON strings back to objects
+      const imageUrlObjects = Array.from(imageUrlStrings).map(str => JSON.parse(str));
+      
+      // Count panorama images
+      const panoramaCount = imageUrlObjects.filter(img => img.isPanorama).length;
+      if (panoramaCount > 0) {
+        console.log(`🖼️  Found ${panoramaCount} panorama images on ${uri}`);
+      }
       
       // 2. Download them and build URL mapping
       const urlMap = new Map();
-      for (const url of imageUrls) {
-        const localUrl = await downloadAndCache(url, imgCacheDir);
+      for (const { url, isPanorama } of imageUrlObjects) {
+        const localUrl = await downloadAndCache(url, imgCacheDir, isPanorama);
         if (localUrl) {
           urlMap.set(url, localUrl);
         }
@@ -616,10 +650,12 @@ async function run() {
     const specials = await fetchSpecials();
     
     // Transform image URLs in specials
-    const imageUrls = recurseFindImages(specials);
+    const imageUrlStrings = recurseFindImages(specials);
+    const imageUrlObjects = Array.from(imageUrlStrings).map(str => JSON.parse(str));
+    
     const urlMap = new Map();
-    for (const url of imageUrls) {
-      const localUrl = await downloadAndCache(url, imgCacheDir);
+    for (const { url, isPanorama } of imageUrlObjects) {
+      const localUrl = await downloadAndCache(url, imgCacheDir, isPanorama);
       if (localUrl) urlMap.set(url, localUrl);
     }
     const transformedSpecials = replaceImageUrls(specials, urlMap);

@@ -7,6 +7,7 @@ interface VideoData {
   cf_stream_video?: string;
   yt_hover?: boolean;
   show_controls?: boolean;
+  panorama?: boolean; // Panorama flag
   yt_img?: {
     url: string;
     alt?: string;
@@ -15,6 +16,7 @@ interface VideoData {
       intch_lg?: string;
       intch_med?: string;
       intch_sm?: string;
+      intch_full?: string; // Full-size image for panorama
     };
   };
 }
@@ -24,6 +26,7 @@ interface Props {
   usePosterSrcSet?: boolean;
   posterForceSize?: "xl" | "large" | "med" | "small";
   critical?: boolean;
+  panorama?: boolean; // Allow external panorama override
 }
 
 /* ---------------- Props ---------------- */
@@ -32,6 +35,7 @@ const {
   usePosterSrcSet = true,
   posterForceSize,
   critical = false,
+  panorama: externalPanorama,
 } = Astro.props;
 
 /* ---------------- Constants ---------------- */
@@ -58,6 +62,7 @@ function extractPosterImages(ytImg: VideoData["yt_img"]) {
   const fallbackUrl = ytImg.url;
 
   return {
+    full: sizes.intch_full || null, // Full-size image
     xl: sizes.intch_xl || fallbackUrl,
     large: sizes.intch_lg || fallbackUrl,
     med: sizes.intch_med || fallbackUrl,
@@ -77,6 +82,10 @@ const showControls = videoData.show_controls ?? false;
 const posterImages = extractPosterImages(videoData.yt_img);
 const posterAlt = videoData.yt_img?.alt || "";
 
+// Determine if this is a panorama video
+// Priority: external prop > video data property
+const isPanorama = externalPanorama ?? videoData.panorama ?? false;
+
 const videoId = generateVideoId(videoData);
 const videoSrc = streamUrl 
   ? `${streamUrl}?clientBandwidthHint=${VIDEO_CONFIG.BANDWIDTH_HINT}`
@@ -91,6 +100,7 @@ const posterProps = {
   useSrcSet: usePosterSrcSet,
   forceSize: posterForceSize,
   critical,
+  panorama: isPanorama, // Pass panorama flag to SmartImage
 };
 
 // ✅ CRITICAL FIX 1: If critical, do not render 'loading' class on server

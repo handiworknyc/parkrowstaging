@@ -172,6 +172,7 @@
       "align": "",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": false
     },
     {
@@ -517,6 +518,7 @@
       "align": "center",
       "push": "",
       "bleed": false,
+      "panorama": false,
       "content": [
         {
           "title": "Living & Dining",
@@ -3155,5 +3157,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 12:24:24"
+  "_syncedAt": "2026-01-27 14:49:56"
 }

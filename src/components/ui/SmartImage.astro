@@ -12,6 +12,7 @@ interface Props {
     large?: string | ImageSource;
     med?: string | ImageSource | false;
     small?: string | ImageSource | false;
+    full?: string | ImageSource; // Full-size image for panorama mode
   };
   sizes?: string;
   alt?: string;
@@ -20,6 +21,7 @@ interface Props {
   fetchpriority?: "auto" | "high" | "low";
   useSrcSet?: boolean;
   forceSize?: "xl" | "large" | "med" | "small";
+  panorama?: boolean; // Enable full-size image
 }
 
 const {
@@ -31,6 +33,7 @@ const {
   fetchpriority = critical ? "high" : "auto",
   useSrcSet = true,
   forceSize,
+  panorama = false,
 } = Astro.props;
 
 /* --------------------------------------------------------------------------
@@ -49,6 +52,7 @@ function extractUrl(img: string | ImageSource | undefined | false): string | nul
 }
 
 const DEFAULT_WIDTHS = {
+  full: 2400, // Full-size width for panorama
   xl: 1700,
   large: 1400,
   med: 1000,
@@ -58,8 +62,11 @@ const DEFAULT_WIDTHS = {
 /* --------------------------------------------------------------------------
    BUILD SRCSET
 -------------------------------------------------------------------------- */
+// When panorama is true, replace xl with full size
 const candidates = [
-  { url: extractUrl(images.xl), w: DEFAULT_WIDTHS.xl },
+  panorama && images.full 
+    ? { url: extractUrl(images.full), w: DEFAULT_WIDTHS.full }
+    : { url: extractUrl(images.xl), w: DEFAULT_WIDTHS.xl },
   { url: extractUrl(images.large), w: DEFAULT_WIDTHS.large },
   { url: extractUrl(images.med), w: DEFAULT_WIDTHS.med },
   { url: extractUrl(images.small), w: DEFAULT_WIDTHS.small },
@@ -83,12 +90,22 @@ if (forceSize) {
   };
   primarySrc = extractUrl(sizeMap[forceSize]);
 } else {
-  // Fallback chain: xl → large → med → small
-  primarySrc = 
-    extractUrl(images.xl) || 
-    extractUrl(images.large) || 
-    extractUrl(images.med) || 
-    extractUrl(images.small);
+  // Fallback chain: If panorama is true, use full → xl → large → med → small
+  // Otherwise use xl → large → med → small
+  if (panorama) {
+    primarySrc = 
+      extractUrl(images.full) ||
+      extractUrl(images.xl) || 
+      extractUrl(images.large) || 
+      extractUrl(images.med) || 
+      extractUrl(images.small);
+  } else {
+    primarySrc = 
+      extractUrl(images.xl) || 
+      extractUrl(images.large) || 
+      extractUrl(images.med) || 
+      extractUrl(images.small);
+  }
 }
 
 /* --------------------------------------------------------------------------

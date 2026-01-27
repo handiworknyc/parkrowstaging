@@ -737,7 +737,7 @@ ul.two-col-list {
 		padding: 0;
 	}
 
-	.full_bleed_img-module.really-full:not(.rowindex-1):not(.rowindex-1.rowindex-2) {
+	.full_bleed_img-module.really-full:not(.rowindex-1):not(.rowindex-1.rowindex-2):not(.panorama) {
 		.full-bleed-column {
 			container-type: inline-size;
 			max-width: calc( var(--containerMaxW) - (2 * var(--containerPadding)));
