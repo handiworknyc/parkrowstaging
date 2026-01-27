@@ -86,26 +86,23 @@ function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
   const headerState = state.headers.get(key);
   if (!headerState || headerState.hidden === hidden) return;
 
-  // ✅ DON'T hide header during view transitions
+  // ✅ CHECK 1: data-transitioning attribute
   const isTransitioning = headerState.element.hasAttribute("data-transitioning");
   
-  if (DEBUG) {
-    console.log(
-      `%c[StickyHeader] setHeaderHidden%c`,
-      'color: #4CAF50; font-weight: bold',
-      'color: inherit',
-      {
-        key,
-        hidden,
-        currentlyHidden: headerState.hidden,
+  // ✅ CHECK 2: Global lock flag (fallback)
+  const isLocked = typeof (window as any).__vtLocked === 'function' && (window as any).__vtLocked();
+  
+  // ✅ CHECK 3: CSS class protection
+  const hasProtection = headerState.element.classList.contains("vt-protected");
+  
+  if ((isTransitioning || isLocked || hasProtection) && hidden) {
+    if (DEBUG) {
+      console.log('[StickyHeader] BLOCKED: View transition in progress', {
         isTransitioning,
-        willApply: !isTransitioning || !hidden
-      }
-    );
-  }
-
-  if (isTransitioning && hidden) {
-    dbg('BLOCKED: Not hiding header during transition');
+        isLocked,
+        hasProtection
+      });
+    }
     return; // Skip hiding during transition
   }
 

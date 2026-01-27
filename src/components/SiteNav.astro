@@ -239,48 +239,90 @@ const headerMenu = _cachedHeaderMenu;
   }
 
   // -----------------------------------------------------------------------
-  // VIEW TRANSITION HANDLING - FIXED VERSION
+  // BULLETPROOF VIEW TRANSITION PROTECTION
   // -----------------------------------------------------------------------
   
-  function cleanupTransitionState() {
+  // Use a more persistent flag
+  let transitionLock = false;
+  
+  function setTransitionProtection(enable: boolean) {
     const header = document.querySelector("#header");
-    if (header) {
-      header.removeAttribute("data-transitioning");
-    }
+    if (!header) return;
     
-    document.documentElement.classList.remove("header-should-slide");
+    transitionLock = enable;
+    
+    if (enable) {
+      header.setAttribute("data-transitioning", "true");
+      // Also use a CSS class as backup
+      header.classList.add("vt-protected");
+    } else {
+      header.removeAttribute("data-transitioning");
+      header.classList.remove("vt-protected");
+    }
   }
 
+  // Expose lock state globally for sticky header to check
+  (window as any).__vtLocked = () => transitionLock;
+
   document.addEventListener("astro:before-preparation", (e) => {
+    console.log('[VT] before-preparation');
     const header = document.querySelector("#header");
     if (!header) return;
 
     const wasHidden = header.classList.contains("is-hidden");
     
-    // Mark if header should slide in
     if (wasHidden) {
       document.documentElement.classList.add("header-should-slide");
     } else {
       document.documentElement.classList.remove("header-should-slide");
     }
     
-    // Always remove is-hidden so header is visible for transition
     header.classList.remove("is-hidden");
-    
-    // Add a flag to prevent sticky header from hiding it during transition
-    header.setAttribute("data-transitioning", "true");
+    setTransitionProtection(true);
   });
 
-  // ✅ FIX: Wait for view transition to actually complete
   document.addEventListener("astro:after-swap", () => {
-    // Use requestAnimationFrame to wait for the view transition animation to finish
-    // The 0.6s animation needs to complete first
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        cleanupTransitionState();
-      }, 650); // Slightly longer than the 0.6s transition
-    });
+    console.log('[VT] after-swap - waiting for animation');
+    // Wait for the full animation duration plus safety buffer
+    setTimeout(() => {
+      console.log('[VT] cleanup');
+      setTransitionProtection(false);
+      document.documentElement.classList.remove("header-should-slide");
+    }, 700); // 600ms animation + 100ms buffer
   });
   
+  // FALLBACK: Use navigation event to detect page changes
+  // This catches transitions that don't fire Astro events
+  let lastUrl = location.href;
+  
+  const urlCheckInterval = setInterval(() => {
+    if (location.href !== lastUrl) {
+      console.log('[VT-FALLBACK] URL changed without events');
+      lastUrl = location.href;
+      
+      // Lock immediately
+      setTransitionProtection(true);
+      
+      // Unlock after animation should be done
+      setTimeout(() => {
+        setTransitionProtection(false);
+      }, 700);
+    }
+  }, 50); // Check every 50ms
+
   document.addEventListener("astro:page-load", initNav);
 </script>
+
+<style>
+  /* CSS-based protection as ultimate fallback */
+  #header.vt-protected {
+    /* Force visibility during transitions */
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  /* Prevent is-hidden from working during protection */
+  #header.vt-protected.is-hidden {
+    transform: translateY(0) !important;
+  }
+</style>
