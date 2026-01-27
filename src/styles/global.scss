@@ -187,10 +187,12 @@ html, body {
 /* Default: Crossfade when header is visible */
 ::view-transition-old(page-header) {
   animation: header-fade-out 0.6s var(--cubicBez) forwards;
+  transition: none 0s !important;
 }
 
 ::view-transition-new(page-header) {
   animation: header-fade-in 0.6s var(--cubicBez) forwards;
+  transition: none 0s !important;
 }
 
 /* Override: Slide in when header was hidden */

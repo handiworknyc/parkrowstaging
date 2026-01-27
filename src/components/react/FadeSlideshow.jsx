@@ -133,31 +133,30 @@ export default function FadeSlideshow({ slides }) {
     </div>
   );
 }
-
 function NavStyles() {
-    return (
-        <style>{`
-            .carousel-nav-position {
-                position: absolute; 
-                bottom: -4.5rem; 
-                right: var(--containerPadding, 0); 
-            }
+  return (
+    <style>{`
+      .carousel-nav-position {
+        position: absolute;
+        bottom: -4.5rem;
+        right: var(--containerPadding, 0);
+      }
 
-            .has-caption .image-wrapper::before {
-                content: "";
-                position: absolute;
-                inset: -0.75rem -1rem;
-                z-index: 2;
-                mix-blend-mode: multiply;
-                background: linear-gradient(
-                    32deg,
-                    rgba(0,0,0,0.75) 0%,
-                    rgba(0,0,0,0.6) 9%,
-                    rgba(0,0,0,0.0) 25%
-                );
-                filter: blur(11px);
-                pointer-events: none;
-            }
-        `}</style>
-    )
+      .has-caption .image-wrapper::before {
+        content: '';
+        position: absolute;
+        inset: -0.75rem -1rem;
+        z-index: 2;
+        mix-blend-mode: multiply;
+        background: linear-gradient(
+          32deg,
+          rgba(0,0,0,0.75) 0%,
+          rgba(0,0,0,0.6) 9%,
+          rgba(0,0,0,0.0) 25%
+        );
+        filter: blur(11px);
+        pointer-events: none;
+      }
+    `}</style>
+  );
 }

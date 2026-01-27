@@ -1,7 +1,7 @@
 // /src/scripts/sticky-header.ts
 // Mob bottom bar now handled by mob-bottom-bar-scrolltrigger.ts
 
-const DEBUG = true; // Set to false in production
+const DEBUG = false;
 
 function dbg(...args: any[]) {
   if (DEBUG) console.log('[StickyHeader]', ...args);
@@ -86,40 +86,14 @@ function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
   const headerState = state.headers.get(key);
   if (!headerState || headerState.hidden === hidden) return;
 
-  // ✅ CHECK 1: data-transitioning attribute
+  // ✅ DON'T hide header during view transitions
   const isTransitioning = headerState.element.hasAttribute("data-transitioning");
-  
-  // ✅ CHECK 2: Global lock flag (fallback)
-  const isLocked = typeof (window as any).__vtLocked === 'function' && (window as any).__vtLocked();
-  
-  // ✅ CHECK 3: CSS class protection
-  const hasProtection = headerState.element.classList.contains("vt-protected");
-  
-  if ((isTransitioning || isLocked || hasProtection) && hidden) {
-    if (DEBUG) {
-      console.log('[StickyHeader] BLOCKED: View transition in progress', {
-        isTransitioning,
-        isLocked,
-        hasProtection
-      });
-    }
+  if (isTransitioning && hidden) {
     return; // Skip hiding during transition
   }
 
   headerState.hidden = hidden;
   headerState.element.classList.toggle("is-hidden", hidden);
-  
-  if (DEBUG) {
-    console.log(
-      `%c[StickyHeader] Header class toggled%c`,
-      'color: #2196F3; font-weight: bold',
-      'color: inherit',
-      {
-        hidden,
-        classList: Array.from(headerState.element.classList)
-      }
-    );
-  }
 }
 
 function updateBannerScroll(element: HTMLElement, scrollY: number) {
@@ -137,22 +111,6 @@ function createScrollHandler(state: StickyState) {
 
     const shouldHide = dy > CONFIG.DOWN_THRESHOLD && y > CONFIG.HIDE_AFTER;
     const shouldShow = dy < -CONFIG.UP_THRESHOLD || y <= 0;
-
-    if (DEBUG && (shouldHide || shouldShow)) {
-      console.log(
-        `%c[StickyHeader] Scroll evaluation%c`,
-        'color: #FF9800; font-weight: bold',
-        'color: inherit',
-        {
-          y,
-          dy,
-          lastY: state.lastY,
-          shouldHide,
-          shouldShow,
-          threshold: shouldHide ? 'DOWN' : shouldShow ? 'UP' : 'NONE'
-        }
-      );
-    }
 
     state.headers.forEach((headerState, key) => {
       if (shouldHide) {
@@ -195,13 +153,11 @@ function bindHeader(
   });
 
   el.classList.remove("is-hidden");
-  dbg('bindHeader', { key, bannerScroll, classList: Array.from(el.classList) });
 }
 
 function cleanupStaleHeaders(state: StickyState) {
   state.headers.forEach((headerState, key) => {
     if (!document.body.contains(headerState.element)) {
-      dbg('cleanupStaleHeaders: removing', key);
       state.headers.delete(key);
     }
   });
@@ -230,7 +186,6 @@ function watchFooter(state: StickyState) {
   );
 
   state.footerObserver.observe(footer);
-  dbg('watchFooter: observing');
 }
 
 function watchForHeaders(
@@ -258,7 +213,6 @@ function watchForHeaders(
   state.observer?.disconnect();
 
   state.observer = new MutationObserver(() => {
-    dbg('MutationObserver triggered - re-watching headers');
     watchForHeaders(state, configs, onScrollRaf);
   });
 
@@ -268,7 +222,6 @@ function watchForHeaders(
   });
 
   requestAnimationFrame(onScrollRaf);
-  dbg('watchForHeaders complete', { headerCount: state.headers.size });
 }
 
 // ------------------------------------
@@ -279,7 +232,6 @@ function initAll(
   configs: HeaderConfig[],
   onScrollRaf: () => void
 ) {
-  dbg('initAll');
   watchForHeaders(state, configs, onScrollRaf);
   watchFooter(state);
 }
@@ -290,10 +242,7 @@ function attachEventListeners(
   onScroll: () => void,
   onScrollRaf: () => void
 ) {
-  const reinit = () => {
-    dbg('reinit triggered');
-    initAll(state, configs, onScrollRaf);
-  };
+  const reinit = () => initAll(state, configs, onScrollRaf);
 
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
@@ -304,14 +253,11 @@ function attachEventListeners(
 
   window.addEventListener("pageshow", (e) => {
     if (e.persisted) {
-      dbg('pageshow (persisted)');
       reinit();
     } else {
       requestAnimationFrame(onScrollRaf);
     }
   });
-
-  dbg('attachEventListeners complete');
 }
 
 // ------------------------------------
@@ -336,8 +282,6 @@ export default function initStickyHeader(
 
   initAll(state, configs, onScrollRaf);
   attachEventListeners(state, configs, onScroll, onScrollRaf);
-  
-  dbg('initStickyHeader complete');
 }
 
 // ------------------------------------

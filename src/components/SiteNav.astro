@@ -118,13 +118,40 @@ const headerMenu = _cachedHeaderMenu;
   </div>
 </header>
 
-
-
 <script>
   import initStickyHeader from "/src/scripts/sticky-header.ts";
   import { animate } from "motion";
 
+  // -----------------------------------------------------------------------
+  // DEBUGGING LOGGER
+  // -----------------------------------------------------------------------
+  const DEBUG = true; // Set to false in production
+  const logs: Array<{time: number, event: string, data?: any}> = [];
+
+  function log(event: string, data?: any) {
+    const timestamp = performance.now();
+    const logEntry = { time: timestamp, event, data };
+    logs.push(logEntry);
+    
+    if (DEBUG) {
+      console.log(
+        `%c[VT-DEBUG ${timestamp.toFixed(2)}ms]%c ${event}`,
+        'color: #ff6b6b; font-weight: bold',
+        'color: inherit',
+        data || ''
+      );
+    }
+  }
+
+  // Export logs for inspection
+  (window as any).__viewTransitionLogs = logs;
+  (window as any).dumpLogs = () => {
+    console.table(logs);
+    return logs;
+  };
+
   function initNav() {
+    log('initNav called');
     initStickyHeader();
 
     const toggle = document.querySelector(".nav-toggle");
@@ -134,9 +161,15 @@ const headerMenu = _cachedHeaderMenu;
     const logoSvg = document.getElementById("logo-svg");
     const html = document.documentElement;
     
-    if (!toggle || !modal) return;
+    if (!toggle || !modal) {
+      log('initNav aborted - missing elements', { toggle: !!toggle, modal: !!modal });
+      return;
+    }
 
-    if ((toggle as any)._navBound) return;
+    if ((toggle as any)._navBound) {
+      log('initNav aborted - already bound');
+      return;
+    }
     (toggle as any)._navBound = true;
 
     const ul = modal.querySelector("ul");
@@ -236,93 +269,145 @@ const headerMenu = _cachedHeaderMenu;
         html.classList.add("modal-closed");
       }
     });
+
+    log('initNav complete');
   }
 
   // -----------------------------------------------------------------------
-  // BULLETPROOF VIEW TRANSITION PROTECTION
+  // VIEW TRANSITION HANDLING
   // -----------------------------------------------------------------------
-  
-  // Use a more persistent flag
-  let transitionLock = false;
-  
-  function setTransitionProtection(enable: boolean) {
+  let cleanupTimeout: number | null = null;
+
+  function cleanupTransitionState(source: string) {
+    log('cleanupTransitionState called', { source });
+
+    if (cleanupTimeout) {
+      log('clearing existing timeout', { timeoutId: cleanupTimeout });
+      clearTimeout(cleanupTimeout);
+      cleanupTimeout = null;
+    }
+
     const header = document.querySelector("#header");
-    if (!header) return;
-    
-    transitionLock = enable;
-    
-    if (enable) {
-      header.setAttribute("data-transitioning", "true");
-      // Also use a CSS class as backup
-      header.classList.add("vt-protected");
-    } else {
+    if (header) {
+      const hadAttribute = header.hasAttribute("data-transitioning");
       header.removeAttribute("data-transitioning");
-      header.classList.remove("vt-protected");
+      log('removed data-transitioning', { hadAttribute, headerHidden: header.classList.contains('is-hidden') });
+    } else {
+      log('cleanup: header not found');
     }
+    
+    const hadClass = document.documentElement.classList.contains("header-should-slide");
+    document.documentElement.classList.remove("header-should-slide");
+    log('removed header-should-slide', { hadClass });
   }
 
-  // Expose lock state globally for sticky header to check
-  (window as any).__vtLocked = () => transitionLock;
+  document.addEventListener("astro:before-preparation", () => {
+    log('astro:before-preparation fired');
 
-  document.addEventListener("astro:before-preparation", (e) => {
-    console.log('[VT] before-preparation');
-    const header = document.querySelector("#header");
-    if (!header) return;
-
-    const wasHidden = header.classList.contains("is-hidden");
-    
-    if (wasHidden) {
-      document.documentElement.classList.add("header-should-slide");
-    } else {
-      document.documentElement.classList.remove("header-should-slide");
+    if (cleanupTimeout) {
+      log('clearing previous timeout before new transition');
+      clearTimeout(cleanupTimeout);
     }
-    
-    header.classList.remove("is-hidden");
-    setTransitionProtection(true);
+
+    const header = document.querySelector("#header");
+    if (header) {
+      const wasHidden = header.classList.contains("is-hidden");
+      log('header state before transition', { 
+        wasHidden, 
+        hasTransitioning: header.hasAttribute("data-transitioning"),
+        classList: Array.from(header.classList)
+      });
+      
+      if (wasHidden) {
+        document.documentElement.classList.add("header-should-slide");
+        log('added header-should-slide class');
+      } else {
+        document.documentElement.classList.remove("header-should-slide");
+        log('removed header-should-slide class (crossfade mode)');
+      }
+      
+      header.classList.remove("is-hidden");
+      log('removed is-hidden from header');
+      
+      header.setAttribute("data-transitioning", "true");
+      log('set data-transitioning=true');
+
+      // Safety timeout
+      cleanupTimeout = window.setTimeout(() => {
+        log('TIMEOUT CLEANUP triggered (800ms)');
+        cleanupTransitionState('timeout-800ms');
+      }, 800);
+      log('started 800ms safety timeout', { timeoutId: cleanupTimeout });
+    } else {
+      log('ERROR: header not found in before-preparation');
+    }
   });
 
   document.addEventListener("astro:after-swap", () => {
-    console.log('[VT] after-swap - waiting for animation');
-    // Wait for the full animation duration plus safety buffer
-    setTimeout(() => {
-      console.log('[VT] cleanup');
-      setTransitionProtection(false);
-      document.documentElement.classList.remove("header-should-slide");
-    }, 700); // 600ms animation + 100ms buffer
+    log('astro:after-swap fired');
+    cleanupTransitionState('astro:after-swap');
   });
-  
-  // FALLBACK: Use navigation event to detect page changes
-  // This catches transitions that don't fire Astro events
-  let lastUrl = location.href;
-  
-  const urlCheckInterval = setInterval(() => {
-    if (location.href !== lastUrl) {
-      console.log('[VT-FALLBACK] URL changed without events');
-      lastUrl = location.href;
-      
-      // Lock immediately
-      setTransitionProtection(true);
-      
-      // Unlock after animation should be done
-      setTimeout(() => {
-        setTransitionProtection(false);
-      }, 700);
+
+  document.addEventListener("astro:page-load", () => {
+    log('astro:page-load fired');
+    initNav();
+  });
+
+  // Monitor scroll events during transitions
+  let scrollListener: ((e: Event) => void) | null = null;
+
+  document.addEventListener("astro:before-preparation", () => {
+    scrollListener = (e) => {
+      const header = document.querySelector("#header");
+      log('SCROLL during transition', {
+        scrollY: window.scrollY,
+        headerHidden: header?.classList.contains('is-hidden'),
+        hasTransitioning: header?.hasAttribute('data-transitioning')
+      });
+    };
+    window.addEventListener('scroll', scrollListener, { passive: true });
+    log('started monitoring scroll events');
+  });
+
+  document.addEventListener("astro:after-swap", () => {
+    if (scrollListener) {
+      window.removeEventListener('scroll', scrollListener);
+      scrollListener = null;
+      log('stopped monitoring scroll events');
     }
-  }, 50); // Check every 50ms
+  });
 
-  document.addEventListener("astro:page-load", initNav);
+  // Log when header class changes
+  const headerObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        const header = mutation.target as HTMLElement;
+        log('HEADER CLASS CHANGED', {
+          classList: Array.from(header.classList),
+          hasTransitioning: header.hasAttribute('data-transitioning')
+        });
+      }
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-transitioning') {
+        const header = mutation.target as HTMLElement;
+        log('HEADER data-transitioning CHANGED', {
+          value: header.getAttribute('data-transitioning'),
+          classList: Array.from(header.classList)
+        });
+      }
+    });
+  });
+
+  // Start observing once header exists
+  document.addEventListener("astro:page-load", () => {
+    const header = document.querySelector("#header");
+    if (header) {
+      headerObserver.observe(header, { 
+        attributes: true, 
+        attributeFilter: ['class', 'data-transitioning'] 
+      });
+      log('started observing header mutations');
+    }
+  });
+
+  log('SiteNav script loaded');
 </script>
-
-<style>
-  /* CSS-based protection as ultimate fallback */
-  #header.vt-protected {
-    /* Force visibility during transitions */
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  
-  /* Prevent is-hidden from working during protection */
-  #header.vt-protected.is-hidden {
-    transform: translateY(0) !important;
-  }
-</style>
