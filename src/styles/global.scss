@@ -523,12 +523,13 @@ ul.section-text li::before {
 .full_bleed_img-module:not(.rowindex-1) .hw-vid-wrap,
 .full-bleed-img-inner {
 	position: relative;
-	min-height: round(nearest, calc(100cqw * 8 / 16), 1rem); 
-	max-height: round(nearest, calc(100cqw * 8 / 16), 1rem);
+	min-height: round(nearest, calc(100cqw * 5 / 16), 1rem); 
+	height: round(nearest, calc(100cqw * 8 / 16), 1rem); 
+	max-height: round(nearest, 60vh, 1rem);
 }
 
 .full-width-slideshow-wrap {
-	max-height: round(nearest, calc(100cqw * 8 / 16), 1rem);
+	max-height: round(nearest, 65vh, 1rem);
 }
 
 
@@ -563,7 +564,7 @@ ul.section-text li::before {
 
 .full-bleed-column,
 .txt-img-column {
-  --aspect-ratio-height: 8;
+  --aspect-ratio-height: 7.5;
 }
 
 .full_bleed_img-module:not(.rowindex-1).really-full .full-bleed-img-inner {
@@ -646,7 +647,7 @@ ul.section-text li::before {
 .round-corner.corner-pos-left img:first-child:last-child,
 .round-corner.corner-pos-left .hw-vid-wrap,
 .round-corner.align-right .hw-vid-wrap {
-	border-top-left-radius: 30vw;
+	border-top-left-radius: 20vw;
 	overflow: hidden;
 }
 
@@ -654,7 +655,7 @@ ul.section-text li::before {
 .round-corner.corner-pos-right img:first-child:last-child,
 .round-corner.corner-pos-right .hw-vid-wrap,
 .round-corner.align-left .hw-vid-wrap {
-	border-top-right-radius: 40vw;
+	border-top-right-radius: 20vw;
 	overflow: hidden;
 }
 

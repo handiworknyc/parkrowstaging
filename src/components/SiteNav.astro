@@ -185,6 +185,10 @@ const headerMenu = _cachedHeaderMenu;
       toggle.classList.add("active");
       modal.classList.add("open");
       html.classList.add("modal-open");
+
+	  if(typeof window.locoScroll !== 'undefined') {
+		window.locoScroll.stop();
+	  }
       if (ul) ul.classList.add("sal-animate");
 
       // ANIMATE VARIABLES: Logo -> Pink, Bofa -> Invisible
@@ -202,6 +206,7 @@ const headerMenu = _cachedHeaderMenu;
       toggle.classList.remove("active");
       modal.classList.remove("open");
       html.classList.remove("modal-open");
+	  
       if (ul) ul.classList.remove("sal-animate");
 
       // ANIMATE VARIABLES: Logo -> Brown, Bofa -> Visible
@@ -211,6 +216,10 @@ const headerMenu = _cachedHeaderMenu;
           "--bofa-op": 1 
         }, { duration: 0.3 });
       }
+
+	  if(typeof window.locoScroll !== 'undefined') {
+		window.locoScroll.start();
+	  }
     };
 
     // Listeners
