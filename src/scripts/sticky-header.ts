@@ -86,6 +86,12 @@ function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
   const headerState = state.headers.get(key);
   if (!headerState || headerState.hidden === hidden) return;
 
+  // ✅ DON'T hide header during view transitions
+  const isTransitioning = headerState.element.hasAttribute("data-transitioning");
+  if (isTransitioning && hidden) {
+    return; // Skip hiding during transition
+  }
+
   headerState.hidden = hidden;
   headerState.element.classList.toggle("is-hidden", hidden);
 }

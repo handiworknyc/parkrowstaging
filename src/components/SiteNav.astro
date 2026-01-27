@@ -119,8 +119,6 @@ const headerMenu = _cachedHeaderMenu;
 </header>
 
 
-
-
 <script>
   import initStickyHeader from "/src/scripts/sticky-header.ts";
   import { animate } from "motion";
@@ -224,14 +222,14 @@ const headerMenu = _cachedHeaderMenu;
       if (target.closest("a")) closeMenu();
     });
 
-	const logoLink = document.querySelector("a.logo");
+    const logoLink = document.querySelector("a.logo");
 
-	if (logoLink) {
-		logoLink.addEventListener("click", (e) => {
-			if (!modal.classList.contains("open")) return;
-			closeMenu();
-		});
-	}
+    if (logoLink) {
+      logoLink.addEventListener("click", (e) => {
+        if (!modal.classList.contains("open")) return;
+        closeMenu();
+      });
+    }
 
     modal.addEventListener("transitionend", () => {
       if (modal.classList.contains("open")) {
@@ -244,12 +242,12 @@ const headerMenu = _cachedHeaderMenu;
     });
   }
 
-// Add this to your SiteNav.astro <script> section, after initNav:
+  // Track if we're in a view transition
+  let isInTransition = false;
 
-  document.addEventListener("astro:page-load", initNav);
-
-  // Conditionally animate header based on visibility state
   document.addEventListener("astro:before-preparation", () => {
+    isInTransition = true;
+    
     const header = document.querySelector("#header");
     if (header) {
       const wasHidden = header.classList.contains("is-hidden");
@@ -263,13 +261,26 @@ const headerMenu = _cachedHeaderMenu;
       
       // Always remove is-hidden so header is visible for transition
       header.classList.remove("is-hidden");
+      
+      // Add a flag to prevent sticky header from hiding it during transition
+      header.setAttribute("data-transitioning", "true");
     }
   });
 
-  // Clean up the marker class after transition
+  // Clean up after transition completes
   document.addEventListener("astro:after-swap", () => {
+    isInTransition = false;
+    
+    const header = document.querySelector("#header");
+    if (header) {
+      header.removeAttribute("data-transitioning");
+    }
+    
     document.documentElement.classList.remove("header-should-slide");
   });
   
   document.addEventListener("astro:page-load", initNav);
+
+  // Export transition state so sticky header can check it
+  (window as any).__isInViewTransition = () => isInTransition;
 </script>
