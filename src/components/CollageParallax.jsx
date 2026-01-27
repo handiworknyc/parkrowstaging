@@ -30,20 +30,25 @@ export default function CollageParallax({
     offset: ["start end", "end start"],
   });
 
-  // Smooth scroll with spring physics
-  const smoothProgress = useSpring(scrollYProgress, DEFAULT_CONFIG.springConfig);
+  const smoothProgress = useSpring(
+    scrollYProgress,
+    DEFAULT_CONFIG.springConfig
+  );
 
-  // Memoize transform ranges to prevent recreation on every render
-  const transforms = useMemo(() => {
-    const xRange = invert ? [strength, -strength] : [-strength, strength];
-    
-    return {
-      x: useTransform(smoothProgress, [0, 1], xRange),
-      scale: useTransform(smoothProgress, [0, 1.06], [1.06, scaleMax]),
-    };
-  }, [smoothProgress, strength, scaleMax, invert]);
+  // ✅ compute ranges normally
+  const xRange = invert
+    ? [strength, -strength]
+    : [-strength, strength];
 
-  // Memoize styles to prevent recreation
+  // ✅ hooks must be top-level
+  const x = useTransform(smoothProgress, [0, 1], xRange);
+  const scale = useTransform(
+    smoothProgress,
+    [0, 1.06],
+    [1.06, scaleMax]
+  );
+
+  // ✅ memo styles only
   const containerStyle = useMemo(
     () => ({
       width: "100%",
@@ -56,14 +61,14 @@ export default function CollageParallax({
 
   const motionStyle = useMemo(
     () => ({
-      x: transforms.x,
-      scale: transforms.scale,
+      x,
+      scale,
       width: "100%",
       height: "100%",
       display: "block",
       willChange: "transform",
     }),
-    [transforms.x, transforms.scale]
+    [x, scale]
   );
 
   const imageStyle = useMemo(

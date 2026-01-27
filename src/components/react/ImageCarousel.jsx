@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/carousel";
 import SlideNavigation from "../ui/SlideNavigation";
 
-/* ------------------ Slide Component ------------------ */
 const Slide = React.memo(
   function Slide({ image, index }) {
     return (
@@ -29,18 +28,9 @@ const Slide = React.memo(
         </div>
       </figure>
     );
-  },
-  (prevProps, nextProps) => {
-    // Custom comparison - only re-render if image data actually changed
-    return (
-      prevProps.image.src === nextProps.image.src &&
-      prevProps.image.caption === nextProps.image.caption &&
-      prevProps.image.alt === nextProps.image.alt
-    );
   }
 );
 
-/* ------------------ Main Component ------------------ */
 export default function ImageCarousel({ images }) {
   const [api, setApi] = useState(null);
   const [ready, setReady] = useState(false);
@@ -50,7 +40,6 @@ export default function ImageCarousel({ images }) {
     canNext: true,
   });
 
-  // Memoize carousel options to prevent recreation on every render
   const carouselOpts = useMemo(
     () => ({
       align: "center",
@@ -63,7 +52,6 @@ export default function ImageCarousel({ images }) {
     []
   );
 
-  // Single state update for navigation (reduces re-renders)
   const updateNav = useCallback(() => {
     if (!api) return;
 
@@ -77,28 +65,22 @@ export default function ImageCarousel({ images }) {
   useEffect(() => {
     if (!api) return;
 
-    let mounted = true;
-
     const handleReady = () => {
-      if (!mounted) return;
       setReady(true);
+      updateNav();
     };
 
-    // Check if already ready
-    if (api.slidesInView?.().length > 0) {
+    // Initialize immediately if slides exist
+    if (api.slideNodes?.().length > 0) {
       handleReady();
-    } else {
-      api.on("slidesInView", handleReady);
-      api.on("reInit", handleReady);
     }
 
-    // Initial navigation state
-    updateNav();
+    api.on("init", handleReady);
+    api.on("reInit", handleReady);
     api.on("select", updateNav);
 
     return () => {
-      mounted = false;
-      api.off("slidesInView", handleReady);
+      api.off("init", handleReady);
       api.off("reInit", handleReady);
       api.off("select", updateNav);
     };
@@ -112,17 +94,13 @@ export default function ImageCarousel({ images }) {
     api?.scrollNext();
   }, [api]);
 
-  // Early return after hooks (React rules)
   if (!Array.isArray(images) || images.length === 0) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[ImageCarousel] No images provided");
-    }
     return null;
   }
 
   return (
-    <article className="carousel-wrapper" data-ready={ready}>
-      <div className="carousel-container">
+    <article className="carousel-wrapper" data-ready={ready} suppressHydrationWarning>
+      <div className="carousel-container" suppressHydrationWarning>
         <Carousel setApi={setApi} className="w-full mx-auto" opts={carouselOpts}>
           <CarouselContent className="-ml-5">
             {images.map((image, index) => (

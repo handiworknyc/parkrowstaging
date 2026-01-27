@@ -117,16 +117,24 @@ function buildSectionClasses(
   hasHeaderContent: boolean,
   placeHeaderBelow: boolean,
   nextHasSectionContent: boolean,
-  firstIsSplash: boolean
+  firstIsSplash: boolean,
+  width?: string
 ): string {
   const rowindex = idx + 1;
   const isFullBleedImage = row.name === "full_bleed_img";
   const rawContent = row.data?.content || [];
   const isSecondRowAlsoRowOne = firstIsSplash && idx === 1;
 
+  const normalizedWidth =
+    typeof width === "string"
+      ? width.trim().toLowerCase()
+      : "";
+
+	  
   const classes = [
     "flex-bg",
     ...row.meta.classes,
+  	normalizedWidth === "full" && "really-full",
     prevRow?.name ? `prev-${toKebab(prevRow.name)}` : "",
     hasHeaderContent ? "has-section-content" : "no-section-content",
     row.name === "splash_video" ? "full_bleed_img-module" : "",
@@ -234,8 +242,11 @@ const commonCtxBase = {
     hasHeaderContent,
     placeHeaderBelow,
     nextHasSectionContent,
-    firstIsSplash
+    firstIsSplash,
+	row.data?.width
   );
+
+  console.log(row.data.width);
 const bgWrapClass = computeBgWrapClass(row, rowindex, altBgContext);
 const bgColorClass = green_bg ? "bg-green c-white" : "";
 

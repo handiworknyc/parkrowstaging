@@ -206,6 +206,8 @@ const videoClasses = [
 ) : (
   /* --- LAYOUT: FULL WIDTH --- */
   <>
+
+  <div class="full-bleed-column">
     <div class:list={videoClasses} {...locoSpeedAttr}>
       {v && <CFVideo video={v} critical={isCritical} />}
     </div>
@@ -233,5 +235,6 @@ const videoClasses = [
         </div>
       </div>
     )}
+	</div>
   </>
 )}
