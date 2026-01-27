@@ -119,40 +119,12 @@ const headerMenu = _cachedHeaderMenu;
 </header>
 
 
+
 <script>
   import initStickyHeader from "/src/scripts/sticky-header.ts";
   import { animate } from "motion";
 
-  // -----------------------------------------------------------------------
-  // DEBUGGING LOGGER
-  // -----------------------------------------------------------------------
-  const DEBUG = true; // Set to false in production
-  const logs: Array<{time: number, event: string, data?: any}> = [];
-
-  function log(event: string, data?: any) {
-    const timestamp = performance.now();
-    const logEntry = { time: timestamp, event, data };
-    logs.push(logEntry);
-    
-    if (DEBUG) {
-      console.log(
-        `%c[VT-DEBUG ${timestamp.toFixed(2)}ms]%c ${event}`,
-        'color: #ff6b6b; font-weight: bold',
-        'color: inherit',
-        data || ''
-      );
-    }
-  }
-
-  // Export logs for inspection
-  (window as any).__viewTransitionLogs = logs;
-  (window as any).dumpLogs = () => {
-    console.table(logs);
-    return logs;
-  };
-
   function initNav() {
-    log('initNav called');
     initStickyHeader();
 
     const toggle = document.querySelector(".nav-toggle");
@@ -162,15 +134,9 @@ const headerMenu = _cachedHeaderMenu;
     const logoSvg = document.getElementById("logo-svg");
     const html = document.documentElement;
     
-    if (!toggle || !modal) {
-      log('initNav aborted - missing elements', { toggle: !!toggle, modal: !!modal });
-      return;
-    }
+    if (!toggle || !modal) return;
 
-    if ((toggle as any)._navBound) {
-      log('initNav aborted - already bound');
-      return;
-    }
+    if ((toggle as any)._navBound) return;
     (toggle as any)._navBound = true;
 
     const ul = modal.querySelector("ul");
@@ -270,145 +236,51 @@ const headerMenu = _cachedHeaderMenu;
         html.classList.add("modal-closed");
       }
     });
-
-    log('initNav complete');
   }
 
   // -----------------------------------------------------------------------
-  // VIEW TRANSITION HANDLING
+  // VIEW TRANSITION HANDLING - FIXED VERSION
   // -----------------------------------------------------------------------
-  let cleanupTimeout: number | null = null;
-
-  function cleanupTransitionState(source: string) {
-    log('cleanupTransitionState called', { source });
-
-    if (cleanupTimeout) {
-      log('clearing existing timeout', { timeoutId: cleanupTimeout });
-      clearTimeout(cleanupTimeout);
-      cleanupTimeout = null;
-    }
-
+  
+  function cleanupTransitionState() {
     const header = document.querySelector("#header");
     if (header) {
-      const hadAttribute = header.hasAttribute("data-transitioning");
       header.removeAttribute("data-transitioning");
-      log('removed data-transitioning', { hadAttribute, headerHidden: header.classList.contains('is-hidden') });
-    } else {
-      log('cleanup: header not found');
     }
     
-    const hadClass = document.documentElement.classList.contains("header-should-slide");
     document.documentElement.classList.remove("header-should-slide");
-    log('removed header-should-slide', { hadClass });
   }
 
-  document.addEventListener("astro:before-preparation", () => {
-    log('astro:before-preparation fired');
-
-    if (cleanupTimeout) {
-      log('clearing previous timeout before new transition');
-      clearTimeout(cleanupTimeout);
-    }
-
+  document.addEventListener("astro:before-preparation", (e) => {
     const header = document.querySelector("#header");
-    if (header) {
-      const wasHidden = header.classList.contains("is-hidden");
-      log('header state before transition', { 
-        wasHidden, 
-        hasTransitioning: header.hasAttribute("data-transitioning"),
-        classList: Array.from(header.classList)
-      });
-      
-      if (wasHidden) {
-        document.documentElement.classList.add("header-should-slide");
-        log('added header-should-slide class');
-      } else {
-        document.documentElement.classList.remove("header-should-slide");
-        log('removed header-should-slide class (crossfade mode)');
-      }
-      
-      header.classList.remove("is-hidden");
-      log('removed is-hidden from header');
-      
-      header.setAttribute("data-transitioning", "true");
-      log('set data-transitioning=true');
+    if (!header) return;
 
-      // Safety timeout
-      cleanupTimeout = window.setTimeout(() => {
-        log('TIMEOUT CLEANUP triggered (800ms)');
-        cleanupTransitionState('timeout-800ms');
-      }, 800);
-      log('started 800ms safety timeout', { timeoutId: cleanupTimeout });
+    const wasHidden = header.classList.contains("is-hidden");
+    
+    // Mark if header should slide in
+    if (wasHidden) {
+      document.documentElement.classList.add("header-should-slide");
     } else {
-      log('ERROR: header not found in before-preparation');
+      document.documentElement.classList.remove("header-should-slide");
     }
+    
+    // Always remove is-hidden so header is visible for transition
+    header.classList.remove("is-hidden");
+    
+    // Add a flag to prevent sticky header from hiding it during transition
+    header.setAttribute("data-transitioning", "true");
   });
 
+  // ✅ FIX: Wait for view transition to actually complete
   document.addEventListener("astro:after-swap", () => {
-    log('astro:after-swap fired');
-    cleanupTransitionState('astro:after-swap');
-  });
-
-  document.addEventListener("astro:page-load", () => {
-    log('astro:page-load fired');
-    initNav();
-  });
-
-  // Monitor scroll events during transitions
-  let scrollListener: ((e: Event) => void) | null = null;
-
-  document.addEventListener("astro:before-preparation", () => {
-    scrollListener = (e) => {
-      const header = document.querySelector("#header");
-      log('SCROLL during transition', {
-        scrollY: window.scrollY,
-        headerHidden: header?.classList.contains('is-hidden'),
-        hasTransitioning: header?.hasAttribute('data-transitioning')
-      });
-    };
-    window.addEventListener('scroll', scrollListener, { passive: true });
-    log('started monitoring scroll events');
-  });
-
-  document.addEventListener("astro:after-swap", () => {
-    if (scrollListener) {
-      window.removeEventListener('scroll', scrollListener);
-      scrollListener = null;
-      log('stopped monitoring scroll events');
-    }
-  });
-
-  // Log when header class changes
-  const headerObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-        const header = mutation.target as HTMLElement;
-        log('HEADER CLASS CHANGED', {
-          classList: Array.from(header.classList),
-          hasTransitioning: header.hasAttribute('data-transitioning')
-        });
-      }
-      if (mutation.type === 'attributes' && mutation.attributeName === 'data-transitioning') {
-        const header = mutation.target as HTMLElement;
-        log('HEADER data-transitioning CHANGED', {
-          value: header.getAttribute('data-transitioning'),
-          classList: Array.from(header.classList)
-        });
-      }
+    // Use requestAnimationFrame to wait for the view transition animation to finish
+    // The 0.6s animation needs to complete first
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        cleanupTransitionState();
+      }, 650); // Slightly longer than the 0.6s transition
     });
   });
-
-  // Start observing once header exists
-  document.addEventListener("astro:page-load", () => {
-    const header = document.querySelector("#header");
-    if (header) {
-      headerObserver.observe(header, { 
-        attributes: true, 
-        attributeFilter: ['class', 'data-transitioning'] 
-      });
-      log('started observing header mutations');
-    }
-  });
-
-  log('SiteNav script loaded');
+  
+  document.addEventListener("astro:page-load", initNav);
 </script>
