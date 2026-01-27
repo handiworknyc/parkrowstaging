@@ -82,11 +82,11 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
       window.__scrollLockY = window.scrollY || 0;
       
       // Apply CSS lock
-    //   document.body.style.position = "fixed";
-    //   document.body.style.top = `-${window.__scrollLockY}px`;
-    //   document.body.style.width = "100%";
-    //   document.body.style.overflowY = "scroll";
-      HW.$html.classList.add("scroll-locked");
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${window.__scrollLockY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflowY = "scroll";
+      document.body.classList.add("scroll-locked");
       
       // Prevent all scroll events
       const preventScroll = (e) => {
