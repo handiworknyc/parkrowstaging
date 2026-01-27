@@ -180,7 +180,7 @@ html.header-should-slide #header {
 
 /* HEADER TRANSITIONS */
 ::view-transition-group(page-header) {
-  animation-duration: 0.6s;
+  animation-duration: 0.45s;
   animation-timing-function: var(--cubicBez);
   mix-blend-mode: normal;
   opacity: 1;
@@ -190,11 +190,11 @@ html.header-should-slide #header {
 
 /* Default: Crossfade when header is visible */
 ::view-transition-old(page-header) {
-  animation: header-fade-out 0.6s var(--cubicBez) forwards;
+  animation: header-fade-out 0.45s var(--cubicBez) forwards;
 }
 
 ::view-transition-new(page-header) {
-  animation: header-fade-in 0.6s var(--cubicBez) forwards;
+  animation: header-fade-in 0.45s var(--cubicBez) forwards;
 }
 
 /* Override: Slide in when header was hidden */
@@ -205,7 +205,7 @@ html.header-should-slide::view-transition-old(page-header) {
 }
 
 html.header-should-slide::view-transition-new(page-header) {
-  animation: header-slide-in 0.6s var(--cubicBez) forwards;
+  animation: header-slide-in 0.45s var(--cubicBez) forwards;
 }
 
 @keyframes header-fade-out {
