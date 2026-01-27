@@ -119,6 +119,7 @@ const headerMenu = _cachedHeaderMenu;
 </header>
 
 
+
 <script>
   import initStickyHeader from "/src/scripts/sticky-header.ts";
   import { animate } from "motion";
@@ -200,7 +201,7 @@ const headerMenu = _cachedHeaderMenu;
       toggle.classList.remove("active");
       modal.classList.remove("open");
       html.classList.remove("modal-open");
-      if (ul) ul.classList.remove("sal-animate");
+      if (ul) ul.classList.remove("sal-aside");
 
       // ANIMATE VARIABLES: Logo -> Brown, Bofa -> Visible
       if (logoSvg) {
@@ -242,12 +243,31 @@ const headerMenu = _cachedHeaderMenu;
     });
   }
 
-  // Track if we're in a view transition
-  let isInTransition = false;
+  // -----------------------------------------------------------------------
+  // VIEW TRANSITION HANDLING
+  // -----------------------------------------------------------------------
+  let cleanupTimeout: number | null = null;
+
+  function cleanupTransitionState() {
+    if (cleanupTimeout) {
+      clearTimeout(cleanupTimeout);
+      cleanupTimeout = null;
+    }
+
+    const header = document.querySelector("#header");
+    if (header) {
+      header.removeAttribute("data-transitioning");
+    }
+    
+    document.documentElement.classList.remove("header-should-slide");
+  }
 
   document.addEventListener("astro:before-preparation", () => {
-    isInTransition = true;
-    
+    // Clear any existing cleanup timeout
+    if (cleanupTimeout) {
+      clearTimeout(cleanupTimeout);
+    }
+
     const header = document.querySelector("#header");
     if (header) {
       const wasHidden = header.classList.contains("is-hidden");
@@ -264,23 +284,32 @@ const headerMenu = _cachedHeaderMenu;
       
       // Add a flag to prevent sticky header from hiding it during transition
       header.setAttribute("data-transitioning", "true");
+
+      // Safety: Force cleanup after max transition duration (0.6s + buffer)
+      cleanupTimeout = window.setTimeout(() => {
+        cleanupTransitionState();
+      }, 800);
     }
   });
 
   // Clean up after transition completes
-  document.addEventListener("astro:after-swap", () => {
-    isInTransition = false;
-    
-    const header = document.querySelector("#header");
-    if (header) {
-      header.removeAttribute("data-transitioning");
-    }
-    
-    document.documentElement.classList.remove("header-should-slide");
-  });
+  document.addEventListener("astro:after-swap", cleanupTransitionState);
+
+  // Also listen for view transition finish event
+  if (typeof document.startViewTransition !== 'undefined') {
+    const originalStartViewTransition = document.startViewTransition;
+    document.startViewTransition = function(...args) {
+      const transition = originalStartViewTransition.apply(this, args);
+      
+      transition.finished.then(() => {
+        cleanupTransitionState();
+      }).catch(() => {
+        cleanupTransitionState();
+      });
+      
+      return transition;
+    };
+  }
   
   document.addEventListener("astro:page-load", initNav);
-
-  // Export transition state so sticky header can check it
-  (window as any).__isInViewTransition = () => isInTransition;
 </script>
