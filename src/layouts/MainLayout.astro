@@ -58,73 +58,11 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 <head>
   <meta charset="utf-8" />
 
+  
   {/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
   <script is:inline>
 	window.HW = {};
 	HW.$html = document.documentElement;
-
-    (function() {
-      const DEBUG = false;
-      const log = (...args) => DEBUG && console.log("[EarlyScrollLock]", ...args);
-      
-      // Check if we should lock
-      const isHome = HW.$html.classList.contains("home");
-      const isFirstLoad = HW.$html.classList.contains("first-load");
-      
-      if (!isHome || !isFirstLoad) {
-        log("Not home or not first load, skipping");
-        return;
-      }
-      
-      log("Applying immediate scroll lock");
-      
-      // Store initial scroll position
-      window.__scrollLockY = window.scrollY || 0;
-      
-      // Apply CSS lock
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${window.__scrollLockY}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflowY = "scroll";
-      document.body.classList.add("scroll-locked");
-      
-      // Prevent all scroll events
-      const preventScroll = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      };
-      
-      const options = { passive: false, capture: true };
-      
-      window.addEventListener("wheel", preventScroll, options);
-      window.addEventListener("touchmove", preventScroll, options);
-      window.addEventListener("scroll", preventScroll, options);
-      window.addEventListener("touchstart", preventScroll, options);
-      
-      // Store cleanup function
-      window.__removeScrollLock = () => {
-        log("Removing scroll lock");
-        
-        window.removeEventListener("wheel", preventScroll, options);
-        window.removeEventListener("touchmove", preventScroll, options);
-        window.removeEventListener("scroll", preventScroll, options);
-        window.removeEventListener("touchstart", preventScroll, options);
-        
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        document.body.style.overflowY = "";
-        document.body.classList.remove("scroll-locked");
-        document.body.classList.add("scroll-unlocked");
-        
-        window.scrollTo(0, window.__scrollLockY || 0);
-        
-        log("Scroll lock removed");
-      };
-      
-      log("Early scroll lock applied");
-    })();
   </script>
 
   {/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
@@ -337,7 +275,6 @@ Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
   import LocomotiveScroll from "locomotive-scroll";
   import {
     initScrollLock,
-    unlockScroll,
     isScrollLocked
   } from "../scripts/scroll-lock";
 

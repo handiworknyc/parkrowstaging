@@ -74,7 +74,7 @@ function clearTimers(): void {
 }
 
 // ------------------------------------
-// NATIVE SCROLL LOCK
+// NATIVE SCROLL LOCK (CLASS-BASED)
 // ------------------------------------
 let scrollY = 0;
 let scrollPreventListeners: Array<() => void> = [];
@@ -107,13 +107,20 @@ function removeScrollPrevention(): void {
 
 function lockNativeScroll(): void {
   scrollY = window.scrollY;
+
+  // Use CSS class on HTML instead of direct body styles
+  HW.$html.style.setProperty('--scroll-lock-offset', `-${scrollY}px`);
+
   addScrollPrevention();
 }
 
 function unlockNativeScroll(): void {
   removeScrollPrevention();
-
+  
   window.scrollTo(0, scrollY);
+  
+  // Clean up CSS variable
+  HW.$html.style.removeProperty('--scroll-lock-offset');
 }
 
 // ------------------------------------
@@ -126,11 +133,6 @@ export function lockScroll(): void {
   }
 
   state.locked = true;
-  
-  // Don't add class if early lock already added it
-  if (!state.earlyLockActive) {
-    document.body.classList.add("scroll-locked");
-  }
 
   if (state.locoScroll) {
     state.useNativeLock = false;
@@ -161,9 +163,6 @@ export function unlockScroll(source = "unknown"): void {
     state.earlyLockActive = false;
   } else {
     // Normal unlock path
-    document.body.classList.remove("scroll-locked");
-    document.body.classList.add("scroll-unlocked");
-    
     if (state.useNativeLock) {
       unlockNativeScroll();
     } else if (state.locoScroll) {
