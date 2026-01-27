@@ -130,11 +130,6 @@ html, body {
 
 
 
-
-
-
-
-
 /* GROUP WRAPPER */
 ::view-transition-group(main-content) {
   animation-duration: 1.1s;
@@ -175,60 +170,60 @@ html, body {
   100% { opacity: 0; }
 }
 
+html.header-should-slide #header {
+	transition: none 0s !important;
+}
 /* ROOT MUST NOT ANIMATE (required) */
 ::view-transition-group(root) {
   animation-duration: 0s;
 }
 
-/* ========================================================================
-   HEADER TRANSITIONS - NUCLEAR OPTION
-   ======================================================================== */
-
-/* Kill ALL default animations on header group */
+/* HEADER TRANSITIONS */
 ::view-transition-group(page-header) {
-  animation: none !important;
+  animation-duration: 0.6s;
+  animation-timing-function: var(--cubicBez);
   mix-blend-mode: normal;
+  opacity: 1;
   z-index: 9999;
-  /* No duration - we handle it per-element */
+  transition: none 0s !important;
 }
 
-/* Kill default old/new animations */
-::view-transition-old(page-header),
+/* Default: Crossfade when header is visible */
+::view-transition-old(page-header) {
+  animation: header-fade-out 0.6s var(--cubicBez) forwards;
+}
+
 ::view-transition-new(page-header) {
-  animation: none !important;
+  animation: header-fade-in 0.6s var(--cubicBez) forwards;
 }
 
-/* ✅ CROSSFADE MODE (header was visible) */
-html:not(.header-should-slide) ::view-transition-old(page-header) {
-  animation: header-fade-out 0.6s var(--cubicBez) forwards !important;
+/* Override: Slide in when header was hidden */
+html.header-should-slide::view-transition-old(page-header) {
+  animation: none;
+  opacity: 0;
+  display: none;
 }
 
-html:not(.header-should-slide) ::view-transition-new(page-header) {
-  animation: header-fade-in 0.6s var(--cubicBez) forwards !important;
+html.header-should-slide::view-transition-new(page-header) {
+  animation: header-slide-in 0.6s var(--cubicBez) forwards;
 }
 
-/* ✅ SLIDE MODE (header was hidden) */
-html.header-should-slide ::view-transition-old(page-header) {
-  /* Completely remove old header from transition */
-  animation: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-html.header-should-slide ::view-transition-new(page-header) {
-  animation: header-slide-in 0.6s var(--cubicBez) forwards !important;
-}
-
-/* Keyframes */
 @keyframes header-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes header-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes header-slide-in {
@@ -247,11 +242,6 @@ body.vt-lock {
   overflow: hidden !important;
   overscroll-behavior: none;
 }
-
-
-
-
-
 
 
 
