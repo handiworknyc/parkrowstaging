@@ -130,6 +130,17 @@ html, body {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 /* GROUP WRAPPER */
 ::view-transition-group(main-content) {
   animation-duration: 1.1s;
@@ -175,53 +186,47 @@ html, body {
   animation-duration: 0s;
 }
 
-/* HEADER TRANSITIONS */
+/* ========================================================================
+   HEADER TRANSITIONS - FIXED VERSION
+   ======================================================================== */
+
 ::view-transition-group(page-header) {
   animation-duration: 0.6s;
   animation-timing-function: var(--cubicBez);
   mix-blend-mode: normal;
-  opacity: 1;
   z-index: 9999;
 }
 
-/* Default: Crossfade when header is visible */
-::view-transition-old(page-header) {
+/* ✅ CROSSFADE MODE (header was visible) */
+html:not(.header-should-slide) ::view-transition-old(page-header) {
   animation: header-fade-out 0.6s var(--cubicBez) forwards;
-  transition: none 0s !important;
 }
 
-::view-transition-new(page-header) {
+html:not(.header-should-slide) ::view-transition-new(page-header) {
   animation: header-fade-in 0.6s var(--cubicBez) forwards;
-  transition: none 0s !important;
 }
 
-/* Override: Slide in when header was hidden */
-html.header-should-slide::view-transition-old(page-header) {
-  animation: none;
-  opacity: 0;
-  display: none;
+/* ✅ SLIDE MODE (header was hidden) */
+html.header-should-slide ::view-transition-old(page-header) {
+  /* Don't animate old header - it was hidden anyway */
+  animation: none !important;
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
-html.header-should-slide::view-transition-new(page-header) {
+html.header-should-slide ::view-transition-new(page-header) {
   animation: header-slide-in 0.6s var(--cubicBez) forwards;
 }
 
+/* Keyframes */
 @keyframes header-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @keyframes header-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes header-slide-in {
@@ -240,6 +245,15 @@ body.vt-lock {
   overflow: hidden !important;
   overscroll-behavior: none;
 }
+
+
+
+
+
+
+
+
+
 
 
 
