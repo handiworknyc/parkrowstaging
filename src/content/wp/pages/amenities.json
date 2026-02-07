@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -165,6 +170,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -182,7 +188,12 @@
         "section_h2": "25,000 sq ft of Club-inspired Lifestyle Amenities",
         "section_text": "<p>Whether it’s recreation, leisure, relaxation, or social gathering, the amenities invite residents to live fully, with dedicated spaces and programs for wellness, community and connection, or quiet reflection.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -336,6 +347,7 @@
         }
       ],
       "caption": "Caption here",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "9 columns",
       "round_corner": false,
@@ -353,7 +365,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -507,11 +524,15 @@
         }
       ],
       "caption": "Yoga mats for wellness",
+      "caption_chinese": "冰邊急右胡字隻",
       "caption_pos": "right",
       "align": "right",
       "title": "Health & Wellness X",
+      "title_chinese": "冰邊急右胡字隻",
       "text": "<p>A light-filled fitness center, yoga studio, and outdoor pool framed by greenery nurture vitality and calm in equal measure.</p>\n",
-      "list": "Yoga mats\r\nAromatherapy\r\nMeditation\r\nFine herbs\r\nVegan food\r\nSoy milk\r\nKale burgers"
+      "text_chinese": "<p>裏才怕目一在方時干信自百奶筆不目乞找完爬！乾禾耳婆香浪休訴她蝶兆三昌羊比汁位？占植申弓心它久鳥。<br />\n支回活哥亭因魚汗法婆入：消買長流哭園嗎穴訴泉花走兆；寺向員交十師八歌下穿住干昌幾里，紅木時英把流面泉完語巾子了拍用各。</p>\n",
+      "list": "Yoga mats\r\nAromatherapy\r\nMeditation\r\nFine herbs\r\nVegan food\r\nSoy milk\r\nKale burgers",
+      "list_chinese": "裏才怕目\r\n在方時干信自百奶筆\r\n不目乞找完爬\r\n乾禾耳婆香浪休訴她蝶\r\n兆三昌羊比汁位\r\n占植申弓心它久鳥"
     },
     {
       "acf_fc_layout": "curvy_image_grid",
@@ -520,7 +541,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -990,11 +1016,15 @@
         }
       ],
       "caption": "A caption about pools and spas",
+      "caption_chinese": "",
       "caption_pos": "left",
       "align": "left",
       "title": "Retreat & Relax",
+      "title_chinese": "",
       "text": "<p>From sauna to steam, lounge to sun deck, Park Row provides restorative spaces for body and mind.</p>\n",
+      "text_chinese": "",
       "list": "Pool toys\r\nSauna\r\nSteam room\r\nSalt water\r\nFresh water",
+      "list_chinese": "",
       "text_align": "bottom",
       "quote": false
     },
@@ -1005,7 +1035,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -1159,6 +1194,7 @@
         }
       ],
       "caption": "Caption text here",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "10 columns",
       "round_corner": true,
@@ -1172,13 +1208,19 @@
           "title": "Social Gathering & Community",
           "text": "<p>Elegant lounges, landscaped terraces, and private dining rooms designed for connection—celebrating Bellevue’s gracious way of life.</p>\n",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         },
         {
           "title": "",
           "text": "",
           "two_col_list": false,
-          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking"
+          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         }
       ]
     },
@@ -1189,7 +1231,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -1343,6 +1390,7 @@
         }
       ],
       "caption": "Caption text here",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "10 columns",
       "round_corner": true,
@@ -1356,13 +1404,19 @@
           "title": "Private Dining<br />\r\n& Entertaining",
           "text": "<p>An elegant setting for intimate occasions and memorable gatherings. The private dining room feels both exclusive and inviting. Whether celebrating with family or hosting among friends, every detail reflects the art of gracious living.</p>\n",
           "two_col_list": false,
-          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking"
+          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         },
         {
           "title": "Additional Amenities <br />\r\n& Services",
           "text": "<p>Concierge services, secure parking, and thoughtful conveniences make every day seamless, so residents can focus on what truly matters.</p>\n",
           "two_col_list": true,
-          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking\r\nDetail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking"
+          "list": "Detail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking\r\nDetail list\r\nMicrowave\r\nOven\r\nGas stove\r\nHot showers\r\nTowels\r\nFree parking",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         }
       ]
     },
@@ -1373,7 +1427,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -1527,6 +1586,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -1538,5 +1598,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:55"
+  "_syncedAt": "2026-02-07 16:32:23"
 }

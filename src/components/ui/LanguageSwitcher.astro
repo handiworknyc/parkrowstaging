@@ -1,0 +1,77 @@
+---
+interface Props {
+  position?: 'header' | 'footer' | 'absolute';
+  className?: string;
+}
+
+const { position = 'header', className = '' } = Astro.props;
+
+const wrapperClass = [
+  'language-switcher',
+  'abs',
+  className
+].filter(Boolean).join(' ');
+---
+
+<div class={wrapperClass}>
+  <div class="flex gap-2 items-center">
+    <a
+      id="lang-en"
+      class="lang-btn px-3 py-1 rounded transition-colors bg-gray-200 text-gray-700"
+      href="/"
+    >
+      EN
+    </a>
+
+    <span class="text-gray-400">|</span>
+
+    <a
+      id="lang-zh"
+      class="lang-btn px-3 py-1 rounded transition-colors bg-gray-200 text-gray-700"
+      href="/zh"
+    >
+      中文
+    </a>
+  </div>
+</div>
+
+<script>
+  function updateLangUI() {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    const lang = path === '/zh' || path.startsWith('/zh/')
+      ? 'zh'
+      : 'en';
+
+    const en = document.getElementById('lang-en');
+    const zh = document.getElementById('lang-zh');
+    if (!en || !zh) return;
+
+    // EN
+    en.classList.toggle('bg-pink-500', lang === 'en');
+    en.classList.toggle('text-white', lang === 'en');
+    en.classList.toggle('font-semibold', lang === 'en');
+    en.classList.toggle('bg-gray-200', lang !== 'en');
+    en.classList.toggle('text-gray-700', lang !== 'en');
+
+    // ZH
+    zh.classList.toggle('bg-pink-500', lang === 'zh');
+    zh.classList.toggle('text-white', lang === 'zh');
+    zh.classList.toggle('font-semibold', lang === 'zh');
+    zh.classList.toggle('bg-gray-200', lang !== 'zh');
+    zh.classList.toggle('text-gray-700', lang !== 'zh');
+  }
+
+  // Initial load
+  updateLangUI();
+
+  // Astro view transitions
+  document.addEventListener('astro:after-swap', updateLangUI);
+</script>
+
+<style>
+  .lang-btn {
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+</style>

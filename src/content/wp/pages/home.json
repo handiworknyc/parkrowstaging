@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -172,7 +177,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -326,6 +336,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "full",
       "round_corner": false,
@@ -343,7 +354,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -497,6 +513,7 @@
         }
       ],
       "caption": "Double-height Lobby",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "full",
       "round_corner": true,
@@ -510,7 +527,10 @@
           "title": "A new way to live in balance.",
           "text": "<p>Moments from downtown Bellevue, yet immersed in greenery, Park Row is where nature, design, and daily life come together in quiet harmony. Inspired by the park, shaped by the city, created for the rhythm of real life.</p>\n",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         }
       ]
     },
@@ -521,9 +541,15 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "label_above": "",
+      "label_above_chinese": "",
       "images": [
         {
           "image": {
@@ -1655,15 +1681,19 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "content": [
         {
           "title": "A reflection of tomorrow’s Bellevue",
+          "title_chinese": "",
           "text": "<p>Bellevue is evolving—vibrant, cultivated, and connected to its landscape. Park Row stands at the heart of this renewal, a place that honors the city’s natural beauty while imagining what urban living can become: calm, gracious, and alive with possibility.</p>\n",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "list_chinese": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:57"
+  "_syncedAt": "2026-02-07 16:32:25"
 }

@@ -1448,3 +1448,18 @@ html:not(.hw-is-mobile) .child-lazy-loaded .splash-content {
   transform: scale(1.04);
   pointer-events: none;
 }
+
+
+
+
+
+
+
+
+
+
+.language-switcher {
+	top: 50%;
+	transform: translateY(-50%);
+	left: var(--containerPadding);
+}

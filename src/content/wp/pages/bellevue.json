@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -165,6 +170,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -182,7 +188,12 @@
         "section_h2": "Set beside the lawn and promenade <br />\r\nof Downtown Park",
         "section_text": "<p>Park Row lives at the intersection of culture and calm. Walk to boutiques, cafés, and the arts district; return to birdsong and greenery at your door.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -1443,7 +1454,12 @@
         "section_h2": "Bellevue balances innovation with tradition",
         "section_text": "<p>From neighborhood markets to Michelin-star dining, from lakeside walks to downtown energy—it is a city both dynamic and deeply livable.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       }
     },
     {
@@ -1453,7 +1469,12 @@
         "section_h2": "Bellevue’s placemaking initiatives continue",
         "section_text": "<p>Elevated pedestrian experience, expanded walkability, additional art experiences, and connections between the park and the skyline. Park Row stands as the bridge between them.</p>\n",
         "green_bg": false,
-        "section_text_below": true
+        "section_text_below": true,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -1595,7 +1616,8 @@
               "gform-image-choice-lg-height": 290
             }
           },
-          "caption": "A caption for a slide"
+          "caption": "A caption for a slide",
+          "caption_chinese": ""
         },
         {
           "image": {
@@ -1736,7 +1758,8 @@
               "gform-image-choice-lg-height": 390
             }
           },
-          "caption": "Another slide caption"
+          "caption": "Another slide caption",
+          "caption_chinese": ""
         },
         {
           "image": {
@@ -1877,7 +1900,8 @@
               "gform-image-choice-lg-height": 393
             }
           },
-          "caption": "A woman just walking"
+          "caption": "A woman just walking",
+          "caption_chinese": ""
         },
         {
           "image": {
@@ -2018,10 +2042,11 @@
               "gform-image-choice-lg-height": 336
             }
           },
-          "caption": "A vase"
+          "caption": "A vase",
+          "caption_chinese": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:55"
+  "_syncedAt": "2026-02-07 16:32:23"
 }

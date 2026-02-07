@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -165,6 +170,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -182,7 +188,12 @@
         "section_h2": "Each line and surface expresses<br />\r\npermanence and poise",
         "section_text": "<p>Designed by Bosa Development, Park Row’s architecture draws from the colors and contours of the Pacific Northwest—terraced forms, glass that catches the morning light, and materials that age beautifully with time. </p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -336,6 +347,7 @@
         }
       ],
       "caption": "Caption here",
+      "caption_chinese": "",
       "caption_pos": "right",
       "width": "9 columns",
       "round_corner": false,
@@ -353,7 +365,12 @@
         "section_h2": "",
         "section_text": "<p>Across the street, the green sweep of Downtown Park becomes an extension of home. Step outside to sunlight, trees, and open sky—a rare balance of urban energy and organic calm.</p>\n",
         "green_bg": false,
-        "section_text_below": true
+        "section_text_below": true,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -507,6 +524,7 @@
         }
       ],
       "caption": "Caption here",
+      "caption_chinese": "",
       "caption_pos": "left",
       "width": "9 columns",
       "round_corner": false,
@@ -524,7 +542,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -839,14 +862,18 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "align": "left",
       "title": "“The park is the lungs of the city—sometimes it is good just to breathe.”",
+      "title_chinese": "",
       "text": "",
+      "text_chinese": "",
       "list": "",
+      "list_chinese": "",
       "text_align": "center",
       "quote": true
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:56"
+  "_syncedAt": "2026-02-07 16:32:24"
 }

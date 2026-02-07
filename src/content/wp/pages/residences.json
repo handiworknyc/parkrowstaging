@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -165,6 +170,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -182,7 +188,12 @@
         "section_h2": "Framed by mountain horizons & park views",
         "section_text": "<p>At Park Row, each residence is a private sanctuary in the sky. Expansive windows bathe living spaces in natural light, inviting the outdoors in while preserving a deep sense of calm.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -342,11 +353,15 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "align": "right",
       "title": "“This is an inspirational quote that shares the vision behind Park Row and its relationship with Bellevue.”",
+      "title_chinese": "",
       "text": "<p>— Nat Bosa, Founder, Bosa Development</p>\n",
+      "text_chinese": "",
       "list": "",
+      "list_chinese": "",
       "text_align": "center",
       "quote": true
     },
@@ -357,7 +372,12 @@
         "section_h2": "timeless materials with modern restraint",
         "section_text": "<p>Interiors pair burnished wood, honed quartz, and a palette inspired by earth, air, and water. Every element— from proportion to finish—has been crafted with integrity and intention.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -511,6 +531,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "10 columns",
       "round_corner": true,
@@ -524,13 +545,19 @@
           "title": "Living & Dining",
           "text": "<p>Open, fluid layouts encourage connection and effortless entertaining. Natural textures meet refined detailing for warmth that feels contemporary yet enduring..</p>\n",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         },
         {
           "title": "",
           "text": "",
           "two_col_list": false,
-          "list": "Living\r\nDining\r\nPorcelain\r\nChina\r\nTea cups"
+          "list": "Living\r\nDining\r\nPorcelain\r\nChina\r\nTea cups",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         }
       ]
     },
@@ -541,9 +568,15 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "label_above": "",
+      "label_above_chinese": "",
       "images": [
         {
           "image": {
@@ -1675,18 +1708,25 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "content": [
         {
           "title": "Kitchens",
+          "title_chinese": "",
           "text": "<p>Thoughtfully composed around daily rituals. Integrated appliances, sculpted stone, and generous storage create spaces both functional and artful.</p>\n",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "list_chinese": ""
         },
         {
           "title": "",
+          "title_chinese": "",
           "text": "",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": "Sink\r\nDishwasher\r\nCabinets\r\nKnives\r\nForks\r\nNapkins\r\nBowls\r\nSpoons\r\nPlates"
+          "list": "Sink\r\nDishwasher\r\nCabinets\r\nKnives\r\nForks\r\nNapkins\r\nBowls\r\nSpoons\r\nPlates",
+          "list_chinese": ""
         }
       ]
     },
@@ -1697,9 +1737,15 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "label_above": "",
+      "label_above_chinese": "",
       "images": [
         {
           "image": {
@@ -2408,18 +2454,25 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "content": [
         {
           "title": "Primary Bathrooms",
+          "title_chinese": "",
           "text": "<p>Soft light, tactile surfaces, and a serene balance of form and function. A private spa that invites restoration at the beginning and end of each day.</p>\n",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "list_chinese": ""
         },
         {
           "title": "",
+          "title_chinese": "",
           "text": "",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": "Detail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here"
+          "list": "Detail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here",
+          "list_chinese": ""
         }
       ]
     },
@@ -2430,9 +2483,15 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "label_above": "",
+      "label_above_chinese": "",
       "images": [
         {
           "image": {
@@ -3141,21 +3200,28 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "content": [
         {
           "title": "Secondary Bathrooms",
+          "title_chinese": "",
           "text": "<p>Warm tones of stone, oak, and ceramic create an atmosphere of ease and composure. Whether for family, guests, or daily routines, these spaces are designed with  care and integrity—beautiful, functional, and quietly elevated.</p>\n",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": ""
+          "list": "",
+          "list_chinese": ""
         },
         {
           "title": "",
+          "title_chinese": "",
           "text": "",
+          "text_chinese": "",
           "two_col_list": false,
-          "list": "Detail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here"
+          "list": "Detail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here\r\nDetail item here\r\nDetail item here and here",
+          "list_chinese": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:56"
+  "_syncedAt": "2026-02-07 16:32:24"
 }

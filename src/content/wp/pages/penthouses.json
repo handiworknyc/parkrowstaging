@@ -11,7 +11,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -165,6 +170,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -182,7 +188,12 @@
         "section_h2": "The Penthouse Portfolio",
         "section_text": "<p>The Penthouse Portfolio represents Park Row at its most expressive—gracious proportions, expansive terraces, and views that stretch from park to lake to mountain.</p>\n",
         "green_bg": true,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "核藤人年油原前放自腰譜大通弟流",
+        "section_h2_chinese": "核藤人年油原前放自腰譜大通弟流",
+        "section_text_chinese": "<p>都注極計発勲吉育秀化訪見督上生別認。子吹庫試気未掲回察参属福比東属初面入結。委美居複力転公質躍霊碁文。兵年待狙正事長読説拠輸資禁報呼後政真。化来面合読無決細出請携岩職賞棚応転</p>\n",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -336,6 +347,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "full",
       "round_corner": false,
@@ -353,7 +365,12 @@
         "section_h2": "",
         "section_text": "<p>These limited residences embody artistry and precision: bespoke cabinetry, fine stonework, and private indoor-outdoor spaces that flow seamlessly between  sky and garden.</p>\n",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -823,11 +840,15 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "align": "right",
       "title": "Living & Dining",
+      "title_chinese": "",
       "text": "<p>Expansive volumes and panoramic outlooks define these spaces at the top of Park Row. The seamless flow between living and dining areas encourages effortless hosting and private retreat alike. Framed by glass and natural light, the atmosphere shifts with the day—morning brightness, evening glow, and the quiet drama of the skyline beyond.</p>\n",
+      "text_chinese": "",
       "list": "Item detail\r\nMicrowave\r\nHot showers\r\nTowels\r\nBathrobes\r\nFree parking",
+      "list_chinese": "",
       "text_align": "bottom",
       "quote": false
     },
@@ -838,7 +859,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -992,6 +1018,7 @@
         }
       ],
       "caption": "Caption text here",
+      "caption_chinese": "",
       "caption_pos": "right",
       "width": "9 columns",
       "round_corner": false,
@@ -1009,7 +1036,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -1163,11 +1195,15 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "align": "left",
       "title": "Kitchens",
+      "title_chinese": "",
       "text": "<p>Each penthouse kitchen is a study in modern refinement. Artisanal stone surfaces, custom cabinetry, and integrated professional appliances create a canvas for culinary creativity. Designed for both intimacy and display, the kitchen becomes a centerpiece—equally suited to quiet mornings or spirited gatherings.</p>\n",
-      "list": "Pots & pans\r\nMicrowave\r\nGas stove\r\nTupperware\r\nPorcelain\r\nEspresso\r\nCoffee grinder"
+      "text_chinese": "",
+      "list": "Pots & pans\r\nMicrowave\r\nGas stove\r\nTupperware\r\nPorcelain\r\nEspresso\r\nCoffee grinder",
+      "list_chinese": ""
     },
     {
       "acf_fc_layout": "curvy_image_grid",
@@ -1176,7 +1212,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "images": [
         {
@@ -1491,11 +1532,15 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "align": "left",
       "title": "Primary Bathroom",
+      "title_chinese": "",
       "text": "<p>Generous stone surfaces and soothing hues evoke a private spa experience, while architectural lighting and polished fixtures introduce quiet sophistication. Every element—freestanding tub, frameless glass shower, and custom vanity—is a testament to the elevated standard of comfort and craftsmanship expected at Park Row.</p>\n",
+      "text_chinese": "",
       "list": "Item detail\r\nMicrowave\r\nHot showers\r\nTowels\r\nBathrobes\r\nFree parking",
+      "list_chinese": "",
       "text_align": "bottom",
       "quote": false
     },
@@ -1506,7 +1551,12 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "video": [
         {
@@ -1660,6 +1710,7 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "caption_pos": "",
       "width": "10 columns",
       "round_corner": true,
@@ -1673,10 +1724,13 @@
           "title": "Private Indoor Outdoor<br />\r\nBath & Spa",
           "text": "<p>A rare and highly bespoke feature within the Penthouses, is the private indoor / outdoor spa. A private soaking tub with breathtaking views, just outside your primary bathroom.</p>\n",
           "two_col_list": false,
-          "list": "Detail item\r\nMicrowave\r\nTowels\r\nBathrobe\r\nSauna\r\nSteam room"
+          "list": "Detail item\r\nMicrowave\r\nTowels\r\nBathrobe\r\nSauna\r\nSteam room",
+          "title_chinese": "",
+          "text_chinese": "",
+          "list_chinese": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:56"
+  "_syncedAt": "2026-02-07 16:32:23"
 }

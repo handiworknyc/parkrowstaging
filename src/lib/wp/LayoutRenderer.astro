@@ -1,12 +1,13 @@
 ---
 /**
  * src/lib/wp/LayoutRenderer.astro
- * Static JSON flexible layout renderer
+ * Static JSON flexible layout renderer with language support
  */
 
 import { normalizeLayouts } from "./normalize";
 import type { NormRow } from "./normalize";
 import pageOrder from "../../content/wp/page-order.json";
+import { getLocalizedField } from "../language";
 
 /* ---------------- Types ---------------- */
 interface Props {
@@ -14,12 +15,16 @@ interface Props {
   taxContext?: string | null;
   pageId?: number | null;
   pageSlug?: string | null;
+  lang?: 'en' | 'zh';
 }
 
 interface LayoutSettings {
   section_title?: string;
+  section_title_chinese?: string;
   section_h2?: string;
+  section_h2_chinese?: string;
   section_text?: string;
+  section_text_chinese?: string;
   green_bg?: boolean;
   section_text_below?: boolean;
   bg_color?: string;
@@ -34,6 +39,7 @@ interface CommonContext {
   rowIndex: number;
   prevLayout: NormRow | null;
   nextLayout: NormRow | null;
+  lang: 'en' | 'zh'; // Add language to context
 }
 
 /* ---------------- Props ---------------- */
@@ -42,7 +48,9 @@ const {
   taxContext = null,
   pageId = null,
   pageSlug = null,
+  lang = 'en', // default safety
 } = Astro.props as Props;
+
 
 /* ---------------- Component Loading ---------------- */
 const modules = import.meta.glob("/src/components/flex/*.astro", {
@@ -82,6 +90,44 @@ function stripSlashes(str: string): string {
 function toKebab(s: string): string {
   return s.replace(/_/g, "-");
 }
+
+
+function localizeValue(value: any, lang: 'en' | 'zh') {
+  // Arrays = ACF repeater
+  if (Array.isArray(value)) {
+    return value.map(item => localizeValue(item, lang));
+  }
+
+  // Objects = nested ACF groups / repeater rows
+  if (value && typeof value === 'object') {
+    const out: Record<string, any> = {};
+
+    for (const [key, val] of Object.entries(value)) {
+      // Skip language-specific source fields
+      if (key.endsWith('_chinese')) continue;
+
+      // Localize nested values
+      out[key] = localizeValue(
+        getLocalizedField(value, key, lang),
+        lang
+      );
+    }
+
+    return out;
+  }
+
+  // Primitives (string, number, boolean, null)
+  return value;
+}
+
+function localizeRowData(data: any, lang: 'en' | 'zh') {
+  if (!data || typeof data !== 'object') return data;
+  if (lang === 'en') return data; // optional shortcut
+  return localizeValue(data, lang);
+}
+
+
+
 
 function isAltBgContext(taxContext: string | null, firstLayout: string): boolean {
   return (
@@ -188,7 +234,9 @@ const rows = normalizeLayouts(Array.isArray(layouts) ? layouts : []);
 const firstLayout = rows[0]?.name ?? "";
 const firstIsSplash = firstLayout === "splash_video";
 const altBgContext = isAltBgContext(taxContext, firstLayout);
-const nextPageData = getNextPage(Astro.url.pathname);
+
+const rawPath = Astro.url.pathname.replace(/^\/zh/, '') || '/';
+const nextPageData = getNextPage(rawPath);
 
 const commonCtxBase = {
   postId: pageId ?? null,
@@ -196,6 +244,7 @@ const commonCtxBase = {
   termId: null,
   taxonomy: null,
   currentTerm: null,
+  lang, // Pass language to all components
 };
 ---
 
@@ -213,9 +262,9 @@ const commonCtxBase = {
 
   const nextLs = nextRow?.data?.layout_settings as LayoutSettings | undefined;
   const nextHasSectionContent = !!(
-    nextLs?.section_title ||
-    nextLs?.section_h2 ||
-    nextLs?.section_text
+    getLocalizedField(nextLs, 'section_title', lang) ||
+    getLocalizedField(nextLs, 'section_h2', lang) ||
+    getLocalizedField(nextLs, 'section_text', lang)
   );
 
   const commonCtx: CommonContext = {
@@ -228,13 +277,12 @@ const commonCtxBase = {
   const preHtmlString = safeHtml(row.meta.preHtml);
   const ls = row.data?.layout_settings as LayoutSettings | undefined;
 
-  const {
-    section_title = "",
-    section_h2 = "",
-    section_text = "",
-    green_bg = false,
-    section_text_below = false,
-  } = ls || {};
+  // Get localized layout settings
+  const section_title = getLocalizedField(ls, 'section_title', lang);
+  const section_h2 = getLocalizedField(ls, 'section_h2', lang);
+  const section_text = getLocalizedField(ls, 'section_text', lang);
+  const green_bg = ls?.green_bg || false;
+  const section_text_below = ls?.section_text_below || false;
 
   const hasHeaderContent = !!(section_title || section_h2 || section_text);
   const placeHeaderBelow = section_text_below === true;
@@ -301,6 +349,9 @@ const commonCtxBase = {
       : headerInner
     : null;
 
+	const localizedData = localizeRowData(row.data, lang);
+
+
   return (
     <section id={row.meta.id || undefined} class={sectionClass}>
       {preHtmlString && <div set:html={preHtmlString} />}
@@ -309,14 +360,20 @@ const commonCtxBase = {
         <div class={bgWrapClass}>
           <div class={`flex-bg-inner z-[100] pr ${row.meta?.ofh ? "ofh" : ""}`}>
             {!placeHeaderBelow && headerContent}
-            {Comp && <Comp {...row.data} {...commonCtx} />}
+			
+
+			{Comp && <Comp {...localizedData} {...commonCtx} />}
+
             {placeHeaderBelow && headerContent}
           </div>
         </div>
       ) : (
         <>
           {!placeHeaderBelow && headerContent}
-          {Comp && <Comp {...row.data} {...commonCtx} />}
+
+
+			{Comp && <Comp {...localizedData} {...commonCtx} />}
+
           {placeHeaderBelow && headerContent}
         </>
       )}
@@ -330,8 +387,13 @@ const commonCtxBase = {
     class="next-page-section py-20 text-right"
   >
     <div class="hw-contain">
-      <a href={nextPageData.page.uri} class="figure c-pink caps next-link">
-        {nextPageData.page.title}
+      <a
+        href={lang === 'zh' ? `/zh${nextPageData.page.uri}` : nextPageData.page.uri}
+        class="figure c-pink caps next-link"
+      >
+        {lang === 'zh' && nextPageData.page.title_chinese
+          ? nextPageData.page.title_chinese
+          : nextPageData.page.title}
       </a>
     </div>
   </section>

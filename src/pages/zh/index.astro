@@ -1,0 +1,52 @@
+---
+// src/pages/zh/index.astro
+export const prerender = true;
+
+import BaseLayout from "../../layouts/MainLayout.astro";
+import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
+import { getFlexiblePageByUri } from "../../lib/api";
+
+// Language is implicit via folder
+const lang = 'zh';
+
+// ✅ HELPERS
+import { normalizeLayouts } from "../../lib/wp/normalize";
+import { getLcpImage, getLcpVideo } from "../../lib/wp/lcp";
+import { getPreloads } from "../../lib/wp/preloads";
+
+let page = null;
+
+try {
+  // IMPORTANT: still pulling the SAME WP homepage
+  page = await getFlexiblePageByUri("/");
+} catch (e) {
+  page = null;
+}
+
+const title = page?.title ?? "Park Row";
+const layouts = page?.layouts ?? [];
+
+let lcpData = null;
+let lcpVideo = null;
+let preloads = [];
+
+if (layouts.length > 0) {
+  const rows = normalizeLayouts(layouts);
+  lcpData = getLcpImage(rows);
+  lcpVideo = getLcpVideo(rows);
+  preloads = getPreloads(rows);
+}
+---
+
+<BaseLayout
+  title={title}
+  lcp={lcpData}
+  lcpVideo={lcpVideo}
+  preloads={preloads}
+  lang={lang}
+>
+  {layouts.length
+    ? <LayoutRenderer layouts={layouts} lang={lang} />
+    : <p>WP unavailable right now.</p>
+  }
+</BaseLayout>

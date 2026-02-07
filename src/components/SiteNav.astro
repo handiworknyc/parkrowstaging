@@ -1,20 +1,24 @@
 ---
 import { getHeaderMenu } from "../lib/wp/getHeaderMenu";
+import { getHeaderMenuCN } from "@/lib/wp/getHeaderMenuCN";
+import LanguageSwitcher from "../components/ui/LanguageSwitcher.astro";
 
 // -----------------------------------------------------------------------------
 // SETTINGS
 // -----------------------------------------------------------------------------
-const WP_BASE_URL = (import.meta.env.WP_BASE_URL || "").trim().replace(/\/$/, "");
+const WP_BASE_URL = (import.meta.env.WP_BASE_URL || "")
+  .trim()
+  .replace(/\/$/, "");
 
 // -----------------------------------------------------------------------------
-// ⚡ GLOBAL NAV CACHE
+// ⚡ GLOBAL NAV CACHE (HTML ONLY)
 // -----------------------------------------------------------------------------
-let _cachedHeaderMenu = null;
+let _cachedHeaderMenu: string | null = null;
 
 // -----------------------------------------------------------------------------
 // 🚀 FAST URL REWRITE
 // -----------------------------------------------------------------------------
-function fastRewrite(html, baseUrl) {
+function fastRewrite(html: string, baseUrl: string) {
   if (!html || !baseUrl) return html;
   let processed = html.replaceAll(baseUrl, "");
   processed = processed.replaceAll('href="//', 'href="/');
@@ -22,36 +26,68 @@ function fastRewrite(html, baseUrl) {
 }
 
 // -----------------------------------------------------------------------------
-// FETCH & PROCESS
+// FETCH & PROCESS (HTML)
 // -----------------------------------------------------------------------------
 if (!_cachedHeaderMenu) {
   try {
     const raw = await getHeaderMenu();
     let html = raw;
-    if (raw && raw.trim().startsWith('"') && raw.includes('<li')) {
-       try { html = JSON.parse(raw); } catch {}
+
+    if (raw && raw.trim().startsWith('"') && raw.includes("<li")) {
+      try { html = JSON.parse(raw); } catch {}
     }
+
     _cachedHeaderMenu = fastRewrite(html, WP_BASE_URL);
   } catch (err) {
     console.error("[SiteNav] Error:", err);
-    _cachedHeaderMenu = ""; 
+    _cachedHeaderMenu = "";
   }
 }
 
-const headerMenu = _cachedHeaderMenu;
+// -----------------------------------------------------------------------------
+// FETCH CN TITLES (SEPARATE, SAFE)
+// -----------------------------------------------------------------------------
+const headerMenuCN = await getHeaderMenuCN();
+console.log(headerMenuCN);
+// -----------------------------------------------------------------------------
+// LOCALIZE HREFS (EN / ZH)
+// -----------------------------------------------------------------------------
+function localizeMenuHtml(html: string, lang: "en" | "zh") {
+  if (!html) return html;
+
+  return html.replace(
+    /href="(\/[^"]*)"/g,
+    (_match, path) => {
+      if (path.startsWith("/zh")) return `href="${path}"`;
+      if (lang === "zh") {
+        return `href="${path === "/" ? "/zh" : `/zh${path}`}"`;
+      }
+      return `href="${path}"`;
+    }
+  );
+}
+
+const lang =
+  Astro.url.pathname === "/zh" || Astro.url.pathname.startsWith("/zh/")
+    ? "zh"
+    : "en";
+
+const headerMenu = localizeMenuHtml(_cachedHeaderMenu, lang);
 ---
 
-<header 
-  id="header" 
+<header
+  id="header"
   class="group mob-menu-abs"
   transition:persist
   style="view-transition-name: page-header;"
-> 
- <div class="header-inner">
+>
+  <div class="header-inner">
     <div class="hw-contain flex-wrap tal align-items-center">
-      
+
+      <LanguageSwitcher position="header" key={Astro.url.pathname} client:load />
+
       <a class="logo pr" id="header-logo-a" href="/" aria-label="Home">
-        <svg 
+  <svg 
             id="logo-svg" 
             data-name="Layer 1" 
             xmlns="http://www.w3.org/2000/svg" 
@@ -90,11 +126,11 @@ const headerMenu = _cachedHeaderMenu;
       </a>
 
       <nav
-	  	id="main-nav"
-		class="pr tac resp-header-menu header-nav"
-		data-nav-modal
-		transition:persist
-	  >
+        id="main-nav"
+        class="pr tac resp-header-menu header-nav"
+        data-nav-modal
+        transition:persist
+      >
         <div class="main-nav-inner flex-wrap align-items-center pr">
           <ul class="flex-wrap align-items-center antiga">
             <Fragment set:html={headerMenu} />
@@ -106,17 +142,124 @@ const headerMenu = _cachedHeaderMenu;
         <button
           class="nav-toggle"
           aria-label="Click to view the main menu"
-          data-target="#main-nav">
-            <span></span>
-            <span></span>
-            <span></span>
+          data-target="#main-nav"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
       </div>
-      
-    </div>
 
+    </div>
   </div>
 </header>
+
+<!-- Inline JSON payload (SSR-safe, no globals) -->
+<script
+  id="header-menu-cn"
+  type="application/json"
+  is:inline
+  set:html={JSON.stringify(headerMenuCN)}
+></script>
+
+<script is:inline>
+  function debugChineseMenuInjection() {
+    console.group("🇨🇳 Header Menu CN Debug");
+
+    // 1️⃣ Is the JSON payload present?
+    const dataEl = document.getElementById("header-menu-cn");
+    console.log("JSON element found:", !!dataEl);
+
+    if (!dataEl) {
+      console.error("❌ #header-menu-cn script tag not found");
+      console.groupEnd();
+      return;
+    }
+
+    let CN_MAP = {};
+    try {
+      CN_MAP = JSON.parse(dataEl.textContent || "{}");
+    } catch (e) {
+      console.error("❌ Failed to parse CN JSON", e);
+      console.groupEnd();
+      return;
+    }
+
+    console.log("CN_MAP:", CN_MAP);
+    console.log("CN_MAP keys:", Object.keys(CN_MAP));
+
+    // 2️⃣ What menu <li>s actually exist?
+    const allLis = [...document.querySelectorAll("#main-nav li")];
+    console.log(
+      "Menu <li> count:",
+      allLis.length
+    );
+    console.log(
+      "Menu <li> classes:",
+      allLis.map(li => li.className)
+    );
+
+    // 3️⃣ Try to resolve each CN item
+    for (const [id, cn] of Object.entries(CN_MAP)) {
+      console.group(`Menu item ID ${id}`);
+
+      const liByClass = document.querySelector(`.menu-item-${id}`);
+      const liById = document.getElementById(`nav-menu-item-${id}`);
+
+      console.log("li via .menu-item-ID:", liByClass);
+      console.log("li via #nav-menu-item-ID:", liById);
+
+      const li = liByClass || liById;
+      if (!li) {
+        console.error("❌ No <li> found for menu item", id);
+        console.groupEnd();
+        continue;
+      }
+
+      const link = li.querySelector("a");
+      console.log("<a> found:", link);
+
+      if (!link) {
+        console.error("❌ No <a> inside menu item", id);
+        console.groupEnd();
+        continue;
+      }
+
+      const enSpan = link.querySelector(".header-link--title");
+      const cnSpan = link.querySelector(".header-link--title-cn");
+
+      console.log("EN span exists:", !!enSpan);
+      console.log("CN span exists:", !!cnSpan);
+
+      // Inject visibly for debugging
+      if (!enSpan) {
+        const s = document.createElement("span");
+        s.className = "header-link--title";
+        s.textContent = link.textContent || "";
+        link.textContent = "";
+        link.appendChild(s);
+        console.log("✅ EN span injected");
+      }
+
+		if (!cnSpan) {
+		const s = document.createElement("span");
+		s.className = "header-link--title-cn";
+		s.textContent = cn;
+		link.appendChild(s);
+
+		link.classList.add("has-cn-title"); // ✅ ALWAYS add
+		}
+
+      console.groupEnd();
+    }
+
+    console.groupEnd();
+  }
+
+  document.addEventListener("astro:page-load", debugChineseMenuInjection);
+</script>
+
+
 
 
 
@@ -131,14 +274,10 @@ const headerMenu = _cachedHeaderMenu;
     const toggle = document.querySelector(".nav-toggle");
     const wrapper = document.querySelector(".nav-toggle-wrap") || toggle;
     const modal = document.querySelector("#main-nav[data-nav-modal]");
-    
-    // Grab the SVG
     const logoSvg = document.getElementById("logo-svg");
-    
     const html = document.documentElement;
-    
-    if (!toggle || !modal) return;
 
+    if (!toggle || !modal) return;
     if ((toggle as any)._navBound) return;
     (toggle as any)._navBound = true;
 
@@ -152,23 +291,15 @@ const headerMenu = _cachedHeaderMenu;
       const elasticEase = [0.175, 0.885, 0.32, 1.275];
 
       wrapEl.addEventListener("mouseenter", () => {
-        animate(
-          wrapEl, 
-          { scale: 0.95, y: "-50%" }, 
-          { duration: 0.05, easing: elasticEase } 
-        );
+        animate(wrapEl, { scale: 0.95, y: "-50%" }, { duration: 0.05, easing: elasticEase });
       });
 
       wrapEl.addEventListener("mouseleave", () => {
-        animate(
-          wrapEl, 
-          { scale: 1, y: "-50%" }, 
-          { duration: 0.05, easing: elasticEase } 
-        );
+        animate(wrapEl, { scale: 1, y: "-50%" }, { duration: 0.05, easing: elasticEase });
       });
 
       wrapEl.addEventListener("click", () => {
-        wrapEl.style.transform = ""; 
+        wrapEl.style.transform = "";
       });
     }
 
@@ -181,22 +312,18 @@ const headerMenu = _cachedHeaderMenu;
 
     const openMenu = () => {
       clearStates();
-      html.classList.add("modal-opening");
+      html.classList.add("modal-opening", "modal-open");
       toggle.classList.add("active");
       modal.classList.add("open");
-      html.classList.add("modal-open");
 
-	  if(typeof window.locoScroll !== 'undefined') {
-		window.locoScroll.stop();
-	  }
+      if (typeof window.locoScroll !== "undefined") {
+        window.locoScroll.stop();
+      }
+
       if (ul) ul.classList.add("sal-animate");
 
-      // ANIMATE VARIABLES: Logo -> Pink, Bofa -> Invisible
       if (logoSvg) {
-        animate(logoSvg, { 
-          "--logo-fill": "var(--pink)", 
-          "--bofa-op": 0 
-        }, { duration: 0.3 });
+        animate(logoSvg, { "--logo-fill": "var(--pink)", "--bofa-op": 0 }, { duration: 0.3 });
       }
     };
 
@@ -206,41 +333,26 @@ const headerMenu = _cachedHeaderMenu;
       toggle.classList.remove("active");
       modal.classList.remove("open");
       html.classList.remove("modal-open");
-	  
+
       if (ul) ul.classList.remove("sal-animate");
 
-      // ANIMATE VARIABLES: Logo -> Brown, Bofa -> Visible
       if (logoSvg) {
-        animate(logoSvg, { 
-          "--logo-fill": "#3a2a22", 
-          "--bofa-op": 1 
-        }, { duration: 0.3 });
+        animate(logoSvg, { "--logo-fill": "#3a2a22", "--bofa-op": 1 }, { duration: 0.3 });
       }
 
-	  if(typeof window.locoScroll !== 'undefined') {
-		window.locoScroll.start();
-	  }
+      if (typeof window.locoScroll !== "undefined") {
+        window.locoScroll.start();
+      }
     };
 
-    // Listeners
     toggle.addEventListener("click", (e) => {
       e.stopPropagation();
       modal.classList.contains("open") ? closeMenu() : openMenu();
     });
 
     modal.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("a")) closeMenu();
+      if ((e.target as HTMLElement).closest("a")) closeMenu();
     });
-
-	const logoLink = document.querySelector("a.logo");
-
-	if (logoLink) {
-		logoLink.addEventListener("click", (e) => {
-			if (!modal.classList.contains("open")) return;
-			closeMenu();
-		});
-	}
 
     modal.addEventListener("transitionend", () => {
       if (modal.classList.contains("open")) {
@@ -255,3 +367,19 @@ const headerMenu = _cachedHeaderMenu;
 
   document.addEventListener("astro:page-load", initNav);
 </script>
+
+<style>
+/* Default */
+:global(.header-link--title-cn) {
+  display: none;
+}
+
+/* Chinese mode — ONLY when CN exists */
+:global(html[lang="zh"] a.has-cn-title .header-link--title) {
+  display: none;
+}
+
+:global(html[lang="zh"] a.has-cn-title .header-link--title-cn) {
+  display: inline-block;
+}
+</style>

@@ -11,11 +11,19 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "h1": "Welcome to the gallery",
       "h2": "Explore All Things Park Row",
-      "description": "Experience the visual story of Park Row—architecture and interiors in dialogue with nature’s light.<br />\r\nBrowse images that capture the feeling of balance and beauty at every scale."
+      "description": "Experience the visual story of Park Row—architecture and interiors in dialogue with nature’s light.<br />\r\nBrowse images that capture the feeling of balance and beauty at every scale.",
+      "h1_chinese": "",
+      "h2_chinese": "",
+      "description_chinese": ""
     },
     {
       "acf_fc_layout": "carousel",
@@ -24,9 +32,15 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "label_above": "Residences",
+      "label_above_chinese": "",
       "images": [
         {
           "image": {
@@ -876,8 +890,9 @@
         }
       ],
       "caption": "",
+      "caption_chinese": "",
       "content": false
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:55"
+  "_syncedAt": "2026-02-07 16:32:22"
 }

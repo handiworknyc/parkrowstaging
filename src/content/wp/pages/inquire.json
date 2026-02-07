@@ -11,12 +11,20 @@
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
-        "section_text_below": false
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
       },
       "h1": "Register for More Information",
       "h2": "",
-      "description": "To learn more about Park Row or schedule a private appointment in our Sales Gallery, please register below.  A member of our team will be in touch to share details, availability, and upcoming opportunities."
+      "description": "To learn more about Park Row or schedule a private appointment in our Sales Gallery, please register below.  A member of our team will be in touch to share details, availability, and upcoming opportunities.",
+      "h1_chinese": "",
+      "h2_chinese": "",
+      "description_chinese": ""
     }
   ],
-  "_syncedAt": "2026-01-27 14:49:54"
+  "_syncedAt": "2026-02-07 16:32:21"
 }

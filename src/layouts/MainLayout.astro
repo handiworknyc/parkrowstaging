@@ -1,458 +1,490 @@
----
-// mainlayout.astro
-import { ClientRouter } from "astro:transitions";
-import SiteFooter from "../components/SiteFooter.astro";
-import SiteNav from "../components/SiteNav.astro";
-import PromoPopup from "../components/PromoPopup.astro";
-
-import videoJsUrl from "/src/scripts/videojs.js?url";
-import belowCssUrl from "@/styles/below.scss?url";
-import headerCriticalUrl from "@/scripts/header-critical.js?url";
-
-import "../styles/global.scss";
-
-/* ---------------- Types ---------------- */
-interface PreloadItem {
-  href: string;
-  imagesrcset?: string;
-  imagesizes?: string;
-  type?: string;
-}
-
-interface Props {
-  title?: string;
-  description?: string;
-  lcp?: PreloadItem | null;
-  lcpVideo?: {
-    href: string;
-  } | null;
-  preloads?: (string | PreloadItem)[];
-}
-
-/* ---------------- Props & Config ---------------- */
-const {
-  title = "",
-  description = "",
-  lcp = null,
-  lcpVideo = null,
-  preloads = [],
-} = Astro.props;
-
-const WP_BASE_URL = import.meta.env.WP_BASE_URL;
-
-// Video Configuration
-const VIDEO_HINT_PARAM = "?clientBandwidthHint=1000"; 
-const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
-const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
-
-const pathname = Astro.url.pathname;
-const segments = pathname.split("/").filter(Boolean);
-const bodyClasses = segments.length ? segments.join(" ") : "home";
-
-const cacheControl = "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
-Astro.response.headers.set("Cache-Control", cacheControl);
-Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
----
-
-<html lang="en" style="view-transition-name: main-content" class={`first-load ${bodyClasses}`}>
-<head>
-  <meta charset="utf-8" />
-
-  
-  {/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
-  <script is:inline>
-	window.HW = {};
-	HW.$html = document.documentElement;
-  </script>
-
-  {/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
-  <link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
-    
-  {/* ⚡️ PRIORITY 2: Import VideoJS immediately (Execution/Parsing) */}
-  {/* This forces the browser to parse the heavy library NOW, not later */}
-  <script>
-      import "/src/scripts/videojs.js";
-  </script>
-
-    
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width" />
-  <meta name="generator" content={Astro.generator} />
-  <title>{title}</title>
-  {description && <meta name="description" content={description} />}
-
-  {/* LCP Image Preload */}
-  {lcp && (
-    <link 
-      rel="preload"
-      as="image"
-      fetchpriority="high"
-      href={lcp.href}
-      imagesrcset={lcp.imagesrcset}
-      imagesizes={lcp.imagesizes}
-      type={lcp.type}
-    />
-  )}
-
-  {/* LCP Video (Full Warmup) */}
-  {lcpVideo && (
-    <>
-        {/* 1. Manifest Domain */}
-        <link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
-        <link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
-
-        {/* 2. ⚡️ Segment Domain (The Heavy Lifter) */}
-        <link rel="preconnect" href={CLOUDFLARE_DELIVERY_DOMAIN} crossorigin />
-        <link rel="dns-prefetch" href={CLOUDFLARE_DELIVERY_DOMAIN} />
-
-        {/* 3. ⚡️ Exact Match Preload (Fixing URL Mismatch) */}
-        <link 
-        rel="preload" 
-        as="fetch" 
-        href={lcpVideo.href.includes('?') ? lcpVideo.href : `${lcpVideo.href}${VIDEO_HINT_PARAM}`}
-        type="application/vnd.apple.mpegurl"
-        fetchpriority="high"
-        crossorigin
-        />
-    </>
-  )}
-
-  {/* Carousel/Slideshow Preloader */}
-  <script is:inline define:vars={{ preloads }}>
-    const DEBUG = false;
-    const log = (...args) => DEBUG && console.log("[Preload]", ...args);
-
-    window.addEventListener("critImgLoaded", () => {
-      log("critImgLoaded fired");
-      log("Incoming preloads:", preloads);
-
-      if (!preloads?.length) {
-        log("No preload items found");
-        return;
-      }
-
-      const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
-
-      run(() => {
-        log("Starting preload queue...");
-
-        preloads.forEach((p, i) => {
-          if (!p) {
-            log(`Skipping empty preload at index ${i}`);
-            return;
-          }
-
-          // Legacy carousel (string URL)
-          if (typeof p === "string") {
-            log("[Carousel]", p);
-            const img = new Image();
-            img.src = p;
-            return;
-          }
-
-          // Slideshow (srcset)
-          if (p.href) {
-            log("[Slideshow]", {
-              href: p.href,
-              srcset: p.imagesrcset,
-              sizes: p.imagesizes,
-              type: p.type
-            });
-
-            const link = document.createElement("link");
-            link.rel = "preload";
-            link.as = "image";
-            link.href = p.href;
-
-            if (p.imagesrcset) link.setAttribute("imagesrcset", p.imagesrcset);
-            if (p.imagesizes) link.setAttribute("imagesizes", p.imagesizes);
-            if (p.type) link.setAttribute("type", p.type);
-
-            document.head.appendChild(link);
-            return;
-          }
-
-          log("Unknown preload entry:", p);
-        });
-
-        log("Queue complete");
-      });
-    }, { once: true });
-  </script>
-
-  {/* Prefetch Map Logic */}
-  <script is:client>
-    (async () => {
-      function getBestImage(srcset) {
-        if (!srcset) return null;
-
-        const candidates = srcset.split(",").map(s => {
-          const parts = s.trim().split(/\s+/);
-          const url = parts[0];
-          const wDesc = parts.length > 1 ? parts[1] : null;
-          const width = wDesc?.endsWith("w") ? parseInt(wDesc, 10) : 0;
-          return { url, width };
-        });
-
-        candidates.sort((a, b) => a.width - b.width);
-        const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
-        const best = candidates.find(c => c.width >= targetWidth);
-        return best ? best.url : candidates[candidates.length - 1].url;
-      }
-
-      try {
-        const res = await fetch("/prefetch-map.json", { cache: "no-store" });
-        if (!res.ok) return;
-
-        const map = await res.json();
-        const assets = new Set();
-
-        map.forEach((entry) => {
-          if (!entry.lcp) return;
-
-          const url = entry.lcp.imagesrcset 
-            ? getBestImage(entry.lcp.imagesrcset)
-            : entry.lcp.href;
-
-          if (url) assets.add(url);
-          if (entry.video) assets.add(entry.video);
-        });
-
-        window.__PREFETCH_ASSETS__ = Array.from(assets);
-      } catch (err) {
-        console.warn("Prefetch map failed:", err);
-      }
-    })();
-  </script>
-
-  {/* Service Worker Prefetch */}
-  <script is:client>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").then((reg) => {
-        navigator.serviceWorker.addEventListener("message", (event) => {
-          if (event.data === "request-prefetch-list" && window.__PREFETCH_ASSETS__?.length) {
-            reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
-          }
-        });
-
-        const notifySW = (worker) => worker.postMessage("prefetch");
-
-        if (reg.active) {
-          notifySW(reg.active);
-        } else {
-          reg.addEventListener("updatefound", () => {
-            const w = reg.installing;
-            w.addEventListener("statechange", () => {
-              if (w.state === "activated") notifySW(w);
-            });
-          });
-        }
-      });
-    }
-  </script>
-
-  <script>
-    import "../scripts/smart-image";
-  </script>
-
-  <style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
-    :root {
-      --wp-base-url: var(--wpBaseUrl);
-    }
-  </style>
-
-  <script src={headerCriticalUrl} defer></script>
-
-  <ClientRouter prefetch="load" />
-
-  <script>
-    document.addEventListener("astro:before-swap", (ev) => {
-      ev.newDocument.documentElement.classList.remove("first-load");
-    });
-  </script>
-
-<script>
-  import LocomotiveScroll from "locomotive-scroll";
-  import {
-    initScrollLock,
-    isScrollLocked
-  } from "../scripts/scroll-lock";
-
-  // ------------------------------------
-  // DEVICE FLAGS
-  // ------------------------------------
-  const isMobile =
-    typeof HW !== "undefined" && HW.isMobile === true;
-
-  const isIpad =
-    typeof HW !== "undefined" && HW.isIpad === true;
-
-  const isIOS = isMobile || isIpad;
-
-  // ------------------------------------
-  // CONFIGURATION
-  // ------------------------------------
-  const CONFIG = {
-    LOCO_INIT_DELAY: 50,
-    ENABLE_LOCO_ON_MOBILE: false,
-  };
-
-  // ------------------------------------
-  // STATE
-  // ------------------------------------
-  let locoScroll = null;
-
-  // ------------------------------------
-  // HELPERS
-  // ------------------------------------
-  const isHome = () => document.body.classList.contains("home");
-  const isFirstLoad = () => HW.$html.classList.contains("first-load");
-
-  function shouldUseLocomotiveScroll() {
-    if (!isIOS) return true;
-    return CONFIG.ENABLE_LOCO_ON_MOBILE;
-  }
-
-  // ------------------------------------
-  // LOCOMOTIVE SCROLL
-  // ------------------------------------
-  function initLocoScroll() {
-    const el = document.querySelector("main");
-    if (!el) return;
-
-    if (!shouldUseLocomotiveScroll()) {
-      console.log("[Loco] Disabled on iOS — native scroll");
-      initScrollLock();
-      return;
-    }
-
-    locoScroll?.destroy();
-
-    locoScroll = new LocomotiveScroll({
-      el,
-      smooth: true,
-      lenisOptions: {
-        lerp: 0,
-        duration: 0.5,
-      },
-      smartphone: { smooth: true },
-      tablet: { smooth: true },
-    });
-
-    window.locoScroll = locoScroll;
-
-    document.dispatchEvent(
-      new CustomEvent("loco:ready", {
-        detail: { instance: locoScroll }
-      })
-    );
-
-    initScrollLock(locoScroll);
-  }
-
-  // ------------------------------------
-  // ASTRO LIFECYCLE
-  // ------------------------------------
-  document.addEventListener("astro:page-load", () => {
-    setTimeout(initLocoScroll, CONFIG.LOCO_INIT_DELAY);
-  });
-
-  document.addEventListener("astro:before-preparation", () => {
-    locoScroll?.stop();
-  });
-
-  document.addEventListener("astro:after-swap", () => {
-    if (!locoScroll) return;
-
-    if (!isFirstLoad() || !isScrollLocked()) {
-      locoScroll.start();
-    } else {
-      locoScroll.stop();
-    }
-  });
-
-  // ------------------------------------
-  // ANCHOR LINKS
-  // ------------------------------------
-  document.addEventListener("click", (e) => {
-    const a = e.target.closest('a[href^="#"]');
-    if (!a) return;
-
-    const id = a.getAttribute("href");
-    if (!id || id === "#") return;
-
-    const target = document.querySelector(id);
-    if (!target) return;
-
-    e.preventDefault();
-
-    if (isScrollLocked()) return;
-
-    if (locoScroll && shouldUseLocomotiveScroll()) {
-      locoScroll.scrollTo(target);
-    } else {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
-  });
-</script>
-
-
-</head>
-
-<body>
-  <main>
-    <SiteNav />
-
-    <div class="switcher">
-      <slot />
-    </div>
-
-    <div class="mob-bottom-bar" transition:persist>
-      <div class="hw-contain flex-wrap items-center">
-        <a class="icon-arrow-right icon-after border-btn white">
-          Inquire
-        </a>
-        <a class="ml-auto c-white mob-bar-phone" href="tel:425-555-1234">
-          425-555-1234
-        </a>
-      </div>
-    </div>
-
-    <div id="mob-bottom-sentinel"></div>
-  </main>
-
-  <SiteFooter />
-
-  <link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
-
-  {/* Safari View Transitions Fallback */}
-  <script is:client>
-    if (window.__isSafari) {
-      document.documentElement.classList.add("disable-vt");
-
-      document.addEventListener("click", (e) => {
-        const a = e.target.closest("a[href]");
-        if (!a) return;
-
-        const url = a.getAttribute("href");
-        const isExternal = url.startsWith("http") && !url.startsWith(location.origin);
-        const isSpecial = url.startsWith("#") || 
-                         url.startsWith("mailto:") || 
-                         url.startsWith("tel:") || 
-                         url.startsWith("javascript:");
-
-        if (isExternal || isSpecial) return;
-
-        e.preventDefault();
-        window.location.href = url;
-      });
-    }
-  </script>
-
-  <PromoPopup />
-
-  <script>
-	  import "../scripts/sticky-bottom";
-  </script>
-</body>
-</html>
+	---
+	// mainlayout.astro
+	import { ClientRouter } from "astro:transitions";
+	import SiteFooter from "../components/SiteFooter.astro";
+	import SiteNav from "../components/SiteNav.astro";
+	import PromoPopup from "../components/PromoPopup.astro";
+
+	import videoJsUrl from "/src/scripts/videojs.js?url";
+	import belowCssUrl from "@/styles/below.scss?url";
+	import headerCriticalUrl from "@/scripts/header-critical.js?url";
+
+	import "../styles/global.scss";
+
+	/* ---------------- Types ---------------- */
+	interface PreloadItem {
+	href: string;
+	imagesrcset?: string;
+	imagesizes?: string;
+	type?: string;
+	}
+
+	interface Props {
+		title?: string;
+		description?: string;
+		lcp?: PreloadItem | null;
+		lcpVideo?: {
+			href: string;
+		} | null;
+		preloads?: (string | PreloadItem)[];
+		lang?: 'en' | 'zh';
+	}
+
+	/* ---------------- Props & Config ---------------- */
+	const {
+	title = "",
+	description = "",
+	lcp = null,
+	lcpVideo = null,
+	preloads = [],
+	lang = 'en',
+	} = Astro.props;
+
+
+	const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+
+	// Video Configuration
+	const VIDEO_HINT_PARAM = "?clientBandwidthHint=1000"; 
+	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
+	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
+
+	const rawPathname = Astro.url.pathname;
+
+	// Normalize path for layout logic (strip /zh)
+	const normalizedPathname =
+	lang === 'zh' ? rawPathname.replace(/^\/zh/, '') || '/' : rawPathname;
+
+	const segments = normalizedPathname.split("/").filter(Boolean);
+	const bodyClasses = segments.length ? segments.join(" ") : "home";
+
+
+	const cacheControl = "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
+	Astro.response.headers.set("Cache-Control", cacheControl);
+	Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
+	---
+
+	<html
+	lang={lang}
+	style="view-transition-name: main-content"
+	class={`first-load ${bodyClasses}`}
+	>
+
+	<head>
+	<meta charset="utf-8" />
+
+	
+	{/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
+	<script is:inline>
+		window.HW = {};
+		HW.$html = document.documentElement;
+	</script>
+
+	{/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
+	<link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
+		
+	{/* ⚡️ PRIORITY 2: Import VideoJS immediately (Execution/Parsing) */}
+	{/* This forces the browser to parse the heavy library NOW, not later */}
+	<script>
+		import "/src/scripts/videojs.js";
+	</script>
+
+		
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<meta name="viewport" content="width=device-width" />
+	<meta name="generator" content={Astro.generator} />
+	<title>{title}</title>
+
+	<link
+	rel="canonical"
+	href={`${Astro.site}${lang === 'zh' ? `/zh${normalizedPathname}` : normalizedPathname}`}
+	/>
+
+	<link
+	rel="alternate"
+	hreflang="en"
+	href={`${Astro.site}${normalizedPathname}`}
+	/>
+
+	<link
+	rel="alternate"
+	hreflang="zh"
+	href={`${Astro.site}/zh${normalizedPathname === '/' ? '' : normalizedPathname}`}
+	/>
+
+	{description && <meta name="description" content={description} />}
+
+	{/* LCP Image Preload */}
+	{lcp && (
+		<link 
+		rel="preload"
+		as="image"
+		fetchpriority="high"
+		href={lcp.href}
+		imagesrcset={lcp.imagesrcset}
+		imagesizes={lcp.imagesizes}
+		type={lcp.type}
+		/>
+	)}
+
+	{/* LCP Video (Full Warmup) */}
+	{lcpVideo && (
+		<>
+			{/* 1. Manifest Domain */}
+			<link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
+			<link rel="dns-prefetch" href={CLOUDFLARE_STREAM_DOMAIN} />
+
+			{/* 2. ⚡️ Segment Domain (The Heavy Lifter) */}
+			<link rel="preconnect" href={CLOUDFLARE_DELIVERY_DOMAIN} crossorigin />
+			<link rel="dns-prefetch" href={CLOUDFLARE_DELIVERY_DOMAIN} />
+
+			{/* 3. ⚡️ Exact Match Preload (Fixing URL Mismatch) */}
+			<link 
+			rel="preload" 
+			as="fetch" 
+			href={lcpVideo.href.includes('?') ? lcpVideo.href : `${lcpVideo.href}${VIDEO_HINT_PARAM}`}
+			type="application/vnd.apple.mpegurl"
+			fetchpriority="high"
+			crossorigin
+			/>
+		</>
+	)}
+
+	{/* Carousel/Slideshow Preloader */}
+	<script is:inline define:vars={{ preloads }}>
+		const DEBUG = false;
+		const log = (...args) => DEBUG && console.log("[Preload]", ...args);
+
+		window.addEventListener("critImgLoaded", () => {
+		log("critImgLoaded fired");
+		log("Incoming preloads:", preloads);
+
+		if (!preloads?.length) {
+			log("No preload items found");
+			return;
+		}
+
+		const run = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+
+		run(() => {
+			log("Starting preload queue...");
+
+			preloads.forEach((p, i) => {
+			if (!p) {
+				log(`Skipping empty preload at index ${i}`);
+				return;
+			}
+
+			// Legacy carousel (string URL)
+			if (typeof p === "string") {
+				log("[Carousel]", p);
+				const img = new Image();
+				img.src = p;
+				return;
+			}
+
+			// Slideshow (srcset)
+			if (p.href) {
+				log("[Slideshow]", {
+				href: p.href,
+				srcset: p.imagesrcset,
+				sizes: p.imagesizes,
+				type: p.type
+				});
+
+				const link = document.createElement("link");
+				link.rel = "preload";
+				link.as = "image";
+				link.href = p.href;
+
+				if (p.imagesrcset) link.setAttribute("imagesrcset", p.imagesrcset);
+				if (p.imagesizes) link.setAttribute("imagesizes", p.imagesizes);
+				if (p.type) link.setAttribute("type", p.type);
+
+				document.head.appendChild(link);
+				return;
+			}
+
+			log("Unknown preload entry:", p);
+			});
+
+			log("Queue complete");
+		});
+		}, { once: true });
+	</script>
+
+	{/* Prefetch Map Logic */}
+	<script is:client>
+		(async () => {
+		function getBestImage(srcset) {
+			if (!srcset) return null;
+
+			const candidates = srcset.split(",").map(s => {
+			const parts = s.trim().split(/\s+/);
+			const url = parts[0];
+			const wDesc = parts.length > 1 ? parts[1] : null;
+			const width = wDesc?.endsWith("w") ? parseInt(wDesc, 10) : 0;
+			return { url, width };
+			});
+
+			candidates.sort((a, b) => a.width - b.width);
+			const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
+			const best = candidates.find(c => c.width >= targetWidth);
+			return best ? best.url : candidates[candidates.length - 1].url;
+		}
+
+		try {
+			const res = await fetch("/prefetch-map.json", { cache: "no-store" });
+			if (!res.ok) return;
+
+			const map = await res.json();
+			const assets = new Set();
+
+			map.forEach((entry) => {
+			if (!entry.lcp) return;
+
+			const url = entry.lcp.imagesrcset 
+				? getBestImage(entry.lcp.imagesrcset)
+				: entry.lcp.href;
+
+			if (url) assets.add(url);
+			if (entry.video) assets.add(entry.video);
+			});
+
+			window.__PREFETCH_ASSETS__ = Array.from(assets);
+		} catch (err) {
+			console.warn("Prefetch map failed:", err);
+		}
+		})();
+	</script>
+
+	{/* Service Worker Prefetch */}
+	<script is:client>
+		if ("serviceWorker" in navigator) {
+		navigator.serviceWorker.register("/sw.js").then((reg) => {
+			navigator.serviceWorker.addEventListener("message", (event) => {
+			if (event.data === "request-prefetch-list" && window.__PREFETCH_ASSETS__?.length) {
+				reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
+			}
+			});
+
+			const notifySW = (worker) => worker.postMessage("prefetch");
+
+			if (reg.active) {
+			notifySW(reg.active);
+			} else {
+			reg.addEventListener("updatefound", () => {
+				const w = reg.installing;
+				w.addEventListener("statechange", () => {
+				if (w.state === "activated") notifySW(w);
+				});
+			});
+			}
+		});
+		}
+	</script>
+
+	<script>
+		import "../scripts/smart-image";
+	</script>
+
+	<style define:vars={{ wpBaseUrl: `url('${WP_BASE_URL}')` }}>
+		:root {
+		--wp-base-url: var(--wpBaseUrl);
+		}
+	</style>
+
+	<script src={headerCriticalUrl} defer></script>
+
+	<ClientRouter prefetch="load" />
+
+	<script>
+		document.addEventListener("astro:before-swap", (ev) => {
+		ev.newDocument.documentElement.classList.remove("first-load");
+		});
+	</script>
+
+	<script>
+	import LocomotiveScroll from "locomotive-scroll";
+	import {
+		initScrollLock,
+		isScrollLocked
+	} from "../scripts/scroll-lock";
+
+	// ------------------------------------
+	// DEVICE FLAGS
+	// ------------------------------------
+	const isMobile =
+		typeof HW !== "undefined" && HW.isMobile === true;
+
+	const isIpad =
+		typeof HW !== "undefined" && HW.isIpad === true;
+
+	const isIOS = isMobile || isIpad;
+
+	// ------------------------------------
+	// CONFIGURATION
+	// ------------------------------------
+	const CONFIG = {
+		LOCO_INIT_DELAY: 50,
+		ENABLE_LOCO_ON_MOBILE: false,
+	};
+
+	// ------------------------------------
+	// STATE
+	// ------------------------------------
+	let locoScroll = null;
+
+	// ------------------------------------
+	// HELPERS
+	// ------------------------------------
+	const isHome = () => document.body.classList.contains("home");
+	const isFirstLoad = () => HW.$html.classList.contains("first-load");
+
+	function shouldUseLocomotiveScroll() {
+		if (!isIOS) return true;
+		return CONFIG.ENABLE_LOCO_ON_MOBILE;
+	}
+
+	// ------------------------------------
+	// LOCOMOTIVE SCROLL
+	// ------------------------------------
+	function initLocoScroll() {
+		const el = document.querySelector("main");
+		if (!el) return;
+
+		if (!shouldUseLocomotiveScroll()) {
+		console.log("[Loco] Disabled on iOS — native scroll");
+		initScrollLock();
+		return;
+		}
+
+		locoScroll?.destroy();
+
+		locoScroll = new LocomotiveScroll({
+		el,
+		smooth: true,
+		lenisOptions: {
+			lerp: 0,
+			duration: 0.5,
+		},
+		smartphone: { smooth: true },
+		tablet: { smooth: true },
+		});
+
+		window.locoScroll = locoScroll;
+
+		document.dispatchEvent(
+		new CustomEvent("loco:ready", {
+			detail: { instance: locoScroll }
+		})
+		);
+
+		initScrollLock(locoScroll);
+	}
+
+	// ------------------------------------
+	// ASTRO LIFECYCLE
+	// ------------------------------------
+	document.addEventListener("astro:page-load", () => {
+		setTimeout(initLocoScroll, CONFIG.LOCO_INIT_DELAY);
+	});
+
+	document.addEventListener("astro:before-preparation", () => {
+		locoScroll?.stop();
+	});
+
+	document.addEventListener("astro:after-swap", () => {
+		if (!locoScroll) return;
+
+		if (!isFirstLoad() || !isScrollLocked()) {
+		locoScroll.start();
+		} else {
+		locoScroll.stop();
+		}
+	});
+
+	// ------------------------------------
+	// ANCHOR LINKS
+	// ------------------------------------
+	document.addEventListener("click", (e) => {
+		const a = e.target.closest('a[href^="#"]');
+		if (!a) return;
+
+		const id = a.getAttribute("href");
+		if (!id || id === "#") return;
+
+		const target = document.querySelector(id);
+		if (!target) return;
+
+		e.preventDefault();
+
+		if (isScrollLocked()) return;
+
+		if (locoScroll && shouldUseLocomotiveScroll()) {
+		locoScroll.scrollTo(target);
+		} else {
+		target.scrollIntoView({ behavior: "smooth" });
+		}
+	});
+	</script>
+
+
+	</head>
+
+	<body>
+	<main>
+		<SiteNav lang={lang} />
+
+		<div class="switcher">
+		<slot />
+		</div>
+
+		<div class="mob-bottom-bar" transition:persist>
+		<div class="hw-contain flex-wrap items-center">
+			<a class="icon-arrow-right icon-after border-btn white">
+			Inquire
+			</a>
+			<a class="ml-auto c-white mob-bar-phone" href="tel:425-555-1234">
+			425-555-1234
+			</a>
+		</div>
+		</div>
+
+		<div id="mob-bottom-sentinel"></div>
+	</main>
+
+	<SiteFooter lang={lang} />
+
+	<link rel="stylesheet" href={belowCssUrl} media="print" onload="this.media='all'" />
+
+	{/* Safari View Transitions Fallback */}
+	<script is:client>
+		if (window.__isSafari) {
+		document.documentElement.classList.add("disable-vt");
+
+		document.addEventListener("click", (e) => {
+			const a = e.target.closest("a[href]");
+			if (!a) return;
+
+			const url = a.getAttribute("href");
+			const isExternal = url.startsWith("http") && !url.startsWith(location.origin);
+			const isSpecial = url.startsWith("#") || 
+							url.startsWith("mailto:") || 
+							url.startsWith("tel:") || 
+							url.startsWith("javascript:");
+
+			if (isExternal || isSpecial) return;
+
+			e.preventDefault();
+			window.location.href = url;
+		});
+		}
+	</script>
+
+	<PromoPopup />
+
+	<script>
+		import "../scripts/sticky-bottom";
+	</script>
+	</body>
+	</html>

@@ -1,34 +1,44 @@
 ---
-// src/pages/[...slug].astro
+// src/pages/zh/[...slug].astro
 export const prerender = true;
 
-import BaseLayout from "../layouts/MainLayout.astro";
-import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
-import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
+import BaseLayout from "../../layouts/MainLayout.astro";
+import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
+import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../../lib/api";
 
-import { normalizeLayouts } from "../lib/wp/normalize";
-import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
-import { getPreloads } from "../lib/wp/preloads";
+import { normalizeLayouts } from "../../lib/wp/normalize";
+import { getLcpImage, getLcpVideo } from "../../lib/wp/lcp";
+import { getPreloads } from "../../lib/wp/preloads";
 
 // ---------------- Static paths ----------------
+// Reuse the SAME WP paths, just prefixed with /zh
 export async function getStaticPaths() {
   const allPaths = getAllFlexiblePagePaths();
 
-  return allPaths.filter(path => {
-    const slug = Array.isArray(path.params.slug)
-      ? path.params.slug.join('/')
-      : path.params.slug;
+  return allPaths
+    .filter(path => {
+      const slug = Array.isArray(path.params.slug)
+        ? path.params.slug.join('/')
+        : path.params.slug;
 
-    return slug !== 'inquire';
-  });
+      return slug !== 'inquire';
+    })
+    .map(path => ({
+      params: {
+        slug: path.params.slug
+      }
+    }));
 }
 
 // ---------------- Params ----------------
 const { slug = [] } = Astro.params;
+
+// IMPORTANT:
+// WP still expects the ENGLISH URI
 const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 
-// English is default
-const lang = 'en';
+// Language is locked by folder
+const lang = 'zh';
 
 // ---------------- Fetch ----------------
 const page = await getFlexiblePageByUri(uri);
