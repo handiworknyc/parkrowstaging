@@ -17,7 +17,7 @@ const wrapperClass = [
   <div class="flex gap-2 items-center">
     <a
       id="lang-en"
-      class="lang-btn px-3 py-1 rounded transition-colors bg-gray-200 text-gray-700"
+      class="lang-btn px-3 py-1 rounded transition-colors"
       href="/"
     >
       EN
@@ -27,7 +27,7 @@ const wrapperClass = [
 
     <a
       id="lang-zh"
-      class="lang-btn px-3 py-1 rounded transition-colors bg-gray-200 text-gray-700"
+      class="lang-btn px-3 py-1 rounded transition-colors"
       href="/zh"
     >
       中文
@@ -38,27 +38,30 @@ const wrapperClass = [
 <script>
   function updateLangUI() {
     const path = window.location.pathname.replace(/\/+$/, '');
-    const lang = path === '/zh' || path.startsWith('/zh/')
-      ? 'zh'
-      : 'en';
+
+    const isZh = path === '/zh' || path.startsWith('/zh/');
+    const cleanPath = path.replace(/^\/zh/, '') || '/';
 
     const en = document.getElementById('lang-en');
     const zh = document.getElementById('lang-zh');
     if (!en || !zh) return;
 
-    // EN
-    en.classList.toggle('bg-pink-500', lang === 'en');
-    en.classList.toggle('text-white', lang === 'en');
-    en.classList.toggle('font-semibold', lang === 'en');
-    en.classList.toggle('bg-gray-200', lang !== 'en');
-    en.classList.toggle('text-gray-700', lang !== 'en');
+    // ✅ Update hrefs
+    en.href = cleanPath === '/' ? '/' : cleanPath;
+    zh.href = cleanPath === '/' ? '/zh' : `/zh${cleanPath}`;
 
-    // ZH
-    zh.classList.toggle('bg-pink-500', lang === 'zh');
-    zh.classList.toggle('text-white', lang === 'zh');
-    zh.classList.toggle('font-semibold', lang === 'zh');
-    zh.classList.toggle('bg-gray-200', lang !== 'zh');
-    zh.classList.toggle('text-gray-700', lang !== 'zh');
+    // ✅ Highlight states
+    en.classList.toggle('bg-pink-500', !isZh);
+    en.classList.toggle('text-white', !isZh);
+    en.classList.toggle('font-semibold', !isZh);
+    en.classList.toggle('bg-gray-200', isZh);
+    en.classList.toggle('text-gray-700', isZh);
+
+    zh.classList.toggle('bg-pink-500', isZh);
+    zh.classList.toggle('text-white', isZh);
+    zh.classList.toggle('font-semibold', isZh);
+    zh.classList.toggle('bg-gray-200', !isZh);
+    zh.classList.toggle('text-gray-700', !isZh);
   }
 
   // Initial load

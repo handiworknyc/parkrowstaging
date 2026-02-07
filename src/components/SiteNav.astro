@@ -48,31 +48,9 @@ if (!_cachedHeaderMenu) {
 // FETCH CN TITLES (SEPARATE, SAFE)
 // -----------------------------------------------------------------------------
 const headerMenuCN = await getHeaderMenuCN();
-console.log(headerMenuCN);
-// -----------------------------------------------------------------------------
-// LOCALIZE HREFS (EN / ZH)
-// -----------------------------------------------------------------------------
-function localizeMenuHtml(html: string, lang: "en" | "zh") {
-  if (!html) return html;
 
-  return html.replace(
-    /href="(\/[^"]*)"/g,
-    (_match, path) => {
-      if (path.startsWith("/zh")) return `href="${path}"`;
-      if (lang === "zh") {
-        return `href="${path === "/" ? "/zh" : `/zh${path}`}"`;
-      }
-      return `href="${path}"`;
-    }
-  );
-}
 
-const lang =
-  Astro.url.pathname === "/zh" || Astro.url.pathname.startsWith("/zh/")
-    ? "zh"
-    : "en";
-
-const headerMenu = localizeMenuHtml(_cachedHeaderMenu, lang);
+const headerMenu = _cachedHeaderMenu;
 ---
 
 <header
@@ -256,7 +234,10 @@ const headerMenu = localizeMenuHtml(_cachedHeaderMenu, lang);
     console.groupEnd();
   }
 
-  document.addEventListener("astro:page-load", debugChineseMenuInjection);
+
+document.addEventListener("astro:page-load", debugChineseMenuInjection);
+document.addEventListener("astro:after-swap", debugChineseMenuInjection);
+
 </script>
 
 
@@ -367,6 +348,53 @@ const headerMenu = localizeMenuHtml(_cachedHeaderMenu, lang);
 
   document.addEventListener("astro:page-load", initNav);
 </script>
+
+
+
+<script is:inline>
+  function localizeHeaderLinks() {
+    const isZh =
+      location.pathname === "/zh" ||
+      location.pathname.startsWith("/zh/");
+
+    const nav = document.getElementById("main-nav");
+    if (!nav) return;
+
+    nav.querySelectorAll("a[href]").forEach(a => {
+      const href = a.getAttribute("href");
+      if (!href) return;
+
+      // Ignore external + special links
+      if (
+        href.startsWith("http") ||
+        href.startsWith("#") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:")
+      ) {
+        return;
+      }
+
+      // Strip any existing /zh
+      let clean = href.replace(/^\/zh/, "") || "/";
+
+      // Apply language
+      const next = isZh
+        ? clean === "/" ? "/zh" : `/zh${clean}`
+        : clean;
+
+      a.setAttribute("href", next);
+    });
+  }
+
+  // Initial load
+  document.addEventListener("astro:page-load", localizeHeaderLinks);
+
+  // View transition navigation
+  document.addEventListener("astro:after-swap", localizeHeaderLinks);
+</script>
+
+
+
 
 <style>
 /* Default */
