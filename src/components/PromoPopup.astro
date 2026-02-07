@@ -2,6 +2,11 @@
 // src/components/PromoPopup.astro
 import specials from "../content/wp/specials.json";
 
+console.log(specials);
+const isZh =
+  Astro.url.pathname === "/zh" ||
+  Astro.url.pathname.startsWith("/zh/");
+  
 const activeSpecial = specials && specials.length > 0 ? specials[0] : null;
 
 // Guard clauses
@@ -12,16 +17,36 @@ if (!activeSpecial || !activeSpecial.image) return;
 // ---------------------------------------------------------
 const { show_on } = activeSpecial;
 
+let isMatch = true;
+
 if (show_on && Array.isArray(show_on) && show_on.length > 0) {
   const currentPath = Astro.url.pathname;
-  let currentSlug = currentPath === "/" ? "home" : currentPath.replace(/^\/|\/$/g, "");
-  const isMatch = show_on.some((page) => page.slug === currentSlug);
 
-  if (!isMatch) return;
+  const normalizedPath = currentPath.match(/^\/zh(\/|$)/)
+    ? currentPath.replace(/^\/zh/, "") || "/"
+    : currentPath;
+
+  const currentSlug =
+    normalizedPath === "/" ? "home" : normalizedPath.replace(/^\/|\/$/g, "");
+
+  isMatch = show_on.some((page) => page.slug === currentSlug);
 }
+
+if (!isMatch) return;
+
+
 // ---------------------------------------------------------
 
-const { title, text, show_once, image } = activeSpecial;
+const show_once = activeSpecial.show_once;
+const image = activeSpecial.image;
+
+const title = isZh && activeSpecial.title_chinese
+  ? activeSpecial.title_chinese
+  : activeSpecial.title;
+
+const text = isZh && activeSpecial.text_chinese
+  ? activeSpecial.text_chinese
+  : activeSpecial.text;
 
 // Resolve the main image using your helper
 const resolvedImage = image.sizes.intch_med;
