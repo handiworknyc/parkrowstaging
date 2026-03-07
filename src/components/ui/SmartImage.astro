@@ -151,31 +151,19 @@ const imgId = critical ? `crit-${crypto.randomUUID().slice(0, 8)}` : undefined;
 					parent.classList.add("crit-child-lazy-loaded");
 				}
 
-				window.dispatchEvent(
-					new CustomEvent("critImgLoaded", {
-						detail: {
-						id: imgId,
-						src: img.currentSrc || img.src,
-						width: img.naturalWidth,
-						height: img.naturalHeight,
-						},
-					})
-				);
-
-                
-                window.dispatchEvent(
-                  new CustomEvent("critImgLoaded", {
-                    detail: {
-                      id: imgId,
-                      src: img.currentSrc || img.src,
-                      width: img.naturalWidth,
-                      height: img.naturalHeight,
-                    },
-                  })
-                );
-              });
-            });
-          };
+					window.dispatchEvent(
+						new CustomEvent("critImgLoaded", {
+							detail: {
+							id: imgId,
+							src: img.currentSrc || img.src,
+							width: img.naturalWidth,
+							height: img.naturalHeight,
+							},
+						})
+					);
+	              });
+	            });
+	          };
 
           if (img.complete && img.naturalWidth > 0) {
             setLoaded();

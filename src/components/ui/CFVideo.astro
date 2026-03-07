@@ -1,5 +1,6 @@
 ---
 import SmartImage from "../ui/SmartImage.astro";
+import { buildStreamUrl } from "../../lib/video/stream";
 
 /* ---------------- Types ---------------- */
 interface VideoData {
@@ -42,7 +43,6 @@ const {
 const VIDEO_CONFIG = {
   PLAY_ON_SCROLL: true,
   SCROLL_THRESHOLD: 0.6,
-  BANDWIDTH_HINT: 1000,
   DEFAULT_SIZES: "(max-width: 1200px) 60vw, 100vw",
 } as const;
 
@@ -87,9 +87,7 @@ const posterAlt = videoData.yt_img?.alt || "";
 const isPanorama = externalPanorama ?? videoData.panorama ?? false;
 
 const videoId = generateVideoId(videoData);
-const videoSrc = streamUrl 
-  ? `${streamUrl}?clientBandwidthHint=${VIDEO_CONFIG.BANDWIDTH_HINT}`
-  : "";
+const videoSrc = buildStreamUrl(streamUrl, null);
 
 /* ---------------- Component Config ---------------- */
 const posterProps = {
@@ -212,7 +210,20 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         });
       }
 
-      document.addEventListener("astro:page-load", initAllVideos);
+      const bootKey = "__HW_CFVIDEO_BOOTSTRAPPED__";
+      const win = window as Window & Record<string, boolean | undefined>;
+
+      if (!win[bootKey]) {
+        win[bootKey] = true;
+        document.addEventListener("astro:page-load", initAllVideos);
+        document.addEventListener("astro:after-swap", initAllVideos);
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAllVideos, { once: true });
+      } else {
+        initAllVideos();
+      }
     </script>
   </>
 )}

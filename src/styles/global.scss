@@ -1029,13 +1029,6 @@ ul.two-col-list {
 .carousel-module {
 	.carousel-wrapper {
 		width: 100%;
-		opacity: 0;
-		transform: scale(0.99);
-		transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-		will-change: opacity, transform;
-	}
-
-	.carousel-wrapper[data-ready="true"] {
 		opacity: 1;
 		transform: scale(1);
 	}

@@ -150,8 +150,10 @@ self.addEventListener("message", async (event) => {
 
   if (data === "prefetch") {
     await handlePrefetchRequest(source.id);
-  } else if (data?.prefetchAssets) {
-    await handlePrefetchAssets(data.prefetchAssets);
+  } else if (Array.isArray(data?.prefetchAssets)) {
+    await handlePrefetchAssets(data.prefetchAssets, data.skipAssets);
+  } else if (Array.isArray(data)) {
+    await handlePrefetchAssets(data);
   } else {
     warn("Unknown message:", data);
   }
@@ -169,16 +171,33 @@ async function handlePrefetchRequest(clientId) {
   client.postMessage("request-prefetch-list");
 }
 
-async function handlePrefetchAssets(assets) {
+async function handlePrefetchAssets(assets, skipAssets = []) {
   if (!Array.isArray(assets) || assets.length === 0) {
     warn("Invalid or empty prefetch list");
     return;
   }
 
-  log(`Prefetching ${assets.length} assets with concurrency ${CONFIG.PREFETCH_CONCURRENCY}`);
+  const skipSet = new Set(
+    Array.isArray(skipAssets) ? skipAssets.filter(Boolean) : []
+  );
+
+  const uniqueAssets = Array.from(
+    new Set(
+      assets.filter((asset) => typeof asset === "string" && asset && !skipSet.has(asset))
+    )
+  );
+
+  if (uniqueAssets.length === 0) {
+    log("All requested assets were skipped");
+    return;
+  }
+
+  log(
+    `Prefetching ${uniqueAssets.length} assets with concurrency ${CONFIG.PREFETCH_CONCURRENCY}`
+  );
 
   // Process in batches to avoid network congestion
-  await processBatches(assets, CONFIG.PREFETCH_CONCURRENCY, prefetchAsset);
+  await processBatches(uniqueAssets, CONFIG.PREFETCH_CONCURRENCY, prefetchAsset);
 
   log("Prefetch complete");
 }

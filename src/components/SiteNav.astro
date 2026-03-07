@@ -3,12 +3,18 @@ import { getHeaderMenu } from "../lib/wp/getHeaderMenu";
 import { getHeaderMenuCN } from "../lib/wp/getHeaderMenuCn";
 import LanguageSwitcher from "../components/ui/LanguageSwitcher.astro";
 
+interface Props {
+  lang?: "en" | "zh";
+}
+
 // -----------------------------------------------------------------------------
 // SETTINGS
 // -----------------------------------------------------------------------------
 const WP_BASE_URL = (import.meta.env.WP_BASE_URL || "")
   .trim()
   .replace(/\/$/, "");
+const { lang = "en" } = Astro.props as Props;
+const homeHref = lang === "zh" ? "/zh" : "/";
 
 // -----------------------------------------------------------------------------
 // ⚡ GLOBAL NAV CACHE (HTML ONLY)
@@ -64,7 +70,7 @@ const headerMenu = _cachedHeaderMenu;
 
       <LanguageSwitcher position="header" key={Astro.url.pathname} />
 
-      <a class="logo pr" id="header-logo-a" href="/" aria-label="Home">
+      <a class="logo pr" id="header-logo-a" href={homeHref} aria-label="Home">
   <svg 
             id="logo-svg" 
             data-name="Layer 1" 
@@ -356,6 +362,11 @@ document.addEventListener("astro:after-swap", debugChineseMenuInjection);
     const isZh =
       location.pathname === "/zh" ||
       location.pathname.startsWith("/zh/");
+
+    const logoLink = document.getElementById("header-logo-a");
+    if (logoLink) {
+      logoLink.setAttribute("href", isZh ? "/zh" : "/");
+    }
 
     const nav = document.getElementById("main-nav");
     if (!nav) return;

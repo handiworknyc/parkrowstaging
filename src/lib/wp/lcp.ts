@@ -1,7 +1,5 @@
 import type { NormRow } from "./normalize";
 
-const OPTIMAL_BANDWIDTH_KBPS = 25000;
-
 /**
  * Responsive sizes optimized for hero video posters
  */
@@ -62,7 +60,7 @@ export function getLcpVideo(rows: NormRow[]) {
 
   if (v.cf_stream_video) {
     return {
-      href: `${v.cf_stream_video}?clientBandwidthHint=${OPTIMAL_BANDWIDTH_KBPS}`
+      href: v.cf_stream_video
     };
   }
   

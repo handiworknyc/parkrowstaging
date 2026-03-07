@@ -227,8 +227,10 @@ export function setupSplashListener(): void {
       locked: state.locked 
     });
     
-    if (!shouldLock() || !state.locked) {
-      log("Ignoring splash:dismiss - conditions not met");
+    // Honor splash dismissal whenever scroll is actively locked. Re-checking
+    // first-load/home state here can fail after the splash timer fires.
+    if (!state.locked) {
+      log("Ignoring splash:dismiss - scroll is not locked");
       return;
     }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -7,7 +7,7 @@ import {
 import SlideNavigation from "../ui/SlideNavigation";
 
 const Slide = React.memo(
-  function Slide({ image, index }) {
+  function Slide({ image }) {
     return (
       <figure className={image.caption ? "slide-figure has-caption" : "slide-figure"}>
         <div className="image-wrapper">
@@ -31,7 +31,7 @@ const Slide = React.memo(
   }
 );
 
-export default function ImageCarousel({ images }) {
+export default function ImageCarousel({ images, instanceId }) {
   const [api, setApi] = useState(null);
   const [ready, setReady] = useState(false);
   const [navState, setNavState] = useState({
@@ -39,6 +39,8 @@ export default function ImageCarousel({ images }) {
     canPrev: false,
     canNext: true,
   });
+  const rootRef = useRef(null);
+  const frameIdsRef = useRef([]);
 
   const carouselOpts = useMemo(
     () => ({
@@ -52,6 +54,11 @@ export default function ImageCarousel({ images }) {
     []
   );
 
+  const clearScheduledReinit = useCallback(() => {
+    frameIdsRef.current.forEach((frameId) => cancelAnimationFrame(frameId));
+    frameIdsRef.current = [];
+  }, []);
+
   const updateNav = useCallback(() => {
     if (!api) return;
 
@@ -61,6 +68,25 @@ export default function ImageCarousel({ images }) {
       canNext: api.canScrollNext(),
     });
   }, [api]);
+
+  const scheduleReinit = useCallback(() => {
+    if (!api?.reInit) return;
+
+    clearScheduledReinit();
+
+    const firstFrame = requestAnimationFrame(() => {
+      const secondFrame = requestAnimationFrame(() => {
+        api.reInit();
+        setReady(true);
+        updateNav();
+      });
+
+      frameIdsRef.current = frameIdsRef.current.filter((id) => id !== firstFrame);
+      frameIdsRef.current.push(secondFrame);
+    });
+
+    frameIdsRef.current.push(firstFrame);
+  }, [api, clearScheduledReinit, updateNav]);
 
   useEffect(() => {
     if (!api) return;
@@ -79,12 +105,50 @@ export default function ImageCarousel({ images }) {
     api.on("reInit", handleReady);
     api.on("select", updateNav);
 
+    scheduleReinit();
+
     return () => {
       api.off("init", handleReady);
       api.off("reInit", handleReady);
       api.off("select", updateNav);
     };
-  }, [api, updateNav]);
+  }, [api, scheduleReinit, updateNav]);
+
+  useEffect(() => {
+    if (!api || !rootRef.current) return;
+
+    const handleAstroPageLoad = () => scheduleReinit();
+    const handleLocoReady = () => scheduleReinit();
+    const handleResize = () => scheduleReinit();
+    const handleAssetLoad = (event) => {
+      const target = event.target;
+      if (target?.tagName === "IMG" || target?.tagName === "VIDEO") {
+        scheduleReinit();
+      }
+    };
+
+    document.addEventListener("astro:page-load", handleAstroPageLoad);
+    document.addEventListener("loco:ready", handleLocoReady);
+    window.addEventListener("resize", handleResize, { passive: true });
+    rootRef.current.addEventListener("load", handleAssetLoad, true);
+
+    let resizeObserver = null;
+    if ("ResizeObserver" in window) {
+      resizeObserver = new ResizeObserver(() => {
+        scheduleReinit();
+      });
+      resizeObserver.observe(rootRef.current);
+    }
+
+    return () => {
+      document.removeEventListener("astro:page-load", handleAstroPageLoad);
+      document.removeEventListener("loco:ready", handleLocoReady);
+      window.removeEventListener("resize", handleResize);
+      rootRef.current?.removeEventListener("load", handleAssetLoad, true);
+      resizeObserver?.disconnect();
+      clearScheduledReinit();
+    };
+  }, [api, clearScheduledReinit, scheduleReinit]);
 
   const handlePrev = useCallback(() => {
     api?.scrollPrev();
@@ -99,16 +163,21 @@ export default function ImageCarousel({ images }) {
   }
 
   return (
-    <article className="carousel-wrapper" data-ready={ready} suppressHydrationWarning>
-      <div className="carousel-container" suppressHydrationWarning>
+    <article
+      ref={rootRef}
+      className="carousel-wrapper"
+      data-ready={ready}
+      data-carousel-instance={instanceId || undefined}
+    >
+      <div className="carousel-container">
         <Carousel setApi={setApi} className="w-full mx-auto" opts={carouselOpts}>
           <CarouselContent className="-ml-5">
-            {images.map((image, index) => (
+            {images.map((image) => (
               <CarouselItem
                 key={image.id}
                 className="pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
               >
-                <Slide image={image} index={index} />
+                <Slide image={image} />
               </CarouselItem>
             ))}
           </CarouselContent>

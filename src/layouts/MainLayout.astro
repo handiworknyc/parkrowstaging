@@ -4,6 +4,10 @@
 	import SiteFooter from "../components/SiteFooter.astro";
 	import SiteNav from "../components/SiteNav.astro";
 	import PromoPopup from "../components/PromoPopup.astro";
+	import {
+		getCriticalVideoPreloadUrls,
+		getCriticalVideoPreloadVariants,
+	} from "@/lib/video/stream";
 
 	import videoJsUrl from "/src/scripts/videojs.js?url";
 	import belowCssUrl from "@/styles/below.scss?url";
@@ -43,16 +47,71 @@
 
 	const WP_BASE_URL = import.meta.env.WP_BASE_URL;
 
-	// Video Configuration
-	const VIDEO_HINT_PARAM = "?clientBandwidthHint=1000"; 
 	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
 	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
+
+	function normalizePrefetchPath(pathname: string): string {
+		let normalized = (pathname || "/").trim();
+		if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+		if (!normalized.endsWith("/")) normalized = `${normalized}/`;
+		return normalized;
+	}
+
+	function extractSrcSetUrls(srcset?: string): string[] {
+		if (!srcset) return [];
+
+		return Array.from(
+			new Set(
+				srcset
+					.split(",")
+					.map((candidate) => candidate.trim().split(/\s+/)[0])
+					.filter(Boolean)
+			)
+		);
+	}
+
+	function collectPreloadedAssetUrls(
+		currentLcp: PreloadItem | null,
+		currentLcpVideo: { href: string } | null,
+		currentPreloads: (string | PreloadItem)[]
+	): string[] {
+		const assets = new Set<string>();
+
+		if (currentLcp?.href) assets.add(currentLcp.href);
+		extractSrcSetUrls(currentLcp?.imagesrcset).forEach((url) => assets.add(url));
+
+		if (currentLcpVideo?.href) {
+			getCriticalVideoPreloadUrls(currentLcpVideo.href).forEach((url) =>
+				assets.add(url)
+			);
+		}
+
+		currentPreloads.forEach((item) => {
+			if (!item) return;
+
+			if (typeof item === "string") {
+				assets.add(item);
+				return;
+			}
+
+			if (item.href) assets.add(item.href);
+			extractSrcSetUrls(item.imagesrcset).forEach((url) => assets.add(url));
+		});
+
+		return Array.from(assets);
+	}
 
 	const rawPathname = Astro.url.pathname;
 
 	// Normalize path for layout logic (strip /zh)
 	const normalizedPathname =
 	lang === 'zh' ? rawPathname.replace(/^\/zh/, '') || '/' : rawPathname;
+	const currentPrefetchPath = normalizePrefetchPath(normalizedPathname);
+	const criticalVideoPreloadVariants = lcpVideo?.href
+		? getCriticalVideoPreloadVariants(lcpVideo.href)
+		: [];
+	const shouldWarmCriticalVideo = criticalVideoPreloadVariants.length > 0;
+	const preloadedAssetUrls = collectPreloadedAssetUrls(lcp, lcpVideo, preloads);
 
 	const segments = normalizedPathname.split("/").filter(Boolean);
 	const bodyClasses = segments.length ? segments.join(" ") : "home";
@@ -80,13 +139,17 @@
 	</script>
 
 	{/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
-	<link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
+	{shouldWarmCriticalVideo && (
+		<link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
+	)}
 		
 	{/* ⚡️ PRIORITY 2: Import VideoJS immediately (Execution/Parsing) */}
 	{/* This forces the browser to parse the heavy library NOW, not later */}
-	<script>
-		import "/src/scripts/videojs.js";
-	</script>
+	{shouldWarmCriticalVideo && (
+		<script>
+			import "/src/scripts/videojs.js";
+		</script>
+	)}
 
 		
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -127,7 +190,7 @@
 	)}
 
 	{/* LCP Video (Full Warmup) */}
-	{lcpVideo && (
+	{criticalVideoPreloadVariants.length > 0 && (
 		<>
 			{/* 1. Manifest Domain */}
 			<link rel="preconnect" href={CLOUDFLARE_STREAM_DOMAIN} crossorigin />
@@ -137,15 +200,18 @@
 			<link rel="preconnect" href={CLOUDFLARE_DELIVERY_DOMAIN} crossorigin />
 			<link rel="dns-prefetch" href={CLOUDFLARE_DELIVERY_DOMAIN} />
 
-			{/* 3. ⚡️ Exact Match Preload (Fixing URL Mismatch) */}
-			<link 
-			rel="preload" 
-			as="fetch" 
-			href={lcpVideo.href.includes('?') ? lcpVideo.href : `${lcpVideo.href}${VIDEO_HINT_PARAM}`}
-			type="application/vnd.apple.mpegurl"
-			fetchpriority="high"
-			crossorigin
-			/>
+			{/* 3. ⚡️ Viewport-matched preload so the player and preload share the same URL */}
+			{criticalVideoPreloadVariants.map((variant) => (
+				<link 
+				rel="preload" 
+				as="fetch" 
+				href={variant.href}
+				media={variant.media}
+				type="application/vnd.apple.mpegurl"
+				fetchpriority="high"
+				crossorigin
+				/>
+			))}
 		</>
 	)}
 
@@ -167,6 +233,7 @@
 
 		run(() => {
 			log("Starting preload queue...");
+			const seen = new Set();
 
 			preloads.forEach((p, i) => {
 			if (!p) {
@@ -176,6 +243,8 @@
 
 			// Legacy carousel (string URL)
 			if (typeof p === "string") {
+				if (seen.has(p)) return;
+				seen.add(p);
 				log("[Carousel]", p);
 				const img = new Image();
 				img.src = p;
@@ -184,6 +253,9 @@
 
 			// Slideshow (srcset)
 			if (p.href) {
+				const key = [p.href, p.imagesrcset || "", p.imagesizes || ""].join("|");
+				if (seen.has(key)) return;
+				seen.add(key);
 				log("[Slideshow]", {
 				href: p.href,
 				srcset: p.imagesrcset,
@@ -213,73 +285,217 @@
 	</script>
 
 	{/* Prefetch Map Logic */}
-	<script is:client>
-		(async () => {
+	<script
+		is:inline
+		define:vars={{
+			prefetchContext: {
+				currentPath: currentPrefetchPath,
+				preloadedAssets: preloadedAssetUrls,
+			},
+		}}
+	>
+		window.__HW_PREFETCH_CONTEXT__ = prefetchContext;
+	</script>
+
+	<script>
+		import {
+			buildStreamUrl,
+			getClientBandwidthHintForViewport,
+		} from "/src/lib/video/stream";
+
+		const PREFETCH_CONFIG = {
+			idleTimeoutMs: 2000,
+			splashSettleTimeoutMs: 8000,
+		};
+
+		function waitForWindowLoad() {
+			if (document.readyState === "complete") {
+				return Promise.resolve();
+			}
+
+			return new Promise((resolve) => {
+				window.addEventListener("load", () => resolve(), { once: true });
+			});
+		}
+
+		function waitForIdle(timeout = PREFETCH_CONFIG.idleTimeoutMs) {
+			return new Promise((resolve) => {
+				if ("requestIdleCallback" in window) {
+					window.requestIdleCallback(() => resolve(), { timeout });
+					return;
+				}
+
+				setTimeout(resolve, 1);
+			});
+		}
+
+		function waitForEventOrTimeout(target, eventName, timeoutMs) {
+			return new Promise((resolve) => {
+				let done = false;
+				let timeoutId = null;
+
+				const finish = () => {
+					if (done) return;
+					done = true;
+
+					if (timeoutId) clearTimeout(timeoutId);
+					target.removeEventListener(eventName, finish);
+					resolve();
+				};
+
+				target.addEventListener(eventName, finish, { once: true });
+				timeoutId = setTimeout(finish, timeoutMs);
+			});
+		}
+
+		async function waitForCurrentPageSettled() {
+			await waitForWindowLoad();
+
+			const isSplashPage =
+				document.documentElement.classList.contains("home") &&
+				!!document.querySelector("[data-splash-video]");
+
+			if (
+				isSplashPage &&
+				window.hwSplashActive === true &&
+				!document.documentElement.classList.contains("splash-dismissed")
+			) {
+				await waitForEventOrTimeout(
+					window,
+					"splash:dismiss",
+					PREFETCH_CONFIG.splashSettleTimeoutMs
+				);
+			}
+
+			await waitForIdle();
+		}
+
 		function getBestImage(srcset) {
 			if (!srcset) return null;
 
-			const candidates = srcset.split(",").map(s => {
-			const parts = s.trim().split(/\s+/);
-			const url = parts[0];
-			const wDesc = parts.length > 1 ? parts[1] : null;
-			const width = wDesc?.endsWith("w") ? parseInt(wDesc, 10) : 0;
-			return { url, width };
+			const candidates = srcset.split(",").map((candidate) => {
+				const parts = candidate.trim().split(/\s+/);
+				const url = parts[0];
+				const wDesc = parts.length > 1 ? parts[1] : null;
+				const width = wDesc?.endsWith("w") ? parseInt(wDesc, 10) : 0;
+				return { url, width };
 			});
 
 			candidates.sort((a, b) => a.width - b.width);
 			const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
-			const best = candidates.find(c => c.width >= targetWidth);
-			return best ? best.url : candidates[candidates.length - 1].url;
+			const best = candidates.find((candidate) => candidate.width >= targetWidth);
+			return best ? best.url : candidates[candidates.length - 1]?.url || null;
 		}
 
-		try {
-			const res = await fetch("/prefetch-map.json", { cache: "no-store" });
-			if (!res.ok) return;
-
-			const map = await res.json();
-			const assets = new Set();
-
-			map.forEach((entry) => {
-			if (!entry.lcp) return;
-
-			const url = entry.lcp.imagesrcset 
-				? getBestImage(entry.lcp.imagesrcset)
-				: entry.lcp.href;
-
-			if (url) assets.add(url);
-			if (entry.video) assets.add(entry.video);
-			});
-
-			window.__PREFETCH_ASSETS__ = Array.from(assets);
-		} catch (err) {
-			console.warn("Prefetch map failed:", err);
+		function normalizePrefetchPath(pathname) {
+			let normalized = (pathname || "/").trim();
+			if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+			if (!normalized.endsWith("/")) normalized = `${normalized}/`;
+			return normalized;
 		}
+
+		window.__HW_PREFETCH_READY_PROMISE__ = (async () => {
+			const context = window.__HW_PREFETCH_CONTEXT__ || {};
+			const currentPath = normalizePrefetchPath(context.currentPath);
+			const skipAssets = new Set(
+				Array.isArray(context.preloadedAssets) ? context.preloadedAssets : []
+			);
+			const emptyState = {
+				assets: [],
+				skipAssets: Array.from(skipAssets),
+			};
+
+			try {
+				await waitForCurrentPageSettled();
+
+				const res = await fetch("/prefetch-map.json", { cache: "no-store" });
+				if (!res.ok) {
+					window.__HW_PREFETCH_READY__ = emptyState;
+					return emptyState;
+				}
+
+				const map = await res.json();
+				const assets = new Set();
+
+				map.forEach((entry) => {
+					if (!entry?.lcp && !entry?.video) return;
+					if (normalizePrefetchPath(entry.path) === currentPath) return;
+
+					const imageUrl = entry.lcp?.imagesrcset
+						? getBestImage(entry.lcp.imagesrcset)
+						: entry.lcp?.href;
+
+					if (imageUrl && !skipAssets.has(imageUrl)) {
+						assets.add(imageUrl);
+					}
+
+					if (entry.video) {
+						const hintedVideoUrl = buildStreamUrl(
+							entry.video,
+							getClientBandwidthHintForViewport(window.innerWidth)
+						);
+
+						if (hintedVideoUrl && !skipAssets.has(hintedVideoUrl)) {
+							assets.add(hintedVideoUrl);
+						}
+					}
+				});
+
+				const prefetchAssets = Array.from(assets);
+				const prefetchSkipAssets = Array.from(skipAssets);
+
+				window.__PREFETCH_ASSETS__ = prefetchAssets;
+				window.__HW_PREFETCH_SKIP_ASSETS__ = prefetchSkipAssets;
+				window.__HW_PREFETCH_READY__ = {
+					assets: prefetchAssets,
+					skipAssets: prefetchSkipAssets,
+				};
+				return window.__HW_PREFETCH_READY__;
+			} catch (err) {
+				console.warn("Prefetch map failed:", err);
+				window.__HW_PREFETCH_READY__ = emptyState;
+				return emptyState;
+			}
 		})();
 	</script>
 
 	{/* Service Worker Prefetch */}
-	<script is:client>
+	<script>
 		if ("serviceWorker" in navigator) {
-		navigator.serviceWorker.register("/sw.js").then((reg) => {
-			navigator.serviceWorker.addEventListener("message", (event) => {
-			if (event.data === "request-prefetch-list" && window.__PREFETCH_ASSETS__?.length) {
-				reg.active?.postMessage({ prefetchAssets: window.__PREFETCH_ASSETS__ });
-			}
-			});
+			navigator.serviceWorker.register("/sw.js").then((reg) => {
+				const waitForPrefetchAssets = async () =>
+					window.__HW_PREFETCH_READY_PROMISE__ ||
+					window.__HW_PREFETCH_READY__ || { assets: [], skipAssets: [] };
 
-			const notifySW = (worker) => worker.postMessage("prefetch");
+				navigator.serviceWorker.addEventListener("message", async (event) => {
+					if (event.data === "request-prefetch-list") {
+						const prefetchState = await waitForPrefetchAssets();
+						if (!prefetchState?.assets?.length) return;
 
-			if (reg.active) {
-			notifySW(reg.active);
-			} else {
-			reg.addEventListener("updatefound", () => {
-				const w = reg.installing;
-				w.addEventListener("statechange", () => {
-				if (w.state === "activated") notifySW(w);
+						reg.active?.postMessage({
+							prefetchAssets: prefetchState.assets,
+							skipAssets: prefetchState.skipAssets || [],
+						});
+					}
 				});
+
+				const notifySW = async (worker) => {
+					const prefetchState = await waitForPrefetchAssets();
+					if (!prefetchState?.assets?.length) return;
+					worker.postMessage("prefetch");
+				};
+
+				if (reg.active) {
+					notifySW(reg.active);
+				} else {
+					reg.addEventListener("updatefound", () => {
+						const w = reg.installing;
+						w.addEventListener("statechange", () => {
+							if (w.state === "activated") notifySW(w);
+						});
+					});
+				}
 			});
-			}
-		});
 		}
 	</script>
 

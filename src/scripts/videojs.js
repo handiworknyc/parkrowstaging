@@ -1,10 +1,15 @@
 import videojs from "video.js";
+import {
+  buildStreamUrl,
+  getClientBandwidthHintForViewport,
+} from "../lib/video/stream";
 
 /* -----------------------------------------------------
    CONFIG
 ----------------------------------------------------- */
 const DEBUG_VIDEO = true;
 const LOG_VER = "v4";
+const WARMUP_PLAY_DURATION_MS = 2500;
 
 // ~16 Mbps forces 1080p/4k on Desktop
 const BANDWIDTH_HIGH = 16194304; 
@@ -38,6 +43,7 @@ function ensureVideoJsCss() {
 ----------------------------------------------------- */
 const players = new Map();
 const observers = new Map();
+const cleanups = new Map();
 
 function isFirstLoadSplashActive() {
   const isFirstLoad = HW.$html.classList.contains("first-load");
@@ -64,8 +70,12 @@ export function initCFVideo(videoId) {
   if (!wrap) return;
 
   const el = wrap.querySelector("video");
-  const manifestSrc = wrap.dataset.src;
-  if (!el || !manifestSrc) return;
+  const baseManifestSrc = wrap.dataset.src;
+  if (!el || !baseManifestSrc) return;
+
+  const clientBandwidthHint = getClientBandwidthHintForViewport(window.innerWidth);
+  const manifestSrc = buildStreamUrl(baseManifestSrc, clientBandwidthHint);
+  if (!manifestSrc) return;
 
   if (players.has(videoId)) return players.get(videoId);
 
@@ -126,6 +136,7 @@ export function initCFVideo(videoId) {
     isCriticalVideo,
     shouldDelaySource,
     targetBandwidth, // Logged for debugging
+    clientBandwidthHint,
     src: manifestSrc,
   });
   
@@ -160,7 +171,120 @@ export function initCFVideo(videoId) {
 
   players.set(videoId, player);
 
-  let playUnlocked = !shouldDelaySource;
+  const cleanupFns = [];
+  const registerCleanup = (fn) => {
+    cleanupFns.push(fn);
+  };
+  cleanups.set(videoId, () => {
+    cleanupFns.forEach((fn) => fn());
+    cleanupFns.length = 0;
+  });
+
+  let sourceUnlocked = !shouldDelaySource;
+  let playbackUnlocked = !shouldDelaySource;
+  const isScrollControlled = wrap.dataset.scroll === "true";
+  let isIntersecting = !isScrollControlled;
+  let warmupActive = false;
+  let warmupCompleted = false;
+  let warmupTimer = null;
+
+  function isElementVisibleEnough(target, threshold = 0) {
+    const rect = target.getBoundingClientRect();
+    const viewportWidth =
+      window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    const intersectionWidth = Math.max(
+      0,
+      Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0)
+    );
+    const intersectionHeight = Math.max(
+      0,
+      Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)
+    );
+    const visibleArea = intersectionWidth * intersectionHeight;
+    const totalArea = Math.max(rect.width * rect.height, 1);
+
+    return visibleArea / totalArea >= threshold;
+  }
+
+  function attemptPlay(reason) {
+    if (player.isDisposed()) return;
+    if (!sourceUnlocked || !playbackUnlocked) return;
+    if (isScrollControlled && !isIntersecting) return;
+    if (!player.paused()) return;
+
+    vlog(videoId, `${reason} → play()`);
+    const playPromise = player.play();
+
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((err) => {
+        vlog(videoId, `${reason} → play() rejected`, err);
+      });
+    }
+  }
+
+  function schedulePlay(reason) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        attemptPlay(reason);
+      });
+    });
+  }
+
+  function clearWarmupTimer() {
+    if (warmupTimer) {
+      clearTimeout(warmupTimer);
+      warmupTimer = null;
+    }
+  }
+
+  function finishWarmup(reason) {
+    if (!warmupActive) return;
+
+    vlog(videoId, `finish warmup (${reason})`);
+    warmupActive = false;
+    warmupCompleted = true;
+    clearWarmupTimer();
+
+    if (!player.isDisposed() && !playbackUnlocked) {
+      if (!player.paused()) {
+        player.pause();
+      }
+
+      try {
+        player.currentTime(0);
+      } catch (err) {
+        vlog(videoId, "warmup rewind failed", err);
+      }
+    }
+  }
+
+  function startWarmupPlayback(reason) {
+    if (player.isDisposed()) return;
+    if (!sourceUnlocked) return;
+    if (!isScrollControlled) return;
+    if (warmupActive || warmupCompleted || playbackUnlocked) return;
+
+    vlog(videoId, `start warmup (${reason})`);
+    warmupActive = true;
+    clearWarmupTimer();
+
+    const playPromise = player.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((err) => {
+        vlog(videoId, `warmup play rejected (${reason})`, err);
+      });
+    }
+
+    warmupTimer = setTimeout(() => {
+      finishWarmup("timer");
+    }, WARMUP_PLAY_DURATION_MS);
+  }
+
+  registerCleanup(() => {
+    clearWarmupTimer();
+  });
 
 
   wrap.classList.add("paused");
@@ -182,7 +306,7 @@ export function initCFVideo(videoId) {
      Events
   ----------------------------------------------------- */
   player.on("playing", () => {
-    if (!playUnlocked) {
+    if (!playbackUnlocked && !warmupActive) {
       vlog(videoId, "playing blocked → pause");
       player.pause();
       return;
@@ -201,14 +325,21 @@ export function initCFVideo(videoId) {
 
   player.on("pause", setPaused);
 
+  player.ready(() => {
+    schedulePlay("ready");
+  });
+  player.on("loadedmetadata", () => attemptPlay("loadedmetadata"));
+  player.on("loadeddata", () => attemptPlay("loadeddata"));
+  player.on("canplay", () => attemptPlay("canplay"));
+
   /* -----------------------------------------------------
      Scroll-to-play
   ----------------------------------------------------- */
-  if (wrap.dataset.scroll === "true") {
+  if (isScrollControlled) {
     const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
     const parent = wrap.closest(".hw-player-parent") || wrap;
 
-    let isIntersecting = false;
+    isIntersecting = isElementVisibleEnough(parent, threshold);
 
     const attachObserver = () => {
       if (observers.has(videoId)) return;
@@ -220,10 +351,9 @@ export function initCFVideo(videoId) {
           entries.forEach((entry) => {
             isIntersecting = entry.isIntersecting;
 
-            if (entry.isIntersecting && playUnlocked) {
-              vlog(videoId, "intersection → play()");
-              player.play().catch(() => {});
-            } else if (!entry.isIntersecting && !player.paused()) {
+            if (entry.isIntersecting && playbackUnlocked) {
+              schedulePlay("intersection");
+            } else if (!entry.isIntersecting && !player.paused() && !warmupActive) {
               player.pause();
             }
           });
@@ -236,29 +366,65 @@ export function initCFVideo(videoId) {
     };
 
     const attachSourceNow = (reason) => {
-      if (playUnlocked) return;
+      if (sourceUnlocked) return;
 
-      vlog(videoId, `unlock → attach source (${reason})`);
-      playUnlocked = true;
+      vlog(videoId, `attach source (${reason})`);
+      sourceUnlocked = true;
 
       player.src({ src: manifestSrc, type: "application/x-mpegURL" });
       player.load();
 
       attachObserver();
-
-      if (isIntersecting) {
-        player.play().catch(() => {});
-      }
+      isIntersecting = isElementVisibleEnough(parent, threshold);
     };
 
-    if (playUnlocked) {
+    const unlockPlaybackNow = (reason) => {
+      if (playbackUnlocked) return;
+
+      vlog(videoId, `unlock playback (${reason})`);
+      playbackUnlocked = true;
+      clearWarmupTimer();
+
+      if (warmupActive || warmupCompleted) {
+        warmupActive = false;
+
+        try {
+          player.currentTime(0);
+        } catch (err) {
+          vlog(videoId, "dismiss rewind failed", err);
+        }
+      }
+
+      attemptPlay(`playback-unlocked:${reason}:immediate`);
+      schedulePlay(`playback-unlocked:${reason}`);
+    };
+
+    if (sourceUnlocked) {
       attachObserver();
+      schedulePlay("initial-visibility");
     } else {
-      window.addEventListener(
-        "splash:dismiss",
-        () => attachSourceNow("splash:dismiss"),
-        { once: true }
-      );
+      const unlockOnSplashPlaying = () => {
+        attachSourceNow("splash:playing");
+        startWarmupPlayback("splash:playing");
+      };
+
+      const unlockOnSplashDismiss = () => {
+        window.removeEventListener("splash:playing", unlockOnSplashPlaying);
+        attachSourceNow("splash:dismiss");
+        unlockPlaybackNow("splash:dismiss");
+      };
+
+      window.addEventListener("splash:playing", unlockOnSplashPlaying, {
+        once: true,
+      });
+      window.addEventListener("splash:dismiss", unlockOnSplashDismiss, {
+        once: true,
+      });
+
+      registerCleanup(() => {
+        window.removeEventListener("splash:playing", unlockOnSplashPlaying);
+        window.removeEventListener("splash:dismiss", unlockOnSplashDismiss);
+      });
     }
   }
 
@@ -269,6 +435,11 @@ export function initCFVideo(videoId) {
    Cleanup
 ----------------------------------------------------- */
 export function destroyCFVideoPlayer(videoId) {
+  if (cleanups.has(videoId)) {
+    cleanups.get(videoId)();
+    cleanups.delete(videoId);
+  }
+
   if (observers.has(videoId)) {
     observers.get(videoId).disconnect();
     observers.delete(videoId);
