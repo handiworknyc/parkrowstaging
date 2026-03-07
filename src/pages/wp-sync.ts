@@ -102,6 +102,19 @@ function runLocalSync() {
   });
 }
 
+function isLocalRequest(request: Request) {
+  try {
+    const { hostname } = new URL(request.url);
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1'
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function dispatchGitHub(
   repository: string,
   token: string,
@@ -134,12 +147,12 @@ async function dispatchGitHub(
 }
 
 export const POST: APIRoute = async ({ request }) => {
-  const isNetlify = Boolean(getEnv('NETLIFY'));
   const githubToken = (getEnv('GITHUB') || getEnv('GITHUB_TOKEN')).trim();
   const githubRepository = normalizeRepository(getEnv('GITHUB_REPOSITORY'));
   const webhookSecret = getEnv('WP_WEBHOOK_SECRET').trim();
+  const localRequest = isLocalRequest(request);
 
-  if (!isNetlify && (!githubToken || !githubRepository)) {
+  if (localRequest && (!githubToken || !githubRepository)) {
     return runLocalSync();
   }
 
