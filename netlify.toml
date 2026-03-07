@@ -6,15 +6,3 @@
   command = "npm run dev"
   port = 8888
   targetPort = 4321
-
-# API routes should NOT be redirected
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-# Catch-all for client-side routing (must come AFTER API routes)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
