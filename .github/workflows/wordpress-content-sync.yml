@@ -1,0 +1,81 @@
+name: WordPress Content Sync
+
+on:
+  repository_dispatch:
+    types:
+      - wordpress_content_changed
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Reason for the manual rebuild
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: netlify-wordpress-content-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+    env:
+      WP_BASE_URL: ${{ secrets.WP_BASE_URL }}
+      WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
+      WP_AUTH_BASIC: ${{ secrets.WP_AUTH_BASIC }}
+      WP_IMAGE_ALLOW_HOSTS: ${{ secrets.WP_IMAGE_ALLOW_HOSTS }}
+      GF_CONSUMER_KEY: ${{ secrets.GF_CONSUMER_KEY }}
+      GF_CONSUMER_SECRET: ${{ secrets.GF_CONSUMER_SECRET }}
+      PAGE_URIS: ${{ vars.PAGE_URIS }}
+
+    steps:
+      - name: Log trigger context
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "action=${{ github.event.action || 'manual' }}"
+          echo 'client_payload=${{ toJson(github.event.client_payload) }}'
+
+      - name: Validate sync environment
+        run: |
+          if [ -z "$WP_BASE_URL" ]; then
+            echo "Missing WP_BASE_URL secret." >&2
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync WordPress content
+        run: npm run sync:flex
+
+      - name: Commit synced JSON
+        id: commit
+        run: |
+          git add -A src/content/wp public/prefetch-map.json
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync WordPress content"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push synced content
+        if: steps.commit.outputs.changed == 'true'
+        run: git push
