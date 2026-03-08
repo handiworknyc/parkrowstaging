@@ -459,45 +459,65 @@
 		})();
 	</script>
 
-	{/* Service Worker Prefetch */}
-	<script>
-		if ("serviceWorker" in navigator) {
-			navigator.serviceWorker.register("/sw.js").then((reg) => {
-				const waitForPrefetchAssets = async () =>
-					window.__HW_PREFETCH_READY_PROMISE__ ||
-					window.__HW_PREFETCH_READY__ || { assets: [], skipAssets: [] };
+		{/* Service Worker Prefetch */}
+		<script>
+			async function unregisterDevServiceWorkers() {
+				const regs = await navigator.serviceWorker.getRegistrations();
+				await Promise.all(regs.map((reg) => reg.unregister()));
 
-				navigator.serviceWorker.addEventListener("message", async (event) => {
-					if (event.data === "request-prefetch-list") {
-						const prefetchState = await waitForPrefetchAssets();
-						if (!prefetchState?.assets?.length) return;
+				if ("caches" in window) {
+					const cacheKeys = await caches.keys();
+					await Promise.all(
+						cacheKeys
+							.filter((key) => key.startsWith("prefetch-"))
+							.map((key) => caches.delete(key))
+					);
+				}
+			}
 
-						reg.active?.postMessage({
-							prefetchAssets: prefetchState.assets,
-							skipAssets: prefetchState.skipAssets || [],
-						});
-					}
-				});
-
-				const notifySW = async (worker) => {
-					const prefetchState = await waitForPrefetchAssets();
-					if (!prefetchState?.assets?.length) return;
-					worker.postMessage("prefetch");
-				};
-
-				if (reg.active) {
-					notifySW(reg.active);
+			if ("serviceWorker" in navigator) {
+				if (import.meta.env.DEV) {
+					unregisterDevServiceWorkers().catch((err) => {
+						console.warn("Service worker cleanup failed:", err);
+					});
 				} else {
-					reg.addEventListener("updatefound", () => {
-						const w = reg.installing;
-						w.addEventListener("statechange", () => {
-							if (w.state === "activated") notifySW(w);
+					navigator.serviceWorker.register("/sw.js").then((reg) => {
+						const waitForPrefetchAssets = async () =>
+							window.__HW_PREFETCH_READY_PROMISE__ ||
+							window.__HW_PREFETCH_READY__ || { assets: [], skipAssets: [] };
+
+						navigator.serviceWorker.addEventListener("message", async (event) => {
+							if (event.data === "request-prefetch-list") {
+								const prefetchState = await waitForPrefetchAssets();
+								if (!prefetchState?.assets?.length) return;
+
+								reg.active?.postMessage({
+									prefetchAssets: prefetchState.assets,
+									skipAssets: prefetchState.skipAssets || [],
+								});
+							}
 						});
+
+						const notifySW = async (worker) => {
+							const prefetchState = await waitForPrefetchAssets();
+							if (!prefetchState?.assets?.length) return;
+							worker.postMessage("prefetch");
+						};
+
+						if (reg.active) {
+							notifySW(reg.active);
+						} else {
+							reg.addEventListener("updatefound", () => {
+								const w = reg.installing;
+								w.addEventListener("statechange", () => {
+									if (w.state === "activated") notifySW(w);
+								});
+							});
+						}
 					});
 				}
-			});
-		}
-	</script>
+			}
+		</script>
 
 	<script>
 		import "../scripts/smart-image";

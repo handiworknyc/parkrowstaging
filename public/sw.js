@@ -2,7 +2,7 @@
    CONFIGURATION
 ========================================================== */
 const CONFIG = {
-  CACHE_VERSION: "prefetch-v1",
+  CACHE_VERSION: "prefetch-v2",
   DEBUG: false,
   PREFETCH_CONCURRENCY: 3, // Parallel requests to avoid bandwidth saturation
   FETCH_TIMEOUT: 10000, // 10s timeout for prefetch requests
@@ -11,6 +11,42 @@ const CONFIG = {
 
 const log = (...args) => CONFIG.DEBUG && console.log("[SW]", ...args);
 const warn = (...args) => console.warn("[SW]", ...args);
+
+function isCrossOrigin(url) {
+  return url.origin !== self.location.origin;
+}
+
+function isViteDevAsset(url) {
+  return (
+    url.pathname.startsWith("/@vite/") ||
+    url.pathname.startsWith("/src/") ||
+    url.pathname.startsWith("/node_modules/.vite/") ||
+    url.searchParams.has("v")
+  );
+}
+
+function isStreamingManifest(url) {
+  return (
+    url.pathname.endsWith(".m3u8") ||
+    url.pathname.includes("/manifest/video.m3u8")
+  );
+}
+
+function shouldBypassRequest(request, url) {
+  if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+    return true;
+  }
+
+  if (isCrossOrigin(url)) {
+    return true;
+  }
+
+  if (isViteDevAsset(url)) {
+    return true;
+  }
+
+  return false;
+}
 
 /* ==========================================================
    FETCH HANDLER (Stale-While-Revalidate Strategy)
@@ -24,7 +60,8 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.includes("auth") ||
-    url.protocol === "chrome-extension:"
+    url.protocol === "chrome-extension:" ||
+    shouldBypassRequest(event.request, url)
   ) {
     return;
   }
@@ -207,6 +244,18 @@ async function handlePrefetchAssets(assets, skipAssets = []) {
 ========================================================== */
 async function prefetchAsset(url) {
   try {
+    const assetUrl = new URL(url, self.location.origin);
+
+    if (isCrossOrigin(assetUrl)) {
+      log("Skipping cross-origin prefetch:", url);
+      return;
+    }
+
+    if (isStreamingManifest(assetUrl)) {
+      log("Skipping streaming manifest prefetch:", url);
+      return;
+    }
+
     const cache = await caches.open(CONFIG.CACHE_VERSION);
 
     // Skip if already cached
@@ -233,13 +282,16 @@ async function fetchWithTimeout(url, timeout) {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    // mode: 'no-cors' handles external CDNs without CORS headers
-    const response = await fetch(new Request(url, { 
-      mode: "no-cors",
+    const response = await fetch(new Request(url, {
       signal: controller.signal,
     }));
 
     clearTimeout(timeoutId);
+
+    if (!response || !response.ok) {
+      return null;
+    }
+
     return response;
   } catch (err) {
     clearTimeout(timeoutId);

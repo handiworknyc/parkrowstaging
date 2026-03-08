@@ -44,6 +44,18 @@ function ensureVideoJsCss() {
 const players = new Map();
 const observers = new Map();
 const cleanups = new Map();
+const refreshers = new Map();
+
+function runAfterFrames(callback, frames = 1) {
+  if (frames <= 0) {
+    callback();
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    runAfterFrames(callback, frames - 1);
+  });
+}
 
 function isFirstLoadSplashActive() {
   const isFirstLoad = HW.$html.classList.contains("first-load");
@@ -65,7 +77,19 @@ if (typeof window !== "undefined") {
 /* -----------------------------------------------------
    INIT
 ----------------------------------------------------- */
-export function initCFVideo(videoId) {
+export function refreshCFVideoPlayback(videoId, reason = "manual-refresh") {
+  const refresher = refreshers.get(videoId);
+  if (!refresher) return false;
+
+  refresher(reason);
+  return true;
+}
+
+export function refreshAllCFVideoPlayback(reason = "manual-refresh-all") {
+  refreshers.forEach((refresher) => refresher(reason));
+}
+
+export function initCFVideo(videoId, reason = "init") {
   const wrap = document.getElementById(`cfvideo-${videoId}`);
   if (!wrap) return;
 
@@ -77,7 +101,10 @@ export function initCFVideo(videoId) {
   const manifestSrc = buildStreamUrl(baseManifestSrc, clientBandwidthHint);
   if (!manifestSrc) return;
 
-  if (players.has(videoId)) return players.get(videoId);
+  if (players.has(videoId)) {
+    refreshCFVideoPlayback(videoId, `${reason}:existing-player`);
+    return players.get(videoId);
+  }
 
   const hasControls = el.classList.contains("show-controls-true");
   if (hasControls) ensureVideoJsCss();
@@ -129,6 +156,7 @@ export function initCFVideo(videoId) {
   const targetBandwidth = isMobile ? BANDWIDTH_MOBILE : BANDWIDTH_HIGH;
 
   vlog(videoId, "init", {
+    reason,
     isIOS,
     isFirstLoad,
     splashActive,
@@ -183,10 +211,13 @@ export function initCFVideo(videoId) {
   let sourceUnlocked = !shouldDelaySource;
   let playbackUnlocked = !shouldDelaySource;
   const isScrollControlled = wrap.dataset.scroll === "true";
+  const scrollThreshold = parseFloat(wrap.dataset.threshold) || 0.6;
+  const scrollParent = wrap.closest(".hw-player-parent") || wrap;
   let isIntersecting = !isScrollControlled;
   let warmupActive = false;
   let warmupCompleted = false;
   let warmupTimer = null;
+  let attachObserver = () => {};
 
   function isElementVisibleEnough(target, threshold = 0) {
     const rect = target.getBoundingClientRect();
@@ -336,15 +367,12 @@ export function initCFVideo(videoId) {
      Scroll-to-play
   ----------------------------------------------------- */
   if (isScrollControlled) {
-    const threshold = parseFloat(wrap.dataset.threshold) || 0.6;
-    const parent = wrap.closest(".hw-player-parent") || wrap;
+    isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
 
-    isIntersecting = isElementVisibleEnough(parent, threshold);
-
-    const attachObserver = () => {
+    attachObserver = () => {
       if (observers.has(videoId)) return;
 
-      vlog(videoId, "observer attached", { threshold });
+      vlog(videoId, "observer attached", { threshold: scrollThreshold });
 
       const observer = new IntersectionObserver(
         (entries) => {
@@ -358,10 +386,10 @@ export function initCFVideo(videoId) {
             }
           });
         },
-        { threshold }
+        { threshold: scrollThreshold }
       );
 
-      observer.observe(parent);
+      observer.observe(scrollParent);
       observers.set(videoId, observer);
     };
 
@@ -375,7 +403,7 @@ export function initCFVideo(videoId) {
       player.load();
 
       attachObserver();
-      isIntersecting = isElementVisibleEnough(parent, threshold);
+      isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
     };
 
     const unlockPlaybackNow = (reason) => {
@@ -428,6 +456,24 @@ export function initCFVideo(videoId) {
     }
   }
 
+  function refreshPlayback(reason) {
+    if (player.isDisposed()) return;
+    if (!wrap.isConnected || !el.isConnected) return;
+
+    if (isScrollControlled) {
+      isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
+      attachObserver();
+    }
+
+    attemptPlay(`${reason}:immediate`);
+    schedulePlay(`${reason}:scheduled`);
+  }
+
+  refreshers.set(videoId, refreshPlayback);
+  registerCleanup(() => {
+    refreshers.delete(videoId);
+  });
+
   return player;
 }
 
@@ -445,6 +491,10 @@ export function destroyCFVideoPlayer(videoId) {
     observers.delete(videoId);
   }
 
+  if (refreshers.has(videoId)) {
+    refreshers.delete(videoId);
+  }
+
   if (players.has(videoId)) {
     const player = players.get(videoId);
     if (player && !player.isDisposed()) {
@@ -459,8 +509,15 @@ if (typeof document !== "undefined") {
     players.forEach((_, id) => destroyCFVideoPlayer(id));
     players.clear();
     observers.clear();
+    refreshers.clear();
 
     window.__HW_SPLASH_PLAYING__ = false;
     window.__HW_FETCH_PRIORITY_ASSIGNED__ = false;
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    runAfterFrames(() => {
+      refreshAllCFVideoPlayback("astro:page-load");
+    }, 2);
   });
 }

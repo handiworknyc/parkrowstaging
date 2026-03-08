@@ -2,6 +2,9 @@ import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SlideNavigation from "../ui/SlideNavigation"; 
 
+const MOBILE_BLUR_MEDIA_QUERY =
+  "(max-width: 768px), (hover: none) and (pointer: coarse)";
+
 // 1. Helper function
 const getSlideImageProps = (slide) => {
   const parts = [];
@@ -24,6 +27,38 @@ const getSlideImageProps = (slide) => {
 
 export default function FadeSlideshow({ slides }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [disableBlur, setDisableBlur] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return false;
+    }
+
+    return window.matchMedia(MOBILE_BLUR_MEDIA_QUERY).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return undefined;
+    }
+
+    const mediaQueryList = window.matchMedia(MOBILE_BLUR_MEDIA_QUERY);
+    const syncBlurMode = () => setDisableBlur(mediaQueryList.matches);
+
+    syncBlurMode();
+
+    if (mediaQueryList.addEventListener) {
+      mediaQueryList.addEventListener("change", syncBlurMode);
+
+      return () => {
+        mediaQueryList.removeEventListener("change", syncBlurMode);
+      };
+    }
+
+    mediaQueryList.addListener(syncBlurMode);
+
+    return () => {
+      mediaQueryList.removeListener(syncBlurMode);
+    };
+  }, []);
 
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -35,6 +70,8 @@ export default function FadeSlideshow({ slides }) {
 
   const slide = slides[currentIndex];
   const { src: primary, srcSet } = getSlideImageProps(slide);
+  const exitFilter = disableBlur ? "blur(0px)" : "blur(5px)";
+  const captionOverlayBlur = disableBlur ? "0px" : "11px";
 
   // ---- Variants & Styles ----
   const wipeVariants = {
@@ -55,7 +92,7 @@ export default function FadeSlideshow({ slides }) {
       opacity: 1,
       WebkitMaskPosition: "100% 100%",
       maskPosition: "100% 100%",
-      filter: "blur(5px)", // Slightly increased blur for extra smoothness
+      filter: exitFilter,
       transition: { duration: 4, ease:  [0.19, 1, 0.32, 1] },
     },
   };
@@ -68,6 +105,7 @@ export default function FadeSlideshow({ slides }) {
     maskSize: "500% 500%",
     WebkitMaskRepeat: "no-repeat",
     maskRepeat: "no-repeat",
+    "--slide-caption-overlay-blur": captionOverlayBlur,
   };
 
   return (
@@ -154,7 +192,7 @@ function NavStyles() {
           rgba(0,0,0,0.6) 9%,
           rgba(0,0,0,0.0) 25%
         );
-        filter: blur(11px);
+        filter: blur(var(--slide-caption-overlay-blur, 11px));
         pointer-events: none;
       }
     `}</style>

@@ -147,7 +147,6 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         SELECTOR: ".hw-vid-wrap",
         FIRST_LOAD_CLASS: "first-load",
         LOADING_CLASS: "loading",
-        INITTED_ATTR: "data-initted",
       };
 
       function isFirstLoad(): boolean {
@@ -174,7 +173,18 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         element.addEventListener("transitionend", handleTransitionEnd);
       }
 
-      function initVideo(element: HTMLElement): void {
+      function runAfterFrames(callback: () => void, frames = 1): void {
+        if (frames <= 0) {
+          callback();
+          return;
+        }
+
+        requestAnimationFrame(() => {
+          runAfterFrames(callback, frames - 1);
+        });
+      }
+
+      function initVideo(element: HTMLElement, reason: string): void {
         const id = element.getAttribute("data-id");
         if (!id) return;
         
@@ -189,25 +199,27 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         // ✅ CRITICAL FIX 3: Prioritize execution
         if (isCritical) {
           // Initialize immediately on the main thread
-          initCFVideo(id);
+          initCFVideo(id, reason);
         } else {
           // Defer non-critical videos to save resources
           requestAnimationFrame(() => {
-            initCFVideo(id);
+            initCFVideo(id, reason);
           });
         }
       }
 
-      function initAllVideos(): void {
+      function initAllVideos(reason: string): void {
         const videos = document.querySelectorAll(CONFIG.SELECTOR);
 
         videos.forEach((video) => {
-          if (video.getAttribute(CONFIG.INITTED_ATTR) === "true") return;
-          
-          video.setAttribute(CONFIG.INITTED_ATTR, "true");
-          // Cast to HTMLElement to satisfy TS
-          initVideo(video as HTMLElement);
+          initVideo(video as HTMLElement, reason);
         });
+      }
+
+      function scheduleInitAllVideos(reason: string, frames = 1): void {
+        runAfterFrames(() => {
+          initAllVideos(reason);
+        }, frames);
       }
 
       const bootKey = "__HW_CFVIDEO_BOOTSTRAPPED__";
@@ -215,14 +227,21 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
 
       if (!win[bootKey]) {
         win[bootKey] = true;
-        document.addEventListener("astro:page-load", initAllVideos);
-        document.addEventListener("astro:after-swap", initAllVideos);
+        document.addEventListener("astro:page-load", () => {
+          scheduleInitAllVideos("astro:page-load", 1);
+        });
+
+        document.addEventListener("astro:after-swap", () => {
+          scheduleInitAllVideos("astro:after-swap", 2);
+        });
       }
 
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initAllVideos, { once: true });
+        document.addEventListener("DOMContentLoaded", () => {
+          scheduleInitAllVideos("DOMContentLoaded", 1);
+        }, { once: true });
       } else {
-        initAllVideos();
+        scheduleInitAllVideos("boot", 1);
       }
     </script>
   </>
