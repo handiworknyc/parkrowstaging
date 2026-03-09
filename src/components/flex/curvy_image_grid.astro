@@ -157,12 +157,10 @@ const mobileBleedClass =
                             "col-span-full",      // Tailwind Full Width
                             "w-full",
                             "py-12",
-                            "!h-auto",            // Force auto height
-                            "row-auto",           // Grid row auto
+                            "h-auto",
                             "self-start",
-                            `text-align-${vars.text_align}`
+                            "text-center"
                         ]}
-                        style={{ gridRow: 'auto' }}
                     >
                         {title && <h3 class="figure-h3 pb-0" set:html={title} />}
                         {text && <div class="section-text mt-5" set:html={text} />}
@@ -266,6 +264,21 @@ const mobileBleedClass =
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+@media (max-width: 759px) {
+  .grid-container.is-quote-true {
+    grid-auto-rows: auto;
+  }
+
+  .grid-container.is-quote-true .mobile-mid-content {
+    height: auto;
+    text-align: center;
+  }
+
+  .grid-container.is-quote-true .grid-item.grid-span-1 .hw-bg-vid {
+    height: 12rem !important;
+  }
 }
 
 /* Remove mobile fixed height on desktop */
