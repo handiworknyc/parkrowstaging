@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import { useRadio } from 'react-aria';
 import type { RadioGroupState } from 'react-stately';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 type Props = {
   text: string;

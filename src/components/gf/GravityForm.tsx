@@ -4,7 +4,7 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 import GFTextField from './GFTextField';
 import GFTextareaField from './GFTextArea';

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import SlideNavigation from "../ui/SlideNavigation"; 
 
 const MOBILE_BLUR_MEDIA_QUERY =
@@ -27,13 +27,7 @@ const getSlideImageProps = (slide) => {
 
 export default function FadeSlideshow({ slides }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [disableBlur, setDisableBlur] = useState(() => {
-    if (typeof window === "undefined" || !window.matchMedia) {
-      return false;
-    }
-
-    return window.matchMedia(MOBILE_BLUR_MEDIA_QUERY).matches;
-  });
+  const [disableBlur, setDisableBlur] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) {
@@ -166,35 +160,6 @@ export default function FadeSlideshow({ slides }) {
           canPrev={slides.length > 1}
           className="carousel-nav-position"
       />
-
-      <NavStyles />
     </div>
-  );
-}
-function NavStyles() {
-  return (
-    <style>{`
-      .carousel-nav-position {
-        position: absolute;
-        bottom: -4.5rem;
-        right: var(--containerPadding, 0);
-      }
-
-      .has-caption .image-wrapper::before {
-        content: '';
-        position: absolute;
-        inset: -0.75rem -1rem;
-        z-index: 2;
-        mix-blend-mode: multiply;
-        background: linear-gradient(
-          32deg,
-          rgba(0,0,0,0.75) 0%,
-          rgba(0,0,0,0.6) 9%,
-          rgba(0,0,0,0.0) 25%
-        );
-        filter: blur(var(--slide-caption-overlay-blur, 11px));
-        pointer-events: none;
-      }
-    `}</style>
   );
 }

@@ -121,8 +121,15 @@ const LAYOUT_CONFIG = [
     const visibleItems = row.items.filter((item) => hasVideo(item.index));
     if (visibleItems.length === 0) return null;
 
+    const rowClass = [
+      row.rowClass,
+      visibleItems.some((item) => item.cellClass.includes("col-"))
+        ? "photo-collage-columns-row"
+        : "photo-collage-bleed-row",
+    ].join(" ");
+
     return (
-      <div class={row.rowClass}>
+      <div class={rowClass}>
         {visibleItems.map((item) => {
           const video = images[item.index].video;
           const isImage = isImageMode(video);

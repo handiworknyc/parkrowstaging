@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useRef, useMemo } from "react";
+import { motion, useScroll, useTransform, useSpring } from "motion/react";
+import { useMemo, useRef } from "react";
 
 const DEFAULT_CONFIG = {
   strength: 5,
   scaleMax: 1.1,
+  baseScale: 1.06,
   springConfig: {
     mass: 0.4,
     stiffness: 150,
@@ -35,20 +36,19 @@ export default function CollageParallax({
     DEFAULT_CONFIG.springConfig
   );
 
-  // ✅ compute ranges normally
+  const horizontalOverscan = Math.max(strength, 0);
+
   const xRange = invert
     ? [strength, -strength]
     : [-strength, strength];
 
-  // ✅ hooks must be top-level
   const x = useTransform(smoothProgress, [0, 1], xRange);
   const scale = useTransform(
     smoothProgress,
     [0, 1.06],
-    [1.06, scaleMax]
+    [DEFAULT_CONFIG.baseScale, scaleMax]
   );
 
-  // ✅ memo styles only
   const containerStyle = useMemo(
     () => ({
       width: "100%",
@@ -63,12 +63,19 @@ export default function CollageParallax({
     () => ({
       x,
       scale,
-      width: "100%",
+      width: horizontalOverscan
+        ? `calc(100% + ${horizontalOverscan * 2}px)`
+        : "100%",
+      minWidth: "100%",
       height: "100%",
+      minHeight: "100%",
       display: "block",
+      position: "relative",
+      left: horizontalOverscan ? `${horizontalOverscan * -1}px` : 0,
       willChange: "transform",
+      transformOrigin: "center center",
     }),
-    [x, scale]
+    [horizontalOverscan, x, scale]
   );
 
   const imageStyle = useMemo(

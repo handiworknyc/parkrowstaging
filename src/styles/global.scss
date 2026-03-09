@@ -883,8 +883,74 @@ ul.two-col-list {
 	transition: opacity .8s var(--cubicBez);
 }
 
+.photo-collage-cell .img-load-par > astro-island {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.photo-collage-cell .img-load-par > astro-island > div {
+	width: 100%;
+	height: 100%;
+}
+
 .photo-collage-cell .img-load-par.child-lazy-loaded {
 	opacity: 1;
+}
+
+@media (max-width: 767px) {
+	.photo-collage {
+		--photo-collage-mobile-gutter: 1rem;
+		--photo-collage-mobile-col-unit: calc(
+			(
+				min(100vw, var(--containerMaxW))
+				- (var(--containerPadding) * 2)
+				- (var(--photo-collage-mobile-gutter) * 11)
+			) / 12
+		);
+	}
+
+	.photo-collage > .row:not(:last-child) .photo-collage-cell {
+		margin-bottom: 1rem;
+	}
+
+	.photo-collage .photo-collage-columns-row {
+		margin-left: -.5rem;
+		margin-right: -.5rem;
+	}
+
+	.photo-collage .photo-collage-cell[class*="col-"] {
+		padding-left: .5rem;
+		padding-right: .5rem;
+	}
+
+	.photo-collage .photo-collage-cell.col-3 {
+		--col-width: calc(
+			(var(--photo-collage-mobile-col-unit) * 3)
+			+ (var(--photo-collage-mobile-gutter) * 3)
+		);
+	}
+
+	.photo-collage .photo-collage-cell.col-5 {
+		--col-width: calc(
+			(var(--photo-collage-mobile-col-unit) * 5)
+			+ (var(--photo-collage-mobile-gutter) * 5)
+		);
+	}
+
+	.photo-collage .photo-collage-cell.col-6 {
+		--col-width: calc(
+			(var(--photo-collage-mobile-col-unit) * 6)
+			+ (var(--photo-collage-mobile-gutter) * 6)
+		);
+	}
+
+	.photo-collage .photo-collage-cell.push-1 {
+		margin-left: calc(
+			(var(--photo-collage-mobile-col-unit) * 1)
+			+ (var(--photo-collage-mobile-gutter) * 1)
+		);
+	}
 }
 
 
@@ -1121,6 +1187,28 @@ ul.two-col-list {
     align-items: center; 
     gap: 16px; 
     z-index: 30; 
+}
+
+.full_width_slideshow-module .carousel-nav-position {
+	position: absolute;
+	bottom: -4.5rem;
+	right: var(--containerPadding, 0);
+}
+
+.full_width_slideshow-module .has-caption .image-wrapper::before {
+	content: "";
+	position: absolute;
+	inset: -0.75rem -1rem;
+	z-index: 2;
+	mix-blend-mode: multiply;
+	background: linear-gradient(
+		32deg,
+		rgba(0, 0, 0, 0.75) 0%,
+		rgba(0, 0, 0, 0.6) 9%,
+		rgba(0, 0, 0, 0) 25%
+	);
+	filter: blur(var(--slide-caption-overlay-blur, 11px));
+	pointer-events: none;
 }
 
 .nav-arrow { 
