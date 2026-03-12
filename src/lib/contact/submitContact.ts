@@ -21,6 +21,21 @@ export type ContactSubmitResult = {
   status: number;
 };
 
+function logResponse(
+  service: string,
+  result: {
+    body: string;
+    contentType?: string;
+    status: number;
+  }
+) {
+  console.info(`[contact submit] ${service} response`, {
+    body: result.body,
+    contentType: result.contentType || 'application/json',
+    status: result.status,
+  });
+}
+
 function getEnv(name: string): string {
   const ime =
     (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
@@ -161,7 +176,7 @@ async function submitToGravity({
   const wpBase = getWpBase();
 
   if (!wpBase) {
-    return {
+    const result = {
       body: JSON.stringify({
         success: false,
         message: 'Missing WP base URL',
@@ -169,6 +184,9 @@ async function submitToGravity({
       contentType: 'application/json',
       status: 500,
     };
+
+    logResponse('gravity', result);
+    return result;
   }
 
   const headers: Record<string, string> = {
@@ -198,16 +216,19 @@ async function submitToGravity({
       }
     );
 
-    return {
+    const result = {
       body: await response.text(),
       contentType:
         response.headers.get('content-type') || 'application/json',
       status: response.status,
     };
+
+    logResponse('gravity', result);
+    return result;
   } catch (error) {
     console.error('[contact submit] gravity request failed', error);
 
-    return {
+    const result = {
       body: JSON.stringify({
         success: false,
         message: 'Proxy request failed',
@@ -215,6 +236,9 @@ async function submitToGravity({
       contentType: 'application/json',
       status: 500,
     };
+
+    logResponse('gravity', result);
+    return result;
   }
 }
 
@@ -258,6 +282,12 @@ async function submitToEdgewise({
     });
 
     const text = await response.text();
+    logResponse('edgewise', {
+      body: text,
+      contentType: response.headers.get('content-type') || 'application/json',
+      status: response.status,
+    });
+
     let data: any = null;
 
     try {
@@ -283,7 +313,12 @@ async function submitToEdgewise({
         '[contact submit] edgewise GraphQL returned no lead id',
         data
       );
+      return;
     }
+
+    console.info('[contact submit] edgewise lead created', {
+      id: data.data.createLead.id,
+    });
   } catch (error) {
     console.error('[contact submit] edgewise request failed', error);
   }
@@ -367,7 +402,14 @@ export async function submitContact(
     fields: normalizedFields,
   });
 
-  if (gravitySubmissionSucceeded(gravityResult)) {
+  const gravitySucceeded = gravitySubmissionSucceeded(gravityResult);
+
+  console.info('[contact submit] gravity submission result', {
+    formId: form_id,
+    gravitySucceeded,
+  });
+
+  if (gravitySucceeded) {
     await submitToEdgewise({
       formId: form_id,
       fields: normalizedFields,

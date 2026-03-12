@@ -69,6 +69,31 @@ function safeJsonParse(text: string):
   }
 }
 
+function extractSubmitError(parsed: any): string {
+  if (!parsed || typeof parsed !== 'object') {
+    return 'Unable to submit form. Please try again.';
+  }
+
+  if (typeof parsed.message === 'string' && parsed.message.trim()) {
+    return parsed.message;
+  }
+
+  if (
+    parsed.validation_messages &&
+    typeof parsed.validation_messages === 'object'
+  ) {
+    const firstMessage = Object.values(parsed.validation_messages).find(
+      (value) => typeof value === 'string' && value.trim().length > 0
+    );
+
+    if (typeof firstMessage === 'string') {
+      return firstMessage.replace(/<\/?[^>]+>/g, '').trim();
+    }
+  }
+
+  return 'Unable to submit form. Please try again.';
+}
+
 /* =====================================================
    COMPONENT
 ===================================================== */
@@ -328,10 +353,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
         submissionValues[base] = values[base] ?? '';
       }
 
-      const isDev = import.meta.env.DEV;
-      const endpoint = isDev 
-        ? '/api/gf/submit'
-        : '/.netlify/functions/gf-submit';
+      const endpoint = '/api/gf/submit';
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -343,10 +365,20 @@ export default function GravityForm({ form, onSuccess }: Props) {
       });
 
       const text = await res.text();
+      console.info('[GF] submit API response', {
+        body: text,
+        status: res.status,
+        url: endpoint,
+      });
+
       const parsed = safeJsonParse(text);
 
       if (!parsed.ok) {
         throw new Error('Invalid server response');
+      }
+
+      if (!res.ok) {
+        throw new Error(extractSubmitError(parsed.data));
       }
 
       const confirmation =
