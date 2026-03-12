@@ -138,6 +138,7 @@ function buildEdgewiseInput(fields: SubmissionFields) {
   const lastName = readField(fields, 'input_3');
   const email = readField(fields, 'input_4');
   const phone = readField(fields, 'input_6');
+  const source = readField(fields, 'input_10');
   const isAgent = readYesNo(fields, 'input_11');
   const rawIsRepresented = readYesNo(fields, 'input_12');
   const address = readField(fields, 'input_16');
@@ -162,11 +163,22 @@ function buildEdgewiseInput(fields: SubmissionFields) {
     email,
     phone,
     address: edgewiseAddress,
-    source: getEnv('EDGEWISE_SOURCE') || undefined,
+    source: source || undefined,
     isAgent,
     isRepresented,
     subscribed: readCheckbox(fields, 'input_13'),
   });
+}
+
+function buildGravityFields(fields: SubmissionFields): SubmissionFields {
+  const next = { ...fields };
+
+  // The live WordPress Gravity Form still validates field 10 against its old
+  // choice set. Keep the user's selection for Edgewise, but omit it from the
+  // Gravity submission until the WP form is updated to match.
+  delete next.input_10;
+
+  return next;
 }
 
 async function submitToGravity({
@@ -396,10 +408,11 @@ export async function submitContact(
   const normalizedFields = {
     ...(fields as SubmissionFields),
   };
+  const gravityFields = buildGravityFields(normalizedFields);
 
   const gravityResult = await submitToGravity({
     formId: form_id,
-    fields: normalizedFields,
+    fields: gravityFields,
   });
 
   const gravitySucceeded = gravitySubmissionSucceeded(gravityResult);

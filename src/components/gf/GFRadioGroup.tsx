@@ -30,9 +30,7 @@ export default function GFRadioGroup({
   errorMessage,
 }: Props) {
   const state = useRadioGroupState({
-    ...(value !== undefined
-      ? { value }
-      : { defaultValue: options[0]?.value }),
+    ...(value !== undefined ? { value } : {}),
     onChange,
     isRequired,
   });

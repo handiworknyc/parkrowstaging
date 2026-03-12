@@ -284,16 +284,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
       }
     }
 
-    const isAgent =
-      String(values.input_11 ?? '').trim().toLowerCase() === 'yes';
-    const isRepresented =
-      String(values.input_12 ?? '').trim().toLowerCase() === 'yes';
-
-    if (isAgent && isRepresented) {
-      errors.input_12 =
-        'A realtor or broker cannot also be represented by a realtor or broker.';
-    }
-
     // ✅ Reset auto-focus flag when new errors are generated
     if (Object.keys(errors).length > 0) {
       didAutoFocusRef.current = false;

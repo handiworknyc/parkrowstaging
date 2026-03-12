@@ -1310,16 +1310,44 @@
       "placeholder": "",
       "choices": [
         {
-          "text": "First Choice",
-          "value": "First Choice"
+          "text": "Social Media",
+          "value": "Social Media"
         },
         {
-          "text": "Second Choice",
-          "value": "Second Choice"
+          "text": "Email",
+          "value": "Email"
         },
         {
-          "text": "Third Choice",
-          "value": "Third Choice"
+          "text": "Referral",
+          "value": "Referral"
+        },
+        {
+          "text": "Advertisement",
+          "value": "Advertisement"
+        },
+        {
+          "text": "Other",
+          "value": "Other"
+        },
+        {
+          "text": "Online Search",
+          "value": "Online Search"
+        },
+        {
+          "text": "Signage",
+          "value": "Signage"
+        },
+        {
+          "text": "Realtor/Broker",
+          "value": "Realtor/Broker"
+        },
+        {
+          "text": "Article/Press",
+          "value": "Article/Press"
+        },
+        {
+          "text": "Direct Mail",
+          "value": "Direct Mail"
         }
       ]
     },

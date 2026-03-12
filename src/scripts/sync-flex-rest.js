@@ -66,6 +66,231 @@ async function fetchJSON(url, opts = {}) {
   return { json: await res.json(), res };
 }
 
+async function fetchText(url, opts = {}) {
+  const { headers = {}, ...rest } = opts;
+  const res = await fetch(url, {
+    ...rest,
+    headers: { ...authHeaders(), ...headers },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${url}\n${text.slice(0, 400)}`);
+  }
+  return { text, res };
+}
+
+function readJSONIfExists(file) {
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function writeJSONIfChanged(file, data, updatedMessage, unchangedMessage) {
+  const nextHash = hashJSON(data);
+  const current = readJSONIfExists(file);
+  const currentHash = current ? hashJSON(current) : null;
+
+  if (nextHash === currentHash) {
+    console.log(unchangedMessage);
+    return false;
+  }
+
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  console.log(updatedMessage);
+  return true;
+}
+
+function normalizeHost(host) {
+  return String(host || "")
+    .replace(/^www\./i, "")
+    .toLowerCase();
+}
+
+function parseHeaderMenuHtml(raw) {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+
+  if (text.startsWith('"') && text.includes("<li")) {
+    try {
+      const parsed = JSON.parse(text);
+      return typeof parsed === "string" ? parsed : text;
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
+}
+
+function looksLikeMenuHtml(value) {
+  const text = String(value ?? "").trim();
+  return !!text && /<li\b|<ul\b|<a\b/i.test(text);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value)
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function rewriteMenuUrls(html) {
+  if (!html) return "";
+
+  let wpBase = null;
+  try {
+    wpBase = new URL(WP_BASE);
+  } catch {
+    wpBase = null;
+  }
+
+  return html.replace(/href=(['"])([^'"]+)\1/gi, (full, quote, href) => {
+    try {
+      if (/^(mailto:|tel:|sms:|javascript:|#)/i.test(href)) return full;
+
+      if (/^\/\//.test(href)) {
+        if (!wpBase) return `href=${quote}/${href.replace(/^\/+/, "")}${quote}`;
+        const sameProtocolUrl = new URL(`${wpBase.protocol}${href}`);
+        if (normalizeHost(sameProtocolUrl.hostname) === normalizeHost(wpBase.hostname)) {
+          return `href=${quote}${sameProtocolUrl.pathname || "/"}${sameProtocolUrl.search || ""}${sameProtocolUrl.hash || ""}${quote}`;
+        }
+        return full;
+      }
+
+      if (!/^https?:\/\//i.test(href)) return full;
+
+      const target = new URL(href);
+      if (!wpBase || normalizeHost(target.hostname) !== normalizeHost(wpBase.hostname)) {
+        return full;
+      }
+
+      return `href=${quote}${target.pathname || "/"}${target.search || ""}${target.hash || ""}${quote}`;
+    } catch {
+      return full;
+    }
+  });
+}
+
+async function fetchHeaderMenuViaGraphQL() {
+  if (!GRAPHQL) return "";
+
+  const query = `query HeaderMenuFallback {
+    menus(first: 1, where: { location: PRIMARY }) {
+      nodes {
+        menuItems(first: 100) {
+          nodes {
+            databaseId
+            label
+            title
+            uri
+            url
+            target
+            cssClasses
+          }
+        }
+      }
+    }
+  }`;
+
+  const res = await fetch(GRAPHQL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...authHeaders(),
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`GraphQL HTTP ${res.status} ${GRAPHQL}\n${text.slice(0, 400)}`);
+  }
+
+  let json = {};
+  try {
+    json = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`GraphQL menu parse failed: ${error?.message || error}`);
+  }
+
+  if (Array.isArray(json?.errors) && json.errors.length) {
+    throw new Error(`GraphQL menu errors: ${JSON.stringify(json.errors).slice(0, 400)}`);
+  }
+
+  const items = json?.data?.menus?.nodes?.[0]?.menuItems?.nodes ?? [];
+  if (!Array.isArray(items) || !items.length) return "";
+
+  return items
+    .map((item) => {
+      const id = Number(item?.databaseId);
+      const href = item?.uri || item?.url || "#";
+      const label = item?.label || item?.title || "Menu";
+      const cssClasses = Array.isArray(item?.cssClasses)
+        ? item.cssClasses.filter(Boolean)
+        : [];
+      const classes = ["menu-item", id ? `menu-item-${id}` : "", ...cssClasses]
+        .filter(Boolean)
+        .join(" ");
+      const target = item?.target ? ` target="${escapeAttr(item.target)}"` : "";
+      const rel = item?.target === "_blank" ? ' rel="noopener noreferrer"' : "";
+      const liId = id ? ` id="nav-menu-item-${id}"` : "";
+      return `<li class="${escapeAttr(classes)}"${liId}><a href="${escapeAttr(href)}"${target}${rel}>${escapeHtml(label)}</a></li>`;
+    })
+    .join("");
+}
+
+async function fetchHeaderMenuHTML() {
+  const endpoint = new URL("/wp-json/astro/v1/headermenu", WP_BASE);
+
+  try {
+    const { text } = await fetchText(endpoint, {
+      headers: { Accept: "text/html,application/json;q=0.9" },
+    });
+    const html = rewriteMenuUrls(parseHeaderMenuHtml(text));
+    if (looksLikeMenuHtml(html)) return html;
+  } catch (error) {
+    console.warn(`⚠️ Header menu REST fetch failed: ${error?.message || error}`);
+  }
+
+  try {
+    const html = rewriteMenuUrls(await fetchHeaderMenuViaGraphQL());
+    if (looksLikeMenuHtml(html)) return html;
+  } catch (error) {
+    console.warn(`⚠️ Header menu GraphQL fallback failed: ${error?.message || error}`);
+  }
+
+  return "";
+}
+
+async function fetchHeaderMenuCN() {
+  const endpoint = new URL("/wp-json/astro/v1/headermenu-cn", WP_BASE);
+  const { json } = await fetchJSON(endpoint);
+  const items = {};
+
+  if (!json || typeof json !== "object" || Array.isArray(json)) {
+    return items;
+  }
+
+  for (const [key, value] of Object.entries(json)) {
+    if (typeof value !== "string") continue;
+    const normalizedKey = String(Number(key));
+    if (normalizedKey === "NaN") continue;
+    items[normalizedKey] = value;
+  }
+
+  return items;
+}
+
 function toPathname(link) {
   try {
     if (link && link.startsWith("http")) {
@@ -458,6 +683,8 @@ async function run() {
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
+  const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
+  const outHeaderMenuCN = path.join(process.cwd(), "src", "content", "wp", "header-menu-cn.json");
   const publicDir = path.join(process.cwd(), "public");
   const outSchemaAddress = path.join(process.cwd(), "src", "content", "wp", "schema-address.json");
   const imgCacheDir = path.join(publicDir, "img-cache");
@@ -477,7 +704,10 @@ async function run() {
   }
 
   console.log(`🔎 Pages discovered: ${pageUris.length}`);
-  if (!pageUris.length) return;
+  const shouldSyncPages = pageUris.length > 0;
+  if (!shouldSyncPages) {
+    console.warn("⚠️ No pages discovered; skipping page JSON and prefetch refresh.");
+  }
 
   let wrote = 0, skipped = 0, failed = 0;
 
@@ -536,113 +766,119 @@ async function run() {
   }
 
   /* -------- PAGE SYNC -------- */
-  for (const uri of pageUris) {
-    try {
-      const data = await fetchFlexibleForPage(uri);
-      const layouts = Array.isArray(data?.layouts) ? data.layouts : [];
-      
-      if (!layouts.length) {
-        skipped++;
-        continue;
-      }
-
-      const cleanPath = toPathname(uri);
-      const pageTitle = data.title?.rendered || data.title || "Untitled Page";
-      
-      pageManifest.push({ uri: cleanPath, title: pageTitle });
-
-      // 1. Collect ALL image URLs from this page (with isPanorama context)
-      const imageUrlStrings = new Set();
-      
-      // Process each layout to detect panorama flag at the layout level
-      for (const layout of layouts) {
-        const isPanoramaLayout = layout.panorama === true || layout.panorama === 'true' || layout.panorama === 1;
-        if (isPanoramaLayout) {
-          console.log(`🔍 PANORAMA DETECTED on page ${uri} - layout type: ${layout.acf_fc_layout}`);
+  if (shouldSyncPages) {
+    for (const uri of pageUris) {
+      try {
+        const data = await fetchFlexibleForPage(uri);
+        const layouts = Array.isArray(data?.layouts) ? data.layouts : [];
+        
+        if (!layouts.length) {
+          skipped++;
+          continue;
         }
-        const context = isPanoramaLayout ? { isPanorama: true } : {};
-        recurseFindImages(layout, imageUrlStrings, context);
-      }
-      
-      // Parse JSON strings back to objects
-      const imageUrlObjects = Array.from(imageUrlStrings).map(str => JSON.parse(str));
-      
-      // Count panorama images
-      const panoramaCount = imageUrlObjects.filter(img => img.isPanorama).length;
-      if (panoramaCount > 0) {
-        console.log(`🖼️  Found ${panoramaCount} panorama images on ${uri}`);
-      }
-      
-      // 2. Download them and build URL mapping
-      const urlMap = new Map();
-      for (const { url, isPanorama } of imageUrlObjects) {
-        const localUrl = await downloadAndCache(url, imgCacheDir, isPanorama);
-        if (localUrl) {
-          urlMap.set(url, localUrl);
+
+        const cleanPath = toPathname(uri);
+        const pageTitle = data.title?.rendered || data.title || "Untitled Page";
+        
+        pageManifest.push({ uri: cleanPath, title: pageTitle });
+
+        // 1. Collect ALL image URLs from this page (with isPanorama context)
+        const imageUrlStrings = new Set();
+        
+        // Process each layout to detect panorama flag at the layout level
+        for (const layout of layouts) {
+          const isPanoramaLayout = layout.panorama === true || layout.panorama === 'true' || layout.panorama === 1;
+          if (isPanoramaLayout) {
+            console.log(`🔍 PANORAMA DETECTED on page ${uri} - layout type: ${layout.acf_fc_layout}`);
+          }
+          const context = isPanoramaLayout ? { isPanorama: true } : {};
+          recurseFindImages(layout, imageUrlStrings, context);
         }
-      }
-
-      // 3. ✅ REPLACE URLs in the data object
-      const transformedData = replaceImageUrls(data, urlMap);
-
-      // 4. Build Prefetch Map
-      const firstRow = layouts[0];
-      const entry = { path: cleanPath };
-      let hasEntry = false;
-
-      // VIDEO
-      const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
-      if (videoField && Array.isArray(videoField)) {
-        const videoObj = videoField[0];
-        if (videoObj && videoObj.cf_stream_video) {
-          entry.video = videoObj.cf_stream_video;
-          hasEntry = true;
+        
+        // Parse JSON strings back to objects
+        const imageUrlObjects = Array.from(imageUrlStrings).map(str => JSON.parse(str));
+        
+        // Count panorama images
+        const panoramaCount = imageUrlObjects.filter(img => img.isPanorama).length;
+        if (panoramaCount > 0) {
+          console.log(`🖼️  Found ${panoramaCount} panorama images on ${uri}`);
         }
-      }
-
-      // LCP IMAGE
-      const lcpData = getRawLcpImage(firstRow);
-      if (lcpData && lcpData.candidates.length) {
-        const processed = [];
-        for (const c of lcpData.candidates) {
-          // Use the already-downloaded local URL from urlMap
-          const localUrl = urlMap.get(c.url);
+        
+        // 2. Download them and build URL mapping
+        const urlMap = new Map();
+        for (const { url, isPanorama } of imageUrlObjects) {
+          const localUrl = await downloadAndCache(url, imgCacheDir, isPanorama);
           if (localUrl) {
-            processed.push({ url: localUrl, w: c.w });
+            urlMap.set(url, localUrl);
           }
         }
 
-        if (processed.length > 0) {
-          const srcSet = processed
-            .filter(p => p.w)
-            .map(p => `${p.url} ${p.w}`)
-            .join(", ");
-          
-          entry.lcp = {
-            href: processed[0].url,
-            imagesrcset: srcSet || undefined,
-            imagesizes: lcpData.sizesAttr,
-            type: "image/webp" 
-          };
-          hasEntry = true;
+        // 3. ✅ REPLACE URLs in the data object
+        const transformedData = replaceImageUrls(data, urlMap);
+
+        // 4. Build Prefetch Map
+        const firstRow = layouts[0];
+        const entry = { path: cleanPath };
+        let hasEntry = false;
+
+        // VIDEO
+        const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
+        if (videoField && Array.isArray(videoField)) {
+          const videoObj = videoField[0];
+          if (videoObj && videoObj.cf_stream_video) {
+            entry.video = videoObj.cf_stream_video;
+            hasEntry = true;
+          }
         }
+
+        // LCP IMAGE
+        const lcpData = getRawLcpImage(firstRow);
+        if (lcpData && lcpData.candidates.length) {
+          const processed = [];
+          for (const c of lcpData.candidates) {
+            // Use the already-downloaded local URL from urlMap
+            const localUrl = urlMap.get(c.url);
+            if (localUrl) {
+              processed.push({ url: localUrl, w: c.w });
+            }
+          }
+
+          if (processed.length > 0) {
+            const srcSet = processed
+              .filter(p => p.w)
+              .map(p => `${p.url} ${p.w}`)
+              .join(", ");
+            
+            entry.lcp = {
+              href: processed[0].url,
+              imagesrcset: srcSet || undefined,
+              imagesizes: lcpData.sizesAttr,
+              type: "image/webp" 
+            };
+            hasEntry = true;
+          }
+        }
+
+        if (hasEntry) prefetchMap.push(entry);
+
+        // 5. Write the TRANSFORMED data
+        const file = path.join(outPages, `${fileSlugFromUri(uri)}.json`);
+        fs.writeFileSync(file, JSON.stringify(transformedData, null, 2));
+        console.log(`✅ Wrote ${file} (${urlMap.size} images transformed)`);
+        wrote++;
+      } catch (e) {
+        console.error(`❌ Page ${uri}:`, e.message || e);
+        failed++;
       }
-
-      if (hasEntry) prefetchMap.push(entry);
-
-      // 5. Write the TRANSFORMED data
-      const file = path.join(outPages, `${fileSlugFromUri(uri)}.json`);
-      fs.writeFileSync(file, JSON.stringify(transformedData, null, 2));
-      console.log(`✅ Wrote ${file} (${urlMap.size} images transformed)`);
-      wrote++;
-    } catch (e) {
-      console.error(`❌ Page ${uri}:`, e.message || e);
-      failed++;
     }
   }
 
-  fs.writeFileSync(outOrder, JSON.stringify(pageManifest, null, 2));
-  console.log(`📜 Wrote Page Order Manifest (${pageManifest.length} pages)`);
+  if (shouldSyncPages) {
+    fs.writeFileSync(outOrder, JSON.stringify(pageManifest, null, 2));
+    console.log(`📜 Wrote Page Order Manifest (${pageManifest.length} pages)`);
+  } else {
+    console.log("⏩ Page order unchanged — no pages discovered");
+  }
 
   /* -------- SPECIALS SYNC -------- */
   try {
@@ -705,12 +941,44 @@ async function run() {
     console.error("❌ Failed to sync Schema Address:", e.message || e);
   }
 
-  const mapFile = path.join(publicDir, "prefetch-map.json");
-  fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+  /* -------- HEADER MENU SYNC -------- */
+  try {
+    console.log("🧭 Fetching Header Menu…");
+    const headerMenu = await fetchHeaderMenuHTML();
+    writeJSONIfChanged(
+      outHeaderMenu,
+      { html: headerMenu },
+      "✨ Header menu updated",
+      "⏩ Header menu unchanged — skip write"
+    );
+  } catch (e) {
+    console.error("❌ Failed to sync Header Menu:", e.message || e);
+  }
 
-  console.log("---------------------------------------------------");
-  console.log(`🎥 Generated map: prefetch-map.json`);
-  console.log(`Entries: ${prefetchMap.length}`);
+  /* -------- HEADER MENU CN SYNC -------- */
+  try {
+    console.log("🇨🇳 Fetching Header Menu CN…");
+    const headerMenuCN = await fetchHeaderMenuCN();
+    writeJSONIfChanged(
+      outHeaderMenuCN,
+      { items: headerMenuCN },
+      "✨ Header menu CN updated",
+      "⏩ Header menu CN unchanged — skip write"
+    );
+  } catch (e) {
+    console.error("❌ Failed to sync Header Menu CN:", e.message || e);
+  }
+
+  const mapFile = path.join(publicDir, "prefetch-map.json");
+  if (shouldSyncPages) {
+    fs.writeFileSync(mapFile, JSON.stringify(prefetchMap, null, 2));
+    console.log("---------------------------------------------------");
+    console.log(`🎥 Generated map: prefetch-map.json`);
+    console.log(`Entries: ${prefetchMap.length}`);
+  } else {
+    console.log("---------------------------------------------------");
+    console.log("🎥 Prefetch map unchanged — no pages discovered");
+  }
   console.log(`Sync complete: wrote=${wrote}, skipped=${skipped}, failed=${failed}`);
   console.log("---------------------------------------------------");
 }
