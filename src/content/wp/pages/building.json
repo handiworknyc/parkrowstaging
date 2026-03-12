@@ -185,8 +185,8 @@
       "acf_fc_layout": "full_bleed_img",
       "layout_settings": {
         "section_title": "Architecture<br />\r\nshaped by place",
-        "section_h2": "Each line and surface expresses<br />\r\npermanence and poise",
-        "section_text": "<p>Designed by Bosa Development, Park Row’s architecture draws from the colors and contours of the Pacific Northwest—terraced forms, glass that catches the morning light, and materials that age beautifully with time. </p>\n",
+        "section_h2": "Each Line and Surface Expresses Permanence and Poise<br />\r\n",
+        "section_text": "<p>Envisioned by Bosa Development and designed in collaboration with Amanat Architects, Park Row’s architecture draws from the colors, textures, and contours of the Pacific Northwest with terraced forms, refined materiality, and a curtain wall of glass that frames the surrounding park and city. The result is an architecture that dissolves boundaries between indoors and out, bringing balance and nature into everyday life.</p>\n",
         "green_bg": false,
         "section_text_below": false,
         "chinese": null,
@@ -361,9 +361,9 @@
     {
       "acf_fc_layout": "full_bleed_img",
       "layout_settings": {
-        "section_title": "A natural bounty in<br />\r\nyour backyard",
+        "section_title": "A Coveted Parkside Setting",
         "section_h2": "",
-        "section_text": "<p>Across the street, the green sweep of Downtown Park becomes an extension of home. Step outside to sunlight, trees, and open sky—a rare balance of urban energy and organic calm.</p>\n",
+        "section_text": "<p>Directly bordering Bellevue Downtown Park, the sweeping lawn, mature trees, and open sky become a seamless extension of home. Park Row occupies one of the most privileged and enduring locations in the city, an address defined by openness, greenery, and rarity.</p>\n",
         "green_bg": false,
         "section_text_below": true,
         "chinese": null,
@@ -875,5 +875,5 @@
       "quote": true
     }
   ],
-  "_syncedAt": "2026-03-12 20:52:03"
+  "_syncedAt": "2026-03-12 21:19:57"
 }
