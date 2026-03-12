@@ -345,6 +345,19 @@ async function fetchGFForm(formId) {
 }
 
 function normalizeGFForm(form) {
+  const edgewiseSourceChoices = [
+    { text: "Social Media", value: "Social Media" },
+    { text: "Email", value: "Email" },
+    { text: "Referral", value: "Referral" },
+    { text: "Advertisement", value: "Advertisement" },
+    { text: "Other", value: "Other" },
+    { text: "Online Search", value: "Online Search" },
+    { text: "Signage", value: "Signage" },
+    { text: "Realtor/Broker", value: "Realtor/Broker" },
+    { text: "Article/Press", value: "Article/Press" },
+    { text: "Direct Mail", value: "Direct Mail" }
+  ];
+
   return {
     id: form.id,
     title: form.title,
@@ -357,12 +370,15 @@ function normalizeGFForm(form) {
         label: f.label || "",
         isRequired: !!f.isRequired,
         placeholder: f.placeholder || "",
-        choices: Array.isArray(f.choices)
-          ? f.choices.map(c => ({
-              text: c.text,
-              value: c.value
-            }))
-          : undefined
+        choices:
+          Number(form.id) === 1 && Number(f.id) === 10
+            ? edgewiseSourceChoices
+            : Array.isArray(f.choices)
+              ? f.choices.map(c => ({
+                  text: c.text,
+                  value: c.value
+                }))
+              : undefined
       }))
   };
 }
