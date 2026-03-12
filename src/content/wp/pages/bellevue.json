@@ -185,8 +185,8 @@
       "acf_fc_layout": "photo_collage",
       "layout_settings": {
         "section_title": "At home in<br />\r\nThe City in a Park",
-        "section_h2": "Set beside the lawn and promenade <br />\r\nof Downtown Park",
-        "section_text": "<p>Park Row lives at the intersection of culture and calm. Walk to boutiques, cafés, and the arts district; return to birdsong and greenery at your door.</p>\n",
+        "section_h2": "Set Beside the Lawn and Promenade of Bellevue Downtown Park",
+        "section_text": "<p>Park Row sits directly on Bellevue Downtown Park — the city’s most iconic green space, and the most coveted destination to call home.</p>\n",
         "green_bg": false,
         "section_text_below": false,
         "chinese": null,
@@ -1450,9 +1450,9 @@
     {
       "acf_fc_layout": "section_header",
       "layout_settings": {
-        "section_title": "Around town:<br />\r\nNew & old",
-        "section_h2": "Bellevue balances innovation with tradition",
-        "section_text": "<p>From neighborhood markets to Michelin-star dining, from lakeside walks to downtown energy—it is a city both dynamic and deeply livable.</p>\n",
+        "section_title": "Balanced Living in the Heart of Downtown",
+        "section_h2": "From Park Row, Access is Easy.",
+        "section_text": "<p>Bellevue, where park front serenity and downtown vitality exist in seamless balance, and every destination begins at your doorstep.</p>\n",
         "green_bg": false,
         "section_text_below": false,
         "chinese": null,
@@ -1465,9 +1465,9 @@
     {
       "acf_fc_layout": "full_width_slideshow",
       "layout_settings": {
-        "section_title": "Future plans<br />\r\nfor easier living",
-        "section_h2": "Bellevue’s placemaking initiatives continue",
-        "section_text": "<p>Elevated pedestrian experience, expanded walkability, additional art experiences, and connections between the park and the skyline. Park Row stands as the bridge between them.</p>\n",
+        "section_title": "Future Plans for Easier Living",
+        "section_h2": "Growth and Confidence",
+        "section_text": "<p>Bellevue continues its trajectory as a major regional economic center with more than 160,000 jobs city-wide and projections that employment will grow beyond 190,000 by 2035, a testament to sustained business confidence and quality of life.</p>\n<p>Leading employers have expanded their presence here, bringing global impact and local vitality. Amazon maintains a large and growing workforce, Meta operates one of its largest hubs outside Silicon Valley, T-Mobile’s U.S. headquarters is a cornerstone of innovation, and Salesforce continues to grow its footprint.</p>\n<p>Since 2021, Bellevue has added nearly 3.9 million square feet of new office space, nearly outpacing similar growth in nearby markets and reflecting strong demand from technology, business services, and growth sectors.<br />\nThis economic momentum brings talent and energy to the city, while making Bellevue a highly desirable place to live, work, and build community.</p>\n",
         "green_bg": false,
         "section_text_below": true,
         "chinese": null,
@@ -2048,5 +2048,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-12 22:42:03"
+  "_syncedAt": "2026-03-12 22:45:21"
 }
