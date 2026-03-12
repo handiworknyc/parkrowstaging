@@ -54,14 +54,14 @@ export function GFCheckboxItem({
           border-2
           transition-colors duration-200
           ${
-            state.isSelected
+            isSelected
               ? 'bg-emerald-600 border-emerald-600'
               : 'bg-transparent border-black'
           }
         `}
       >
         <AnimatePresence>
-          {state.isSelected && (
+          {isSelected && (
             <motion.svg
               key="check"
               viewBox="0 0 20 20"

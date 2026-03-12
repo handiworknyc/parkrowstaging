@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "sync:flex": "node src/scripts/sync-flex-rest.js",
+    "edgewise:projects": "node src/scripts/edgewise-projects.js",
     "predev": "npm run sync:flex",
     "dev": "astro dev",
     "webhook": "node src/scripts/wp-webhook-server.js",
