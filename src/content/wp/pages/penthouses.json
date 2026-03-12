@@ -185,8 +185,8 @@
       "acf_fc_layout": "full_bleed_img",
       "layout_settings": {
         "section_title": "Elevated design,<br />\r\ngrounded lifestyle",
-        "section_h2": "The Penthouse Portfolio",
-        "section_text": "<p>The Penthouse Portfolio represents Park Row at its most expressive—gracious proportions, expansive terraces, and views that stretch from park to lake to mountain.</p>\n",
+        "section_h2": "",
+        "section_text": "<p>The Penthouse Residences represents Park Row at its most expressive — gracious proportions, expansive terraces, and a range of views spanning park, water, and downtown Bellevue.</p>\n",
         "green_bg": true,
         "section_text_below": false,
         "chinese": null,
@@ -363,7 +363,7 @@
       "layout_settings": {
         "section_title": "Distinguished<br />\r\n& highly appointed",
         "section_h2": "",
-        "section_text": "<p>These limited residences embody artistry and precision: bespoke cabinetry, fine stonework, and private indoor-outdoor spaces that flow seamlessly between  sky and garden.</p>\n",
+        "section_text": "<p>These limited residences embody artistry and precision: bespoke cabinetry, fine stonework, and private indoor-outdoor spaces that flow seamlessly between sky and garden.</p>\n",
         "green_bg": false,
         "section_text_below": false,
         "chinese": null,
@@ -843,11 +843,11 @@
       "caption_chinese": "",
       "caption_pos": "",
       "align": "right",
-      "title": "Living & Dining",
+      "title": "Penthouse Features<br />\r\n",
       "title_chinese": "",
       "text": "<p>Expansive volumes and panoramic outlooks define these spaces at the top of Park Row. The seamless flow between living and dining areas encourages effortless hosting and private retreat alike. Framed by glass and natural light, the atmosphere shifts with the day—morning brightness, evening glow, and the quiet drama of the skyline beyond.</p>\n",
       "text_chinese": "",
-      "list": "Item detail\r\nMicrowave\r\nHot showers\r\nTowels\r\nBathrobes\r\nFree parking",
+      "list": "",
       "list_chinese": "",
       "text_align": "bottom",
       "quote": false
@@ -1198,11 +1198,11 @@
       "caption_chinese": "",
       "caption_pos": "",
       "align": "left",
-      "title": "Kitchens",
+      "title": "Kitchen",
       "title_chinese": "",
       "text": "<p>Each penthouse kitchen is a study in modern refinement. Artisanal stone surfaces, custom cabinetry, and integrated professional appliances create a canvas for culinary creativity. Designed for both intimacy and display, the kitchen becomes a centerpiece—equally suited to quiet mornings or spirited gatherings.</p>\n",
       "text_chinese": "",
-      "list": "Pots & pans\r\nMicrowave\r\nGas stove\r\nTupperware\r\nPorcelain\r\nEspresso\r\nCoffee grinder",
+      "list": "",
       "list_chinese": ""
     },
     {
@@ -1539,7 +1539,7 @@
       "title_chinese": "",
       "text": "<p>Generous stone surfaces and soothing hues evoke a private spa experience, while architectural lighting and polished fixtures introduce quiet sophistication. Every element—freestanding tub, frameless glass shower, and custom vanity—is a testament to the elevated standard of comfort and craftsmanship expected at Park Row.</p>\n",
       "text_chinese": "",
-      "list": "Item detail\r\nMicrowave\r\nHot showers\r\nTowels\r\nBathrobes\r\nFree parking",
+      "list": "",
       "list_chinese": "",
       "text_align": "bottom",
       "quote": false
@@ -1721,10 +1721,10 @@
       "panorama": false,
       "content": [
         {
-          "title": "Private Indoor Outdoor<br />\r\nBath & Spa",
+          "title": "Private Bath & Spa",
           "text": "<p>A rare and highly bespoke feature within the Penthouses, is the private indoor / outdoor spa. A private soaking tub with breathtaking views, just outside your primary bathroom.</p>\n",
           "two_col_list": false,
-          "list": "Detail item\r\nMicrowave\r\nTowels\r\nBathrobe\r\nSauna\r\nSteam room",
+          "list": "",
           "title_chinese": "",
           "text_chinese": "",
           "list_chinese": ""
@@ -1732,5 +1732,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-12 21:38:25"
+  "_syncedAt": "2026-03-12 22:05:14"
 }
