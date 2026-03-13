@@ -3,6 +3,7 @@ import inventory from "@/content/wp/avesdo-floorplans.json";
 
 const { rowIndex = 0 } = Astro.props;
 const tableId = `floorplans-${rowIndex}`;
+const galleryId = `floorplans-gallery-${rowIndex}`;
 const units = Array.isArray(inventory?.units)
   ? [...inventory.units].sort((a, b) =>
       String(a?.unitNumber || "").localeCompare(String(b?.unitNumber || ""), undefined, {
@@ -82,8 +83,9 @@ function formatBathrooms(value) {
                 <a
                   class="floorplans-view-link"
                   href={unit.floorPlanImage}
-                  target="_blank"
-                  rel="noreferrer"
+                  data-fslightbox={galleryId}
+                  data-type="image"
+                  aria-label={`View floorplan for unit ${unit.unitNumber}`}
                 >
                   View
                 </a>
@@ -100,63 +102,94 @@ function formatBathrooms(value) {
   {!units.length && <p class="floorplans-empty">No floorplans available.</p>}
 </div>
 
+<script>
+  import "/src/scripts/plugins/fslightbox.js";
+</script>
+
 <script is:inline define:vars={{ tableId }}>
   (() => {
-    const root = document.getElementById(tableId);
-    if (!root) return;
+    const refreshLightbox = () => {
+      if (typeof window === "undefined") return;
+      if (typeof window.refreshFsLightbox === "function") {
+        window.refreshFsLightbox();
+      }
+    };
 
-    const body = root.querySelector("[data-floorplans-body]");
-    if (!body) return;
+    const init = () => {
+      const root = document.getElementById(tableId);
+      if (!root) return;
 
-    const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
-    let sortKey = "";
-    let sortDir = "asc";
+      const body = root.querySelector("[data-floorplans-body]");
+      if (!body) return;
 
-    const updateButtons = () => {
+      if (root.dataset.floorplansInitialized === "true") {
+        refreshLightbox();
+        return;
+      }
+
+      root.dataset.floorplansInitialized = "true";
+
+      const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
+      let sortKey = "";
+      let sortDir = "asc";
+
+      const updateButtons = () => {
+        buttons.forEach((button) => {
+          const active = button.dataset.sortKey === sortKey;
+          const indicator = button.querySelector(".floorplans-sort-indicator");
+          if (indicator) {
+            indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
+          }
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      };
+
+      const sortRows = (key, dir) => {
+        const rows = Array.from(body.querySelectorAll(".floorplans-row"));
+
+        rows.sort((rowA, rowB) => {
+          const valueA = Number(rowA.dataset[key] || 0);
+          const valueB = Number(rowB.dataset[key] || 0);
+
+          if (valueA !== valueB) {
+            return dir === "asc" ? valueA - valueB : valueB - valueA;
+          }
+
+          return (rowA.dataset.unitNumber || "").localeCompare(
+            rowB.dataset.unitNumber || "",
+            undefined,
+            { numeric: true, sensitivity: "base" }
+          );
+        });
+
+        rows.forEach((row) => body.appendChild(row));
+        refreshLightbox();
+      };
+
       buttons.forEach((button) => {
-        const active = button.dataset.sortKey === sortKey;
-        const indicator = button.querySelector(".floorplans-sort-indicator");
-        if (indicator) {
-          indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
-        }
-        button.setAttribute("aria-pressed", active ? "true" : "false");
+        button.addEventListener("click", () => {
+          const key = button.dataset.sortKey;
+          if (!key) return;
+
+          sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+          sortKey = key;
+          sortRows(key, sortDir);
+          updateButtons();
+        });
       });
+
+      updateButtons();
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", refreshLightbox, { once: true });
+      } else {
+        refreshLightbox();
+      }
     };
 
-    const sortRows = (key, dir) => {
-      const rows = Array.from(body.querySelectorAll(".floorplans-row"));
-
-      rows.sort((rowA, rowB) => {
-        const valueA = Number(rowA.dataset[key] || 0);
-        const valueB = Number(rowB.dataset[key] || 0);
-
-        if (valueA !== valueB) {
-          return dir === "asc" ? valueA - valueB : valueB - valueA;
-        }
-
-        return (rowA.dataset.unitNumber || "").localeCompare(
-          rowB.dataset.unitNumber || "",
-          undefined,
-          { numeric: true, sensitivity: "base" }
-        );
-      });
-
-      rows.forEach((row) => body.appendChild(row));
-    };
-
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const key = button.dataset.sortKey;
-        if (!key) return;
-
-        sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
-        sortKey = key;
-        sortRows(key, sortDir);
-        updateButtons();
-      });
-    });
-
-    updateButtons();
+    init();
+    document.addEventListener("astro:page-load", init);
+    document.addEventListener("astro:after-swap", init);
   })();
 </script>
 
