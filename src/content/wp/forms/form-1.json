@@ -300,7 +300,7 @@
     {
       "id": 18,
       "type": "select",
-      "label": "County",
+      "label": "Country",
       "isRequired": true,
       "placeholder": "",
       "choices": [
