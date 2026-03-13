@@ -1,0 +1,249 @@
+---
+import inventory from "@/content/wp/avesdo-floorplans.json";
+
+const { rowIndex = 0 } = Astro.props;
+const tableId = `floorplans-${rowIndex}`;
+const units = Array.isArray(inventory?.units)
+  ? [...inventory.units].sort((a, b) =>
+      String(a?.unitNumber || "").localeCompare(String(b?.unitNumber || ""), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    )
+  : [];
+
+const numberFormat = new Intl.NumberFormat("en-US");
+
+function formatBathrooms(value) {
+  const numeric = Number(value || 0);
+  return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+}
+---
+
+<div class="hw-contain">
+  <div class="floorplans-scroller">
+    <div id={tableId} class="floorplans-table">
+      <div class="floorplans-head">
+        <div class="floorplans-cell floorplans-cell--unit">Unit Number</div>
+        <div class="floorplans-cell floorplans-cell--metric">
+          <button
+            type="button"
+            class="floorplans-sort-button"
+            data-sort-key="bedrooms"
+            data-label="Bedrooms"
+            aria-pressed="false"
+          >
+            <span class="floorplans-sort-label">Bedrooms</span>
+            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="floorplans-cell floorplans-cell--metric">
+          <button
+            type="button"
+            class="floorplans-sort-button"
+            data-sort-key="bathrooms"
+            data-label="Bathrooms"
+            aria-pressed="false"
+          >
+            <span class="floorplans-sort-label">Bathrooms</span>
+            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="floorplans-cell floorplans-cell--metric">
+          <button
+            type="button"
+            class="floorplans-sort-button"
+            data-sort-key="area"
+            data-label="Area"
+            aria-pressed="false"
+          >
+            <span class="floorplans-sort-label">Area</span>
+            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
+      </div>
+
+      <div class="floorplans-body" data-floorplans-body>
+        {units.map((unit) => (
+          <div
+            class="floorplans-row"
+            data-unit-number={unit.unitNumber}
+            data-bedrooms={unit.bedrooms}
+            data-bathrooms={unit.bathrooms}
+            data-area={unit.area}
+          >
+            <div class="floorplans-cell floorplans-cell--unit">{unit.unitNumber}</div>
+            <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
+            <div class="floorplans-cell floorplans-cell--metric">{formatBathrooms(unit.bathrooms)}</div>
+            <div class="floorplans-cell floorplans-cell--metric">{numberFormat.format(unit.area)}</div>
+            <div class="floorplans-cell floorplans-cell--action">
+              {unit.floorPlanImage ? (
+                <a
+                  class="floorplans-view-link"
+                  href={unit.floorPlanImage}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View
+                </a>
+              ) : (
+                <span>-</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {!units.length && <p class="floorplans-empty">No floorplans available.</p>}
+</div>
+
+<script is:inline define:vars={{ tableId }}>
+  (() => {
+    const root = document.getElementById(tableId);
+    if (!root) return;
+
+    const body = root.querySelector("[data-floorplans-body]");
+    if (!body) return;
+
+    const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
+    let sortKey = "";
+    let sortDir = "asc";
+
+    const updateButtons = () => {
+      buttons.forEach((button) => {
+        const active = button.dataset.sortKey === sortKey;
+        const indicator = button.querySelector(".floorplans-sort-indicator");
+        if (indicator) {
+          indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
+        }
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+    };
+
+    const sortRows = (key, dir) => {
+      const rows = Array.from(body.querySelectorAll(".floorplans-row"));
+
+      rows.sort((rowA, rowB) => {
+        const valueA = Number(rowA.dataset[key] || 0);
+        const valueB = Number(rowB.dataset[key] || 0);
+
+        if (valueA !== valueB) {
+          return dir === "asc" ? valueA - valueB : valueB - valueA;
+        }
+
+        return (rowA.dataset.unitNumber || "").localeCompare(
+          rowB.dataset.unitNumber || "",
+          undefined,
+          { numeric: true, sensitivity: "base" }
+        );
+      });
+
+      rows.forEach((row) => body.appendChild(row));
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.sortKey;
+        if (!key) return;
+
+        sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+        sortKey = key;
+        sortRows(key, sortDir);
+        updateButtons();
+      });
+    });
+
+    updateButtons();
+  })();
+</script>
+
+<style>
+  .floorplans-scroller {
+    overflow-x: auto;
+  }
+
+  .floorplans-table {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+  }
+
+  .floorplans-head {
+    display: table-header-group;
+  }
+
+  .floorplans-body {
+    display: table-row-group;
+  }
+
+  .floorplans-head,
+  .floorplans-row {
+    display: table-row;
+  }
+
+  .floorplans-cell {
+    box-sizing: border-box;
+    display: table-cell;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #d4d4d4;
+    vertical-align: middle;
+  }
+
+  .floorplans-cell--unit {
+    width: 24%;
+  }
+
+  .floorplans-cell--metric {
+    width: 16%;
+  }
+
+  .floorplans-cell--action {
+    width: 28%;
+  }
+
+  .floorplans-head .floorplans-cell {
+    font-weight: 600;
+    border-top: 1px solid #d4d4d4;
+  }
+
+  .floorplans-sort-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    padding: 0;
+    gap: 0.35rem;
+    text-align: left;
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .floorplans-sort-label {
+    flex: 0 1 auto;
+  }
+
+  .floorplans-sort-indicator {
+    display: inline-block;
+    flex: 0 0 1ch;
+    min-width: 1ch;
+    text-align: center;
+  }
+
+  .floorplans-view-link {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid currentColor;
+    text-decoration: none;
+  }
+
+  .floorplans-empty {
+    margin-top: 1rem;
+  }
+</style>

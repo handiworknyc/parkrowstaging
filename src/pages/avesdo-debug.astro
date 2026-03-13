@@ -1,0 +1,170 @@
+---
+export const prerender = false;
+
+const debugEnabled =
+  import.meta.env.DEV ||
+  import.meta.env.AVESDO_DEBUG === "1" ||
+  process.env.AVESDO_DEBUG === "1";
+
+if (!debugEnabled) {
+  return Astro.redirect("/");
+}
+
+const API_BASE = "https://api.avesdo.com";
+const PARK_ROW_DEVELOPMENT = {
+  id: 756,
+  name: "Park Row - Bellevue",
+  buildingName: "Park Row - Bellevue",
+  developerName: "Bosa Development (Park Row) LP",
+};
+const token = (import.meta.env.AVESDO || process.env.AVESDO || "").trim();
+const propertyIdParam = Astro.url.searchParams.get("propertyId")?.trim() || "";
+const selectedPropertyId = propertyIdParam ? Number(propertyIdParam) : null;
+const shouldFetchFloorplans = Number.isFinite(selectedPropertyId);
+
+const headers = {
+  Authorization: `Bearer ${token}`,
+  Accept: "application/json",
+};
+
+async function safeJson(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error("NON-JSON RESPONSE");
+    console.error("STATUS:", res.status);
+    console.error("TEXT:", text);
+    return null;
+  }
+}
+
+const status = {
+  developments: null,
+  properties: null,
+  floorplans: {},
+};
+
+let developments = null;
+let parkRow = PARK_ROW_DEVELOPMENT;
+let properties = [];
+const floorplansByProperty = {};
+let debugError = "";
+let selectedProperty = null;
+
+if (!token) {
+  debugError = "Missing AVESDO env var.";
+} else {
+  try {
+    developments = [PARK_ROW_DEVELOPMENT];
+    status.developments = "skipped";
+
+    console.log("PARK ROW DEVELOPMENT:", PARK_ROW_DEVELOPMENT);
+
+    const propRes = await fetch(
+      `${API_BASE}/v2/developments/${PARK_ROW_DEVELOPMENT.id}/properties`,
+      { headers }
+    );
+
+    status.properties = propRes.status;
+    properties = (await safeJson(propRes)) || [];
+
+    console.log("PROPERTIES COUNT:", properties.length);
+
+    if (shouldFetchFloorplans) {
+      selectedProperty =
+        properties.find((property) => property.id === selectedPropertyId) || null;
+
+      if (!selectedProperty) {
+        debugError = `Property ${selectedPropertyId} was not found in Park Row properties.`;
+      } else {
+        const fpRes = await fetch(
+          `${API_BASE}/v2/properties/${selectedProperty.id}/floorplans`,
+          { headers }
+        );
+
+        status.floorplans[selectedProperty.id] = fpRes.status;
+
+        const floorplans = await safeJson(fpRes);
+
+        floorplansByProperty[selectedProperty.id] = {
+          property: selectedProperty,
+          floorplans,
+        };
+
+        console.log(
+          `FLOORPLANS FOR PROPERTY ${selectedProperty.id}:`,
+          Array.isArray(floorplans) ? floorplans.length : floorplans
+        );
+      }
+    }
+  } catch (error) {
+    debugError = error instanceof Error ? error.message : String(error);
+    console.error("AVESDO DEBUG ERROR:", error);
+  }
+}
+---
+
+
+<h1>Park Row Floorplans</h1>
+
+<p>Route enabled: {debugEnabled ? "yes" : "no"}</p>
+<p>AVESDO token present: {token ? "yes" : "no"}</p>
+<p>Developments status: {status.developments ?? "not requested"}</p>
+<p>Properties status: {status.properties ?? "not requested"}</p>
+<p>Selected propertyId: {propertyIdParam || "none"}</p>
+
+{debugError && (
+  <section>
+    <h2>Error</h2>
+    <pre>{debugError}</pre>
+  </section>
+)}
+
+<section>
+  <h2>Park Row Development</h2>
+  <pre>{JSON.stringify(parkRow, null, 2)}</pre>
+</section>
+
+<section>
+  <h2>Developments</h2>
+  <pre>{JSON.stringify(developments, null, 2)}</pre>
+</section>
+
+<section>
+  <h2>Properties</h2>
+  <pre>{JSON.stringify(properties, null, 2)}</pre>
+</section>
+
+<section>
+  <h2>Floorplan Debug</h2>
+  <p>
+    The Avesdo floorplans endpoint is rate-limited. Use one property at a time
+    with <code>?propertyId=...</code>.
+  </p>
+  <p>
+    Example:
+    <a href="/avesdo-debug?propertyId=120988"> /avesdo-debug?propertyId=120988</a>
+  </p>
+  <pre>
+    {JSON.stringify(
+      properties.slice(0, 20).map((property) => ({
+        id: property.id,
+        unitNumber: property.unitNumber,
+        floorPlan: property.floorPlan,
+        status: property.status,
+      })),
+      null,
+      2
+    )}
+  </pre>
+</section>
+
+{Object.values(floorplansByProperty).map(({ property, floorplans }) => (
+  <section>
+    <h2>{property.name}</h2>
+    <p>Status: {status.floorplans[property.id] ?? "not requested"}</p>
+
+    <pre>{JSON.stringify(floorplans, null, 2)}</pre>
+  </section>
+))}

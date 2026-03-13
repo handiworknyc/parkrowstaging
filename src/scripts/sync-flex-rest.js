@@ -44,9 +44,17 @@ function maskBasicAuthUrl(u) {
 const WP_BASE = (process.env.WP_BASE_URL || "").trim();
 const GRAPHQL = (process.env.WORDPRESS_API_URL || process.env.WP_GRAPHQL_URL || "").trim();
 const PAGE_URIS_ENV = (process.env.PAGE_URIS || "").trim();
+const AVESDO_TOKEN = (process.env.AVESDO || "").trim();
 const AUTH = process.env.WP_AUTH_BASIC
   ? "Basic " + Buffer.from(process.env.WP_AUTH_BASIC, "utf8").toString("base64")
   : null;
+const AVESDO_API_BASE = "https://api.avesdo.com";
+const AVESDO_PARK_ROW_DEVELOPMENT = {
+  id: 756,
+  name: "Park Row - Bellevue",
+  buildingName: "Park Row - Bellevue",
+  developerName: "Bosa Development (Park Row) LP",
+};
 
 if (!WP_BASE) {
   console.error("Missing WP_BASE_URL.");
@@ -77,6 +85,82 @@ async function fetchText(url, opts = {}) {
     throw new Error(`HTTP ${res.status} ${url}\n${text.slice(0, 400)}`);
   }
   return { text, res };
+}
+
+function formatBathCount(bathrooms, halfBathrooms) {
+  const full = Number(bathrooms || 0);
+  const half = Number(halfBathrooms || 0);
+  return full + half * 0.5;
+}
+
+async function fetchAvesdoJSON(pathname) {
+  if (!AVESDO_TOKEN) {
+    throw new Error("Missing AVESDO token.");
+  }
+
+  const url = new URL(pathname, AVESDO_API_BASE);
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${AVESDO_TOKEN}`,
+      Accept: "application/json",
+    },
+  });
+
+  const text = await res.text();
+  let json;
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Avesdo returned non-JSON for ${url}: HTTP ${res.status}\n${text.slice(0, 400)}`);
+  }
+
+  if (!res.ok) {
+    throw new Error(`Avesdo HTTP ${res.status} ${url}\n${JSON.stringify(json).slice(0, 400)}`);
+  }
+
+  return json;
+}
+
+function compareUnitNumbers(a, b) {
+  return String(a || "").localeCompare(String(b || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+async function fetchAvesdoParkRowInventory() {
+  const properties = await fetchAvesdoJSON(
+    `/v2/developments/${AVESDO_PARK_ROW_DEVELOPMENT.id}/properties`
+  );
+
+  if (!Array.isArray(properties)) {
+    throw new Error("Avesdo properties response was not an array.");
+  }
+
+  const units = properties
+    .map((property) => {
+      const bathrooms = formatBathCount(property?.bathrooms, property?.halfBathrooms);
+
+      return {
+        id: Number(property?.id || 0),
+        unitNumber: String(property?.unitNumber || "").trim(),
+        bedrooms: Number(property?.bedrooms || 0),
+        bathrooms,
+        area: Number(property?.floorArea || 0),
+        floorPlanImage: String(property?.floorPlanImage || "").trim(),
+        floorPlan: String(property?.floorPlan || "").trim(),
+        status: String(property?.status || "").trim(),
+        availability: String(property?.availability || "").trim(),
+      };
+    })
+    .filter((unit) => unit.id && unit.unitNumber)
+    .sort((a, b) => compareUnitNumbers(a.unitNumber, b.unitNumber));
+
+  return {
+    development: AVESDO_PARK_ROW_DEVELOPMENT,
+    units,
+  };
 }
 
 function readJSONIfExists(file) {
@@ -701,6 +785,7 @@ async function run() {
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
   const outHeaderMenuCN = path.join(process.cwd(), "src", "content", "wp", "header-menu-cn.json");
+  const outAvesdoFloorplans = path.join(process.cwd(), "src", "content", "wp", "avesdo-floorplans.json");
   const publicDir = path.join(process.cwd(), "public");
   const outSchemaAddress = path.join(process.cwd(), "src", "content", "wp", "schema-address.json");
   const imgCacheDir = path.join(publicDir, "img-cache");
@@ -708,6 +793,20 @@ async function run() {
   fs.mkdirSync(outPages, { recursive: true });
   fs.mkdirSync(publicDir, { recursive: true });
   fs.mkdirSync(imgCacheDir, { recursive: true });
+
+  /* -------- AVESDO FLOORPLANS -------- */
+  try {
+    console.log("🏢 Fetching Avesdo Park Row inventory…");
+    const inventory = await fetchAvesdoParkRowInventory();
+    writeJSONIfChanged(
+      outAvesdoFloorplans,
+      inventory,
+      `✅ Avesdo floorplans updated (${inventory.units.length} units)`,
+      "⏩ Avesdo floorplans unchanged"
+    );
+  } catch (error) {
+    console.warn(`⚠️ Failed to sync Avesdo floorplans: ${error?.message || error}`);
+  }
 
   /* -------- PAGES -------- */
   let pageUris = PAGE_URIS_ENV
