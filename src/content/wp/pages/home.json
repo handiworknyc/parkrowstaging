@@ -1405,6 +1405,7 @@
           "title": "Park Life, Defined",
           "text": "<p>Park Row defines Park Life: a way of living shaped by daily access to nature, balance, and calm, without sacrificing connection to the city. Envisioned by Bosa Development and inspired by the park itself, the project brings intention, legacy, and lasting value to Bellevue’s most celebrated setting. Here, design is purposeful, the location is irreplaceable, and every day begins and ends at the park.</p>\n",
           "two_col_list": false,
+          "wide_list_columns": false,
           "list": "",
           "title_chinese": "",
           "text_chinese": "",
@@ -1413,5 +1414,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-18 12:46:04"
+  "_syncedAt": "2026-03-18 12:49:29"
 }
