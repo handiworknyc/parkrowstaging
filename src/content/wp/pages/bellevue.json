@@ -1617,7 +1617,10 @@
             }
           },
           "caption": "A caption for a slide",
-          "caption_chinese": ""
+          "caption_chinese": "",
+          "section_title": "Future Plans for Easier Living",
+          "section_h3": "",
+          "section_text": ""
         },
         {
           "image": {
@@ -1759,7 +1762,10 @@
             }
           },
           "caption": "Another slide caption",
-          "caption_chinese": ""
+          "caption_chinese": "",
+          "section_title": "",
+          "section_h3": "",
+          "section_text": ""
         },
         {
           "image": {
@@ -1901,7 +1907,10 @@
             }
           },
           "caption": "A woman just walking",
-          "caption_chinese": ""
+          "caption_chinese": "",
+          "section_title": "",
+          "section_h3": "",
+          "section_text": ""
         },
         {
           "image": {
@@ -2043,10 +2052,13 @@
             }
           },
           "caption": "A vase",
-          "caption_chinese": ""
+          "caption_chinese": "",
+          "section_title": "",
+          "section_h3": "",
+          "section_text": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-03-18 12:52:29"
+  "_syncedAt": "2026-03-18 13:06:18"
 }
