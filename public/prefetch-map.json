@@ -29,16 +29,17 @@
   },
   {
     "path": "/residences/",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/8c4c97300e700a60ac35a4afc15b76bd/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/park-row-residences-43f1a0a8.jpg.webp",
-      "imagesrcset": "/img-cache/park-row-residences-43f1a0a8.jpg.webp 1440w, /img-cache/park-row-residences-43f1a0a8.jpg.webp 1440w, /img-cache/park-row-residences-1000x569-1b1b0abc.jpg.webp 1000w, /img-cache/park-row-residences-600x342-b987f536.jpg.webp 600w",
+      "href": "/img-cache/video-11-poster-3000x1678-3a8ecd32.png.webp",
+      "imagesrcset": "/img-cache/video-11-poster-3000x1678-3a8ecd32.png.webp 3000w, /img-cache/video-11-poster-1500x839-308ad5fe.png.webp 1500w, /img-cache/video-11-poster-1000x559-19c11a78.png.webp 1000w, /img-cache/video-11-poster-600x336-a51eff3f.png.webp 600w",
       "imagesizes": "(max-width: 1200px) 60vw, 100vw",
       "type": "image/webp"
     }
   },
   {
     "path": "/building/",
-    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/80dcea932c6f052c59dee0382dfd3d1e/manifest/video.m3u8",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/37e2534c7441fceb49f9b0e7446d697d/manifest/video.m3u8",
     "lcp": {
       "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp",
       "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1000x569-ae5f105a.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-600x342-f2345ef4.jpg.webp 600w",
