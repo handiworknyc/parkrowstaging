@@ -1,15 +1,5 @@
 [
   {
-    "path": "/bellevue/",
-    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/860f7d85d8db2c9989a2c5b47c6e9835/manifest/video.m3u8",
-    "lcp": {
-      "href": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp",
-      "imagesrcset": "/img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-ee8890e9.jpg.webp 1440w, /img-cache/park_row_neighborhood-1000x569-1b3bb200.jpg.webp 1000w, /img-cache/park_row_neighborhood-600x342-503407da.jpg.webp 600w",
-      "imagesizes": "(max-width: 1200px) 60vw, 100vw",
-      "type": "image/webp"
-    }
-  },
-  {
     "path": "/amenities/",
     "lcp": {
       "href": "/img-cache/park-row-amenities-5b504fdb.jpg.webp",

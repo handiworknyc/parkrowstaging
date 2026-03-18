@@ -1148,20 +1148,20 @@
       "content": [
         {
           "title": "Kitchens",
-          "title_chinese": "",
           "text": "<p>Thoughtfully composed around daily rituals. Integrated appliances, sculpted stone, and generous storage create spaces both functional and artful.</p>\n",
-          "text_chinese": "",
           "two_col_list": false,
           "list": "",
+          "title_chinese": "",
+          "text_chinese": "",
           "list_chinese": ""
         },
         {
           "title": "",
-          "title_chinese": "",
           "text": "",
-          "text_chinese": "",
           "two_col_list": false,
           "list": "Custom designed chef-par kitchens\r\nPolished quartz countertops and backsplash\r\nCustom designed quartz curved island with a convex detail\r\nEuropean-inspired wood veneer cabinets with integrated pulls\r\nUndermount LED cabinet lighting for workspace illumination\r\nSoft-close drawers and organizers for flatware and utensils\r\nDeep utility drawers with glass sides\r\nConvenient docking drawer with USB/USB-C outlet\r\nOne-bedroom residences include an integrated backlit glass pantry\r\n8” deep single basin stainless steel sink\r\nPolished dark chrome Dornbracht single lever faucet with pull-down spray and integrated soap dispenser\r\n",
+          "title_chinese": "",
+          "text_chinese": "",
           "list_chinese": ""
         }
       ]
@@ -2035,24 +2035,24 @@
       "content": [
         {
           "title": "Bathrooms",
-          "title_chinese": "",
           "text": "<p>Soft light, tactile surfaces, and a serene balance of form and function. A private spa that invites restoration at the beginning and end of each day.</p>\n",
-          "text_chinese": "",
           "two_col_list": false,
           "list": "",
+          "title_chinese": "",
+          "text_chinese": "",
           "list_chinese": ""
         },
         {
           "title": "",
-          "title_chinese": "",
           "text": "",
-          "text_chinese": "",
           "two_col_list": true,
           "list": "Primary Bathrooms\r\nCantilevered soft-close fluted wood veneer cabinets with interior outlet and undercabinet lighting\r\nDual undermount sinks with honed quartz vanity top\r\nIlluminated vanity mirror with custom wall sconce and wall tile \r\nModern large format tile flooring with heated floors\r\nCurbless, glass enclosed shower with tiled niche and linear drain in 2 & 3-bedroom residences\r\nDornbracht wall mounted dark chrome fixtures including rain shower with hand shower system\r\nDark chrome accessories\r\n\r\nSecondary Bathrooms\r\nCantilevered soft-close fluted wood veneer cabinets with undercabinet lighting\r\nUndermount sink with honed quartz vanity top\r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixtures\r\n\r\nPowder Bath\r\nSoft-close fluted wood veneer cabinets with undercabinet lighting  \r\nUndermount sink with honed quartz vanity top \r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing  \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixture",
+          "title_chinese": "",
+          "text_chinese": "",
           "list_chinese": ""
         }
       ]
     }
   ],
-  "_syncedAt": "2026-03-18 11:51:31"
+  "_syncedAt": "2026-03-18 12:28:27"
 }
