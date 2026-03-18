@@ -1618,9 +1618,9 @@
           },
           "caption": "A caption for a slide",
           "caption_chinese": "",
-          "section_title": "Future Plans for Easier Living",
-          "section_h3": "",
-          "section_text": ""
+          "section_title": "Future Plans\r\nfor Easier Living",
+          "section_h3": "Growth and Confidence",
+          "section_text": "<p>Bellevue continues its trajectory as a major regional economic center with more than 160,000 jobs city-wide and projections that employment will grow beyond 190,000 by 2035, a testament to sustained business confidence and quality of life.</p>\n<p>Leading employers have expanded their presence here, bringing global impact and local vitality. Amazon maintains a large and growing workforce, Meta operates one of its largest hubs outside Silicon Valley, T-Mobile’s U.S. headquarters is a cornerstone of innovation, and Salesforce continues to grow its footprint.</p>\n<p>Since 2021, Bellevue has added nearly 3.9 million square feet of new office space, nearly outpacing similar growth in nearby markets and reflecting strong demand from technology, business services, and growth sectors.<br />\nThis economic momentum brings talent and energy to the city, while making Bellevue a highly desirable place to live, work, and build community.</p>\n"
         },
         {
           "image": {
@@ -1763,9 +1763,9 @@
           },
           "caption": "Another slide caption",
           "caption_chinese": "",
-          "section_title": "",
-          "section_h3": "",
-          "section_text": ""
+          "section_title": "Another Heading",
+          "section_h3": "Context Here",
+          "section_text": "<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#8217;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>\n"
         },
         {
           "image": {
@@ -1909,8 +1909,8 @@
           "caption": "A woman just walking",
           "caption_chinese": "",
           "section_title": "",
-          "section_h3": "",
-          "section_text": ""
+          "section_h3": "Popularised in the 1960s",
+          "section_text": "<p>Desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>\n<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#8217;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>\n"
         },
         {
           "image": {
@@ -2055,10 +2055,10 @@
           "caption_chinese": "",
           "section_title": "",
           "section_h3": "",
-          "section_text": ""
+          "section_text": "<p>Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>\n<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry&#8217;s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p>\n"
         }
       ]
     }
   ],
-  "_syncedAt": "2026-03-18 13:06:18"
+  "_syncedAt": "2026-03-18 13:07:40"
 }
