@@ -7,7 +7,11 @@ export function getGraphQLEndpoint(): string | null {
 }
 
 export function authHeaders(): Record<string, string> {
-  const pair = (process.env.WP_AUTH_BASIC || "").trim(); // works in Netlify functions
+  const pair = (
+    import.meta.env.WP_AUTH_BASIC ||
+    process.env.WP_AUTH_BASIC ||
+    ""
+  ).trim();
   if (!pair) return {};
   const token = Buffer.from(pair, "utf8").toString("base64");
   return { Authorization: `Basic ${token}` };

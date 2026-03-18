@@ -69,8 +69,8 @@
       "area": 799,
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2a_-_305.jpg?v=639062648289361075",
       "floorPlan": "A2a - 305",
-      "status": "Not Signed",
-      "availability": "Pending"
+      "status": "Available",
+      "availability": "Available"
     },
     {
       "id": 120994,
@@ -1136,8 +1136,8 @@
       "area": 1650,
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
-      "status": "Not Signed",
-      "availability": "Pending"
+      "status": "Available",
+      "availability": "Available"
     },
     {
       "id": 121091,

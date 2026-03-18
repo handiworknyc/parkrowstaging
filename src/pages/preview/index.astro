@@ -54,8 +54,9 @@ if (hasPreviewAccess && !page) {
     title={page.title || "Preview"}
     cacheControl="private, no-store, max-age=0, must-revalidate"
     noIndex={true}
+    isPreview={true}
   >
-    <LayoutRenderer layouts={page.layouts || []} />
+    <LayoutRenderer layouts={page.layouts || []} skipSplash={true} />
   </BaseLayout>
 ) : (
   "Page Not found"

@@ -16,6 +16,7 @@ interface Props {
   pageId?: number | null;
   pageSlug?: string | null;
   lang?: 'en' | 'zh';
+  skipSplash?: boolean;
 }
 
 interface LayoutSettings {
@@ -49,6 +50,7 @@ const {
   pageId = null,
   pageSlug = null,
   lang = 'en', // default safety
+  skipSplash = false,
 } = Astro.props as Props;
 
 
@@ -230,7 +232,8 @@ function getNextPage(currentPath: string) {
 }
 
 /* ---------------- Data Prep ---------------- */
-const rows = normalizeLayouts(Array.isArray(layouts) ? layouts : []);
+const allRows = normalizeLayouts(Array.isArray(layouts) ? layouts : []);
+const rows = skipSplash ? allRows.filter(r => r.name !== "splash_video") : allRows;
 const firstLayout = rows[0]?.name ?? "";
 const firstIsSplash = firstLayout === "splash_video";
 const altBgContext = isAltBgContext(taxContext, firstLayout);

@@ -34,6 +34,7 @@
 		lang?: 'en' | 'zh';
 		cacheControl?: string;
 		noIndex?: boolean;
+		isPreview?: boolean;
 	}
 
 	/* ---------------- Props & Config ---------------- */
@@ -46,6 +47,7 @@
 	lang = 'en',
 	cacheControl: cacheControlProp = "",
 	noIndex = false,
+	isPreview = false,
 	} = Astro.props;
 
 
@@ -132,7 +134,7 @@
 	<html
 	lang={lang}
 	style="view-transition-name: main-content"
-	class={`first-load ${bodyClasses}`}
+	class={`${isPreview ? '' : 'first-load'} ${bodyClasses}`.trim()}
 	>
 
 	<head>
