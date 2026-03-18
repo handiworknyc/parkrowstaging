@@ -1,0 +1,68 @@
+---
+export const prerender = false;
+
+import BaseLayout from "../../layouts/MainLayout.astro";
+import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
+import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+
+const PREVIEW_SECRET = (
+  import.meta.env.PREVIEW_SECRET ||
+  process.env.PREVIEW_SECRET ||
+  ""
+).trim();
+const PREVIEW_COOKIE = "hw_preview";
+
+const previewToken = (Astro.url.searchParams.get("preview") || "").trim();
+const previewCookie = (Astro.cookies.get(PREVIEW_COOKIE)?.value || "").trim();
+
+if (
+  PREVIEW_SECRET &&
+  previewToken === PREVIEW_SECRET &&
+  previewCookie !== PREVIEW_SECRET
+) {
+  Astro.cookies.set(PREVIEW_COOKIE, PREVIEW_SECRET, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: Astro.url.protocol === "https:",
+    path: "/preview",
+    maxAge: 60 * 60 * 12,
+  });
+}
+
+const hasPreviewAccess =
+  !PREVIEW_SECRET ||
+  previewToken === PREVIEW_SECRET ||
+  previewCookie === PREVIEW_SECRET;
+
+const slugValue = Astro.params.slug;
+const slug = Array.isArray(slugValue)
+  ? slugValue.join("/")
+  : slugValue || "";
+const uri = slug ? `/${slug}/` : "/";
+
+let page = null;
+
+if (hasPreviewAccess) {
+  page = await fetchPreviewFlexiblePageByUri(uri);
+} else {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+}
+
+if (hasPreviewAccess && !page) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+}
+---
+
+{hasPreviewAccess && page ? (
+  <BaseLayout
+    title={page.title || "Preview"}
+    cacheControl="private, no-store, max-age=0, must-revalidate"
+    noIndex={true}
+  >
+    <LayoutRenderer layouts={page.layouts || []} />
+  </BaseLayout>
+) : (
+  "Page Not found"
+)}

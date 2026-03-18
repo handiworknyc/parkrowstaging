@@ -32,6 +32,8 @@
 		} | null;
 		preloads?: (string | PreloadItem)[];
 		lang?: 'en' | 'zh';
+		cacheControl?: string;
+		noIndex?: boolean;
 	}
 
 	/* ---------------- Props & Config ---------------- */
@@ -42,6 +44,8 @@
 	lcpVideo = null,
 	preloads = [],
 	lang = 'en',
+	cacheControl: cacheControlProp = "",
+	noIndex = false,
 	} = Astro.props;
 
 
@@ -117,9 +121,12 @@
 	const bodyClasses = segments.length ? segments.join(" ") : "home";
 
 
-	const cacheControl = "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
+	const cacheControl = cacheControlProp || "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
 	Astro.response.headers.set("Cache-Control", cacheControl);
 	Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
+	if (noIndex) {
+		Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+	}
 	---
 
 	<html
@@ -155,6 +162,7 @@
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 	<meta name="viewport" content="width=device-width" />
 	<meta name="generator" content={Astro.generator} />
+	{noIndex && <meta name="robots" content="noindex, nofollow" />}
 	<title>{title}</title>
 
 	<link
