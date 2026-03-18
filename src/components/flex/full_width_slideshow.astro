@@ -47,6 +47,22 @@ const validSlides = formattedSlides.filter((s): s is NonNullable<typeof s> => Bo
 
 // 5. Check if any slide has per-slide section overrides
 const hasSlideOverrides = validSlides.some(s => s.section_title || s.section_h3 || s.section_text);
+
+// 6. Find the tallest section content by text length (server-side heuristic)
+function stripHtml(str: string | null): string {
+  return (str || '').replace(/<[^>]+>/g, '');
+}
+let tallestSectionIndex = 0;
+if (hasSlideOverrides) {
+  let maxLen = 0;
+  validSlides.forEach((s, i) => {
+    const title = stripHtml(s.section_title || moduleSectionContent.section_title);
+    const h3 = stripHtml(s.section_h3 || moduleSectionContent.section_h3);
+    const text = stripHtml(s.section_text || moduleSectionContent.section_text);
+    const len = title.length + h3.length + text.length;
+    if (len > maxLen) { maxLen = len; tallestSectionIndex = i; }
+  });
+}
 ---
 
 {validSlides.length > 0 ? (
@@ -59,6 +75,7 @@ const hasSlideOverrides = validSlides.some(s => s.section_title || s.section_h3 
       sectionContent: moduleSectionContent,
       placeBelow: !!_sectionPlaceBelow,
       sectionBgColorClass: _sectionBgColorClass || null,
+      tallestSectionIndex,
     } : {})}
   />
 ) : (

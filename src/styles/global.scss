@@ -1225,8 +1225,20 @@ ul.two-col-list {
 }
 
 /* Slideshow per-slide cross-fading section content */
-.slideshow-section-inner {
+.slideshow-section-stack {
 	position: relative;
+}
+
+.slideshow-section-ghost {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.slideshow-section-active {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
 }
 
 .nav-arrow { 

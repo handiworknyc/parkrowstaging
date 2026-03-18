@@ -41,7 +41,7 @@ function isLongSectionTitle(title) {
   return lines.some(l => l.length >= 18);
 }
 
-export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null }) {
+export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null, tallestSectionIndex = 0 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [disableBlur, setDisableBlur] = useState(false);
 
@@ -124,56 +124,88 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
     "--slide-caption-overlay-blur": captionOverlayBlur,
   };
 
-  // Build the cross-fading section content block (same structure as LayoutRenderer headerInner)
-  const sectionContentBlock = sectionContent ? (
-    <AnimatePresence mode="wait">
-      {currentSectionContent && (
-        <motion.div
-          key={`section-${currentIndex}`}
-          className={`flex-section-content hw-contain slideshow-section-inner ${
-            !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
-          }`}
-          initial={{ opacity: 0 }}
-          animate={{ 
-            opacity: 1,
-            transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
-          }}
-          exit={{ 
-            opacity: 0,
-            transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
-          }}
-        >
-          <div className="row">
-            <div className="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
-              <div className="row">
-                {currentSectionContent.title && (
-                  <h2
-                    className={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
-                      isLongSectionTitle(currentSectionContent.title) ? "long-title" : ""
-                    }`}
-                    dangerouslySetInnerHTML={{ __html: currentSectionContent.title }}
-                  />
-                )}
-                <div className="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
-                  {currentSectionContent.h3 && (
-                    <h3
-                      className="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
-                      dangerouslySetInnerHTML={{ __html: currentSectionContent.h3 }}
-                    />
-                  )}
-                  {currentSectionContent.text && (
-                    <div
-                      className="section-text"
-                      dangerouslySetInnerHTML={{ __html: currentSectionContent.text }}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
+  // Pre-resolve all slide section contents for the ghost height-setter
+  const allSectionContents = useMemo(
+    () => sectionContent
+      ? slides.map(s => resolveSectionContent(s, sectionContent))
+      : [],
+    [slides, sectionContent]
+  );
+
+  const tallestContent = allSectionContents[tallestSectionIndex];
+
+  // Shared renderer for section content inner markup
+  const renderSectionInner = (content) => (
+    <div className="row">
+      <div className="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
+        <div className="row">
+          {content.title && (
+            <h2
+              className={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
+                isLongSectionTitle(content.title) ? "long-title" : ""
+              }`}
+              dangerouslySetInnerHTML={{ __html: content.title }}
+            />
+          )}
+          <div className="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
+            {content.h3 && (
+              <h3
+                className="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
+                dangerouslySetInnerHTML={{ __html: content.h3 }}
+              />
+            )}
+            {content.text && (
+              <div
+                className="section-text"
+                dangerouslySetInnerHTML={{ __html: content.text }}
+              />
+            )}
           </div>
-        </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Build the cross-fading section content block with ghost height-setter
+  const sectionContentBlock = sectionContent ? (
+    <div className="slideshow-section-stack">
+      {/* Ghost: tallest content in normal flow, invisible, sets the height */}
+      {tallestContent && (
+        <div
+          className={`flex-section-content hw-contain slideshow-section-ghost ${
+            !(tallestContent.h3 || tallestContent.text) ? "title-only" : ""
+          }`}
+          aria-hidden="true"
+          role="presentation"
+          inert=""
+        >
+          {renderSectionInner(tallestContent)}
+        </div>
       )}
-    </AnimatePresence>
+
+      {/* Active slide: absolutely positioned on top, cross-fades */}
+      <AnimatePresence mode="wait">
+        {currentSectionContent && (
+          <motion.div
+            key={`section-${currentIndex}`}
+            className={`flex-section-content hw-contain slideshow-section-inner slideshow-section-active ${
+              !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
+            }`}
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: 1,
+              transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+            }}
+            exit={{ 
+              opacity: 0,
+              transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
+            }}
+          >
+            {renderSectionInner(currentSectionContent)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   ) : null;
 
   // Wrap section content in bg color class if needed
