@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import SlideNavigation from "../ui/SlideNavigation"; 
 
@@ -25,7 +25,23 @@ const getSlideImageProps = (slide) => {
   return { src, srcSet };
 };
 
-export default function FadeSlideshow({ slides }) {
+// Helper: resolve per-slide section text with module-level fallback
+function resolveSectionContent(slide, sectionContent) {
+  const title = slide.section_title || sectionContent?.section_title || null;
+  const h3 = slide.section_h3 || sectionContent?.section_h3 || null;
+  const text = slide.section_text || sectionContent?.section_text || null;
+  if (!title && !h3 && !text) return null;
+  return { title, h3, text };
+}
+
+// Helper: check if a title string is "long" (same logic as LayoutRenderer)
+function isLongSectionTitle(title) {
+  if (!title) return false;
+  const lines = title.split(/<br\s*\/?>/i).map(l => l.replace(/<[^>]+>/g, "").trim());
+  return lines.some(l => l.length >= 18);
+}
+
+export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [disableBlur, setDisableBlur] = useState(false);
 
@@ -67,6 +83,12 @@ export default function FadeSlideshow({ slides }) {
   const exitFilter = disableBlur ? "blur(0px)" : "blur(5px)";
   const captionOverlayBlur = disableBlur ? "0px" : "11px";
 
+  // Resolve section content for the current slide
+  const currentSectionContent = useMemo(
+    () => resolveSectionContent(slide, sectionContent),
+    [currentIndex, slide, sectionContent]
+  );
+
   // ---- Variants & Styles ----
   const wipeVariants = {
     initial: { 
@@ -102,64 +124,134 @@ export default function FadeSlideshow({ slides }) {
     "--slide-caption-overlay-blur": captionOverlayBlur,
   };
 
-  return (
-    <div className="relative w-full h-full">
-      <div className="relative w-full h-full overflow-hidden">
-        <AnimatePresence initial={false}>
-          <motion.figure
-            key={currentIndex}
-            className={`slide-figure absolute inset-0 w-full h-full ${
-              slide.caption ? "has-caption" : ""
-            }`}
-            variants={wipeVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            style={maskStyle}
-          >
-            <div className="image-wrapper w-full h-full">
-              <motion.img
-                draggable={false}
-                className="photo absolute w-full h-full object-cover"
-                src={primary}
-                srcSet={srcSet}
-                sizes="(max-width: 1200px) 100vw, 100vw"
-                alt={slide.alt || `Slide ${currentIndex + 1}`}
-                decoding="async" 
-              />
-
-              {slide.caption && (
-                <motion.figcaption
-                  className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
-                  initial={{ opacity: 0 }}
-                  animate={{ 
-                    opacity: 1, 
-                    transition: { 
-                        duration: 2.25, 
-                        ease: [0.2, 1, 0.4, 1], 
-                        delay: 0.65
-                    }
-                  }}
-                  exit={{ 
-                    opacity: 0, 
-                    transition: { duration: 0.8, ease:  [0.19, 1, 0.32, 1] } 
-                  }}
-                >
-                  {slide.caption}
-                </motion.figcaption>
-              )}
+  // Build the cross-fading section content block (same structure as LayoutRenderer headerInner)
+  const sectionContentBlock = sectionContent ? (
+    <AnimatePresence mode="wait">
+      {currentSectionContent && (
+        <motion.div
+          key={`section-${currentIndex}`}
+          className={`flex-section-content hw-contain slideshow-section-inner ${
+            !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
+          }`}
+          initial={{ opacity: 0 }}
+          animate={{ 
+            opacity: 1,
+            transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+          }}
+          exit={{ 
+            opacity: 0,
+            transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
+          }}
+        >
+          <div className="row">
+            <div className="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
+              <div className="row">
+                {currentSectionContent.title && (
+                  <h2
+                    className={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
+                      isLongSectionTitle(currentSectionContent.title) ? "long-title" : ""
+                    }`}
+                    dangerouslySetInnerHTML={{ __html: currentSectionContent.title }}
+                  />
+                )}
+                <div className="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
+                  {currentSectionContent.h3 && (
+                    <h3
+                      className="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
+                      dangerouslySetInnerHTML={{ __html: currentSectionContent.h3 }}
+                    />
+                  )}
+                  {currentSectionContent.text && (
+                    <div
+                      className="section-text"
+                      dangerouslySetInnerHTML={{ __html: currentSectionContent.text }}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </motion.figure>
-        </AnimatePresence>
-      </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  ) : null;
 
-      <SlideNavigation 
-          onNext={handleNext} 
-          onPrev={handlePrev}
-          canNext={slides.length > 1}
-          canPrev={slides.length > 1}
-          className="carousel-nav-position"
-      />
+  // Wrap section content in bg color class if needed
+  const wrappedSectionContent = sectionContentBlock
+    ? sectionBgColorClass
+      ? <div className={sectionBgColorClass}>{sectionContentBlock}</div>
+      : sectionContentBlock
+    : null;
+
+  // Image slideshow block
+  const slideshowBlock = (
+    <div className="full-width-slideshow-wrap relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
+      <div className="relative w-full h-full">
+        <div className="relative w-full h-full overflow-hidden">
+          <AnimatePresence initial={false}>
+            <motion.figure
+              key={currentIndex}
+              className={`slide-figure absolute inset-0 w-full h-full ${
+                slide.caption ? "has-caption" : ""
+              }`}
+              variants={wipeVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={maskStyle}
+            >
+              <div className="image-wrapper w-full h-full">
+                <motion.img
+                  draggable={false}
+                  className="photo absolute w-full h-full object-cover"
+                  src={primary}
+                  srcSet={srcSet}
+                  sizes="(max-width: 1200px) 100vw, 100vw"
+                  alt={slide.alt || `Slide ${currentIndex + 1}`}
+                  decoding="async" 
+                />
+
+                {slide.caption && (
+                  <motion.figcaption
+                    className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: 1, 
+                      transition: { 
+                          duration: 2.25, 
+                          ease: [0.2, 1, 0.4, 1], 
+                          delay: 0.65
+                      }
+                    }}
+                    exit={{ 
+                      opacity: 0, 
+                      transition: { duration: 0.8, ease:  [0.19, 1, 0.32, 1] } 
+                    }}
+                  >
+                    {slide.caption}
+                  </motion.figcaption>
+                )}
+              </div>
+            </motion.figure>
+          </AnimatePresence>
+        </div>
+
+        <SlideNavigation 
+            onNext={handleNext} 
+            onPrev={handlePrev}
+            canNext={slides.length > 1}
+            canPrev={slides.length > 1}
+            className="carousel-nav-position"
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="slideshow-with-sections">
+      {!placeBelow && wrappedSectionContent}
+      {slideshowBlock}
+      {placeBelow && wrappedSectionContent}
     </div>
   );
 }

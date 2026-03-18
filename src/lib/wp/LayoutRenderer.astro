@@ -343,13 +343,25 @@ const commonCtxBase = {
     </div>
   );
 
-  const headerContent = hasHeaderContent
+  // Check if full_width_slideshow has per-slide section overrides
+  const slideshowHasSlideOverrides = row.name === "full_width_slideshow" &&
+    Array.isArray(row.data?.images) &&
+    row.data.images.some((img: any) => img?.section_title || img?.section_h3 || img?.section_text);
+
+  // When per-slide overrides exist, suppress static header — the React component handles it
+  const headerContent = (hasHeaderContent && !slideshowHasSlideOverrides)
     ? bgColorClass
       ? <div class={bgColorClass}>{headerInner}</div>
       : headerInner
     : null;
 
 	const localizedData = localizeRowData(row.data, lang);
+
+	// Pass section content positioning to slideshow when it has per-slide overrides
+	if (slideshowHasSlideOverrides) {
+		localizedData._sectionPlaceBelow = placeHeaderBelow;
+		localizedData._sectionBgColorClass = bgColorClass || null;
+	}
 
 
   return (

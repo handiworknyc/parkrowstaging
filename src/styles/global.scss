@@ -443,6 +443,19 @@ ul.section-text li::before {
     background-color: currentColor; /* Uses the text color */
 }
 
+/* Heading list items: no bullet, no indent */
+ul.section-text li:has(h4) {
+    padding-left: 0;
+}
+
+ul.section-text li:has(h4)::before {
+    display: none;
+}
+
+ul.section-text li:has(h4) h4 {
+    margin-bottom: 0;
+}
+
 .next-link {
 	letter-spacing: .03em;
 
@@ -1209,6 +1222,11 @@ ul.two-col-list {
 	);
 	filter: blur(var(--slide-caption-overlay-blur, 11px));
 	pointer-events: none;
+}
+
+/* Slideshow per-slide cross-fading section content */
+.slideshow-section-inner {
+	position: relative;
 }
 
 .nav-arrow { 

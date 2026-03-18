@@ -2,9 +2,16 @@
 import FadeSlideshow from "../react/FadeSlideshow.jsx";
 
 // 1. Get the raw props
-const { images } = Astro.props;
+const { images, layout_settings, _sectionPlaceBelow, _sectionBgColorClass } = Astro.props;
 
-// 2. Transform + LOCALIZE all WP image URLs
+// 2. Module-level section content (fallback when slides don't override)
+const moduleSectionContent = {
+  section_title: layout_settings?.section_title || null,
+  section_h3: layout_settings?.section_h2 || null,
+  section_text: layout_settings?.section_text || null,
+};
+
+// 3. Transform + LOCALIZE all WP image URLs
 const formattedSlides = Array.isArray(images)
   ? images.map((item, index) => {
       const rawImg = item?.image;
@@ -27,25 +34,35 @@ const formattedSlides = Array.isArray(images)
         smartImg,
         alt: rawImg.alt || item.caption || "Slideshow image",
         caption: item.caption || null,
+        // Per-slide section text (overrides module-level when present)
+        section_title: item.section_title || null,
+        section_h3: item.section_h3 || null,
+        section_text: item.section_text || null,
       };
     })
   : [];
 
-// 3. Filter out broken slides
-const validSlides = formattedSlides.filter(Boolean);
+// 4. Filter out broken slides
+const validSlides = formattedSlides.filter((s): s is NonNullable<typeof s> => Boolean(s));
+
+// 5. Check if any slide has per-slide section overrides
+const hasSlideOverrides = validSlides.some(s => s.section_title || s.section_h3 || s.section_text);
 ---
 
-<section class="full-width-slideshow-wrap relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
-  {validSlides.length > 0 ? (
-    <FadeSlideshow 
-      client:visible 
-      slides={validSlides} 
-      duration={4000}
-	  client:idle
-    />
-  ) : (
-    <div class="flex items-center justify-center w-full h-full flex-col left-[var(--containerPadding)] text-[1.08rem] ">
-      <p>No images found</p>
-    </div>
-  )}
-</section>
+{validSlides.length > 0 ? (
+  <FadeSlideshow 
+    client:visible 
+    slides={validSlides} 
+    duration={4000}
+    client:idle
+    {...(hasSlideOverrides ? {
+      sectionContent: moduleSectionContent,
+      placeBelow: !!_sectionPlaceBelow,
+      sectionBgColorClass: _sectionBgColorClass || null,
+    } : {})}
+  />
+) : (
+  <div class="flex items-center justify-center w-full h-full flex-col left-[var(--containerPadding)] text-[1.08rem] ">
+    <p>No images found</p>
+  </div>
+)}

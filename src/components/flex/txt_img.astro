@@ -92,7 +92,7 @@ const bleedClass = isRight ? "bleed-right" : "bleed-left";
 
       {listItems.length > 0 && (
         <ul class="section-text two-col-list">
-          {listItems.map((li) => <li>{li}</li>)}
+          {listItems.map((li) => <li set:html={li} />)}
         </ul>
       )}
 

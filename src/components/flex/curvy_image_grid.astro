@@ -166,7 +166,7 @@ const mobileBleedClass =
                         {text && <div class="section-text mt-5" set:html={text} />}
                         {listItems.length > 0 && (
                             <ul class="section-text two-col-list min-[760px]:mt-6">
-                                {listItems.map((li) => <li>{li}</li>)}
+                                {listItems.map((li) => <li set:html={li} />)}
                             </ul>
                         )}
                     </div>
@@ -209,7 +209,7 @@ const mobileBleedClass =
 
       {listItems.length > 0 && (
         <ul class="section-text two-col-list min-[760px]:mt-6">
-          {listItems.map((li) => <li>{li}</li>)}
+          {listItems.map((li) => <li set:html={li} />)}
         </ul>
       )}
 
