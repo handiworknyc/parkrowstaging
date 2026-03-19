@@ -76,7 +76,7 @@ const headerMenu = _cachedHeaderMenu;
             data-name="Layer 1" 
             xmlns="http://www.w3.org/2000/svg" 
             viewBox="0 0 140 50"
-            style="--logo-fill: #3a2a22; --bofa-op: 1;"
+            style="--logo-fill: #3a2a22; --bofa-fill: #3a2a22; --bofa-op: 1;"
         >
             <g id="main-logo">
                 <path d="M22.33,18.55h-6.12c.11-.66,2.75-15.87,2.99-17.21l3.13,17.21ZM26.91,30.6L21.58,1.79c-.16-.84-.85-1.46-1.64-1.46h-2.1v.02c.34.73.42,1.64.24,2.76l-5.27,29.51v.02h1.23l2.04-13.42h6.41l2.14,11.38c.15.68.09,1.36-.18,2.02v.02s3.22,0,3.22,0l-.02-.03c-.34-.49-.58-1.17-.74-2.02" style="fill: var(--logo-fill);"/>
@@ -271,7 +271,9 @@ document.addEventListener("astro:after-swap", debugChineseMenuInjection);
       if (!logoSvg) return;
 
       const isMenuOpen = modal.classList.contains("open");
-      logoSvg.style.setProperty("--logo-fill", isMenuOpen ? "var(--pink)" : getClosedLogoFill());
+      const closedLogoFill = getClosedLogoFill();
+      logoSvg.style.setProperty("--logo-fill", isMenuOpen ? "var(--pink)" : closedLogoFill);
+      logoSvg.style.setProperty("--bofa-fill", closedLogoFill);
       logoSvg.style.setProperty("--bofa-op", isMenuOpen ? "0" : "1");
     };
 

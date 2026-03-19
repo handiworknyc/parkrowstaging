@@ -88,6 +88,10 @@ html:not(.modal-opening):not(.modal-closing) {
 	}
 }
 
+#logo-svg #bofa path {
+	fill: var(--bofa-fill) !important;
+}
+
 .home .logo {
 	pointer-events: none;
 	cursor: default;
@@ -109,6 +113,7 @@ html, body {
 .penthouses:not(.modal-open):not(.modal-closing) {
 	#logo-svg {
 		--logo-fill: var(--white) !important;
+		--bofa-fill: var(--white) !important;
 	}
 }
 .penthouses {

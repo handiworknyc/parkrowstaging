@@ -219,15 +219,46 @@ const mobileBleedClass =
 </div>
 
 <style>
-/* Force object position for the single-image split trick */
-.split-img-top :global(video),
-.split-img-top :global(img) {
-    object-position: center top !important;
+/* Treat duplicated media as one shared crop split across two stacked rows */
+.split-img-top,
+.split-img-bottom {
+  overflow: hidden;
 }
 
+.split-img-top {
+  --split-media-offset: 0%;
+}
+
+.split-img-bottom {
+  --split-media-offset: -100%;
+}
+
+.grid-container .hw-bg-vid.split-img-top > :global(.hw-vid-wrap),
+.grid-container .hw-bg-vid.split-img-bottom > :global(.hw-vid-wrap) {
+  position: absolute;
+  inset-inline: 0;
+  top: var(--split-media-offset);
+  width: 100%;
+  height: 200%;
+}
+
+.grid-container .hw-bg-vid.split-img-top > :global(img),
+.grid-container .hw-bg-vid.split-img-top > :global(video),
+.grid-container .hw-bg-vid.split-img-bottom > :global(img),
+.grid-container .hw-bg-vid.split-img-bottom > :global(video) {
+  position: absolute;
+  inset-inline: 0;
+  top: var(--split-media-offset);
+  width: 100%;
+  height: 200%;
+  object-fit: cover;
+}
+
+.split-img-top :global(video),
+.split-img-top :global(img),
 .split-img-bottom :global(video),
 .split-img-bottom :global(img) {
-    object-position: center bottom !important;
+  object-position: center;
 }
 
 /* Grid row height: grid-span-2 determines row height at 16/9 */
