@@ -717,7 +717,8 @@
               "gform-image-choice-lg-height": 400
             }
           },
-          "caption": "Air Palette"
+          "caption": "Air Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -858,7 +859,8 @@
               "gform-image-choice-lg-height": 400
             }
           },
-          "caption": "Earth Palette"
+          "caption": "Earth Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -999,7 +1001,8 @@
               "gform-image-choice-lg-height": 400
             }
           },
-          "caption": "Air Palette"
+          "caption": "Air Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -1140,7 +1143,8 @@
               "gform-image-choice-lg-height": 400
             }
           },
-          "caption": "Earth Palette"
+          "caption": "Earth Palette",
+          "slide_content": false
         }
       ],
       "caption": "",
@@ -1324,7 +1328,8 @@
               "gform-image-choice-lg-height": 480
             }
           },
-          "caption": "Primary Bathroom, Air Palette"
+          "caption": "Primary Bathroom, Air Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -1465,7 +1470,8 @@
               "gform-image-choice-lg-height": 480
             }
           },
-          "caption": "Primary Bathroom, Earth Palette"
+          "caption": "Primary Bathroom, Earth Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -1606,7 +1612,8 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "Secondary Bathroom, Air Palette"
+          "caption": "Secondary Bathroom, Air Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -1747,7 +1754,8 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "Secondary Bathroom, Earth Palette"
+          "caption": "Secondary Bathroom, Earth Palette",
+          "slide_content": false
         },
         {
           "image": {
@@ -1888,7 +1896,8 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "Secondary Bathroom Detail"
+          "caption": "Secondary Bathroom Detail",
+          "slide_content": false
         },
         {
           "image": {
@@ -2029,7 +2038,8 @@
               "gform-image-choice-lg-height": 480
             }
           },
-          "caption": "Primary Bathroom Detail"
+          "caption": "Primary Bathroom Detail",
+          "slide_content": false
         }
       ],
       "caption": "",
@@ -2058,5 +2068,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 04:19:19"
+  "_syncedAt": "2026-03-19 17:42:36"
 }

@@ -690,7 +690,8 @@
               "gform-image-choice-lg-height": 393
             }
           },
-          "caption": "Direct Access to Downtown Bellevue Park"
+          "caption": "Direct Access to Downtown Bellevue Park",
+          "slide_content": false
         },
         {
           "image": {
@@ -831,7 +832,8 @@
               "gform-image-choice-lg-height": 425
             }
           },
-          "caption": "Open Air & Green Space at Your Doorstep"
+          "caption": "Open Air & Green Space at Your Doorstep",
+          "slide_content": false
         },
         {
           "image": {
@@ -972,7 +974,8 @@
               "gform-image-choice-lg-height": 341
             }
           },
-          "caption": "The Park peaks out from the Indoor Pool"
+          "caption": "The Park peaks out from the Indoor Pool",
+          "slide_content": false
         },
         {
           "image": {
@@ -1113,7 +1116,8 @@
               "gform-image-choice-lg-height": 338
             }
           },
-          "caption": "An Extension of Home"
+          "caption": "An Extension of Home",
+          "slide_content": false
         },
         {
           "image": {
@@ -1254,7 +1258,8 @@
               "gform-image-choice-lg-height": 400
             }
           },
-          "caption": "City & Nature Converge"
+          "caption": "City & Nature Converge",
+          "slide_content": false
         },
         {
           "image": {
@@ -1395,7 +1400,8 @@
               "gform-image-choice-lg-height": 427
             }
           },
-          "caption": "An Everyday Outdoor Escape"
+          "caption": "An Everyday Outdoor Escape",
+          "slide_content": false
         }
       ],
       "caption": "",
@@ -1414,5 +1420,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 04:19:22"
+  "_syncedAt": "2026-03-19 17:42:39"
 }

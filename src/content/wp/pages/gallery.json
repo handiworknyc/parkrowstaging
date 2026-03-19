@@ -181,7 +181,8 @@
               "gform-image-choice-lg-height": 239
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         },
         {
           "image": {
@@ -322,7 +323,8 @@
               "gform-image-choice-lg-height": 337
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         },
         {
           "image": {
@@ -463,7 +465,8 @@
               "gform-image-choice-lg-height": 339
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         },
         {
           "image": {
@@ -604,7 +607,8 @@
               "gform-image-choice-lg-height": 343
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         },
         {
           "image": {
@@ -745,7 +749,8 @@
               "gform-image-choice-lg-height": 317
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         },
         {
           "image": {
@@ -886,7 +891,8 @@
               "gform-image-choice-lg-height": 346
             }
           },
-          "caption": ""
+          "caption": "",
+          "slide_content": false
         }
       ],
       "caption": "",
@@ -894,5 +900,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-03-19 04:19:08"
+  "_syncedAt": "2026-03-19 17:42:25"
 }
