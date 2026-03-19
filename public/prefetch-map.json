@@ -41,8 +41,8 @@
     "path": "/building/",
     "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/37e2534c7441fceb49f9b0e7446d697d/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp",
-      "imagesrcset": "/img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-0d065419.jpg.webp 1440w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-1000x569-ae5f105a.jpg.webp 1000w, /img-cache/4_0194_park_row_exterior_park_water_draft_04-3-600x342-f2345ef4.jpg.webp 600w",
+      "href": "/img-cache/video-poster-park-approach-3000x1688-8ffaada3.jpg.webp",
+      "imagesrcset": "/img-cache/video-poster-park-approach-3000x1688-8ffaada3.jpg.webp 3000w, /img-cache/video-poster-park-approach-1500x844-000a8839.jpg.webp 1500w, /img-cache/video-poster-park-approach-1000x563-f146aa8c.jpg.webp 1000w, /img-cache/video-poster-park-approach-600x338-e3de4df9.jpg.webp 600w",
       "imagesizes": "(max-width: 1200px) 60vw, 100vw",
       "type": "image/webp"
     }
