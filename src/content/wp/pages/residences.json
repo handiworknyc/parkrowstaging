@@ -1329,7 +1329,18 @@
             }
           },
           "caption": "Primary Bathroom, Air Palette",
-          "slide_content": false
+          "slide_content": [
+            {
+              "title": "",
+              "text": "",
+              "two_col_list": true,
+              "wide_list_columns": false,
+              "list": "<h4>Primary Bathrooms</h4>\r\nCantilevered soft-close fluted wood veneer cabinets with interior outlet and undercabinet lighting\r\nDual undermount sinks with honed quartz vanity top\r\nIlluminated vanity mirror with custom wall sconce and wall tile \r\nModern large format tile flooring with heated floors\r\nCurbless, glass enclosed shower with tiled niche and linear drain in 2 & 3-bedroom residences\r\nDornbracht wall mounted dark chrome fixtures including rain shower with hand shower system\r\nDark chrome accessories",
+              "title_chinese": "",
+              "text_chinese": "",
+              "list_chinese": ""
+            }
+          ]
         },
         {
           "image": {
@@ -1613,7 +1624,18 @@
             }
           },
           "caption": "Secondary Bathroom, Air Palette",
-          "slide_content": false
+          "slide_content": [
+            {
+              "title": "",
+              "text": "",
+              "two_col_list": false,
+              "wide_list_columns": false,
+              "list": "<h4>Secondary Bathrooms</h4>\r\nCantilevered soft-close fluted wood veneer cabinets with undercabinet lighting\r\nUndermount sink with honed quartz vanity top\r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixtures\r\n\r\n<h4>Powder Bath</h4>\r\nSoft-close fluted wood veneer cabinets with undercabinet lighting  \r\nUndermount sink with honed quartz vanity top \r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing  \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixture",
+              "title_chinese": "",
+              "text_chinese": "",
+              "list_chinese": ""
+            }
+          ]
         },
         {
           "image": {
@@ -2039,7 +2061,18 @@
             }
           },
           "caption": "Primary Bathroom Detail",
-          "slide_content": false
+          "slide_content": [
+            {
+              "title": "",
+              "text": "",
+              "two_col_list": false,
+              "wide_list_columns": false,
+              "list": "<h4>Primary Bathrooms</h4>\r\nCantilevered soft-close fluted wood veneer cabinets with interior outlet and undercabinet lighting\r\nDual undermount sinks with honed quartz vanity top\r\nIlluminated vanity mirror with custom wall sconce and wall tile \r\nModern large format tile flooring with heated floors\r\nCurbless, glass enclosed shower with tiled niche and linear drain in 2 & 3-bedroom residences\r\nDornbracht wall mounted dark chrome fixtures including rain shower with hand shower system\r\nDark chrome accessories",
+              "title_chinese": "",
+              "text_chinese": "",
+              "list_chinese": ""
+            }
+          ]
         }
       ],
       "caption": "",
@@ -2058,9 +2091,9 @@
         {
           "title": "",
           "text": "",
-          "two_col_list": true,
+          "two_col_list": false,
           "wide_list_columns": false,
-          "list": "<h4>Primary Bathrooms</h4>\r\nCantilevered soft-close fluted wood veneer cabinets with interior outlet and undercabinet lighting\r\nDual undermount sinks with honed quartz vanity top\r\nIlluminated vanity mirror with custom wall sconce and wall tile \r\nModern large format tile flooring with heated floors\r\nCurbless, glass enclosed shower with tiled niche and linear drain in 2 & 3-bedroom residences\r\nDornbracht wall mounted dark chrome fixtures including rain shower with hand shower system\r\nDark chrome accessories\r\n\r\n<h4>Secondary Bathrooms</h4>\r\nCantilevered soft-close fluted wood veneer cabinets with undercabinet lighting\r\nUndermount sink with honed quartz vanity top\r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixtures\r\n\r\n<h4>Powder Bath</h4>\r\nSoft-close fluted wood veneer cabinets with undercabinet lighting  \r\nUndermount sink with honed quartz vanity top \r\nCustom illuminated vanity mirror and wall sconce with wood wall detailing  \r\nPorcelain wall and floor tile \r\nDark chrome Dornbracht faucets and fixture",
+          "list": "",
           "title_chinese": "",
           "text_chinese": "",
           "list_chinese": ""
@@ -2068,5 +2101,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 17:42:36"
+  "_syncedAt": "2026-03-19 17:44:59"
 }
