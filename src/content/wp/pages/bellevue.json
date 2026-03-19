@@ -158,7 +158,7 @@
               "gform-image-choice-lg-height": 342
             }
           },
-          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/860f7d85d8db2c9989a2c5b47c6e9835/manifest/video.m3u8",
+          "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -2060,5 +2060,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 04:05:27"
+  "_syncedAt": "2026-03-19 04:19:09"
 }
