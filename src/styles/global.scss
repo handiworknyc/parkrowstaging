@@ -106,15 +106,12 @@ html, body {
 
 
 
-.penthouses {
+.penthouses:not(.modal-open):not(.modal-closing) {
 	#logo-svg {
 		--logo-fill: var(--white) !important;
-
-		path {
-			fill: var(--white) !important
-		}
 	}
-	
+}
+.penthouses {
 	.full_bleed_img-module.rowindex-1,
 	.header-inner {
 		background-color: var(--green);
@@ -456,6 +453,14 @@ ul.section-text li:has(h4) h4 {
     margin-bottom: 0;
 }
 
+ .section-text-list-heading h4.figure,
+ul.section-text li:has(h4) h4.figure {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 0;
+    padding-bottom: 1rem;
+}
+
 .next-link {
 	letter-spacing: .03em;
 
@@ -701,6 +706,14 @@ ul.section-text li:has(h4) h4 {
 ul.two-col-list {
   columns: 2;
   column-gap: .75rem;
+}
+
+ul.section-text.wide-list-columns {
+  max-width: none;
+}
+
+ul.two-col-list.wide-list-columns {
+  column-gap: 6rem;
 }
 
 .full-bleed-content-wrap .col-5 {
@@ -1235,6 +1248,22 @@ ul.two-col-list {
 }
 
 .slideshow-section-active {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+}
+
+.carousel-slide-content-stack {
+	position: relative;
+}
+
+.carousel-slide-content-ghost {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.carousel-slide-content-active {
 	position: absolute;
 	top: 0;
 	left: 0;

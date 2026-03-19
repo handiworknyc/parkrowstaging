@@ -58,6 +58,7 @@ const carouselImages = Array.isArray(images)
         src: mediumUrl || imgData.url,
         alt: imgData.alt || imgData.title || `Image ${index + 1}`,
         caption: item.caption || "",
+        slideContent: Array.isArray(item.slide_content) ? item.slide_content : null,
         aspectRatio:
           imgData.width && imgData.height
             ? imgData.width / imgData.height
@@ -124,14 +125,17 @@ const instanceId = transitionName;
     <ImageCarousel
       client:load
       images={carouselImages}
+      defaultContent={content}
+      caption={caption}
+      captionPos={caption_pos}
       instanceId={instanceId}
       transition:name={transitionName}
     />
   </div>
 )}
 
-{/* Text Content */}
-{(caption || hasContent) && (
+{/* Fallback Text Content */}
+{!hasImages && (caption || hasContent) && (
   <div class={`hw-contain ${captionWrapperClass}`}>
     <div class="row">
       <div class="min-[1240px]:push-1 col-12">

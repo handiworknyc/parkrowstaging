@@ -265,6 +265,17 @@ document.addEventListener("astro:after-swap", debugChineseMenuInjection);
     const html = document.documentElement;
 
     if (!toggle || !modal) return;
+    const getClosedLogoFill = () =>
+      html.classList.contains("penthouses") ? "var(--white)" : "#3a2a22";
+    const syncLogoState = () => {
+      if (!logoSvg) return;
+
+      const isMenuOpen = modal.classList.contains("open");
+      logoSvg.style.setProperty("--logo-fill", isMenuOpen ? "var(--pink)" : getClosedLogoFill());
+      logoSvg.style.setProperty("--bofa-op", isMenuOpen ? "0" : "1");
+    };
+
+    syncLogoState();
     if ((toggle as any)._navBound) return;
     (toggle as any)._navBound = true;
 
@@ -324,7 +335,7 @@ document.addEventListener("astro:after-swap", debugChineseMenuInjection);
       if (ul) ul.classList.remove("sal-animate");
 
       if (logoSvg) {
-        animate(logoSvg, { "--logo-fill": "#3a2a22", "--bofa-op": 1 }, { duration: 0.3 });
+        animate(logoSvg, { "--logo-fill": getClosedLogoFill(), "--bofa-op": 1 }, { duration: 0.3 });
       }
 
       if (typeof window.locoScroll !== "undefined") {
