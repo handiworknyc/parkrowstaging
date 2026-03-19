@@ -11,9 +11,10 @@
   },
   {
     "path": "/amenities/",
+    "video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/58b0b6f617a6e544600b396b6da46326/manifest/video.m3u8",
     "lcp": {
-      "href": "/img-cache/park-row-amenities-5b504fdb.jpg.webp",
-      "imagesrcset": "/img-cache/park-row-amenities-5b504fdb.jpg.webp 1600w, /img-cache/park-row-amenities-1500x851-3b560a2b.jpg.webp 1500w, /img-cache/park-row-amenities-1000x568-9a039c42.jpg.webp 1000w, /img-cache/park-row-amenities-600x341-929f3cd5.jpg.webp 600w",
+      "href": "/img-cache/video-7-poster-b37c98c3.jpg.webp",
+      "imagesrcset": "/img-cache/video-7-poster-b37c98c3.jpg.webp 2500w, /img-cache/video-7-poster-1500x844-7b0054ab.jpg.webp 1500w, /img-cache/video-7-poster-1000x562-ce4009b3.jpg.webp 1000w, /img-cache/video-7-poster-600x337-51e106ca.jpg.webp 600w",
       "imagesizes": "(max-width: 1200px) 60vw, 100vw",
       "type": "image/webp"
     }
