@@ -349,7 +349,7 @@
               "image_align": "center"
             }
           ],
-          "large": false
+          "large": true
         }
       ],
       "caption": "",
@@ -2101,5 +2101,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 20:32:58"
+  "_syncedAt": "2026-03-19 20:35:50"
 }
