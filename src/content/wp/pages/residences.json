@@ -41,7 +41,7 @@
             "mime_type": "image/png",
             "type": "image",
             "subtype": "png",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 3354,
             "height": 1876,
             "sizes": {
@@ -221,7 +221,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 2500,
                 "height": 1379,
                 "sizes": {
@@ -402,7 +402,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1333,
             "sizes": {
@@ -600,7 +600,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -742,7 +742,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -884,7 +884,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -1026,7 +1026,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -1211,7 +1211,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -1364,7 +1364,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -1506,7 +1506,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -1659,7 +1659,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -1801,7 +1801,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -1943,7 +1943,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -2101,5 +2101,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-19 21:55:14"
+  "_syncedAt": "2026-03-20 20:11:58"
 }
