@@ -8,27 +8,17 @@ const vars = { ...Astro.props };
 // ---------------------------------------------
 const rawImages = Array.isArray(vars.images) ? vars.images : [];
 const isSingle = rawImages.length === 1;
-
-let renderImages = [];
-
-// 1. Normalize the Array
-if (isSingle) {
-  // 📸 SINGLE IMAGE: Duplicate it so we have 2 items to split
-  renderImages = [rawImages[0], rawImages[0]];
-} else {
-  // 📸 MULTI IMAGE: Use as is (limit to 4 for sanity if needed)
-  renderImages = rawImages.slice(0, 4); 
-}
+const renderImages = rawImages.slice(0, 4);
 
 // 2. Calculate Split Index
-// If we have 2 items (real or duplicated), split at 1 (Middle).
+// If we have 2 items, split at 1 (Middle).
 // If we have 3+ items, split at 2 (After first row of 2).
 const splitIndex = renderImages.length <= 2 ? 1 : 2;
 
 // 3. Enable Split
-// simply checks if quote is true. The logic above handles the 'where'.
+// Single-image layouts stay unsplit so the media can fill the curved frame.
 const isQuote = !!vars.quote;
-const useMobileSplit = isQuote; 
+const useMobileSplit = isQuote && !isSingle; 
 
 
 // ---------------------------------------------
@@ -108,7 +98,10 @@ const mobileBleedClass =
     
     <div class:list={[
       "grid-container hw-player-parent", 
-      { [`is-quote-${!!vars.quote}`]: true }
+      {
+        [`is-quote-${!!vars.quote}`]: true,
+        "is-single-image": isSingle,
+      }
     ]}>
         {renderImages.map((img, index) => {
           const video = img.video?.[0];
@@ -121,22 +114,16 @@ const mobileBleedClass =
 
              let spanClass = "";
              if (isSingle) {
-                spanClass = "grid-span-2"; 
+                spanClass = "grid-span-2 single-image-item"; 
              } else {
                 spanClass = img.large ? "grid-span-2" : "grid-span-1";
              }
-             
-             let posClass = "";
-             if (isSingle) {
-                // If single, top half is index 0, bottom is index 1
-                posClass = index === 0 ? "split-img-top" : "split-img-bottom";
-             }
-             
+
              const pSize = spanClass === "grid-span-1" ? "small" : "med";
 
              return (
                 <div class={`grid-item ${spanClass}`}>
-                  <div class={`hw-bg-vid img-load-par pr ${posClass} max-[759px]:h-[12rem]`}>
+                  <div class="hw-bg-vid img-load-par pr max-[759px]:h-[12rem]">
                     <CFVideo 
                       video={[video]} 
                       usePosterSrcSet={false} 
@@ -219,48 +206,6 @@ const mobileBleedClass =
 </div>
 
 <style>
-/* Treat duplicated media as one shared crop split across two stacked rows */
-.split-img-top,
-.split-img-bottom {
-  overflow: hidden;
-}
-
-.split-img-top {
-  --split-media-offset: 0%;
-}
-
-.split-img-bottom {
-  --split-media-offset: -100%;
-}
-
-.grid-container .hw-bg-vid.split-img-top > :global(.hw-vid-wrap),
-.grid-container .hw-bg-vid.split-img-bottom > :global(.hw-vid-wrap) {
-  position: absolute;
-  inset-inline: 0;
-  top: var(--split-media-offset);
-  width: 100%;
-  height: 200%;
-}
-
-.grid-container .hw-bg-vid.split-img-top > :global(img),
-.grid-container .hw-bg-vid.split-img-top > :global(video),
-.grid-container .hw-bg-vid.split-img-bottom > :global(img),
-.grid-container .hw-bg-vid.split-img-bottom > :global(video) {
-  position: absolute;
-  inset-inline: 0;
-  top: var(--split-media-offset);
-  width: 100%;
-  height: 200%;
-  object-fit: cover;
-}
-
-.split-img-top :global(video),
-.split-img-top :global(img),
-.split-img-bottom :global(video),
-.split-img-bottom :global(img) {
-  object-position: center;
-}
-
 /* Grid row height: grid-span-2 determines row height at 16/9 */
 .grid-container {
   display: grid;
@@ -283,6 +228,16 @@ const mobileBleedClass =
   container-type: inline-size;
 }
 
+.grid-container.is-single-image .grid-item.single-image-item {
+  grid-row: span 2;
+}
+
+.grid-container.is-single-image .grid-item.single-image-item .hw-bg-vid {
+  min-height: calc((round(nearest, calc(100cqw * 7.5 / 16), 1rem) * 2) + 1rem);
+  max-height: calc((round(nearest, calc(100cqw * 7.5 / 16), 1rem) * 2) + 1rem);
+  aspect-ratio: auto;
+}
+
 /* grid-span-1 items fill the row height set by grid-span-2 */
 .grid-container .grid-item.grid-span-1 .hw-bg-vid {
   height: 100%;
@@ -300,6 +255,12 @@ const mobileBleedClass =
 @media (max-width: 759px) {
   .grid-container.is-quote-true {
     grid-auto-rows: auto;
+  }
+
+  .grid-container.is-single-image .grid-item.single-image-item .hw-bg-vid {
+    height: 25rem !important;
+    min-height: 25rem;
+    max-height: 25rem;
   }
 
   .grid-container.is-quote-true .mobile-mid-content {

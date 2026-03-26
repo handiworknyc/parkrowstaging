@@ -442,6 +442,33 @@ function normalizeGFForm(form) {
     { text: "Direct Mail", value: "Direct Mail" }
   ];
 
+  const normalizeConditionalLogic = (logic) => {
+    if (!logic || typeof logic !== "object" || !logic.enabled) {
+      return undefined;
+    }
+
+    const rules = Array.isArray(logic.rules)
+      ? logic.rules
+          .map((rule) => ({
+            fieldId: Number(rule?.fieldId || 0),
+            operator: typeof rule?.operator === "string" ? rule.operator : "is",
+            value: rule?.value == null ? "" : String(rule.value)
+          }))
+          .filter((rule) => rule.fieldId > 0)
+      : [];
+
+    if (!rules.length) {
+      return undefined;
+    }
+
+    return {
+      enabled: true,
+      actionType: logic.actionType === "hide" ? "hide" : "show",
+      logicType: logic.logicType === "any" ? "any" : "all",
+      rules
+    };
+  };
+
   return {
     id: form.id,
     title: form.title,
@@ -454,6 +481,7 @@ function normalizeGFForm(form) {
         label: f.label || "",
         isRequired: !!f.isRequired,
         placeholder: f.placeholder || "",
+        conditionalLogic: normalizeConditionalLogic(f.conditionalLogic),
         choices:
           Number(form.id) === 1 && Number(f.id) === 10
             ? edgewiseSourceChoices
@@ -1060,12 +1088,16 @@ async function run() {
   try {
     console.log("🧭 Fetching Header Menu…");
     const headerMenu = await fetchHeaderMenuHTML();
-    writeJSONIfChanged(
-      outHeaderMenu,
-      { html: headerMenu },
-      "✨ Header menu updated",
-      "⏩ Header menu unchanged — skip write"
-    );
+    if (!looksLikeMenuHtml(headerMenu)) {
+      console.warn("⚠️ Header menu fetch returned empty/invalid markup; preserving existing cached menu.");
+    } else {
+      writeJSONIfChanged(
+        outHeaderMenu,
+        { html: headerMenu },
+        "✨ Header menu updated",
+        "⏩ Header menu unchanged — skip write"
+      );
+    }
   } catch (e) {
     console.error("❌ Failed to sync Header Menu:", e.message || e);
   }

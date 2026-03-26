@@ -1373,7 +1373,19 @@
       "type": "text",
       "label": "Brokerage / Company Name",
       "isRequired": false,
-      "placeholder": ""
+      "placeholder": "",
+      "conditionalLogic": {
+        "enabled": true,
+        "actionType": "show",
+        "logicType": "all",
+        "rules": [
+          {
+            "fieldId": 11,
+            "operator": "is",
+            "value": "Yes"
+          }
+        ]
+      }
     },
     {
       "id": 12,
@@ -1397,14 +1409,38 @@
       "type": "text",
       "label": "Realtor / Broker First Name",
       "isRequired": false,
-      "placeholder": ""
+      "placeholder": "",
+      "conditionalLogic": {
+        "enabled": true,
+        "actionType": "show",
+        "logicType": "all",
+        "rules": [
+          {
+            "fieldId": 12,
+            "operator": "is",
+            "value": "Yes"
+          }
+        ]
+      }
     },
     {
       "id": 21,
       "type": "text",
       "label": "Realtor / Broker Last Name",
       "isRequired": false,
-      "placeholder": ""
+      "placeholder": "",
+      "conditionalLogic": {
+        "enabled": true,
+        "actionType": "show",
+        "logicType": "all",
+        "rules": [
+          {
+            "fieldId": 12,
+            "operator": "is",
+            "value": "Yes"
+          }
+        ]
+      }
     },
     {
       "id": 13,

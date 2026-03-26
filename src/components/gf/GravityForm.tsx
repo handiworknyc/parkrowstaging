@@ -18,7 +18,20 @@ import LogoLoader from './LogoLoader';
    TYPES
 ===================================================== */
 
-type GFChoice = { label: string; value: string };
+type GFChoice = { text: string; value: string };
+
+type GFConditionalRule = {
+  fieldId: number;
+  operator: string;
+  value: string;
+};
+
+type GFConditionalLogic = {
+  enabled?: boolean;
+  actionType?: 'show' | 'hide';
+  logicType?: 'all' | 'any';
+  rules?: GFConditionalRule[];
+};
 
 type GFFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox' | 'radio' | 'select';
 
@@ -29,6 +42,7 @@ type GFField = {
   isRequired?: boolean;
   placeholder?: string;
   choices?: GFChoice[];
+  conditionalLogic?: GFConditionalLogic;
 };
 
 export type GFFormSchema = {
@@ -92,6 +106,95 @@ function extractSubmitError(parsed: any): string {
   }
 
   return 'Unable to submit form. Please try again.';
+}
+
+function normalizeConditionalValue(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return '';
+}
+
+function matchesConditionalRule(ruleValue: unknown, operator: string, expectedValue: string): boolean {
+  const expected = normalizeConditionalValue(expectedValue);
+
+  if (Array.isArray(ruleValue)) {
+    const values = ruleValue.map((value) => normalizeConditionalValue(value));
+
+    switch (operator) {
+      case 'is':
+      case '=':
+      case '==':
+      case 'contains':
+        return values.includes(expected);
+      case 'isnot':
+      case '!=':
+      case '<>':
+      case 'not in':
+        return !values.includes(expected);
+      case 'empty':
+        return values.length === 0;
+      case 'not_empty':
+        return values.length > 0;
+      default:
+        return values.includes(expected);
+    }
+  }
+
+  const actual = normalizeConditionalValue(ruleValue);
+  const actualNumber = Number(actual);
+  const expectedNumber = Number(expected);
+  const hasNumericComparison =
+    actual !== '' &&
+    expected !== '' &&
+    !Number.isNaN(actualNumber) &&
+    !Number.isNaN(expectedNumber);
+
+  switch (operator) {
+    case 'is':
+    case '=':
+    case '==':
+      return actual === expected;
+    case 'isnot':
+    case '!=':
+    case '<>':
+      return actual !== expected;
+    case 'contains':
+      return actual.includes(expected);
+    case 'starts_with':
+      return actual.startsWith(expected);
+    case 'ends_with':
+      return actual.endsWith(expected);
+    case '>':
+      return hasNumericComparison ? actualNumber > expectedNumber : actual > expected;
+    case '<':
+      return hasNumericComparison ? actualNumber < expectedNumber : actual < expected;
+    case 'empty':
+      return actual === '';
+    case 'not_empty':
+      return actual !== '';
+    default:
+      return actual === expected;
+  }
+}
+
+function isFieldVisible(field: GFField, values: Record<string, any>): boolean {
+  const logic = field.conditionalLogic;
+  const rules = logic?.rules ?? [];
+
+  if (!logic?.enabled || !rules.length) {
+    return true;
+  }
+
+  const matches = rules.map((rule) =>
+    matchesConditionalRule(values[`input_${rule.fieldId}`], rule.operator, rule.value)
+  );
+
+  const passes = logic.logicType === 'any'
+    ? matches.some(Boolean)
+    : matches.every(Boolean);
+
+  return logic.actionType === 'hide' ? !passes : passes;
 }
 
 /* =====================================================
@@ -198,6 +301,21 @@ export default function GravityForm({ form, onSuccess }: Props) {
     });
   }, []);
 
+  const visibleFields = form.fields.filter((field) => isFieldVisible(field, values));
+  const visibleFieldKeys = visibleFields.map((field) => `input_${field.id}`);
+
+  useEffect(() => {
+    const visibleKeys = new Set(visibleFieldKeys);
+
+    setFieldErrors((errors) => {
+      const next = Object.fromEntries(
+        Object.entries(errors).filter(([key]) => visibleKeys.has(key))
+      );
+
+      return Object.keys(next).length === Object.keys(errors).length ? errors : next;
+    });
+  }, [visibleFieldKeys.join('|')]);
+
   /* =====================================================
      AUTO-FOCUS FIRST ERROR
   ===================================================== */
@@ -248,7 +366,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
   const validateClientSide = useCallback((): Record<string, string> => {
     const errors: Record<string, string> = {};
 
-    for (const field of form.fields) {
+    for (const field of visibleFields) {
       const key = `input_${field.id}`;
       const val = values[key];
 
@@ -290,7 +408,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
     }
 
     return errors;
-  }, [form.fields, values]);
+  }, [values, visibleFields]);
 
   /* =====================================================
      SUBMIT (OPTIMIZED)
@@ -322,7 +440,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
     try {
       const submissionValues: Record<string, any> = {};
 
-      for (const field of form.fields) {
+      for (const field of visibleFields) {
         const base = `input_${field.id}`;
 
         if (field.type === 'checkbox') {
@@ -394,7 +512,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
       setShowLoader(false);
       setLoaderPhase('idle');
     }
-  }, [submitting, form, values, validateClientSide]);
+  }, [submitting, form, values, validateClientSide, visibleFields]);
 
   /* =====================================================
      RENDER
@@ -420,7 +538,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
           window.dispatchEvent(new Event('resize'));
         }}
       >
-        {form.fields.map((f) => {
+        {visibleFields.map((f) => {
           const key = `input_${f.id}`;
           const value = values[key] ?? '';
           const error = fieldErrors[key];
