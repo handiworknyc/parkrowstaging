@@ -368,7 +368,7 @@
     {
       "acf_fc_layout": "full_bleed_img",
       "layout_settings": {
-        "section_title": "Designed for Life: Elegant & Enduring",
+        "section_title": "Designed for Life:<br />\r\nElegant & Enduring",
         "section_h2": "",
         "section_text": "<p>Interiors pair timeless materials with modern restraint: burnished wood, honed quartz, and a palette inspired by earth, air, and water. Every element— from proportion to finish—has been crafted with integrity and intention.</p>\n",
         "green_bg": false,
@@ -2712,5 +2712,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-26 22:56:59"
+  "_syncedAt": "2026-03-26 23:14:59"
 }
