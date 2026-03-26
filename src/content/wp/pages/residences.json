@@ -41,7 +41,7 @@
             "mime_type": "image/png",
             "type": "image",
             "subtype": "png",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 3354,
             "height": 1876,
             "sizes": {
@@ -221,7 +221,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 2500,
                 "height": 1379,
                 "sizes": {
@@ -349,7 +349,7 @@
               "image_align": "center"
             }
           ],
-          "large": true
+          "large": false
         }
       ],
       "caption": "",
@@ -402,7 +402,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1333,
             "sizes": {
@@ -600,7 +600,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -742,7 +742,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -884,7 +884,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -1026,7 +1026,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1667,
             "sizes": {
@@ -1211,7 +1211,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 2000,
             "sizes": {
@@ -1328,7 +1328,7 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "X",
+          "caption": "Distinctive dark chrome finish with a sleek, contemporary appearance",
           "slide_content": false
         },
         {
@@ -1353,7 +1353,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 2000,
             "sizes": {
@@ -1470,7 +1470,7 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "X",
+          "caption": "German-engineered craftsmanship known for precision and durability",
           "slide_content": false
         },
         {
@@ -1495,7 +1495,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 2000,
             "sizes": {
@@ -1612,7 +1612,7 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "X",
+          "caption": "Thoughtfully designed controls for intuitive, luxurious water flow",
           "slide_content": false
         },
         {
@@ -1637,7 +1637,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 2000,
             "sizes": {
@@ -1754,7 +1754,7 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "X",
+          "caption": "Timeless design that complements modern and architectural interiors",
           "slide_content": false
         }
       ],
@@ -1822,7 +1822,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -1975,7 +1975,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -2117,7 +2117,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -2270,7 +2270,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -2412,7 +2412,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1600,
             "height": 2000,
             "sizes": {
@@ -2554,7 +2554,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1600,
             "sizes": {
@@ -2712,5 +2712,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-26 22:24:24"
+  "_syncedAt": "2026-03-26 22:27:06"
 }
