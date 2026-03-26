@@ -41,7 +41,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2500,
             "height": 1406,
             "sizes": {
@@ -218,7 +218,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2041,
             "height": 1080,
             "sizes": {
@@ -395,7 +395,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 1888,
             "height": 1080,
             "sizes": {
@@ -531,7 +531,7 @@
       "title_chinese": "冰邊急右胡字隻",
       "text": "<p>A light-filled fitness center and yoga studio primed for everyday use</p>\n",
       "text_chinese": "<p>裏才怕目一在方時干信自百奶筆不目乞找完爬！乾禾耳婆香浪休訴她蝶兆三昌羊比汁位？占植申弓心它久鳥。<br />\n支回活哥亭因魚汗法婆入：消買長流哭園嗎穴訴泉花走兆；寺向員交十師八歌下穿住干昌幾里，紅木時英把流面泉完語巾子了拍用各。</p>\n",
-      "list": "<h4>Fitness Center</h4>\r\nFully-equipped fitness facility with expansive windows\r\nCardio equipment with TVs, free weights, and multi-gym system\r\nTowel service and water station\r\n\r\n<h4>Yoga & Pilates Studio</h4>\r\nPilates reformers\r\nOn demand virtual fitness\r\nLarge TV screen embedded in mirror wall\r\nYoga mats, suspension training and strength training accessories\r\nTowel service",
+      "list": "<h4>Fitness Center</h4>\r\nFully-equipped fitness facility with expansive windows\r\nCardio equipment with TVs, free weights, and multi-gym system\r\nTowel service and water station\r\n<br/>\r\n<br/>\r\n<h4>Yoga & Pilates Studio</h4>\r\nPilates reformers\r\nOn demand virtual fitness\r\nLarge TV screen embedded in mirror wall\r\nYoga mats, suspension training and strength training accessories\r\nTowel service",
       "list_chinese": "裏才怕目\r\n在方時干信自百奶筆\r\n不目乞找完爬\r\n乾禾耳婆香浪休訴她蝶\r\n兆三昌羊比汁位\r\n占植申弓心它久鳥"
     },
     {
@@ -574,7 +574,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
                 "width": 2000,
                 "height": 1137,
                 "sizes": {
@@ -729,7 +729,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
                 "width": 1920,
                 "height": 1080,
                 "sizes": {
@@ -884,7 +884,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
                 "width": 1600,
                 "height": 2000,
                 "sizes": {
@@ -1065,7 +1065,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2560,
             "height": 1439,
             "sizes": {
@@ -1261,7 +1261,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2560,
             "height": 1476,
             "sizes": {
@@ -1448,7 +1448,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2000,
             "height": 798,
             "sizes": {
@@ -1599,5 +1599,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-26 22:33:57"
+  "_syncedAt": "2026-03-26 22:40:22"
 }
