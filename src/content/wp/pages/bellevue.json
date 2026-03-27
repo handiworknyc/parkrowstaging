@@ -166,7 +166,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "",
@@ -209,7 +210,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -363,7 +365,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -517,7 +520,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -671,7 +675,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -825,7 +830,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -979,7 +985,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -1133,7 +1140,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -1287,7 +1295,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         },
@@ -1441,7 +1450,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ]
         }
@@ -2060,5 +2070,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 18:23:46"
+  "_syncedAt": "2026-03-27 18:52:36"
 }

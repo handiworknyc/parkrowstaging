@@ -166,7 +166,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "",
@@ -343,7 +344,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "Fitness Center",
@@ -520,7 +522,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "Yoga & Pilates Studio",
@@ -699,7 +702,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ],
           "large": true
@@ -854,7 +858,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ],
           "large": false
@@ -1009,7 +1014,8 @@
               "yt_start": "",
               "yt_end": "",
               "yt_aspect": "",
-              "image_align": "center"
+              "image_align": "center",
+              "default_aspect": false
             }
           ],
           "large": false
@@ -1190,7 +1196,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "Club Lounge & Kitchen",
@@ -1386,7 +1393,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "Private Dining Room",
@@ -1573,7 +1581,8 @@
           "yt_start": "",
           "yt_end": "",
           "yt_aspect": "",
-          "image_align": "center"
+          "image_align": "center",
+          "default_aspect": false
         }
       ],
       "caption": "Lobby Lounge & Fireplace",
@@ -1599,5 +1608,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 18:23:46"
+  "_syncedAt": "2026-03-27 18:52:36"
 }
