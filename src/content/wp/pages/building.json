@@ -158,6 +158,8 @@
               "gform-image-choice-lg-height": 338
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/37e2534c7441fceb49f9b0e7446d697d/manifest/video.m3u8",
           "show_controls": false,
           "yt_hover": false,
@@ -336,6 +338,8 @@
               "gform-image-choice-lg-height": 414
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -517,6 +521,8 @@
                   "gform-image-choice-lg-height": 317
                 }
               },
+              "yt_img_mob": false,
+              "mob_img_breakpoint": "",
               "cf_stream_video": "",
               "show_controls": false,
               "yt_hover": false,
@@ -673,6 +679,8 @@
                   "gform-image-choice-lg-height": 338
                 }
               },
+              "yt_img_mob": false,
+              "mob_img_breakpoint": "",
               "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/2018e00f0b0a14f734fa53664d64d90a/manifest/video.m3u8",
               "show_controls": false,
               "yt_hover": false,
@@ -702,5 +710,5 @@
       "quote": true
     }
   ],
-  "_syncedAt": "2026-03-27 18:52:37"
+  "_syncedAt": "2026-03-27 19:07:32"
 }

@@ -158,6 +158,8 @@
               "gform-image-choice-lg-height": 337
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/58b0b6f617a6e544600b396b6da46326/manifest/video.m3u8",
           "show_controls": false,
           "yt_hover": false,
@@ -336,6 +338,8 @@
               "gform-image-choice-lg-height": 317
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -514,6 +518,8 @@
               "gform-image-choice-lg-height": 343
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -694,6 +700,8 @@
                   "gform-image-choice-lg-height": 341
                 }
               },
+              "yt_img_mob": false,
+              "mob_img_breakpoint": "",
               "cf_stream_video": "",
               "show_controls": false,
               "yt_hover": false,
@@ -850,6 +858,8 @@
                   "gform-image-choice-lg-height": 338
                 }
               },
+              "yt_img_mob": false,
+              "mob_img_breakpoint": "",
               "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/f29c2f95517353a4f97bb1e058b80c8e/manifest/video.m3u8",
               "show_controls": false,
               "yt_hover": false,
@@ -1006,6 +1016,8 @@
                   "gform-image-choice-lg-height": 600
                 }
               },
+              "yt_img_mob": false,
+              "mob_img_breakpoint": "",
               "cf_stream_video": "",
               "show_controls": false,
               "yt_hover": false,
@@ -1188,6 +1200,8 @@
               "gform-image-choice-lg-height": 337
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1385,6 +1399,8 @@
               "gform-image-choice-lg-height": 346
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1573,6 +1589,8 @@
               "gform-image-choice-lg-height": 239
             }
           },
+          "yt_img_mob": false,
+          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1608,5 +1626,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 18:52:36"
+  "_syncedAt": "2026-03-27 19:07:31"
 }
