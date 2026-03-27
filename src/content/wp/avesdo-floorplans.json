@@ -15,7 +15,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C6_-_201.jpg?v=639062652273776469",
       "floorPlan": "C6 - 201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 120989,
@@ -26,7 +27,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2a_-_301.jpg?v=639062650663482561",
       "floorPlan": "B2a - 301",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 120990,
@@ -37,7 +39,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1a_-_302.jpg?v=639062650480824357",
       "floorPlan": "B1a - 302",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 120991,
@@ -48,7 +51,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6a_-_303.jpg?v=639062651154137141",
       "floorPlan": "B6a - 303",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 120992,
@@ -59,7 +63,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1a_-_304.jpg?v=639062647730794631",
       "floorPlan": "A1a - 304",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 120993,
@@ -70,7 +75,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2a_-_305.jpg?v=639062648289361075",
       "floorPlan": "A2a - 305",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 120994,
@@ -81,7 +87,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3a_-_306.jpg?v=639062648378116223",
       "floorPlan": "A3a - 306",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 120995,
@@ -92,7 +99,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_307.jpg?v=639062648425811327",
       "floorPlan": "A4 - 307",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 120996,
@@ -103,7 +111,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4a_-_308.jpg?v=639062651001793554",
       "floorPlan": "B4a - 308",
       "status": "Not Signed",
-      "availability": "Pending"
+      "availability": "Pending",
+      "orientation": "NW"
     },
     {
       "id": 120997,
@@ -114,7 +123,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3a_-_309.jpg?v=639062650813649034",
       "floorPlan": "B3a - 309",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 120998,
@@ -125,7 +135,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 120999,
@@ -136,7 +147,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121000,
@@ -147,7 +159,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_403_-_503.jpg?v=639062651044762381",
       "floorPlan": "B6 - 403 - 503",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121001,
@@ -158,7 +171,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121002,
@@ -169,7 +183,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_405.jpg?v=639062648210610775",
       "floorPlan": "A2 - 405",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121003,
@@ -180,7 +195,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121004,
@@ -191,7 +207,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121005,
@@ -202,7 +219,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_408.jpg?v=639062650874274532",
       "floorPlan": "B4 - 408",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121006,
@@ -213,7 +231,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121007,
@@ -224,7 +243,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121008,
@@ -235,7 +255,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121009,
@@ -246,7 +267,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_403_-_503.jpg?v=639062651044762381",
       "floorPlan": "B6 - 403 - 503",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121010,
@@ -257,7 +279,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121011,
@@ -268,7 +291,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121012,
@@ -279,7 +303,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121013,
@@ -290,7 +315,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121014,
@@ -301,7 +327,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121015,
@@ -312,7 +339,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121016,
@@ -323,7 +351,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121017,
@@ -334,7 +363,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121018,
@@ -345,7 +375,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121019,
@@ -356,7 +387,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121020,
@@ -367,7 +399,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121021,
@@ -378,7 +411,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121022,
@@ -389,7 +423,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121023,
@@ -400,7 +435,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121024,
@@ -411,7 +447,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121025,
@@ -422,7 +459,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121026,
@@ -433,7 +471,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121027,
@@ -444,7 +483,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121028,
@@ -455,7 +495,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121029,
@@ -466,7 +507,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121030,
@@ -477,7 +519,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121031,
@@ -488,7 +531,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121032,
@@ -499,7 +543,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121033,
@@ -510,7 +555,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121034,
@@ -521,7 +567,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121035,
@@ -532,7 +579,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121036,
@@ -543,7 +591,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121037,
@@ -554,7 +603,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121038,
@@ -565,7 +615,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121039,
@@ -576,7 +627,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121040,
@@ -587,7 +639,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121041,
@@ -598,7 +651,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121042,
@@ -609,7 +663,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121043,
@@ -620,7 +675,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121044,
@@ -631,7 +687,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121045,
@@ -642,7 +699,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121046,
@@ -653,7 +711,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121047,
@@ -664,7 +723,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121048,
@@ -675,7 +735,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121049,
@@ -686,7 +747,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121050,
@@ -697,7 +759,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121051,
@@ -708,7 +771,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121052,
@@ -719,7 +783,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121053,
@@ -730,7 +795,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121054,
@@ -741,7 +807,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121055,
@@ -752,7 +819,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121056,
@@ -763,7 +831,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121057,
@@ -774,7 +843,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121058,
@@ -785,7 +855,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121059,
@@ -796,7 +867,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121060,
@@ -807,7 +879,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121061,
@@ -818,7 +891,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121062,
@@ -829,7 +903,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121063,
@@ -840,7 +915,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121064,
@@ -851,7 +927,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121065,
@@ -862,7 +939,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121066,
@@ -873,7 +951,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121067,
@@ -884,7 +963,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121068,
@@ -895,7 +975,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121069,
@@ -906,7 +987,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121070,
@@ -917,7 +999,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121071,
@@ -928,7 +1011,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B1_-_402_-_1202.jpg?v=639062648544093591",
       "floorPlan": "B1 - 402 - 1202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121072,
@@ -939,7 +1023,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B6_-_603_-1203.jpg?v=639062651096636927",
       "floorPlan": "B6 - 603 -1203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121073,
@@ -950,7 +1035,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1_-_404_-1204.jpg?v=639062647621589301",
       "floorPlan": "A1 - 404 -1204",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121074,
@@ -961,7 +1047,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121075,
@@ -972,7 +1059,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A3_-_406_-_1206.jpg?v=639062648335768364",
       "floorPlan": "A3 - 406 - 1206",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121076,
@@ -983,7 +1071,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A4_-_407_-_1207.jpg?v=639062648484093104",
       "floorPlan": "A4 - 407 - 1207",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121077,
@@ -994,7 +1083,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121078,
@@ -1005,7 +1095,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121079,
@@ -1016,7 +1107,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1301.jpg?v=639062651918035109",
       "floorPlan": "C1 - 1301",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121080,
@@ -1027,7 +1119,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121081,
@@ -1038,7 +1131,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1303.jpg?v=639062651809160522",
       "floorPlan": "B9 - 1303",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121082,
@@ -1049,7 +1143,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1304.jpg?v=639062651320544530",
       "floorPlan": "B8 - 1304",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121083,
@@ -1060,7 +1155,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121084,
@@ -1071,7 +1167,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1306.jpg?v=639062651224606179",
       "floorPlan": "B7 - 1306",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121085,
@@ -1082,7 +1179,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121086,
@@ -1093,7 +1191,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121087,
@@ -1104,7 +1203,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1403_-_1803.jpg?v=639062651852722487",
       "floorPlan": "B9 - 1403 - 1803",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121088,
@@ -1115,7 +1215,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1404_-_1804.jpg?v=639062651367107552",
       "floorPlan": "B8 - 1404 - 1804",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121089,
@@ -1126,7 +1227,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121090,
@@ -1137,7 +1239,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121091,
@@ -1148,7 +1251,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121092,
@@ -1159,7 +1263,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121093,
@@ -1170,7 +1275,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1403_-_1803.jpg?v=639062651852722487",
       "floorPlan": "B9 - 1403 - 1803",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121094,
@@ -1181,7 +1287,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1404_-_1804.jpg?v=639062651367107552",
       "floorPlan": "B8 - 1404 - 1804",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121095,
@@ -1192,7 +1299,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121096,
@@ -1203,7 +1311,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121097,
@@ -1214,7 +1323,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121098,
@@ -1225,7 +1335,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121099,
@@ -1236,7 +1347,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1403_-_1803.jpg?v=639062651852722487",
       "floorPlan": "B9 - 1403 - 1803",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121100,
@@ -1247,7 +1359,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1404_-_1804.jpg?v=639062651367107552",
       "floorPlan": "B8 - 1404 - 1804",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121101,
@@ -1258,7 +1371,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121102,
@@ -1269,7 +1383,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121103,
@@ -1280,7 +1395,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121104,
@@ -1291,7 +1407,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121105,
@@ -1302,7 +1419,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1403_-_1803.jpg?v=639062651852722487",
       "floorPlan": "B9 - 1403 - 1803",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121106,
@@ -1313,7 +1431,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1404_-_1804.jpg?v=639062651367107552",
       "floorPlan": "B8 - 1404 - 1804",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121107,
@@ -1324,7 +1443,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121108,
@@ -1335,7 +1455,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121109,
@@ -1346,7 +1467,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121110,
@@ -1357,7 +1479,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B10_-_1302_-_1802.jpg?v=639062648637063680",
       "floorPlan": "B10 - 1302 - 1802",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121111,
@@ -1368,7 +1491,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B9_-_1403_-_1803.jpg?v=639062651852722487",
       "floorPlan": "B9 - 1403 - 1803",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121112,
@@ -1379,7 +1503,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B8_-_1404_-_1804.jpg?v=639062651367107552",
       "floorPlan": "B8 - 1404 - 1804",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121113,
@@ -1390,7 +1515,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C2_-_1305_-_1805.jpg?v=639062652023732040",
       "floorPlan": "C2 - 1305 - 1805",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121114,
@@ -1401,7 +1527,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "W"
     },
     {
       "id": 121115,
@@ -1412,7 +1539,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C3_-1901_-2001.jpg?v=639062652070714865",
       "floorPlan": "C3 -1901 -2001",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121116,
@@ -1423,7 +1551,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C5_-_1902_-_2002.jpg?v=639062652195467667",
       "floorPlan": "C5 - 1902 - 2002",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121117,
@@ -1434,7 +1563,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B12_-_1903_-_2003.jpg?v=639062650359573398",
       "floorPlan": "B12 - 1903 - 2003",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121118,
@@ -1445,7 +1575,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B11_-_1904_-_2004.jpg?v=639062648964803536",
       "floorPlan": "B11 - 1904 - 2004",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121119,
@@ -1456,7 +1587,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C4_-_1905_-_2005.jpg?v=639062652129995168",
       "floorPlan": "C4 - 1905 - 2005",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121120,
@@ -1467,7 +1599,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C3_-1901_-2001.jpg?v=639062652070714865",
       "floorPlan": "C3 -1901 -2001",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121121,
@@ -1478,7 +1611,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C5_-_1902_-_2002.jpg?v=639062652195467667",
       "floorPlan": "C5 - 1902 - 2002",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SE"
     },
     {
       "id": 121122,
@@ -1489,7 +1623,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B12_-_1903_-_2003.jpg?v=639062650359573398",
       "floorPlan": "B12 - 1903 - 2003",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "E"
     },
     {
       "id": 121123,
@@ -1500,7 +1635,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B11_-_1904_-_2004.jpg?v=639062648964803536",
       "floorPlan": "B11 - 1904 - 2004",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121124,
@@ -1511,7 +1647,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C4_-_1905_-_2005.jpg?v=639062652129995168",
       "floorPlan": "C4 - 1905 - 2005",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121125,
@@ -1522,7 +1659,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH1_-_2101_-_2201.jpg?v=639062652339322850",
       "floorPlan": "PH1 - 2101 - 2201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121126,
@@ -1533,7 +1671,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH3_-_2102_-_2202.jpg?v=639062652450795772",
       "floorPlan": "PH3 - 2102 - 2202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121127,
@@ -1544,7 +1683,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH2_-_2103_-_2203.jpg?v=639062652387199584",
       "floorPlan": "PH2 - 2103 - 2203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     },
     {
       "id": 121128,
@@ -1555,7 +1695,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH1_-_2101_-_2201.jpg?v=639062652339322850",
       "floorPlan": "PH1 - 2101 - 2201",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "SW"
     },
     {
       "id": 121129,
@@ -1566,7 +1707,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH3_-_2102_-_2202.jpg?v=639062652450795772",
       "floorPlan": "PH3 - 2102 - 2202",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NE"
     },
     {
       "id": 121130,
@@ -1577,7 +1719,8 @@
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH2_-_2103_-_2203.jpg?v=639062652387199584",
       "floorPlan": "PH2 - 2103 - 2203",
       "status": "Available",
-      "availability": "Available"
+      "availability": "Available",
+      "orientation": "NW"
     }
   ]
 }
