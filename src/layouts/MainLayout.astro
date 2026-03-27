@@ -102,7 +102,7 @@
 			extractSrcSetUrls(item.imagesrcset).forEach((url) => assets.add(url));
 		});
 
-		if (currentLcpVideo?.href) {
+		if (currentLcpVideo) {
 			getResponsiveCriticalVideoPreloadUrls(currentLcpVideo).forEach((url) =>
 				assets.add(url)
 			);
@@ -177,6 +177,41 @@
 
 		
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link
+		rel="preload"
+		href="/fonts/HankenGrotesk-Light.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin
+	/>
+	<link
+		rel="preload"
+		href="/fonts/HankenGrotesk-Regular.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin
+	/>
+	<link
+		rel="preload"
+		href="/fonts/HankenGrotesk-SemiBold.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin
+	/>
+	<link
+		rel="preload"
+		href="/fonts/Antiga-Regular.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin
+	/>
+	<link
+		rel="preload"
+		href="/fonts/figure.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin
+	/>
 	<meta name="viewport" content="width=device-width" />
 	<meta name="generator" content={Astro.generator} />
 	{noIndex && <meta name="robots" content="noindex, nofollow" />}

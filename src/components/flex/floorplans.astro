@@ -1,31 +1,82 @@
 ---
 import inventory from "@/content/wp/avesdo-floorplans.json";
+import floorPlanDetailPage from "@/content/wp/floor-plan-detail.json";
 
 const { rowIndex = 0 } = Astro.props;
 const tableId = `floorplans-${rowIndex}`;
-const galleryId = `floorplans-gallery-${rowIndex}`;
+const rawDetails = Array.isArray(floorPlanDetailPage?.floor_plan_detail)
+  ? floorPlanDetailPage.floor_plan_detail
+  : [];
+const details = rawDetails.flatMap((detail) => {
+    const image = detail?.floor_plan_image;
+    const imageUrl = String(image?.url ?? "").trim();
+
+    return imageUrl
+      ? [
+          {
+            unit: String(detail?.unit ?? "").trim(),
+            exterior: String(detail?.exterior ?? "").trim(),
+            exposure: String(detail?.exposure ?? "").trim(),
+            imageUrl,
+            imageWidth: Number(image?.width) || undefined,
+            imageHeight: Number(image?.height) || undefined,
+          },
+        ]
+      : [];
+  });
+
+const defaultDetail = details[0] ?? null;
+const detailMap = new Map(details.map((detail) => [detail.unit, detail]));
+
 const units = Array.isArray(inventory?.units)
-  ? [...inventory.units].sort((a, b) =>
-      String(a?.unitNumber || "").localeCompare(String(b?.unitNumber || ""), undefined, {
-        numeric: true,
-        sensitivity: "base",
+  ? [...inventory.units]
+      .sort((a, b) =>
+        String(a?.unitNumber || "").localeCompare(String(b?.unitNumber || ""), undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      )
+      .map((unit) => {
+        const unitNumber = String(unit?.unitNumber ?? "").trim();
+        const matchedDetail = detailMap.get(unitNumber) ?? defaultDetail;
+
+        return {
+          ...unit,
+          detail: matchedDetail
+            ? {
+                ...matchedDetail,
+                unit: unitNumber,
+              }
+            : null,
+        };
       })
-    )
   : [];
 const hasOrientation = units.some((unit) => String(unit?.orientation ?? "").trim());
+const columnTemplate = hasOrientation
+  ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
+  : "minmax(8rem, 1.5fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)";
 const tableStyle = {
   minWidth: hasOrientation ? "840px" : "720px",
+  "--floorplans-columns": columnTemplate,
 };
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
-function formatBathrooms(value) {
+function formatBathrooms(value: number | string | null | undefined) {
   const numeric = Number(value || 0);
   return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
 }
 
-function formatOrientation(value) {
+function formatOrientation(value: string | null | undefined) {
   return String(value ?? "").trim() || "-";
+}
+
+function formatExterior(value: number | string | null | undefined) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+
+  const numeric = Number(normalized.replace(/,/g, ""));
+  return Number.isFinite(numeric) ? numberFormat.format(numeric) : normalized;
 }
 ---
 
@@ -71,46 +122,118 @@ function formatOrientation(value) {
           </button>
         </div>
         {hasOrientation && (
-          <div class="floorplans-cell floorplans-cell--orientation">Orientation</div>
+          <div class="floorplans-cell floorplans-cell--orientation">Exposure</div>
         )}
         <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
       </div>
 
       <div class="floorplans-body" data-floorplans-body>
-        {units.map((unit) => (
-          <div
-            class="floorplans-row"
-            data-unit-number={unit.unitNumber}
-            data-bedrooms={unit.bedrooms}
-            data-bathrooms={unit.bathrooms}
-            data-area={unit.area}
-          >
-            <div class="floorplans-cell floorplans-cell--unit">{unit.unitNumber}</div>
-            <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
-            <div class="floorplans-cell floorplans-cell--metric">{formatBathrooms(unit.bathrooms)}</div>
-            <div class="floorplans-cell floorplans-cell--metric">{numberFormat.format(unit.area)}</div>
-            {hasOrientation && (
-              <div class="floorplans-cell floorplans-cell--orientation">
-                {formatOrientation(unit.orientation)}
+        {units.map((unit) => {
+          const hasDetail = Boolean(unit.detail?.imageUrl);
+          const detailId = `${tableId}-detail-${unit.unitNumber}`;
+          const exteriorLabel = formatExterior(unit.detail?.exterior);
+          const exposureLabel = formatOrientation(unit.orientation);
+
+          return (
+            <div
+              class="floorplans-item"
+              data-unit-item
+              data-unit-number={unit.unitNumber}
+              data-bedrooms={unit.bedrooms}
+              data-bathrooms={unit.bathrooms}
+              data-area={unit.area}
+            >
+              <div
+                class={`floorplans-row${hasDetail ? " floorplans-row--interactive" : ""}`}
+                data-floorplans-row
+                role={hasDetail ? "button" : undefined}
+                tabindex={hasDetail ? "0" : undefined}
+                aria-haspopup={hasDetail ? "dialog" : undefined}
+                aria-expanded={hasDetail ? "false" : undefined}
+                aria-controls={hasDetail ? detailId : undefined}
+              >
+                <div class="floorplans-cell floorplans-cell--unit">{unit.unitNumber}</div>
+                <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
+                <div class="floorplans-cell floorplans-cell--metric">
+                  {formatBathrooms(unit.bathrooms)}
+                </div>
+                <div class="floorplans-cell floorplans-cell--metric">
+                  {numberFormat.format(unit.area)}
+                </div>
+                {hasOrientation && (
+                  <div class="floorplans-cell floorplans-cell--orientation">
+                    {formatOrientation(unit.orientation)}
+                  </div>
+                )}
+                <div class="floorplans-cell floorplans-cell--action">
+                  {hasDetail ? (
+                    <span
+                      class="floorplans-view-link"
+                      data-floorplans-toggle-label
+                      data-collapsed-label="View"
+                      data-expanded-label="Close"
+                    >
+                      View
+                    </span>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
               </div>
-            )}
-            <div class="floorplans-cell floorplans-cell--action">
-              {unit.floorPlanImage ? (
-                <a
-                  class="floorplans-view-link"
-                  href={unit.floorPlanImage}
-                  data-fslightbox={galleryId}
-                  data-type="image"
-                  aria-label={`View floorplan for unit ${unit.unitNumber}`}
-                >
-                  View
-                </a>
-              ) : (
-                <span>-</span>
+
+              {hasDetail && (
+                <div id={detailId} class="floorplans-modal" data-floorplans-modal hidden>
+                  <button
+                    type="button"
+                    class="floorplans-modal-backdrop"
+                    data-floorplans-close
+                    aria-label={`Close floor plan for unit ${unit.unitNumber}`}
+                  ></button>
+
+                  <div
+                    class="floorplans-modal-card"
+                    data-floorplans-modal-card
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Floor plan for unit ${unit.unitNumber}`}
+                  >
+                    <button
+                      type="button"
+                      class="floorplans-modal-close"
+                      data-floorplans-close
+                      data-floorplans-close-button
+                      aria-label={`Close floor plan for unit ${unit.unitNumber}`}
+                    >
+                      Close
+                    </button>
+
+                    <div class="floorplans-detail-inner">
+                      <div class="floorplans-detail-copy">
+                        <div class="floorplans-detail-meta">
+                          <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
+                          <p>Interior: {numberFormat.format(unit.area)} SF</p>
+                          {exteriorLabel && <p>Exterior: {exteriorLabel} SF</p>}
+                          <p>Exposure: {exposureLabel}</p>
+                        </div>
+                      </div>
+
+                      <div class="floorplans-detail-visual">
+                        <img
+                          class="floorplans-detail-image"
+                          src={unit.detail.imageUrl}
+                          width={unit.detail.imageWidth}
+                          height={unit.detail.imageHeight}
+                          alt={`Floor plan for unit ${unit.unitNumber}`}
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   </div>
@@ -118,19 +241,8 @@ function formatOrientation(value) {
   {!units.length && <p class="floorplans-empty">No floorplans available.</p>}
 </div>
 
-<script>
-  import "/src/scripts/plugins/fslightbox.js";
-</script>
-
 <script is:inline define:vars={{ tableId }}>
   (() => {
-    const refreshLightbox = () => {
-      if (typeof window === "undefined") return;
-      if (typeof window.refreshFsLightbox === "function") {
-        window.refreshFsLightbox();
-      }
-    };
-
     const init = () => {
       const root = document.getElementById(tableId);
       if (!root) return;
@@ -139,15 +251,221 @@ function formatOrientation(value) {
       if (!body) return;
 
       if (root.dataset.floorplansInitialized === "true") {
-        refreshLightbox();
         return;
       }
 
       root.dataset.floorplansInitialized = "true";
+      const abortController = new AbortController();
 
       const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
       let sortKey = "";
       let sortDir = "asc";
+      let headerHiddenBeforeModal = false;
+      let lockedScrollY = 0;
+      let lockedScrollbarWidth = 0;
+      let activeScrollLockMode = "none";
+      const modalFadeMs = 220;
+      const modalCloseTimers = new WeakMap();
+      const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
+      const getOpenItem = () =>
+        getItems().find((item) => item.classList.contains("is-modal-open"));
+      const hasOpenModal = () =>
+        document.querySelector("[data-floorplans-modal]:not([hidden])") instanceof HTMLElement;
+      const getLocoScroll = () => {
+        const locoScroll = window.locoScroll;
+        if (
+          locoScroll &&
+          typeof locoScroll.stop === "function" &&
+          typeof locoScroll.start === "function"
+        ) {
+          return locoScroll;
+        }
+
+        return null;
+      };
+      const getCurrentScrollY = () => {
+        const locoScroll = getLocoScroll();
+        const locoY = locoScroll?.lenisInstance?.scroll;
+        if (typeof locoY === "number" && Number.isFinite(locoY)) {
+          return locoY;
+        }
+
+        return (
+          window.scrollY ||
+          document.scrollingElement?.scrollTop ||
+          document.documentElement.scrollTop ||
+          0
+        );
+      };
+      const isHeaderHidden = () =>
+        document.getElementById("header")?.classList.contains("is-hidden") ?? false;
+      const setHeaderHidden = (hidden) => {
+        if (typeof window.__setStickyHeaderHidden === "function") {
+          window.__setStickyHeaderHidden(hidden);
+          return;
+        }
+
+        document.getElementById("header")?.classList.toggle("is-hidden", hidden);
+      };
+      const lockPageScroll = () => {
+        const locoScroll = getLocoScroll();
+        lockedScrollY = getCurrentScrollY();
+
+        if (locoScroll) {
+          activeScrollLockMode = "loco";
+          locoScroll.stop();
+          return;
+        }
+
+        activeScrollLockMode = "native";
+        lockedScrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+        document.documentElement.style.setProperty(
+          "--floorplans-scrollbar-compensation",
+          `${lockedScrollbarWidth}px`
+        );
+
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${lockedScrollY}px`;
+        document.body.style.width = "100%";
+        document.body.classList.add("floorplans-modal-open");
+      };
+      const unlockPageScroll = () => {
+        if (hasOpenModal()) return;
+
+        const savedY = lockedScrollY;
+
+        if (activeScrollLockMode === "loco") {
+          const locoScroll = getLocoScroll();
+          if (locoScroll?.scrollTo) {
+            locoScroll.scrollTo(savedY, {
+              immediate: true,
+              force: true,
+            });
+          } else {
+            window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
+          }
+
+          locoScroll?.start();
+          activeScrollLockMode = "none";
+          return;
+        }
+
+        if (activeScrollLockMode === "native") {
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.width = "";
+          document.body.classList.remove("floorplans-modal-open");
+          document.documentElement.style.removeProperty("--floorplans-scrollbar-compensation");
+          window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
+        }
+
+        activeScrollLockMode = "none";
+      };
+      const clearModalCloseTimer = (modal) => {
+        const closeTimer = modalCloseTimers.get(modal);
+        if (closeTimer) {
+          window.clearTimeout(closeTimer);
+          modalCloseTimers.delete(modal);
+        }
+      };
+      const finalizeItemClose = (item, modal, row, restoreFocus = false) => {
+        clearModalCloseTimer(modal);
+        modal.hidden = true;
+        modal.classList.remove("is-visible", "is-closing");
+
+        if (modal.parentElement !== item) {
+          item.appendChild(modal);
+        }
+
+        unlockPageScroll();
+
+        if (!hasOpenModal()) {
+          setHeaderHidden(headerHiddenBeforeModal);
+
+          if (restoreFocus) {
+            row.focus({ preventScroll: true });
+          }
+        }
+      };
+      const getItemModal = (item, row) => {
+        const modalId = row?.getAttribute("aria-controls");
+        if (modalId) {
+          const modalById = document.getElementById(modalId);
+          if (modalById instanceof HTMLElement) {
+            return modalById;
+          }
+        }
+
+        const modalInItem = item.querySelector("[data-floorplans-modal]");
+        return modalInItem instanceof HTMLElement ? modalInItem : null;
+      };
+      const setItemOpen = (item, open, restoreFocus = false) => {
+        const row = item.querySelector("[data-floorplans-row]");
+        const modal = row instanceof HTMLElement ? getItemModal(item, row) : null;
+        const label = item.querySelector("[data-floorplans-toggle-label]");
+
+        if (!(row instanceof HTMLElement) || !(modal instanceof HTMLElement)) return;
+
+        item.classList.toggle("is-modal-open", open);
+        row.setAttribute("aria-expanded", open ? "true" : "false");
+
+        if (open) {
+          clearModalCloseTimer(modal);
+          if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+          }
+
+          modal.hidden = false;
+          modal.classList.remove("is-closing", "is-visible");
+          headerHiddenBeforeModal = isHeaderHidden();
+          setHeaderHidden(false);
+          lockPageScroll();
+          requestAnimationFrame(() => {
+            if (!modal.hidden) {
+              modal.classList.add("is-visible");
+            }
+          });
+
+          const closeButton = modal.querySelector("[data-floorplans-close-button]");
+          if (closeButton instanceof HTMLElement) {
+            closeButton.focus({ preventScroll: true });
+          }
+
+          if (label instanceof HTMLElement) {
+            label.textContent = label.dataset.expandedLabel || "Close";
+          }
+
+          return;
+        }
+
+        if (label instanceof HTMLElement) {
+          label.textContent = label.dataset.collapsedLabel || "View";
+        }
+
+        clearModalCloseTimer(modal);
+        modal.classList.remove("is-visible");
+        modal.classList.add("is-closing");
+
+        const closeTimer = window.setTimeout(() => {
+          finalizeItemClose(item, modal, row, restoreFocus);
+        }, modalFadeMs);
+        modalCloseTimers.set(modal, closeTimer);
+      };
+      const closeOpenItem = (restoreFocus = false) => {
+        const item = getOpenItem();
+        if (!item) {
+          unlockPageScroll();
+          return;
+        }
+
+        setItemOpen(item, false, restoreFocus);
+      };
+      const openItem = (item) => {
+        if (item.classList.contains("is-modal-open")) return;
+
+        closeOpenItem();
+        setItemOpen(item, true);
+      };
 
       const updateButtons = () => {
         buttons.forEach((button) => {
@@ -161,32 +479,59 @@ function formatOrientation(value) {
       };
 
       const sortRows = (key, dir) => {
-        const rows = Array.from(body.querySelectorAll(".floorplans-row"));
+        const items = getItems();
 
-        rows.sort((rowA, rowB) => {
-          const valueA = Number(rowA.dataset[key] || 0);
-          const valueB = Number(rowB.dataset[key] || 0);
+        items.sort((itemA, itemB) => {
+          const valueA = Number(itemA.dataset[key] || 0);
+          const valueB = Number(itemB.dataset[key] || 0);
 
           if (valueA !== valueB) {
             return dir === "asc" ? valueA - valueB : valueB - valueA;
           }
 
-          return (rowA.dataset.unitNumber || "").localeCompare(
-            rowB.dataset.unitNumber || "",
+          return (itemA.dataset.unitNumber || "").localeCompare(
+            itemB.dataset.unitNumber || "",
             undefined,
             { numeric: true, sensitivity: "base" }
           );
         });
 
-        rows.forEach((row) => body.appendChild(row));
-        refreshLightbox();
+        items.forEach((item) => body.appendChild(item));
       };
+
+      getItems().forEach((item) => {
+        const row = item.querySelector("[data-floorplans-row]");
+        const modal = item.querySelector("[data-floorplans-modal]");
+
+        if (row instanceof HTMLElement && row.getAttribute("role") === "button") {
+          row.addEventListener("click", (event) => {
+            if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+            openItem(item);
+          });
+
+          row.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            openItem(item);
+          });
+        }
+
+        if (modal instanceof HTMLElement) {
+          modal.addEventListener("click", (event) => {
+            if (!(event.target instanceof HTMLElement)) return;
+            if (event.target.closest("[data-floorplans-close]")) {
+              closeOpenItem(true);
+            }
+          });
+        }
+      });
 
       buttons.forEach((button) => {
         button.addEventListener("click", () => {
           const key = button.dataset.sortKey;
           if (!key) return;
 
+          closeOpenItem();
           sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
           sortKey = key;
           sortRows(key, sortDir);
@@ -194,13 +539,25 @@ function formatOrientation(value) {
         });
       });
 
-      updateButtons();
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Escape") {
+            closeOpenItem(true);
+          }
+        },
+        { signal: abortController.signal }
+      );
 
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", refreshLightbox, { once: true });
-      } else {
-        refreshLightbox();
-      }
+      updateButtons();
+      document.addEventListener(
+        "astro:before-swap",
+        () => {
+          closeOpenItem();
+          abortController.abort();
+        },
+        { once: true }
+      );
     };
 
     init();
@@ -210,58 +567,65 @@ function formatOrientation(value) {
 </script>
 
 <style>
+  :global(body.floorplans-modal-open) {
+    overflow: hidden;
+    padding-right: var(--floorplans-scrollbar-compensation, 0px);
+    height: 100vh;
+    position: relative;
+  }
+
   .floorplans-scroller {
     overflow-x: auto;
   }
 
   .floorplans-table {
-    display: table;
-    table-layout: fixed;
     width: 100%;
     min-width: 720px;
-    border-collapse: collapse;
   }
 
   .floorplans-head {
-    display: table-header-group;
-  }
-
-  .floorplans-body {
-    display: table-row-group;
+    display: grid;
+    grid-template-columns: var(--floorplans-columns);
   }
 
   .floorplans-head,
   .floorplans-row {
-    display: table-row;
+    display: grid;
+    grid-template-columns: var(--floorplans-columns);
+    width: 100%;
   }
 
   .floorplans-cell {
     box-sizing: border-box;
-    display: table-cell;
+    display: flex;
+    align-items: center;
     padding: 0.75rem 0.5rem;
-    border-bottom: 1px solid #d4d4d4;
     vertical-align: middle;
+    min-width: 0;
   }
 
-  .floorplans-cell--unit {
-    width: 20%;
+  .floorplans-item {
+    border-bottom: 1px solid #d4d4d4;
   }
 
-  .floorplans-cell--metric {
-    width: 14%;
+  .floorplans-row--interactive {
+    cursor: pointer;
+    transition: background-color 160ms ease;
   }
 
-  .floorplans-cell--orientation {
-    width: 14%;
+  .floorplans-row--interactive:hover {
+    background: rgba(58, 42, 34, 0.05);
   }
 
-  .floorplans-cell--action {
-    width: 24%;
+  .floorplans-row--interactive:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
   }
 
   .floorplans-head .floorplans-cell {
     font-weight: 600;
     border-top: 1px solid #d4d4d4;
+    border-bottom: 1px solid #d4d4d4;
   }
 
   .floorplans-sort-button {
@@ -294,9 +658,156 @@ function formatOrientation(value) {
     padding: 0.35rem 0.75rem;
     border: 1px solid currentColor;
     text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .floorplans-modal[hidden] {
+    display: none;
+  }
+
+  .floorplans-modal {
+    position: fixed;
+    top: var(--headerHeight);
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - var(--headerHeight));
+    height: calc(100dvh - var(--headerHeight));
+    z-index: 9997;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+
+  .floorplans-modal.is-visible,
+  .floorplans-modal.is-closing {
+    pointer-events: auto;
+  }
+
+  .floorplans-modal.is-visible {
+    opacity: 1;
+  }
+
+  .floorplans-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(8, 32, 19, 0.28);
+    cursor: pointer;
+  }
+
+  .floorplans-modal-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    background: #efeeec;
+    overflow: hidden;
+  }
+
+  .floorplans-modal-close {
+    appearance: none;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    z-index: 2;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #3a2a22;
+    cursor: pointer;
+    font-size: 0;
+    line-height: 0;
+    padding: 0;
+  }
+
+  .floorplans-modal-close::before,
+  .floorplans-modal-close::after {
+    content: "";
+    position: absolute;
+    width: 1.75rem;
+    height: 2px;
+    background: currentColor;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+  }
+
+  .floorplans-modal-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .floorplans-modal-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  .floorplans-detail-inner {
+    position: relative;
+    height: 100%;
+    padding: 1.5rem;
+  }
+
+  .floorplans-detail-copy {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 1;
+    max-width: min(18rem, calc(100% - 3rem));
+    color: #3a2a22;
+  }
+
+  .floorplans-detail-meta {
+    font-family: "Figure", "Hanken Grotesk", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1.5rem;
+    line-height: 2.25rem;
+  }
+
+  .floorplans-detail-meta p {
+    margin: 0;
+  }
+
+  .floorplans-detail-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .floorplans-detail-image {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: min(calc((100vh - var(--headerHeight)) * 0.87), 100%);
+    max-height: min(calc((100dvh - var(--headerHeight)) * 0.87), 100%);
+    height: auto;
+    object-fit: contain;
   }
 
   .floorplans-empty {
     margin-top: 1rem;
+  }
+
+  @media (max-width: 48rem) {
+    .floorplans-modal-close {
+      top: 0.75rem;
+      right: 0.75rem;
+    }
+
+    .floorplans-detail-inner {
+      padding: 1rem;
+    }
+
+    .floorplans-detail-copy {
+      top: 1rem;
+      left: 1rem;
+      max-width: min(16rem, calc(100% - 2rem));
+    }
   }
 </style>

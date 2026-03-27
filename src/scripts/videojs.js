@@ -27,6 +27,12 @@ function vlog(videoId, ...args) {
   console.log(`[CFVideo:${LOG_VER}:${videoId}]`, ...args);
 }
 
+function getTargetBandwidthForViewport(viewportWidth) {
+  return getClientBandwidthHintForViewport(viewportWidth) == null
+    ? BANDWIDTH_MOBILE
+    : BANDWIDTH_HIGH;
+}
+
 /* -----------------------------------------------------
    CSS loader
 ----------------------------------------------------- */
@@ -94,24 +100,32 @@ export function initCFVideo(videoId, reason = "init") {
   if (!wrap) return;
 
   const el = wrap.querySelector("video");
-  const desktopManifestSrc = wrap.dataset.src;
-  const mobileManifestSrc = wrap.dataset.srcMobile;
+  const desktopManifestSrc = wrap.dataset.src || "";
+  const mobileManifestSrc = wrap.dataset.srcMobile || "";
   const responsiveBreakpoint = Number.parseInt(
     wrap.dataset.mobileBreakpoint || "",
     10
   );
-  const useMobileManifest =
+  const hasResponsiveSources = !!desktopManifestSrc || !!mobileManifestSrc;
+  if (!el || !hasResponsiveSources) return;
+
+  const shouldUseMobileManifest = () =>
     !!mobileManifestSrc &&
     Number.isFinite(responsiveBreakpoint) &&
     window.innerWidth <= responsiveBreakpoint;
-  const baseManifestSrc = useMobileManifest
-    ? mobileManifestSrc
-    : desktopManifestSrc;
-  if (!el || !baseManifestSrc) return;
 
-  const clientBandwidthHint = getClientBandwidthHintForViewport(window.innerWidth);
-  const manifestSrc = buildStreamUrl(baseManifestSrc, clientBandwidthHint);
-  if (!manifestSrc) return;
+  const getPreferredBaseManifestSrc = () =>
+    shouldUseMobileManifest() ? mobileManifestSrc : desktopManifestSrc;
+
+  const getPreferredManifestSrc = () => {
+    const preferredBaseManifestSrc = getPreferredBaseManifestSrc();
+    if (!preferredBaseManifestSrc) return "";
+
+    const clientBandwidthHint = getClientBandwidthHintForViewport(window.innerWidth);
+    return buildStreamUrl(preferredBaseManifestSrc, clientBandwidthHint);
+  };
+
+  const manifestSrc = getPreferredManifestSrc();
 
   if (players.has(videoId)) {
     refreshCFVideoPlayback(videoId, `${reason}:existing-player`);
@@ -164,8 +178,8 @@ export function initCFVideo(videoId, reason = "init") {
     splashActive &&
     !isSplashVideo;
 
-  // Select target bandwidth based on device
-  const targetBandwidth = isMobile ? BANDWIDTH_MOBILE : BANDWIDTH_HIGH;
+  // Select target bandwidth based on viewport
+  const targetBandwidth = getTargetBandwidthForViewport(window.innerWidth);
 
   vlog(videoId, "init", {
     reason,
@@ -176,8 +190,8 @@ export function initCFVideo(videoId, reason = "init") {
     isCriticalVideo,
     shouldDelaySource,
     targetBandwidth, // Logged for debugging
-    clientBandwidthHint,
-    useMobileManifest,
+    clientBandwidthHint: getClientBandwidthHintForViewport(window.innerWidth),
+    useMobileManifest: shouldUseMobileManifest(),
     src: manifestSrc,
   });
   
@@ -204,7 +218,7 @@ export function initCFVideo(videoId, reason = "init") {
     },
 
     // 🚫 CRITICAL: no HLS until allowed
-    sources: shouldDelaySource
+    sources: shouldDelaySource || !manifestSrc
       ? []
       : [{ src: manifestSrc, type: "application/x-mpegURL" }],
   });
@@ -231,6 +245,7 @@ export function initCFVideo(videoId, reason = "init") {
   let warmupCompleted = false;
   let warmupTimer = null;
   let attachObserver = () => {};
+  let activeManifestSrc = shouldDelaySource ? "" : manifestSrc;
 
   function isElementVisibleEnough(target, threshold = 0) {
     const rect = target.getBoundingClientRect();
@@ -254,6 +269,7 @@ export function initCFVideo(videoId, reason = "init") {
 
   function attemptPlay(reason) {
     if (player.isDisposed()) return;
+    if (!activeManifestSrc) return;
     if (!sourceUnlocked || !playbackUnlocked) return;
     if (isScrollControlled && !isIntersecting) return;
     if (!player.paused()) return;
@@ -283,6 +299,80 @@ export function initCFVideo(videoId, reason = "init") {
     }
   }
 
+  function clearActiveSource(reason) {
+    if (player.isDisposed()) return;
+    if (!activeManifestSrc) return;
+
+    vlog(videoId, `clear source (${reason})`, {
+      activeManifestSrc,
+    });
+
+    clearWarmupTimer();
+    warmupActive = false;
+    warmupCompleted = false;
+
+    if (!player.paused()) {
+      player.pause();
+    }
+
+    try {
+      player.currentTime(0);
+    } catch (err) {
+      vlog(videoId, "clear source rewind failed", err);
+    }
+
+    try {
+      player.reset();
+    } catch (err) {
+      vlog(videoId, "player.reset() failed", err);
+      player.src([]);
+      player.load();
+    }
+
+    activeManifestSrc = "";
+    setPaused();
+  }
+
+  function syncPreferredSource(reason, { allowAttach = false } = {}) {
+    if (player.isDisposed()) return false;
+
+    const preferredManifestSrc = getPreferredManifestSrc();
+
+    if (!preferredManifestSrc) {
+      clearActiveSource(`${reason}:no-preferred-source`);
+      return false;
+    }
+
+    if (!allowAttach && !sourceUnlocked) {
+      return preferredManifestSrc === activeManifestSrc;
+    }
+
+    if (preferredManifestSrc === activeManifestSrc) {
+      return true;
+    }
+
+    vlog(videoId, `switch source (${reason})`, {
+      from: activeManifestSrc,
+      to: preferredManifestSrc,
+      width: window.innerWidth,
+    });
+
+    clearWarmupTimer();
+    warmupActive = false;
+    warmupCompleted = false;
+
+    if (!player.paused()) {
+      player.pause();
+    }
+
+    player.src({ src: preferredManifestSrc, type: "application/x-mpegURL" });
+    player.load();
+
+    activeManifestSrc = preferredManifestSrc;
+    setPaused();
+    return true;
+  }
+
   function finishWarmup(reason) {
     if (!warmupActive) return;
 
@@ -306,6 +396,7 @@ export function initCFVideo(videoId, reason = "init") {
 
   function startWarmupPlayback(reason) {
     if (player.isDisposed()) return;
+    if (!activeManifestSrc) return;
     if (!sourceUnlocked) return;
     if (!isScrollControlled) return;
     if (warmupActive || warmupCompleted || playbackUnlocked) return;
@@ -412,8 +503,7 @@ export function initCFVideo(videoId, reason = "init") {
       vlog(videoId, `attach source (${reason})`);
       sourceUnlocked = true;
 
-      player.src({ src: manifestSrc, type: "application/x-mpegURL" });
-      player.load();
+      syncPreferredSource(`attach:${reason}`, { allowAttach: true });
 
       attachObserver();
       isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
@@ -436,6 +526,7 @@ export function initCFVideo(videoId, reason = "init") {
         }
       }
 
+      syncPreferredSource(`unlock:${reason}`, { allowAttach: true });
       attemptPlay(`playback-unlocked:${reason}:immediate`);
       schedulePlay(`playback-unlocked:${reason}`);
     };
@@ -476,6 +567,11 @@ export function initCFVideo(videoId, reason = "init") {
     if (isScrollControlled) {
       isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
       attachObserver();
+    }
+
+    syncPreferredSource(`${reason}:sync`, { allowAttach: sourceUnlocked });
+    if (!activeManifestSrc) {
+      return;
     }
 
     attemptPlay(`${reason}:immediate`);
@@ -533,4 +629,33 @@ if (typeof document !== "undefined") {
       refreshAllCFVideoPlayback("astro:page-load");
     }, 2);
   });
+}
+
+if (typeof window !== "undefined") {
+  const resizeKey = "__HW_CFVIDEO_RESIZE_BOUND__";
+
+  if (!window[resizeKey]) {
+    window[resizeKey] = true;
+
+    let resizeRaf = 0;
+    let lastWidth = window.innerWidth;
+
+    window.addEventListener(
+      "resize",
+      () => {
+        if (window.innerWidth === lastWidth) return;
+        lastWidth = window.innerWidth;
+
+        if (resizeRaf) {
+          cancelAnimationFrame(resizeRaf);
+        }
+
+        resizeRaf = requestAnimationFrame(() => {
+          resizeRaf = 0;
+          refreshAllCFVideoPlayback("window:resize");
+        });
+      },
+      { passive: true }
+    );
+  }
 }

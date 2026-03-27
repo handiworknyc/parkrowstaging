@@ -132,6 +132,7 @@ if (!function_exists('parkrow_astro_sync_get_floor_plan_detail')) {
             $items[] = array(
                 'acf_fc_layout' => !empty($row['acf_fc_layout']) ? sanitize_key($row['acf_fc_layout']) : 'floor_plan',
                 'unit' => isset($row['unit']) ? sanitize_text_field($row['unit']) : '',
+                'exterior' => isset($row['exterior']) ? sanitize_text_field($row['exterior']) : '',
                 'floor_plan_image' => parkrow_astro_sync_prepare_image($row['floor_plan_image'] ?? null),
                 'exposure' => isset($row['exposure']) ? sanitize_text_field($row['exposure']) : '',
             );

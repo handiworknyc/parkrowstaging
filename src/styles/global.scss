@@ -1,3 +1,4 @@
+@use "fonts";
 @use "hw-reset";
 @use "hw-utils";
 @use "hw-defaults";
@@ -11,9 +12,6 @@
 @use "hw-nav-modal";
 @use "_hw-grid-overlay";
 
-
-/* 2. Custom fonts */
-@use "fonts";
 
 @use "hw-base";
 
@@ -43,7 +41,7 @@
 
 html {
 	--headerHeight: 8rem;
-	font-family: 'Hanken Grotesk';
+	font-family: 'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	color: var(--brown);
 }
 
@@ -59,7 +57,7 @@ html {
 }
 
 .antiga {
-	font-family: "Antiga";
+	font-family: "Antiga", Georgia, serif;
 }
 
 .ua-chrome .antiga {
@@ -71,7 +69,7 @@ html {
  }
 
 .figure {
-	font-family: 'Figure';
+	font-family: 'Figure', 'Hanken Grotesk', system-ui, sans-serif;
 }
 
 .logo {

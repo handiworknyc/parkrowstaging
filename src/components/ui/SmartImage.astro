@@ -54,6 +54,9 @@ const responsiveSources = pictureSources.filter(
   (source) => source?.media && source?.srcset
 );
 const hasPictureSources = responsiveSources.length > 0;
+const imgSrcSetAttr = hasPictureSources ? undefined : useSrcSetAttr || undefined;
+const imgSizesAttr =
+  hasPictureSources ? undefined : useSrcSetAttr ? sizes : undefined;
 ---
 
 {primarySrc && (
@@ -71,8 +74,8 @@ const hasPictureSources = responsiveSources.length > 0;
         <img
           id={imgId}
           src={primarySrc}
-          srcset={useSrcSetAttr || undefined}
-          sizes={useSrcSetAttr ? sizes : undefined}
+          srcset={imgSrcSetAttr}
+          sizes={imgSizesAttr}
           alt={alt}
           class={className}
           loading={loading}
@@ -84,8 +87,8 @@ const hasPictureSources = responsiveSources.length > 0;
       <img
         id={imgId}
         src={useSrcSetAttr ? undefined : primarySrc}
-        srcset={useSrcSetAttr || undefined}
-        sizes={useSrcSetAttr ? sizes : undefined}
+        srcset={imgSrcSetAttr}
+        sizes={imgSizesAttr}
         alt={alt}
         class={className}
         loading={loading}

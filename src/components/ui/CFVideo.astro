@@ -109,15 +109,28 @@ const responsivePosterSrcSet =
   mobilePosterImages && responsiveMediaBreakpoint
     ? buildResponsiveSrcSet(mobilePosterImages, { panorama: isPanorama })
     : undefined;
+const desktopPosterSrcSet =
+  desktopPosterImages && responsiveMediaBreakpoint
+    ? buildResponsiveSrcSet(desktopPosterImages, { panorama: isPanorama })
+    : undefined;
 const responsivePosterSources =
-  responsivePosterSrcSet && responsiveMediaBreakpoint
+  responsiveMediaBreakpoint
     ? [
-        {
-          media: `(max-width: ${responsiveMediaBreakpoint}px)`,
-          srcset: responsivePosterSrcSet,
-          sizes: posterSizes,
-        },
-      ]
+        responsivePosterSrcSet
+          ? {
+              media: `(max-width: ${responsiveMediaBreakpoint}px)`,
+              srcset: responsivePosterSrcSet,
+              sizes: posterSizes,
+            }
+          : null,
+        desktopPosterSrcSet
+          ? {
+              media: `(min-width: ${responsiveMediaBreakpoint + 1}px)`,
+              srcset: desktopPosterSrcSet,
+              sizes: posterSizes,
+            }
+          : null,
+      ].filter(Boolean)
     : undefined;
 
 /* ---------------- Component Config ---------------- */

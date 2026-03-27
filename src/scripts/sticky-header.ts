@@ -33,6 +33,7 @@ type StickyState = {
 declare global {
   interface Window {
     __stickyHeaderState?: StickyState;
+    __setStickyHeaderHidden?: (hidden: boolean) => void;
   }
 }
 
@@ -88,6 +89,32 @@ function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
 
   headerState.hidden = hidden;
   headerState.element.classList.toggle("is-hidden", hidden);
+}
+
+function forceHeaderHidden(hidden: boolean) {
+  const state = getState();
+  const scrollY = getScrollY();
+  let applied = false;
+
+  cleanupStaleHeaders(state);
+
+  state.headers.forEach((headerState, key) => {
+    setHeaderHidden(state, key, hidden);
+
+    if (headerState.bannerScroll) {
+      updateBannerScroll(headerState.element, scrollY);
+    }
+
+    applied = true;
+  });
+
+  if (!applied) {
+    document
+      .querySelectorAll<HTMLElement>("#header")
+      .forEach((element) => element.classList.toggle("is-hidden", hidden));
+  }
+
+  state.lastY = scrollY;
 }
 
 function updateBannerScroll(element: HTMLElement, scrollY: number) {
@@ -261,6 +288,8 @@ export default function initStickyHeader(
   config: string | string[] | HeaderConfig | HeaderConfig[] = "#header"
 ) {
   dbg("init");
+
+  window.__setStickyHeaderHidden = forceHeaderHidden;
 
   const state = getState();
 
