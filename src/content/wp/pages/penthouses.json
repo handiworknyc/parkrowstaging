@@ -297,7 +297,7 @@
             }
           },
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/f29c2f95517353a4f97bb1e058b80c8e/manifest/video.m3u8",
           "mob_img_breakpoint": "800",
           "show_controls": false,
           "yt_hover": false,
@@ -478,7 +478,7 @@
           },
           "yt_img_mob": false,
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": ": Select a video",
           "mob_img_breakpoint": "",
           "show_controls": true,
           "yt_hover": false,
@@ -662,7 +662,7 @@
               },
               "yt_img_mob": false,
               "cf_stream_video": "",
-              "cf_stream_mob": false,
+              "cf_stream_mob": ": Select a video",
               "mob_img_breakpoint": "",
               "show_controls": false,
               "yt_hover": false,
@@ -847,7 +847,7 @@
           },
           "yt_img_mob": false,
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": ": Select a video",
           "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1028,7 +1028,7 @@
           },
           "yt_img_mob": false,
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": ": Select a video",
           "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1208,7 +1208,7 @@
           },
           "yt_img_mob": false,
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": ": Select a video",
           "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1391,7 +1391,7 @@
               },
               "yt_img_mob": false,
               "cf_stream_video": "",
-              "cf_stream_mob": false,
+              "cf_stream_mob": ": Select a video",
               "mob_img_breakpoint": "",
               "show_controls": false,
               "yt_hover": false,
@@ -1576,7 +1576,7 @@
           },
           "yt_img_mob": false,
           "cf_stream_video": "",
-          "cf_stream_mob": false,
+          "cf_stream_mob": ": Select a video",
           "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
@@ -1612,5 +1612,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 19:14:18"
+  "_syncedAt": "2026-03-27 19:15:55"
 }
