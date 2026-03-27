@@ -12,6 +12,10 @@ const units = Array.isArray(inventory?.units)
       })
     )
   : [];
+const hasOrientation = units.some((unit) => String(unit?.orientation ?? "").trim());
+const tableStyle = {
+  minWidth: hasOrientation ? "840px" : "720px",
+};
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
@@ -19,11 +23,15 @@ function formatBathrooms(value) {
   const numeric = Number(value || 0);
   return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
 }
+
+function formatOrientation(value) {
+  return String(value ?? "").trim() || "-";
+}
 ---
 
 <div class="hw-contain">
   <div class="floorplans-scroller">
-    <div id={tableId} class="floorplans-table">
+    <div id={tableId} class="floorplans-table" style={tableStyle}>
       <div class="floorplans-head">
         <div class="floorplans-cell floorplans-cell--unit">Unit Number</div>
         <div class="floorplans-cell floorplans-cell--metric">
@@ -62,6 +70,9 @@ function formatBathrooms(value) {
             <span class="floorplans-sort-indicator" aria-hidden="true"></span>
           </button>
         </div>
+        {hasOrientation && (
+          <div class="floorplans-cell floorplans-cell--orientation">Orientation</div>
+        )}
         <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
       </div>
 
@@ -78,6 +89,11 @@ function formatBathrooms(value) {
             <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
             <div class="floorplans-cell floorplans-cell--metric">{formatBathrooms(unit.bathrooms)}</div>
             <div class="floorplans-cell floorplans-cell--metric">{numberFormat.format(unit.area)}</div>
+            {hasOrientation && (
+              <div class="floorplans-cell floorplans-cell--orientation">
+                {formatOrientation(unit.orientation)}
+              </div>
+            )}
             <div class="floorplans-cell floorplans-cell--action">
               {unit.floorPlanImage ? (
                 <a
@@ -228,15 +244,19 @@ function formatBathrooms(value) {
   }
 
   .floorplans-cell--unit {
-    width: 24%;
+    width: 20%;
   }
 
   .floorplans-cell--metric {
-    width: 16%;
+    width: 14%;
+  }
+
+  .floorplans-cell--orientation {
+    width: 14%;
   }
 
   .floorplans-cell--action {
-    width: 28%;
+    width: 24%;
   }
 
   .floorplans-head .floorplans-cell {

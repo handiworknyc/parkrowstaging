@@ -1,25 +1,28 @@
 ---
 import SmartImage from "../ui/SmartImage.astro";
 import { buildStreamUrl } from "../../lib/video/stream";
+import type { WpImageLike } from "../../lib/images/responsive";
+import {
+  buildResponsiveSrcSet,
+  extractWpResponsiveImages,
+  normalizeResponsiveBreakpoint,
+} from "../../lib/images/responsive";
 
 /* ---------------- Types ---------------- */
 interface VideoData {
   id?: string;
   cf_stream_video?: string;
+  cf_stream_mob?: string | false;
   yt_hover?: boolean;
   show_controls?: boolean;
   panorama?: boolean; // Panorama flag
-  yt_img?: {
-    url: string;
+  yt_img?: WpImageLike & {
     alt?: string;
-    sizes?: {
-      intch_xl?: string;
-      intch_lg?: string;
-      intch_med?: string;
-      intch_sm?: string;
-      intch_full?: string; // Full-size image for panorama
-    };
   };
+  yt_img_mob?: (WpImageLike & {
+    alt?: string;
+  }) | false;
+  mob_img_breakpoint?: string | number | null;
 }
 
 interface Props {
@@ -28,6 +31,7 @@ interface Props {
   posterForceSize?: "xl" | "large" | "med" | "small";
   critical?: boolean;
   panorama?: boolean; // Allow external panorama override
+  enableResponsivePoster?: boolean;
 }
 
 /* ---------------- Props ---------------- */
@@ -37,6 +41,7 @@ const {
   posterForceSize,
   critical = false,
   panorama: externalPanorama,
+  enableResponsivePoster = false,
 } = Astro.props;
 
 /* ---------------- Constants ---------------- */
@@ -44,6 +49,7 @@ const VIDEO_CONFIG = {
   PLAY_ON_SCROLL: true,
   SCROLL_THRESHOLD: 0.6,
   DEFAULT_SIZES: "(max-width: 1200px) 60vw, 100vw",
+  HERO_SIZES: "100vw",
 } as const;
 
 /* ---------------- Helpers ---------------- */
@@ -55,50 +61,76 @@ function generateVideoId(videoData: VideoData): string {
   return rawId.replace(/[^a-z0-9]/gi, "").slice(-12);
 }
 
-function extractPosterImages(ytImg: VideoData["yt_img"]) {
-  if (!ytImg) return null;
-
-  const sizes = ytImg.sizes || {};
-  const fallbackUrl = ytImg.url;
-
-  return {
-    full: sizes.intch_full || null, // Full-size image
-    xl: sizes.intch_xl || fallbackUrl,
-    large: sizes.intch_lg || fallbackUrl,
-    med: sizes.intch_med || fallbackUrl,
-    small: sizes.intch_sm || fallbackUrl,
-  };
-}
-
 /* ---------------- Data Extraction ---------------- */
 const videoData = video?.[0];
 if (!videoData) {
   throw new Error("[CFVideo] No video data provided");
 }
 
-const streamUrl = videoData.cf_stream_video || "";
+const desktopStreamUrl =
+  typeof videoData.cf_stream_video === "string"
+    ? videoData.cf_stream_video.trim()
+    : "";
 const playOnHover = videoData.yt_hover === true;
 const showControls = videoData.show_controls ?? false;
-const posterImages = extractPosterImages(videoData.yt_img);
-const posterAlt = videoData.yt_img?.alt || "";
+const desktopPosterImages = extractWpResponsiveImages(videoData.yt_img);
+const mobilePosterImages = enableResponsivePoster
+  ? extractWpResponsiveImages(videoData.yt_img_mob || null)
+  : null;
+const posterImages = desktopPosterImages || mobilePosterImages;
+const mobilePosterAlt =
+  videoData.yt_img_mob && typeof videoData.yt_img_mob === "object"
+    ? videoData.yt_img_mob.alt || ""
+    : "";
+const posterAlt = videoData.yt_img?.alt || mobilePosterAlt || "";
+const responsiveMediaBreakpoint = enableResponsivePoster
+  ? normalizeResponsiveBreakpoint(videoData.mob_img_breakpoint)
+  : null;
+const responsiveMobileStreamUrl =
+  enableResponsivePoster && typeof videoData.cf_stream_mob === "string"
+    ? videoData.cf_stream_mob.trim()
+    : "";
 
 // Determine if this is a panorama video
 // Priority: external prop > video data property
 const isPanorama = externalPanorama ?? videoData.panorama ?? false;
 
 const videoId = generateVideoId(videoData);
-const videoSrc = buildStreamUrl(streamUrl, null);
+const desktopVideoSrc = desktopStreamUrl
+  ? buildStreamUrl(desktopStreamUrl, null)
+  : "";
+const hasResponsiveMobileStream =
+  !!responsiveMobileStreamUrl && !!responsiveMediaBreakpoint;
+const hasAnyStream = !!desktopVideoSrc || hasResponsiveMobileStream;
+const posterSizes = enableResponsivePoster
+  ? VIDEO_CONFIG.HERO_SIZES
+  : VIDEO_CONFIG.DEFAULT_SIZES;
+const responsivePosterSrcSet =
+  mobilePosterImages && responsiveMediaBreakpoint
+    ? buildResponsiveSrcSet(mobilePosterImages, { panorama: isPanorama })
+    : undefined;
+const responsivePosterSources =
+  responsivePosterSrcSet && responsiveMediaBreakpoint
+    ? [
+        {
+          media: `(max-width: ${responsiveMediaBreakpoint}px)`,
+          srcset: responsivePosterSrcSet,
+          sizes: posterSizes,
+        },
+      ]
+    : undefined;
 
 /* ---------------- Component Config ---------------- */
 const posterProps = {
   images: posterImages,
   alt: posterAlt,
   imgClass: "abs-full of-cover hw-vid-poster-img",
-  sizes: VIDEO_CONFIG.DEFAULT_SIZES,
+  sizes: posterSizes,
   useSrcSet: usePosterSrcSet,
   forceSize: posterForceSize,
   critical,
   panorama: isPanorama, // Pass panorama flag to SmartImage
+  pictureSources: responsivePosterSources,
 };
 
 // ✅ CRITICAL FIX 1: If critical, do not render 'loading' class on server
@@ -107,18 +139,20 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
 ---
 
 {/* Fallback: Image only (no video) */}
-{!streamUrl && posterImages && (
+{!hasAnyStream && posterImages && (
   <SmartImage {...posterProps} />
 )}
 
 {/* Video player */}
-{streamUrl && (
+{hasAnyStream && (
   <>
     <div
       id={`cfvideo-${videoId}`}
       class={wrapperClass}
       data-id={videoId}
-      data-src={videoSrc}
+      data-src={desktopVideoSrc || undefined}
+      data-src-mobile={responsiveMobileStreamUrl || undefined}
+      data-mobile-breakpoint={responsiveMediaBreakpoint || undefined}
       data-hover={playOnHover}
       data-critical={critical} 
       data-scroll={VIDEO_CONFIG.PLAY_ON_SCROLL}

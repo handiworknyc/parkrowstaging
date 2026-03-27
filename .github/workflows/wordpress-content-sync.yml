@@ -4,6 +4,8 @@ on:
   repository_dispatch:
     types:
       - wordpress_content_changed
+  schedule:
+    - cron: '17 */6 * * *'
   workflow_dispatch:
     inputs:
       reason:
@@ -26,6 +28,7 @@ jobs:
       WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
       WP_AUTH_BASIC: ${{ secrets.WP_AUTH_BASIC }}
       WP_IMAGE_ALLOW_HOSTS: ${{ secrets.WP_IMAGE_ALLOW_HOSTS }}
+      AVESDO: ${{ secrets.AVESDO }}
       GF_CONSUMER_KEY: ${{ secrets.GF_CONSUMER_KEY }}
       GF_CONSUMER_SECRET: ${{ secrets.GF_CONSUMER_SECRET }}
       PAGE_URIS: ${{ vars.PAGE_URIS }}
@@ -41,6 +44,11 @@ jobs:
         run: |
           if [ -z "$WP_BASE_URL" ]; then
             echo "Missing WP_BASE_URL secret." >&2
+            exit 1
+          fi
+
+          if [ -z "$AVESDO" ]; then
+            echo "Missing AVESDO secret." >&2
             exit 1
           fi
 

@@ -25,10 +25,13 @@ Set these in GitHub Actions repository secrets:
 - `WORDPRESS_API_URL`
 - `WP_AUTH_BASIC`
 - `WP_IMAGE_ALLOW_HOSTS`
+- `AVESDO`
 - `GF_CONSUMER_KEY`
 - `GF_CONSUMER_SECRET`
 
 Netlify must already be connected to this GitHub repo with automatic deploys enabled on the branch this workflow pushes to.
+
+The workflow also runs on a 6-hour schedule so Avesdo inventory changes are synced even when WordPress content has not changed.
 
 ## WordPress Configuration
 

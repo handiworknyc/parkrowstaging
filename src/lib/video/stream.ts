@@ -5,6 +5,15 @@ export const VIDEO_STREAM_CONFIG = {
 } as const;
 
 export type ClientBandwidthHint = number | null;
+export type CriticalVideoPreloadVariant = {
+  href: string;
+  media?: string;
+};
+export type ResponsiveCriticalVideoConfig = {
+  href?: string | null;
+  mobileHref?: string | null;
+  mobileBreakpoint?: number | null;
+};
 
 export function isMobileVideoViewport(viewportWidth: number): boolean {
   return viewportWidth < VIDEO_STREAM_CONFIG.mobileViewportBreakpoint;
@@ -86,5 +95,93 @@ export function getCriticalVideoPreloadVariants(baseUrl: string) {
 export function getCriticalVideoPreloadUrls(baseUrl: string): string[] {
   return Array.from(
     new Set(getCriticalVideoPreloadVariants(baseUrl).map((variant) => variant.href))
+  );
+}
+
+export function getResponsiveCriticalVideoPreloadVariants(
+  config: ResponsiveCriticalVideoConfig | null
+): CriticalVideoPreloadVariant[] {
+  if (!config?.href && !config?.mobileHref) return [];
+
+  const { href, mobileHref, mobileBreakpoint } = config;
+
+  if ((!mobileHref || !mobileBreakpoint) && href) {
+    return getCriticalVideoPreloadVariants(href);
+  }
+
+  if (!href && mobileHref && mobileBreakpoint) {
+    return [
+      {
+        href: buildStreamUrl(
+          mobileHref,
+          VIDEO_STREAM_CONFIG.mobileClientBandwidthHint
+        ),
+        media: `(max-width: ${mobileBreakpoint}px)`,
+      },
+    ];
+  }
+
+  if (!href) return [];
+
+  const variants: CriticalVideoPreloadVariant[] = [];
+  const pushVariant = (variant: CriticalVideoPreloadVariant | null) => {
+    if (!variant?.href) return;
+    if (
+      variants.some(
+        (existing) =>
+          existing.href === variant.href && existing.media === variant.media
+      )
+    ) {
+      return;
+    }
+
+    variants.push(variant);
+  };
+
+  pushVariant({
+    href: buildStreamUrl(
+      mobileHref,
+      VIDEO_STREAM_CONFIG.mobileClientBandwidthHint
+    ),
+    media: `(max-width: ${mobileBreakpoint}px)`,
+  });
+
+  const desktopMobileBandwidthMax =
+    VIDEO_STREAM_CONFIG.mobileViewportBreakpoint - 1;
+  const desktopMobileBandwidthMin = mobileBreakpoint + 1;
+
+  if (desktopMobileBandwidthMin <= desktopMobileBandwidthMax) {
+    pushVariant({
+      href: buildStreamUrl(
+        href,
+        VIDEO_STREAM_CONFIG.mobileClientBandwidthHint
+      ),
+      media: `(min-width: ${desktopMobileBandwidthMin}px) and (max-width: ${desktopMobileBandwidthMax}px)`,
+    });
+  }
+
+  pushVariant({
+    href: buildStreamUrl(
+      href,
+      VIDEO_STREAM_CONFIG.desktopClientBandwidthHint
+    ),
+    media: `(min-width: ${Math.max(
+      mobileBreakpoint + 1,
+      VIDEO_STREAM_CONFIG.mobileViewportBreakpoint
+    )}px)`,
+  });
+
+  return variants;
+}
+
+export function getResponsiveCriticalVideoPreloadUrls(
+  config: ResponsiveCriticalVideoConfig | null
+): string[] {
+  return Array.from(
+    new Set(
+      getResponsiveCriticalVideoPreloadVariants(config).map(
+        (variant) => variant.href
+      )
+    )
   );
 }

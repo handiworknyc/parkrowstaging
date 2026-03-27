@@ -51,14 +51,12 @@ const wrapperClass = [
     zh.href = cleanPath === '/' ? '/zh' : `/zh${cleanPath}`;
 
     // ✅ Highlight states
-    en.classList.toggle('bg-pink-500', !isZh);
-    en.classList.toggle('text-white', !isZh);
+    en.classList.toggle('bg-pink', !isZh);
     en.classList.toggle('font-semibold', !isZh);
     en.classList.toggle('bg-gray-200', isZh);
     en.classList.toggle('text-gray-700', isZh);
 
-    zh.classList.toggle('bg-pink-500', isZh);
-    zh.classList.toggle('text-white', isZh);
+    zh.classList.toggle('bg-pink', isZh);
     zh.classList.toggle('font-semibold', isZh);
     zh.classList.toggle('bg-gray-200', !isZh);
     zh.classList.toggle('text-gray-700', !isZh);

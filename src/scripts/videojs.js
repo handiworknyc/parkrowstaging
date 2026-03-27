@@ -94,7 +94,19 @@ export function initCFVideo(videoId, reason = "init") {
   if (!wrap) return;
 
   const el = wrap.querySelector("video");
-  const baseManifestSrc = wrap.dataset.src;
+  const desktopManifestSrc = wrap.dataset.src;
+  const mobileManifestSrc = wrap.dataset.srcMobile;
+  const responsiveBreakpoint = Number.parseInt(
+    wrap.dataset.mobileBreakpoint || "",
+    10
+  );
+  const useMobileManifest =
+    !!mobileManifestSrc &&
+    Number.isFinite(responsiveBreakpoint) &&
+    window.innerWidth <= responsiveBreakpoint;
+  const baseManifestSrc = useMobileManifest
+    ? mobileManifestSrc
+    : desktopManifestSrc;
   if (!el || !baseManifestSrc) return;
 
   const clientBandwidthHint = getClientBandwidthHintForViewport(window.innerWidth);
@@ -165,6 +177,7 @@ export function initCFVideo(videoId, reason = "init") {
     shouldDelaySource,
     targetBandwidth, // Logged for debugging
     clientBandwidthHint,
+    useMobileManifest,
     src: manifestSrc,
   });
   

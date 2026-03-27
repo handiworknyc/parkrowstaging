@@ -1,5 +1,6 @@
 ---
 import CFVideo from "../ui/CFVideo.astro";
+import { isHeroFullBleedRowIndex } from "../../lib/wp/hero";
 
 const vars = { ...Astro.props };
 const v = vars.video;
@@ -10,12 +11,24 @@ const { prevLayout, nextLayout, ...props } = Astro.props;
 
 // ✅ 1. Check Row Index to determine Critical status
 const currentIndex = vars.rowIndex;
-const isCritical = currentIndex === 1;
+const firstIsSplash = vars.firstIsSplash === true;
+const isCritical = isHeroFullBleedRowIndex({
+  rowIndex: currentIndex,
+  firstIsSplash,
+  width: vars.width,
+});
+const hasDesktopStream =
+  typeof v?.[0]?.cf_stream_video === "string" &&
+  v[0].cf_stream_video.trim().length > 0;
+const hasCriticalMobileStream =
+  isCritical &&
+  typeof v?.[0]?.cf_stream_mob === "string" &&
+  v[0].cf_stream_mob.trim().length > 0;
 
 // ✅ 2. Detect panorama mode
 const isPanorama = vars.panorama === true;
 
-const locoSpeedAttr = isCritical || prevLayout.name === "splash_video"
+const locoSpeedAttr = isCritical || prevLayout?.name === "splash_video"
   ? { "data-scroll data-scroll-speed": "-.4" }
   : {};
 
@@ -175,7 +188,7 @@ const videoClasses = [
   "full-bleed-img-inner",
   vars.round_corner && "round-corner",
   `corner-pos-${vars.corner_pos}`,
-  !v?.[0]?.cf_stream_video && "no-video",
+  !hasDesktopStream && !hasCriticalMobileStream && "no-video",
 ];
 ---
 
@@ -185,7 +198,14 @@ const videoClasses = [
     <div class="row">
       <div class:list={layoutClasses}>
         <div class:list={videoClasses}>
-          {v && <CFVideo video={v} critical={isCritical} panorama={isPanorama} />}
+          {v && (
+            <CFVideo
+              video={v}
+              critical={isCritical}
+              panorama={isPanorama}
+              enableResponsivePoster={isCritical}
+            />
+          )}
         </div>
 
         {caption && <div class={captionWrapperClass}>{caption}</div>}
@@ -212,7 +232,14 @@ const videoClasses = [
 
   <div class="full-bleed-column">
     <div class:list={videoClasses} {...locoSpeedAttr}>
-      {v && <CFVideo video={v} critical={isCritical} panorama={isPanorama} />}
+      {v && (
+        <CFVideo
+          video={v}
+          critical={isCritical}
+          panorama={isPanorama}
+          enableResponsivePoster={isCritical}
+        />
+      )}
     </div>
 
     {(caption || hasContent) && (

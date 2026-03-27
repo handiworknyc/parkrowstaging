@@ -1,15 +1,55 @@
 import type { NormRow } from "./normalize";
+import { getHeroFullBleedRow } from "./hero";
+import {
+  buildResponsiveSrcSet,
+  extractWpResponsiveImages,
+  getResponsivePrimarySrc,
+  normalizeResponsiveBreakpoint,
+} from "../images/responsive";
+
+function isFullWidthFullBleedRow(row: NormRow | null | undefined): boolean {
+  if (!row || row.name !== "full_bleed_img") return false;
+
+  return typeof row.data?.width === "string"
+    ? row.data.width.trim().toLowerCase() === "full"
+    : false;
+}
 
 /**
  * Responsive sizes optimized for hero video posters
  */
 function getResponsiveSizes(): string {
   return [
-    '(max-width: 640px) 100vw',
-    '(max-width: 1024px) 90vw',
-    '(max-width: 1440px) 80vw',
-    '1400px'
-  ].join(', ');
+    "(max-width: 640px) 100vw",
+    "(max-width: 1024px) 90vw",
+    "(max-width: 1440px) 80vw",
+    "1400px",
+  ].join(", ");
+}
+
+function buildLcpPreloadItem({
+  images,
+  panorama = false,
+  imagesizes,
+  media,
+}: {
+  images: ReturnType<typeof extractWpResponsiveImages>;
+  panorama?: boolean;
+  imagesizes: string;
+  media?: string;
+}) {
+  if (!images) return null;
+
+  const href = getResponsivePrimarySrc(images, { panorama });
+  if (!href) return null;
+
+  return {
+    href,
+    imagesrcset: buildResponsiveSrcSet(images, { panorama }),
+    imagesizes,
+    type: "image/webp",
+    media,
+  };
 }
 
 /**
@@ -18,32 +58,55 @@ function getResponsiveSizes(): string {
 export function getLcpImage(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 
-  const firstData = rows[0].data || {};
+  const targetRow = getHeroFullBleedRow(rows) || rows[0];
+  const targetData = targetRow?.data || {};
+  const videoData = Array.isArray(targetData.video) ? targetData.video[0] : null;
 
-  if (Array.isArray(firstData.video) && firstData.video[0]?.yt_img) {
-    const raw = firstData.video[0].yt_img;
-    const sizes = raw.sizes || {};
+  if (!videoData?.yt_img && !videoData?.yt_img_mob) return null;
 
-    const candidates = [
-      { url: sizes.intch_xl || raw.url, w: sizes["intch_xl-width"] || 2048 },
-      { url: sizes.intch_lg,            w: sizes["intch_lg-width"] || 1600 },
-      { url: sizes.intch_med,           w: sizes["intch_med-width"] || 1200 },
-      { url: sizes.intch_sm,            w: sizes["intch_sm-width"] || 800 }
-    ].filter(c => c.url);
+  const panorama = targetData?.panorama === true;
+  const imagesizes = isFullWidthFullBleedRow(targetRow)
+    ? "100vw"
+    : getResponsiveSizes();
+  const desktopImages =
+    extractWpResponsiveImages(videoData.yt_img) ||
+    extractWpResponsiveImages(videoData.yt_img_mob || null);
+  const mobileImages = isFullWidthFullBleedRow(targetRow)
+    ? extractWpResponsiveImages(videoData.yt_img_mob || null)
+    : null;
+  const mobileBreakpoint = isFullWidthFullBleedRow(targetRow)
+    ? normalizeResponsiveBreakpoint(videoData.mob_img_breakpoint)
+    : null;
 
-    if (!candidates.length) return null;
+  if (mobileImages && mobileBreakpoint) {
+    const mobilePreload = buildLcpPreloadItem({
+      images: mobileImages,
+      panorama,
+      imagesizes,
+      media: `(max-width: ${mobileBreakpoint}px)`,
+    });
+    const desktopPreload = buildLcpPreloadItem({
+      images: desktopImages,
+      panorama,
+      imagesizes,
+      media: `(min-width: ${mobileBreakpoint + 1}px)`,
+    });
+    const preloads = [mobilePreload, desktopPreload].filter(Boolean);
 
-    const srcsetParts = candidates.map(c => `${c.url} ${c.w}w`);
+    if (preloads.length === 1) {
+      return preloads[0];
+    }
 
-    return {
-      href: candidates[0].url as string,
-      imagesrcset: srcsetParts.join(", "),
-      imagesizes: getResponsiveSizes(),
-      type: "image/webp"
-    };
+    if (preloads.length > 1) {
+      return preloads;
+    }
   }
 
-  return null;
+  return buildLcpPreloadItem({
+    images: desktopImages,
+    panorama,
+    imagesizes,
+  });
 }
 
 /**
@@ -53,16 +116,33 @@ export function getLcpImage(rows: NormRow[]) {
 export function getLcpVideo(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
 
-  const firstData = rows[0].data || {};
-  if (!firstData.video || !firstData.video[0]) return null;
+  const firstRow = rows[0];
+  const targetRow =
+    firstRow?.name === "splash_video"
+      ? firstRow
+      : getHeroFullBleedRow(rows) || firstRow;
+  const targetData = targetRow?.data || {};
+  if (!targetData.video || !targetData.video[0]) return null;
 
-  const v = firstData.video[0];
+  const v = targetData.video[0];
+  const mobileHref =
+    isFullWidthFullBleedRow(targetRow) && typeof v.cf_stream_mob === "string"
+      ? v.cf_stream_mob.trim() || null
+      : null;
+  const mobileBreakpoint =
+    mobileHref && isFullWidthFullBleedRow(targetRow)
+      ? normalizeResponsiveBreakpoint(v.mob_img_breakpoint)
+      : null;
+  const desktopHref =
+    typeof v.cf_stream_video === "string" ? v.cf_stream_video.trim() : "";
 
-  if (v.cf_stream_video) {
+  if (desktopHref || mobileHref) {
     return {
-      href: v.cf_stream_video
+      href: desktopHref || null,
+      mobileHref,
+      mobileBreakpoint,
     };
   }
-  
+
   return null;
 }

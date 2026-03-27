@@ -93,6 +93,10 @@ function formatBathCount(bathrooms, halfBathrooms) {
   return full + half * 0.5;
 }
 
+function formatAvesdoText(value) {
+  return String(value ?? "").trim();
+}
+
 async function fetchAvesdoJSON(pathname) {
   if (!AVESDO_TOKEN) {
     throw new Error("Missing AVESDO token.");
@@ -141,17 +145,19 @@ async function fetchAvesdoParkRowInventory() {
   const units = properties
     .map((property) => {
       const bathrooms = formatBathCount(property?.bathrooms, property?.halfBathrooms);
+      const orientation = formatAvesdoText(property?.Orientation ?? property?.orientation);
 
       return {
         id: Number(property?.id || 0),
-        unitNumber: String(property?.unitNumber || "").trim(),
+        unitNumber: formatAvesdoText(property?.unitNumber),
         bedrooms: Number(property?.bedrooms || 0),
         bathrooms,
         area: Number(property?.floorArea || 0),
-        floorPlanImage: String(property?.floorPlanImage || "").trim(),
-        floorPlan: String(property?.floorPlan || "").trim(),
-        status: String(property?.status || "").trim(),
-        availability: String(property?.availability || "").trim(),
+        floorPlanImage: formatAvesdoText(property?.floorPlanImage),
+        floorPlan: formatAvesdoText(property?.floorPlan),
+        status: formatAvesdoText(property?.status),
+        availability: formatAvesdoText(property?.availability),
+        orientation,
       };
     })
     .filter((unit) => unit.id && unit.unitNumber)
@@ -504,6 +510,18 @@ async function fetchSchemaAddress() {
   return json;
 }
 
+async function fetchFloorPlanDetail() {
+  const url = new URL("/wp-json/astro/v1/floor-plan-detail", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
+async function fetchPanoramicViews() {
+  const url = new URL("/wp-json/astro/v1/panoramic-views", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
 /* -------------------------------------------
    SEO-Friendly Download & Cache
    Format: "my-image-hash.jpg.webp"
@@ -617,7 +635,7 @@ function recurseFindImages(obj, collected = new Set(), parentContext = {}) {
   if (typeof obj.url === 'string') {
     
     // A. Add Full Size (always)
-    if (obj.url.match(/\.(jpeg|jpg|png|webp|gif)$/i)) {
+    if (obj.url.match(/\.(jpeg|jpg|png|webp|gif|svg)(?:[?#].*)?$/i)) {
       collected.add(JSON.stringify({ url: obj.url, isPanorama }));
     }
 
@@ -645,6 +663,35 @@ function recurseFindImages(obj, collected = new Set(), parentContext = {}) {
   }
 
   return collected;
+}
+
+function parseCollectedImageObjects(collected) {
+  return Array.from(collected)
+    .map((value) => {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    })
+    .filter((value) => value && typeof value.url === "string");
+}
+
+async function cacheStructuredDataImages(data, imgCacheDir) {
+  const imageUrlObjects = parseCollectedImageObjects(recurseFindImages(data));
+  const urlMap = new Map();
+
+  for (const { url, isPanorama } of imageUrlObjects) {
+    const localUrl = await downloadAndCache(url, imgCacheDir, isPanorama);
+    if (localUrl) {
+      urlMap.set(url, localUrl);
+    }
+  }
+
+  return {
+    data: replaceImageUrls(data, urlMap),
+    transformedImageCount: urlMap.size,
+  };
 }
 
 /* -------------------------------------------
@@ -809,6 +856,8 @@ async function run() {
   console.log("ENV:", { WP_BASE_URL: maskBasicAuthUrl(WP_BASE) });
 
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
+  const outFloorPlanDetail = path.join(process.cwd(), "src", "content", "wp", "floor-plan-detail.json");
+  const outPanoramicViews = path.join(process.cwd(), "src", "content", "wp", "panoramic-views.json");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
@@ -834,6 +883,38 @@ async function run() {
     );
   } catch (error) {
     console.warn(`⚠️ Failed to sync Avesdo floorplans: ${error?.message || error}`);
+  }
+
+  /* -------- FLOOR PLAN DETAIL -------- */
+  try {
+    console.log("🧭 Fetching Floor Plan Detail…");
+    const floorPlanDetail = await fetchFloorPlanDetail();
+    const transformed = await cacheStructuredDataImages(floorPlanDetail, imgCacheDir);
+
+    writeJSONIfChanged(
+      outFloorPlanDetail,
+      transformed.data,
+      `✨ Floor plan detail updated (${transformed.transformedImageCount} images transformed)`,
+      "⏩ Floor plan detail unchanged — skip write"
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Floor Plan Detail: ${error?.message || error}`);
+  }
+
+  /* -------- PANORAMIC VIEWS -------- */
+  try {
+    console.log("🌆 Fetching Panoramic Views…");
+    const panoramicViews = await fetchPanoramicViews();
+    const transformed = await cacheStructuredDataImages(panoramicViews, imgCacheDir);
+
+    writeJSONIfChanged(
+      outPanoramicViews,
+      transformed.data,
+      `✨ Panoramic views updated (${transformed.transformedImageCount} images transformed)`,
+      "⏩ Panoramic views unchanged — skip write"
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Panoramic Views: ${error?.message || error}`);
   }
 
   /* -------- PAGES -------- */

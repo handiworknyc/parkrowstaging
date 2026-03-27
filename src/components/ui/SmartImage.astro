@@ -1,19 +1,20 @@
 ---
 // src/components/ui/SmartImage.astro
 
-interface ImageSource {
-  url: string;
-  width: number;
+import type { ResponsiveImageMap } from "../../lib/images/responsive";
+import {
+  buildResponsiveSrcSet,
+  getResponsivePrimarySrc,
+} from "../../lib/images/responsive";
+
+interface PictureSource {
+  media: string;
+  srcset: string;
+  sizes?: string;
 }
 
 interface Props {
-  images: {
-    xl?: string | ImageSource;
-    large?: string | ImageSource;
-    med?: string | ImageSource | false;
-    small?: string | ImageSource | false;
-    full?: string | ImageSource; // Full-size image for panorama mode
-  };
+  images: ResponsiveImageMap;
   sizes?: string;
   alt?: string;
   imgClass?: string;
@@ -22,6 +23,7 @@ interface Props {
   useSrcSet?: boolean;
   forceSize?: "xl" | "large" | "med" | "small";
   panorama?: boolean; // Enable full-size image
+  pictureSources?: PictureSource[];
 }
 
 const {
@@ -34,79 +36,10 @@ const {
   useSrcSet = true,
   forceSize,
   panorama = false,
+  pictureSources = [],
 } = Astro.props;
-
-/* --------------------------------------------------------------------------
-   HELPERS
--------------------------------------------------------------------------- */
-function extractUrl(img: string | ImageSource | undefined | false): string | null {
-  if (!img) return null;
-  if (typeof img === "string") {
-    // Filter out invalid strings
-    if (img === "false" || img === "undefined" || img === "null" || !img.trim()) {
-      return null;
-    }
-    return img;
-  }
-  return img.url || null;
-}
-
-const DEFAULT_WIDTHS = {
-  full: 2400, // Full-size width for panorama
-  xl: 1700,
-  large: 1400,
-  med: 1000,
-  small: 600,
-} as const;
-
-/* --------------------------------------------------------------------------
-   BUILD SRCSET
--------------------------------------------------------------------------- */
-// When panorama is true, replace xl with full size
-const candidates = [
-  panorama && images.full 
-    ? { url: extractUrl(images.full), w: DEFAULT_WIDTHS.full }
-    : { url: extractUrl(images.xl), w: DEFAULT_WIDTHS.xl },
-  { url: extractUrl(images.large), w: DEFAULT_WIDTHS.large },
-  { url: extractUrl(images.med), w: DEFAULT_WIDTHS.med },
-  { url: extractUrl(images.small), w: DEFAULT_WIDTHS.small },
-].filter((c) => c.url);
-
-const srcSet = candidates.length > 0 
-  ? candidates.map((c) => `${c.url} ${c.w}w`).join(", ")
-  : undefined;
-
-/* --------------------------------------------------------------------------
-   DETERMINE PRIMARY SRC
--------------------------------------------------------------------------- */
-let primarySrc: string | null = null;
-
-if (forceSize) {
-  const sizeMap = {
-    xl: images.xl,
-    large: images.large,
-    med: images.med,
-    small: images.small,
-  };
-  primarySrc = extractUrl(sizeMap[forceSize]);
-} else {
-  // Fallback chain: If panorama is true, use full → xl → large → med → small
-  // Otherwise use xl → large → med → small
-  if (panorama) {
-    primarySrc = 
-      extractUrl(images.full) ||
-      extractUrl(images.xl) || 
-      extractUrl(images.large) || 
-      extractUrl(images.med) || 
-      extractUrl(images.small);
-  } else {
-    primarySrc = 
-      extractUrl(images.xl) || 
-      extractUrl(images.large) || 
-      extractUrl(images.med) || 
-      extractUrl(images.small);
-  }
-}
+const srcSet = buildResponsiveSrcSet(images, { panorama });
+const primarySrc = getResponsivePrimarySrc(images, { panorama, forceSize });
 
 /* --------------------------------------------------------------------------
    CONFIG
@@ -117,21 +50,49 @@ const className = ["hw-lazy-img", imgClass].filter(Boolean).join(" ");
 
 const useSrcSetAttr = useSrcSet && !forceSize && srcSet;
 const imgId = critical ? `crit-${crypto.randomUUID().slice(0, 8)}` : undefined;
+const responsiveSources = pictureSources.filter(
+  (source) => source?.media && source?.srcset
+);
+const hasPictureSources = responsiveSources.length > 0;
 ---
 
 {primarySrc && (
   <>
-    <img
-      id={imgId}
-      src={useSrcSetAttr ? undefined : primarySrc}
-      srcset={useSrcSetAttr || undefined}
-      sizes={useSrcSetAttr ? sizes : undefined}
-      alt={alt}
-      class={className}
-      loading={loading}
-      decoding={decoding}
-      fetchpriority={fetchpriority}
-    />
+    {hasPictureSources ? (
+      <picture>
+        {responsiveSources.map((source) => (
+          <source
+            media={source.media}
+            srcset={source.srcset}
+            sizes={source.sizes || sizes}
+          />
+        ))}
+
+        <img
+          id={imgId}
+          src={primarySrc}
+          srcset={useSrcSetAttr || undefined}
+          sizes={useSrcSetAttr ? sizes : undefined}
+          alt={alt}
+          class={className}
+          loading={loading}
+          decoding={decoding}
+          fetchpriority={fetchpriority}
+        />
+      </picture>
+    ) : (
+      <img
+        id={imgId}
+        src={useSrcSetAttr ? undefined : primarySrc}
+        srcset={useSrcSetAttr || undefined}
+        sizes={useSrcSetAttr ? sizes : undefined}
+        alt={alt}
+        class={className}
+        loading={loading}
+        decoding={decoding}
+        fetchpriority={fetchpriority}
+      />
+    )}
 
     {critical && imgId && (
       <script is:inline define:vars={{ imgId }}>

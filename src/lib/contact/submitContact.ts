@@ -140,7 +140,10 @@ function buildEdgewiseInput(fields: SubmissionFields) {
   const phone = readField(fields, 'input_6');
   const source = readField(fields, 'input_10');
   const isAgent = readYesNo(fields, 'input_11');
-  const rawIsRepresented = readYesNo(fields, 'input_12');
+  const isWorkingWithAgent = readYesNo(fields, 'input_12');
+  const brokerageCompanyName = readField(fields, 'input_19');
+  const agentFirstName = readField(fields, 'input_20');
+  const agentLastName = readField(fields, 'input_21');
   const address = readField(fields, 'input_16');
   const city = readField(fields, 'input_14');
   const state = readField(fields, 'input_17');
@@ -151,11 +154,15 @@ function buildEdgewiseInput(fields: SubmissionFields) {
     administrativeArea: state,
     postalCode,
   });
-
-  const isRepresented =
-    isAgent === true && rawIsRepresented === true
-      ? false
-      : rawIsRepresented;
+  const metadata = compact({
+    brokerageCompanyName,
+    workingWithAgent:
+      isWorkingWithAgent === undefined
+        ? undefined
+        : String(isWorkingWithAgent),
+    agentFirstName,
+    agentLastName,
+  });
 
   return compact({
     projectId: getEdgewiseProjectId(),
@@ -165,7 +172,7 @@ function buildEdgewiseInput(fields: SubmissionFields) {
     address: edgewiseAddress,
     source: source || undefined,
     isAgent,
-    isRepresented,
+    metadata,
     subscribed: readCheckbox(fields, 'input_13'),
   });
 }

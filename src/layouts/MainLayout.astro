@@ -5,8 +5,8 @@
 	import SiteNav from "../components/SiteNav.astro";
 	import PromoPopup from "../components/PromoPopup.astro";
 	import {
-		getCriticalVideoPreloadUrls,
-		getCriticalVideoPreloadVariants,
+		getResponsiveCriticalVideoPreloadUrls,
+		getResponsiveCriticalVideoPreloadVariants,
 	} from "@/lib/video/stream";
 
 	import videoJsUrl from "/src/scripts/videojs.js?url";
@@ -21,14 +21,17 @@
 	imagesrcset?: string;
 	imagesizes?: string;
 	type?: string;
+	media?: string;
 	}
 
 	interface Props {
 		title?: string;
 		description?: string;
-		lcp?: PreloadItem | null;
+		lcp?: PreloadItem | PreloadItem[] | null;
 		lcpVideo?: {
-			href: string;
+			href?: string | null;
+			mobileHref?: string | null;
+			mobileBreakpoint?: number | null;
 		} | null;
 		preloads?: (string | PreloadItem)[];
 		lang?: 'en' | 'zh';
@@ -77,17 +80,30 @@
 	}
 
 	function collectPreloadedAssetUrls(
-		currentLcp: PreloadItem | null,
-		currentLcpVideo: { href: string } | null,
+		currentLcp: PreloadItem | PreloadItem[] | null,
+		currentLcpVideo: {
+			href?: string | null;
+			mobileHref?: string | null;
+			mobileBreakpoint?: number | null;
+		} | null,
 		currentPreloads: (string | PreloadItem)[]
 	): string[] {
 		const assets = new Set<string>();
 
-		if (currentLcp?.href) assets.add(currentLcp.href);
-		extractSrcSetUrls(currentLcp?.imagesrcset).forEach((url) => assets.add(url));
+		const lcpItems = Array.isArray(currentLcp)
+			? currentLcp
+			: currentLcp
+				? [currentLcp]
+				: [];
+
+		lcpItems.forEach((item) => {
+			if (!item?.href) return;
+			assets.add(item.href);
+			extractSrcSetUrls(item.imagesrcset).forEach((url) => assets.add(url));
+		});
 
 		if (currentLcpVideo?.href) {
-			getCriticalVideoPreloadUrls(currentLcpVideo.href).forEach((url) =>
+			getResponsiveCriticalVideoPreloadUrls(currentLcpVideo).forEach((url) =>
 				assets.add(url)
 			);
 		}
@@ -113,9 +129,8 @@
 	const normalizedPathname =
 	lang === 'zh' ? rawPathname.replace(/^\/zh/, '') || '/' : rawPathname;
 	const currentPrefetchPath = normalizePrefetchPath(normalizedPathname);
-	const criticalVideoPreloadVariants = lcpVideo?.href
-		? getCriticalVideoPreloadVariants(lcpVideo.href)
-		: [];
+	const lcpEntries = Array.isArray(lcp) ? lcp.filter(Boolean) : lcp ? [lcp] : [];
+	const criticalVideoPreloadVariants = getResponsiveCriticalVideoPreloadVariants(lcpVideo);
 	const shouldWarmCriticalVideo = criticalVideoPreloadVariants.length > 0;
 	const preloadedAssetUrls = collectPreloadedAssetUrls(lcp, lcpVideo, preloads);
 
@@ -187,17 +202,18 @@
 	{description && <meta name="description" content={description} />}
 
 	{/* LCP Image Preload */}
-	{lcp && (
+	{lcpEntries.map((item) => (
 		<link 
 		rel="preload"
 		as="image"
 		fetchpriority="high"
-		href={lcp.href}
-		imagesrcset={lcp.imagesrcset}
-		imagesizes={lcp.imagesizes}
-		type={lcp.type}
+		href={item.href}
+		imagesrcset={item.imagesrcset}
+		imagesizes={item.imagesizes}
+		type={item.type}
+		media={item.media}
 		/>
-	)}
+	))}
 
 	{/* LCP Video (Full Warmup) */}
 	{criticalVideoPreloadVariants.length > 0 && (

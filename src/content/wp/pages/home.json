@@ -159,9 +159,9 @@
             }
           },
           "yt_img_mob": false,
-          "mob_img_breakpoint": "",
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/45b6029259380dd00872b71a4e120217/manifest/video.m3u8",
           "cf_stream_mob": false,
+          "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -329,9 +329,9 @@
             }
           },
           "yt_img_mob": false,
-          "mob_img_breakpoint": "",
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/09675e436e7ca79808119fb2599c4c90/manifest/video.m3u8",
           "cf_stream_mob": false,
+          "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -510,9 +510,9 @@
             }
           },
           "yt_img_mob": false,
-          "mob_img_breakpoint": "",
           "cf_stream_video": "",
           "cf_stream_mob": false,
+          "mob_img_breakpoint": "",
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1290,5 +1290,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 19:11:14"
+  "_syncedAt": "2026-03-27 19:28:25"
 }
