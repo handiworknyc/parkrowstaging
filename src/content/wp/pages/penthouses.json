@@ -298,6 +298,7 @@
           },
           "mob_img_breakpoint": "800",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -478,6 +479,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": true,
           "yt_hover": false,
           "yt_lb": "",
@@ -661,6 +663,7 @@
               "yt_img_mob": false,
               "mob_img_breakpoint": "",
               "cf_stream_video": "",
+              "cf_stream_mob": false,
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -845,6 +848,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1025,6 +1029,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1204,6 +1209,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1386,6 +1392,7 @@
               "yt_img_mob": false,
               "mob_img_breakpoint": "",
               "cf_stream_video": "",
+              "cf_stream_mob": false,
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -1570,6 +1577,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1604,5 +1612,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 19:07:32"
+  "_syncedAt": "2026-03-27 19:11:14"
 }

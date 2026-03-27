@@ -161,6 +161,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/58b0b6f617a6e544600b396b6da46326/manifest/video.m3u8",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -341,6 +342,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -521,6 +523,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -703,6 +706,7 @@
               "yt_img_mob": false,
               "mob_img_breakpoint": "",
               "cf_stream_video": "",
+              "cf_stream_mob": false,
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -861,6 +865,7 @@
               "yt_img_mob": false,
               "mob_img_breakpoint": "",
               "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/f29c2f95517353a4f97bb1e058b80c8e/manifest/video.m3u8",
+              "cf_stream_mob": false,
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -1019,6 +1024,7 @@
               "yt_img_mob": false,
               "mob_img_breakpoint": "",
               "cf_stream_video": "",
+              "cf_stream_mob": false,
               "show_controls": false,
               "yt_hover": false,
               "yt_lb": "",
@@ -1203,6 +1209,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1402,6 +1409,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1592,6 +1600,7 @@
           "yt_img_mob": false,
           "mob_img_breakpoint": "",
           "cf_stream_video": "",
+          "cf_stream_mob": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1626,5 +1635,5 @@
       ]
     }
   ],
-  "_syncedAt": "2026-03-27 19:07:31"
+  "_syncedAt": "2026-03-27 19:11:13"
 }
