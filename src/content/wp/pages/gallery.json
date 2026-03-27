@@ -21,6 +21,7 @@
       "h1": "Welcome to the gallery",
       "h2": "Explore All Things Park Row",
       "description": "Experience the visual story of Park Row—architecture and interiors in dialogue with nature’s light.<br />\r\nBrowse images that capture the feeling of balance and beauty at every scale.",
+      "smaller_text": false,
       "h1_chinese": "",
       "h2_chinese": "",
       "description_chinese": ""
@@ -1702,5 +1703,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-03-27 20:52:20"
+  "_syncedAt": "2026-03-27 22:18:36"
 }
