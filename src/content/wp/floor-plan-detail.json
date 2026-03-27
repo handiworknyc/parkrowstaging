@@ -7,7 +7,6 @@
     {
       "acf_fc_layout": "floor_plan",
       "unit": "201",
-      "exterior": "97",
       "floor_plan_image": {
         "ID": 369,
         "url": "/img-cache/floor-plan-fpo-79938bcd.svg",
@@ -123,8 +122,9 @@
           "gform-image-choice-lg-height": 759
         }
       },
-      "exposure": "W, SW, S"
+      "exterior": "97",
+      "exposure": ""
     }
   ],
-  "_syncedAt": "2026-03-27 20:13:40"
+  "_syncedAt": "2026-03-27 20:52:10"
 }
