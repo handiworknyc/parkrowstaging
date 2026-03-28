@@ -1,15 +1,92 @@
 ---
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import FloorplanZoomViewer from "@/components/react/FloorplanZoomViewer.jsx";
 import inventory from "@/content/wp/avesdo-floorplans.json";
 import floorPlanDetailPage from "@/content/wp/floor-plan-detail.json";
 
 const { rowIndex = 0 } = Astro.props;
 const tableId = `floorplans-${rowIndex}`;
+const svgSizeCache = new Map<string, { width: number; height: number } | null>();
+
+function parseSvgNumericDimension(value: string | null | undefined) {
+  const numeric = Number.parseFloat(String(value ?? "").trim());
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function getSvgIntrinsicSize(imageUrl: string) {
+  if (!imageUrl.toLowerCase().endsWith(".svg")) return null;
+
+  const cached = svgSizeCache.get(imageUrl);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const imagePath = resolve(process.cwd(), "public", imageUrl.replace(/^\/+/, ""));
+  if (!existsSync(imagePath)) {
+    svgSizeCache.set(imageUrl, null);
+    return null;
+  }
+
+  try {
+    const svg = readFileSync(imagePath, "utf8");
+    const viewBoxMatch = svg.match(/<svg\b[^>]*\bviewBox=(["'])([^"']+)\1/i);
+    const viewBoxParts = viewBoxMatch?.[2]
+      ?.trim()
+      .split(/[\s,]+/)
+      .map((part) => Number.parseFloat(part));
+    const viewBoxWidth = viewBoxParts?.[2];
+    const viewBoxHeight = viewBoxParts?.[3];
+
+    if (
+      Number.isFinite(viewBoxWidth) &&
+      viewBoxWidth > 0 &&
+      Number.isFinite(viewBoxHeight) &&
+      viewBoxHeight > 0
+    ) {
+      const size = { width: viewBoxWidth, height: viewBoxHeight };
+      svgSizeCache.set(imageUrl, size);
+      return size;
+    }
+
+    const widthMatch = svg.match(/<svg\b[^>]*\bwidth=(["'])([^"']+)\1/i);
+    const heightMatch = svg.match(/<svg\b[^>]*\bheight=(["'])([^"']+)\1/i);
+    const width = parseSvgNumericDimension(widthMatch?.[2]);
+    const height = parseSvgNumericDimension(heightMatch?.[2]);
+
+    if (width && height) {
+      const size = { width, height };
+      svgSizeCache.set(imageUrl, size);
+      return size;
+    }
+  } catch {
+    svgSizeCache.set(imageUrl, null);
+    return null;
+  }
+
+  svgSizeCache.set(imageUrl, null);
+  return null;
+}
+
 const rawDetails = Array.isArray(floorPlanDetailPage?.floor_plan_detail)
   ? floorPlanDetailPage.floor_plan_detail
   : [];
 const details = rawDetails.flatMap((detail) => {
     const image = detail?.floor_plan_image;
     const imageUrl = String(image?.url ?? "").trim();
+    const svgSize = imageUrl ? getSvgIntrinsicSize(imageUrl) : null;
+    const fallbackImageWidth = Number(image?.width);
+    const fallbackImageHeight = Number(image?.height);
+    const imageWidth =
+      svgSize?.width ??
+      (Number.isFinite(fallbackImageWidth) && fallbackImageWidth > 0
+        ? fallbackImageWidth
+        : undefined);
+    const imageHeight =
+      svgSize?.height ??
+      (Number.isFinite(fallbackImageHeight) && fallbackImageHeight > 0
+        ? fallbackImageHeight
+        : undefined);
 
     return imageUrl
       ? [
@@ -18,8 +95,10 @@ const details = rawDetails.flatMap((detail) => {
             exterior: String(detail?.exterior ?? "").trim(),
             exposure: String(detail?.exposure ?? "").trim(),
             imageUrl,
-            imageWidth: Number(image?.width) || undefined,
-            imageHeight: Number(image?.height) || undefined,
+            imageWidth,
+            imageHeight,
+            imageAspectRatio:
+              imageWidth && imageHeight ? String(imageWidth / imageHeight) : undefined,
           },
         ]
       : [];
@@ -80,51 +159,53 @@ function formatExterior(value: number | string | null | undefined) {
 }
 ---
 
-<div class="hw-contain">
+<div class="floorplans-wrap" data-floorplans-table>
   <div class="floorplans-scroller">
     <div id={tableId} class="floorplans-table" style={tableStyle}>
-      <div class="floorplans-head">
-        <div class="floorplans-cell floorplans-cell--unit">Unit Number</div>
-        <div class="floorplans-cell floorplans-cell--metric">
-          <button
-            type="button"
-            class="floorplans-sort-button"
-            data-sort-key="bedrooms"
-            data-label="Bedrooms"
-            aria-pressed="false"
-          >
-            <span class="floorplans-sort-label">Bedrooms</span>
-            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
-          </button>
+      <div class="floorplans-head-row">
+        <div class="floorplans-head hw-contain">
+          <div class="floorplans-cell floorplans-cell--unit">Residence</div>
+          <div class="floorplans-cell floorplans-cell--metric">
+            <button
+              type="button"
+              class="floorplans-sort-button"
+              data-sort-key="bedrooms"
+              data-label="Bedrooms"
+              aria-pressed="false"
+            >
+              <span class="floorplans-sort-label">Bedrooms</span>
+              <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="floorplans-cell floorplans-cell--metric">
+            <button
+              type="button"
+              class="floorplans-sort-button"
+              data-sort-key="bathrooms"
+              data-label="Bathrooms"
+              aria-pressed="false"
+            >
+              <span class="floorplans-sort-label">Bathrooms</span>
+              <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="floorplans-cell floorplans-cell--metric">
+            <button
+              type="button"
+              class="floorplans-sort-button"
+              data-sort-key="area"
+              data-label="Area"
+              aria-pressed="false"
+            >
+              <span class="floorplans-sort-label">Area</span>
+              <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+            </button>
+          </div>
+          {hasOrientation && (
+            <div class="floorplans-cell floorplans-cell--orientation">Exposure</div>
+          )}
+          <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
         </div>
-        <div class="floorplans-cell floorplans-cell--metric">
-          <button
-            type="button"
-            class="floorplans-sort-button"
-            data-sort-key="bathrooms"
-            data-label="Bathrooms"
-            aria-pressed="false"
-          >
-            <span class="floorplans-sort-label">Bathrooms</span>
-            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
-          </button>
-        </div>
-        <div class="floorplans-cell floorplans-cell--metric">
-          <button
-            type="button"
-            class="floorplans-sort-button"
-            data-sort-key="area"
-            data-label="Area"
-            aria-pressed="false"
-          >
-            <span class="floorplans-sort-label">Area</span>
-            <span class="floorplans-sort-indicator" aria-hidden="true"></span>
-          </button>
-        </div>
-        {hasOrientation && (
-          <div class="floorplans-cell floorplans-cell--orientation">Exposure</div>
-        )}
-        <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
       </div>
 
       <div class="floorplans-body" data-floorplans-body>
@@ -144,7 +225,7 @@ function formatExterior(value: number | string | null | undefined) {
               data-area={unit.area}
             >
               <div
-                class={`floorplans-row${hasDetail ? " floorplans-row--interactive" : ""}`}
+                class={`floorplans-row hw-contain${hasDetail ? " floorplans-row--interactive" : ""}`}
                 data-floorplans-row
                 role={hasDetail ? "button" : undefined}
                 tabindex={hasDetail ? "0" : undefined}
@@ -218,14 +299,16 @@ function formatExterior(value: number | string | null | undefined) {
                       </div>
 
                       <div class="floorplans-detail-visual">
-                        <img
-                          class="floorplans-detail-image"
-                          src={unit.detail.imageUrl}
-                          width={unit.detail.imageWidth}
-                          height={unit.detail.imageHeight}
-                          alt={`Floor plan for unit ${unit.unitNumber}`}
-                          loading="lazy"
-                        />
+                        <div class="floorplans-detail-viewer">
+                          <FloorplanZoomViewer
+                            client:load
+                            src={unit.detail.imageUrl}
+                            width={unit.detail.imageWidth}
+                            height={unit.detail.imageHeight}
+                            imageAspectRatio={unit.detail.imageAspectRatio}
+                            alt={`Floor plan for unit ${unit.unitNumber}`}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -238,326 +321,334 @@ function formatExterior(value: number | string | null | undefined) {
     </div>
   </div>
 
-  {!units.length && <p class="floorplans-empty">No floorplans available.</p>}
+  {!units.length && <p class="floorplans-empty hw-contain">No floorplans available.</p>}
 </div>
 
-<script is:inline define:vars={{ tableId }}>
+<script>
   (() => {
     const init = () => {
-      const root = document.getElementById(tableId);
-      if (!root) return;
+      const roots = Array.from(document.querySelectorAll("[data-floorplans-table]"));
+      if (!roots.length) return;
 
-      const body = root.querySelector("[data-floorplans-body]");
-      if (!body) return;
+      roots.forEach((root) => {
+        if (!(root instanceof HTMLElement)) return;
 
-      if (root.dataset.floorplansInitialized === "true") {
-        return;
-      }
+        const body = root.querySelector("[data-floorplans-body]");
+        if (!(body instanceof HTMLElement)) return;
 
-      root.dataset.floorplansInitialized = "true";
-      const abortController = new AbortController();
-
-      const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
-      let sortKey = "";
-      let sortDir = "asc";
-      let headerHiddenBeforeModal = false;
-      let lockedScrollY = 0;
-      let lockedScrollbarWidth = 0;
-      let activeScrollLockMode = "none";
-      const modalFadeMs = 220;
-      const modalCloseTimers = new WeakMap();
-      const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
-      const getOpenItem = () =>
-        getItems().find((item) => item.classList.contains("is-modal-open"));
-      const hasOpenModal = () =>
-        document.querySelector("[data-floorplans-modal]:not([hidden])") instanceof HTMLElement;
-      const getLocoScroll = () => {
-        const locoScroll = window.locoScroll;
-        if (
-          locoScroll &&
-          typeof locoScroll.stop === "function" &&
-          typeof locoScroll.start === "function"
-        ) {
-          return locoScroll;
-        }
-
-        return null;
-      };
-      const getCurrentScrollY = () => {
-        const locoScroll = getLocoScroll();
-        const locoY = locoScroll?.lenisInstance?.scroll;
-        if (typeof locoY === "number" && Number.isFinite(locoY)) {
-          return locoY;
-        }
-
-        return (
-          window.scrollY ||
-          document.scrollingElement?.scrollTop ||
-          document.documentElement.scrollTop ||
-          0
-        );
-      };
-      const isHeaderHidden = () =>
-        document.getElementById("header")?.classList.contains("is-hidden") ?? false;
-      const setHeaderHidden = (hidden) => {
-        if (typeof window.__setStickyHeaderHidden === "function") {
-          window.__setStickyHeaderHidden(hidden);
+        if (root.dataset.floorplansInitialized === "true") {
           return;
         }
 
-        document.getElementById("header")?.classList.toggle("is-hidden", hidden);
-      };
-      const lockPageScroll = () => {
-        const locoScroll = getLocoScroll();
-        lockedScrollY = getCurrentScrollY();
+        root.dataset.floorplansInitialized = "true";
+        const abortController = new AbortController();
 
-        if (locoScroll) {
-          activeScrollLockMode = "loco";
-          locoScroll.stop();
-          return;
-        }
+        const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
+        let sortKey = "";
+        let sortDir = "asc";
+        let headerHiddenBeforeModal = false;
+        let lockedScrollY = 0;
+        let lockedScrollbarWidth = 0;
+        let activeScrollLockMode = "none";
+        const modalFadeMs = 400;
+        const modalCloseTimers = new WeakMap();
+        const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
+        const getOpenItem = () =>
+          getItems().find((item) => item.classList.contains("is-modal-open"));
+        const hasOpenModal = () =>
+          document.querySelector("[data-floorplans-modal]:not([hidden])") instanceof HTMLElement;
+        const getLocoScroll = () => {
+          const locoScroll = window.locoScroll;
+          if (
+            locoScroll &&
+            typeof locoScroll.stop === "function" &&
+            typeof locoScroll.start === "function"
+          ) {
+            return locoScroll;
+          }
 
-        activeScrollLockMode = "native";
-        lockedScrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-        document.documentElement.style.setProperty(
-          "--floorplans-scrollbar-compensation",
-          `${lockedScrollbarWidth}px`
-        );
-
-        document.body.style.position = "fixed";
-        document.body.style.top = `-${lockedScrollY}px`;
-        document.body.style.width = "100%";
-        document.body.classList.add("floorplans-modal-open");
-      };
-      const unlockPageScroll = () => {
-        if (hasOpenModal()) return;
-
-        const savedY = lockedScrollY;
-
-        if (activeScrollLockMode === "loco") {
+          return null;
+        };
+        const getCurrentScrollY = () => {
           const locoScroll = getLocoScroll();
-          if (locoScroll?.scrollTo) {
-            locoScroll.scrollTo(savedY, {
-              immediate: true,
-              force: true,
-            });
-          } else {
+          const locoY = locoScroll?.lenisInstance?.scroll;
+          if (typeof locoY === "number" && Number.isFinite(locoY)) {
+            return locoY;
+          }
+
+          return (
+            window.scrollY ||
+            document.scrollingElement?.scrollTop ||
+            document.documentElement.scrollTop ||
+            0
+          );
+        };
+        const isHeaderHidden = () =>
+          document.getElementById("header")?.classList.contains("is-hidden") ?? false;
+        const setHeaderHidden = (hidden) => {
+          if (typeof window.__setStickyHeaderHidden === "function") {
+            window.__setStickyHeaderHidden(hidden);
+            return;
+          }
+
+          document.getElementById("header")?.classList.toggle("is-hidden", hidden);
+        };
+        const lockPageScroll = () => {
+          const locoScroll = getLocoScroll();
+          lockedScrollY = getCurrentScrollY();
+
+          if (locoScroll) {
+            activeScrollLockMode = "loco";
+            locoScroll.stop();
+            return;
+          }
+
+          activeScrollLockMode = "native";
+          lockedScrollbarWidth = Math.max(
+            0,
+            window.innerWidth - document.documentElement.clientWidth
+          );
+          document.documentElement.style.setProperty(
+            "--floorplans-scrollbar-compensation",
+            `${lockedScrollbarWidth}px`
+          );
+
+          document.body.style.position = "fixed";
+          document.body.style.top = `-${lockedScrollY}px`;
+          document.body.style.width = "100%";
+          document.body.classList.add("floorplans-modal-open");
+        };
+        const unlockPageScroll = () => {
+          if (hasOpenModal()) return;
+
+          const savedY = lockedScrollY;
+
+          if (activeScrollLockMode === "loco") {
+            const locoScroll = getLocoScroll();
+            if (locoScroll?.scrollTo) {
+              locoScroll.scrollTo(savedY, {
+                immediate: true,
+                force: true,
+              });
+            } else {
+              window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
+            }
+
+            locoScroll?.start();
+            activeScrollLockMode = "none";
+            return;
+          }
+
+          if (activeScrollLockMode === "native") {
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.width = "";
+            document.body.classList.remove("floorplans-modal-open");
+            document.documentElement.style.removeProperty("--floorplans-scrollbar-compensation");
             window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
           }
 
-          locoScroll?.start();
           activeScrollLockMode = "none";
-          return;
-        }
-
-        if (activeScrollLockMode === "native") {
-          document.body.style.position = "";
-          document.body.style.top = "";
-          document.body.style.width = "";
-          document.body.classList.remove("floorplans-modal-open");
-          document.documentElement.style.removeProperty("--floorplans-scrollbar-compensation");
-          window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
-        }
-
-        activeScrollLockMode = "none";
-      };
-      const clearModalCloseTimer = (modal) => {
-        const closeTimer = modalCloseTimers.get(modal);
-        if (closeTimer) {
-          window.clearTimeout(closeTimer);
-          modalCloseTimers.delete(modal);
-        }
-      };
-      const finalizeItemClose = (item, modal, row, restoreFocus = false) => {
-        clearModalCloseTimer(modal);
-        modal.hidden = true;
-        modal.classList.remove("is-visible", "is-closing");
-
-        if (modal.parentElement !== item) {
-          item.appendChild(modal);
-        }
-
-        unlockPageScroll();
-
-        if (!hasOpenModal()) {
-          setHeaderHidden(headerHiddenBeforeModal);
-
-          if (restoreFocus) {
-            row.focus({ preventScroll: true });
+        };
+        const clearModalCloseTimer = (modal) => {
+          const closeTimer = modalCloseTimers.get(modal);
+          if (closeTimer) {
+            window.clearTimeout(closeTimer);
+            modalCloseTimers.delete(modal);
           }
-        }
-      };
-      const getItemModal = (item, row) => {
-        const modalId = row?.getAttribute("aria-controls");
-        if (modalId) {
-          const modalById = document.getElementById(modalId);
-          if (modalById instanceof HTMLElement) {
-            return modalById;
-          }
-        }
-
-        const modalInItem = item.querySelector("[data-floorplans-modal]");
-        return modalInItem instanceof HTMLElement ? modalInItem : null;
-      };
-      const setItemOpen = (item, open, restoreFocus = false) => {
-        const row = item.querySelector("[data-floorplans-row]");
-        const modal = row instanceof HTMLElement ? getItemModal(item, row) : null;
-        const label = item.querySelector("[data-floorplans-toggle-label]");
-
-        if (!(row instanceof HTMLElement) || !(modal instanceof HTMLElement)) return;
-
-        item.classList.toggle("is-modal-open", open);
-        row.setAttribute("aria-expanded", open ? "true" : "false");
-
-        if (open) {
+        };
+        const finalizeItemClose = (item, modal, row, restoreFocus = false) => {
           clearModalCloseTimer(modal);
-          if (modal.parentElement !== document.body) {
-            document.body.appendChild(modal);
+          modal.hidden = true;
+          modal.classList.remove("is-visible", "is-closing");
+
+          if (modal.parentElement !== item) {
+            item.appendChild(modal);
           }
 
-          modal.hidden = false;
-          modal.classList.remove("is-closing", "is-visible");
-          headerHiddenBeforeModal = isHeaderHidden();
-          setHeaderHidden(false);
-          lockPageScroll();
-          requestAnimationFrame(() => {
-            if (!modal.hidden) {
-              modal.classList.add("is-visible");
-            }
-          });
+          unlockPageScroll();
 
-          const closeButton = modal.querySelector("[data-floorplans-close-button]");
-          if (closeButton instanceof HTMLElement) {
-            closeButton.focus({ preventScroll: true });
+          if (!hasOpenModal()) {
+            setHeaderHidden(headerHiddenBeforeModal);
+
+            if (restoreFocus) {
+              row.focus({ preventScroll: true });
+            }
+          }
+        };
+        const getItemModal = (item, row) => {
+          const modalId = row?.getAttribute("aria-controls");
+          if (modalId) {
+            const modalById = document.getElementById(modalId);
+            if (modalById instanceof HTMLElement) {
+              return modalById;
+            }
+          }
+
+          const modalInItem = item.querySelector("[data-floorplans-modal]");
+          return modalInItem instanceof HTMLElement ? modalInItem : null;
+        };
+        const setItemOpen = (item, open, restoreFocus = false) => {
+          const row = item.querySelector("[data-floorplans-row]");
+          const modal = row instanceof HTMLElement ? getItemModal(item, row) : null;
+          const label = item.querySelector("[data-floorplans-toggle-label]");
+
+          if (!(row instanceof HTMLElement) || !(modal instanceof HTMLElement)) return;
+
+          item.classList.toggle("is-modal-open", open);
+          row.setAttribute("aria-expanded", open ? "true" : "false");
+
+          if (open) {
+            clearModalCloseTimer(modal);
+
+            if (modal.parentElement !== document.body) {
+              document.body.appendChild(modal);
+            }
+
+            modal.hidden = false;
+            modal.classList.remove("is-closing", "is-visible");
+            headerHiddenBeforeModal = isHeaderHidden();
+            setHeaderHidden(false);
+            lockPageScroll();
+            requestAnimationFrame(() => {
+              if (!modal.hidden) {
+                modal.classList.add("is-visible");
+              }
+            });
+
+            const closeButton = modal.querySelector("[data-floorplans-close-button]");
+            if (closeButton instanceof HTMLElement) {
+              closeButton.focus({ preventScroll: true });
+            }
+
+            if (label instanceof HTMLElement) {
+              label.textContent = label.dataset.expandedLabel || "Close";
+            }
+
+            return;
           }
 
           if (label instanceof HTMLElement) {
-            label.textContent = label.dataset.expandedLabel || "Close";
+            label.textContent = label.dataset.collapsedLabel || "View";
           }
 
-          return;
-        }
+          clearModalCloseTimer(modal);
+          modal.classList.remove("is-visible");
+          modal.classList.add("is-closing");
 
-        if (label instanceof HTMLElement) {
-          label.textContent = label.dataset.collapsedLabel || "View";
-        }
+          const closeTimer = window.setTimeout(() => {
+            finalizeItemClose(item, modal, row, restoreFocus);
+          }, modalFadeMs);
+          modalCloseTimers.set(modal, closeTimer);
+        };
+        const closeOpenItem = (restoreFocus = false) => {
+          const item = getOpenItem();
+          if (!item) {
+            unlockPageScroll();
+            return;
+          }
 
-        clearModalCloseTimer(modal);
-        modal.classList.remove("is-visible");
-        modal.classList.add("is-closing");
+          setItemOpen(item, false, restoreFocus);
+        };
+        const openItem = (item) => {
+          if (item.classList.contains("is-modal-open")) return;
 
-        const closeTimer = window.setTimeout(() => {
-          finalizeItemClose(item, modal, row, restoreFocus);
-        }, modalFadeMs);
-        modalCloseTimers.set(modal, closeTimer);
-      };
-      const closeOpenItem = (restoreFocus = false) => {
-        const item = getOpenItem();
-        if (!item) {
-          unlockPageScroll();
-          return;
-        }
+          closeOpenItem();
+          setItemOpen(item, true);
+        };
 
-        setItemOpen(item, false, restoreFocus);
-      };
-      const openItem = (item) => {
-        if (item.classList.contains("is-modal-open")) return;
+        const updateButtons = () => {
+          buttons.forEach((button) => {
+            const active = button.dataset.sortKey === sortKey;
+            const indicator = button.querySelector(".floorplans-sort-indicator");
+            if (indicator) {
+              indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
+            }
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        };
 
-        closeOpenItem();
-        setItemOpen(item, true);
-      };
+        const sortRows = (key, dir) => {
+          const items = getItems();
 
-      const updateButtons = () => {
+          items.sort((itemA, itemB) => {
+            const valueA = Number(itemA.dataset[key] || 0);
+            const valueB = Number(itemB.dataset[key] || 0);
+
+            if (valueA !== valueB) {
+              return dir === "asc" ? valueA - valueB : valueB - valueA;
+            }
+
+            return (itemA.dataset.unitNumber || "").localeCompare(
+              itemB.dataset.unitNumber || "",
+              undefined,
+              { numeric: true, sensitivity: "base" }
+            );
+          });
+
+          items.forEach((item) => body.appendChild(item));
+        };
+
+        getItems().forEach((item) => {
+          const row = item.querySelector("[data-floorplans-row]");
+          const modal = item.querySelector("[data-floorplans-modal]");
+
+          if (row instanceof HTMLElement && row.getAttribute("role") === "button") {
+            row.addEventListener("click", (event) => {
+              if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+              openItem(item);
+            });
+
+            row.addEventListener("keydown", (event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              openItem(item);
+            });
+          }
+
+          if (modal instanceof HTMLElement) {
+            modal.addEventListener("click", (event) => {
+              if (!(event.target instanceof HTMLElement)) return;
+              if (event.target.closest("[data-floorplans-close]")) {
+                closeOpenItem(true);
+              }
+            });
+          }
+        });
+
         buttons.forEach((button) => {
-          const active = button.dataset.sortKey === sortKey;
-          const indicator = button.querySelector(".floorplans-sort-indicator");
-          if (indicator) {
-            indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
-          }
-          button.setAttribute("aria-pressed", active ? "true" : "false");
-        });
-      };
+          button.addEventListener("click", () => {
+            const key = button.dataset.sortKey;
+            if (!key) return;
 
-      const sortRows = (key, dir) => {
-        const items = getItems();
-
-        items.sort((itemA, itemB) => {
-          const valueA = Number(itemA.dataset[key] || 0);
-          const valueB = Number(itemB.dataset[key] || 0);
-
-          if (valueA !== valueB) {
-            return dir === "asc" ? valueA - valueB : valueB - valueA;
-          }
-
-          return (itemA.dataset.unitNumber || "").localeCompare(
-            itemB.dataset.unitNumber || "",
-            undefined,
-            { numeric: true, sensitivity: "base" }
-          );
+            closeOpenItem();
+            sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+            sortKey = key;
+            sortRows(key, sortDir);
+            updateButtons();
+          });
         });
 
-        items.forEach((item) => body.appendChild(item));
-      };
-
-      getItems().forEach((item) => {
-        const row = item.querySelector("[data-floorplans-row]");
-        const modal = item.querySelector("[data-floorplans-modal]");
-
-        if (row instanceof HTMLElement && row.getAttribute("role") === "button") {
-          row.addEventListener("click", (event) => {
-            if (event.target instanceof HTMLElement && event.target.closest("button")) return;
-            openItem(item);
-          });
-
-          row.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter" && event.key !== " ") return;
-            event.preventDefault();
-            openItem(item);
-          });
-        }
-
-        if (modal instanceof HTMLElement) {
-          modal.addEventListener("click", (event) => {
-            if (!(event.target instanceof HTMLElement)) return;
-            if (event.target.closest("[data-floorplans-close]")) {
+        document.addEventListener(
+          "keydown",
+          (event) => {
+            if (event.key === "Escape") {
               closeOpenItem(true);
             }
-          });
-        }
+          },
+          { signal: abortController.signal }
+        );
+
+        updateButtons();
+        document.addEventListener(
+          "astro:before-swap",
+          () => {
+            closeOpenItem();
+            abortController.abort();
+          },
+          { once: true }
+        );
       });
-
-      buttons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const key = button.dataset.sortKey;
-          if (!key) return;
-
-          closeOpenItem();
-          sortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
-          sortKey = key;
-          sortRows(key, sortDir);
-          updateButtons();
-        });
-      });
-
-      document.addEventListener(
-        "keydown",
-        (event) => {
-          if (event.key === "Escape") {
-            closeOpenItem(true);
-          }
-        },
-        { signal: abortController.signal }
-      );
-
-      updateButtons();
-      document.addEventListener(
-        "astro:before-swap",
-        () => {
-          closeOpenItem();
-          abortController.abort();
-        },
-        { once: true }
-      );
     };
 
     init();
@@ -578,9 +669,16 @@ function formatExterior(value: number | string | null | undefined) {
     overflow-x: auto;
   }
 
+  .floorplans-wrap {
+    width: 100%;
+  }
+
   .floorplans-table {
     width: 100%;
     min-width: 720px;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1.33rem;
+    line-height: 1.75rem;
   }
 
   .floorplans-head {
@@ -588,24 +686,32 @@ function formatExterior(value: number | string | null | undefined) {
     grid-template-columns: var(--floorplans-columns);
   }
 
+  .floorplans-head-row {
+    border-bottom: 1px solid var(--brown);
+  }
+
   .floorplans-head,
   .floorplans-row {
     display: grid;
     grid-template-columns: var(--floorplans-columns);
     width: 100%;
+    justify-content: space-between;
   }
 
   .floorplans-cell {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 0.75rem 0.5rem;
+    justify-content: center;
+    padding: 1.25rem 0.5rem;
+    text-align: center;
     vertical-align: middle;
     min-width: 0;
+    font-weight: 400;
   }
 
   .floorplans-item {
-    border-bottom: 1px solid #d4d4d4;
+    border-bottom: 1px solid var(--brown);
   }
 
   .floorplans-row--interactive {
@@ -623,9 +729,31 @@ function formatExterior(value: number | string | null | undefined) {
   }
 
   .floorplans-head .floorplans-cell {
-    font-weight: 600;
-    border-top: 1px solid #d4d4d4;
-    border-bottom: 1px solid #d4d4d4;
+    font-weight: 700;
+  }
+
+  .floorplans-head .floorplans-cell--unit {
+    font-weight: 400;
+  }
+
+  .floorplans-cell--unit {
+    font-family: "Figure", "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 400;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .floorplans-cell--action {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .floorplans-cell--metric,
+  .floorplans-cell--orientation {
+    justify-content: center;
+    text-align: center;
   }
 
   .floorplans-sort-button {
@@ -633,32 +761,54 @@ function formatExterior(value: number | string | null | undefined) {
     background: transparent;
     border: 0;
     cursor: pointer;
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
     font: inherit;
+    font-weight: inherit;
     padding: 0;
-    gap: 0.35rem;
-    text-align: left;
+    text-align: center;
     width: 100%;
     white-space: nowrap;
   }
 
   .floorplans-sort-label {
-    flex: 0 1 auto;
+    grid-column: 2;
+    justify-self: center;
   }
 
   .floorplans-sort-indicator {
-    display: inline-block;
-    flex: 0 0 1ch;
-    min-width: 1ch;
+    grid-column: 3;
+    justify-self: start;
+    width: 1ch;
+    margin-left: 0.35rem;
     text-align: center;
   }
 
   .floorplans-view-link {
-    display: inline-block;
-    padding: 0.35rem 0.75rem;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.75rem;
+    padding: 4px 20px 2px;
     border: 1px solid currentColor;
+    border-radius: 999px;
     text-decoration: none;
     white-space: nowrap;
+    line-height: 1;
+  }
+
+  .floorplans-view-link::after {
+    content: "";
+    width: 0.5625rem;
+    height: 0.9375rem;
+    margin-left: 0.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg%20width%3D%229%22%20height%3D%2215%22%20viewBox%3D%220%200%209%2015%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0.353516%2014.3535L7.35352%207.35352L0.353516%200.353516%22%20stroke%3D%22black%22/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    flex: 0 0 auto;
   }
 
   .floorplans-modal[hidden] {
@@ -675,7 +825,11 @@ function formatExterior(value: number | string | null | undefined) {
     z-index: 9997;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    transition: opacity 0.7s var(--cubicBez);
+  }
+
+  .floorplans-modal.is-closing {
+    transition-duration: 0.4s;
   }
 
   .floorplans-modal.is-visible,
@@ -708,7 +862,6 @@ function formatExterior(value: number | string | null | undefined) {
     appearance: none;
     position: absolute;
     top: 1rem;
-    right: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -723,6 +876,10 @@ function formatExterior(value: number | string | null | undefined) {
     font-size: 0;
     line-height: 0;
     padding: 0;
+  }
+
+  .floorplans-modal-close {
+    right: 1rem;
   }
 
   .floorplans-modal-close::before,
@@ -748,12 +905,12 @@ function formatExterior(value: number | string | null | undefined) {
   .floorplans-detail-inner {
     position: relative;
     height: 100%;
-    padding: 1.5rem;
+    padding: 0 1.5rem 1.5rem;
   }
 
   .floorplans-detail-copy {
     position: absolute;
-    top: 1.5rem;
+    top: 1rem;
     left: 1.5rem;
     z-index: 1;
     max-width: min(18rem, calc(100% - 3rem));
@@ -762,7 +919,7 @@ function formatExterior(value: number | string | null | undefined) {
 
   .floorplans-detail-meta {
     font-family: "Figure", "Hanken Grotesk", system-ui, sans-serif;
-    font-weight: 700;
+    font-weight: 400;
     text-transform: uppercase;
     font-size: 1.5rem;
     line-height: 2.25rem;
@@ -778,16 +935,23 @@ function formatExterior(value: number | string | null | undefined) {
     justify-content: center;
     min-width: 0;
     height: 100%;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    position: relative;
   }
 
-  .floorplans-detail-image {
+  .floorplans-detail-viewer {
+    --floorplans-reset-top: 1rem;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .floorplans-detail-viewer :global(astro-island) {
     display: block;
-    width: auto;
-    max-width: 100%;
-    max-height: min(calc((100vh - var(--headerHeight)) * 0.87), 100%);
-    max-height: min(calc((100dvh - var(--headerHeight)) * 0.87), 100%);
-    height: auto;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
   }
 
   .floorplans-empty {
@@ -797,17 +961,24 @@ function formatExterior(value: number | string | null | undefined) {
   @media (max-width: 48rem) {
     .floorplans-modal-close {
       top: 0.75rem;
+    }
+
+    .floorplans-modal-close {
       right: 0.75rem;
     }
 
     .floorplans-detail-inner {
-      padding: 1rem;
+      padding: 0 1rem 1rem;
     }
 
     .floorplans-detail-copy {
       top: 1rem;
       left: 1rem;
       max-width: min(16rem, calc(100% - 2rem));
+    }
+
+    .floorplans-detail-viewer {
+      --floorplans-reset-top: 0.75rem;
     }
   }
 </style>
