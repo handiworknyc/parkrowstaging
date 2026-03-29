@@ -4,11 +4,13 @@ export const prerender = true;
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
 import { getFlexiblePageByUri } from "../lib/api";
+import PageContent from "../components/wp/PageContent.astro";
 
 // ✅ IMPORT HELPER FUNCTIONS
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads"; // <--- NEW IMPORT
+import { getFlexiblePageContentHtml } from "../lib/wp/page";
 
 let page = null;
 try {
@@ -19,6 +21,7 @@ try {
 
 const title = page?.title ?? "Park Row";
 const layouts = page?.layouts ?? [];
+const contentHtml = getFlexiblePageContentHtml(page);
 
 let lcpData = null;
 let lcpVideo = null;
@@ -41,5 +44,9 @@ if (layouts.length > 0) {
   lcpVideo={lcpVideo} 
   preloads={preloads}
 >
-  {layouts.length ? <LayoutRenderer layouts={layouts} /> : <p>WP unavailable right now.</p>}
+  {page
+    ? layouts.length
+      ? <LayoutRenderer layouts={layouts} />
+      : <PageContent html={contentHtml} />
+    : <p>WP unavailable right now.</p>}
 </BaseLayout>

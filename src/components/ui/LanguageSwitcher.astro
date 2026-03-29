@@ -2,9 +2,10 @@
 interface Props {
   position?: 'header' | 'footer' | 'absolute';
   className?: string;
+  hidden?: boolean;
 }
 
-const { position = 'header', className = '' } = Astro.props;
+const { position = 'header', className = '', hidden = false } = Astro.props;
 
 const wrapperClass = [
   'language-switcher',
@@ -13,7 +14,7 @@ const wrapperClass = [
 ].filter(Boolean).join(' ');
 ---
 
-<div class={wrapperClass}>
+<div class={wrapperClass} style={hidden ? 'display: none;' : undefined} aria-hidden={hidden ? 'true' : undefined}>
   <div class="flex gap-2 items-center">
     <a
       id="lang-en"

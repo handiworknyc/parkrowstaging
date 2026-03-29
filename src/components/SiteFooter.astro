@@ -2,10 +2,13 @@
 import address from "../content/wp/schema-address.json";
 
 const hasAddress = address && address.streetAddress;
-
+const { lang = "en" } = Astro.props;
+const langPrefix = lang === "zh" ? "/zh" : "";
+const termsHref = `${langPrefix}/terms-of-use/`;
+const privacyHref = `${langPrefix}/privacy-policy/`;
 ---
 
-<div class="bg-darkgreen pt-14 pb-14 c-white" id="footer" transition:persist>
+<div class="site-footer bg-darkgreen pt-14 pb-14 c-white" id="footer" transition:persist>
   <div class="hw-contain">
     <div class="footer-top mb-5 items-start text-[1.1rem] flex-wrap">
       <div
@@ -57,15 +60,355 @@ const hasAddress = address && address.streetAddress;
 	  </div>
     </div>
 
-    <div class="footer-bottom flex-wrap pt-7">
+    <div class="footer-bottom justify-start flex-wrap pt-7">
 		
       <a href="https://bosadevleopment.com">
         <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
       </a>
 
-      <a class="ml-auto items-end" href="">
-        <img src="/images/equal-housing.svg" loading="lazy" alt="Equal Opportunity Housing" />
-      </a>
+      <div class="footer-bottom-right ml-auto items-end">
+        <div class="footer-meta-links" aria-label="Cookie settings and legal links">
+          <button
+            type="button"
+            class="footer-meta-link footer-cookie-trigger"
+            data-cookie-settings-open
+            aria-controls="footer-cookie-overlay"
+            aria-haspopup="dialog"
+          >
+            Cookie Settings
+          </button>
+          <a class="footer-meta-link" href={termsHref}>Terms of Use</a>
+          <a class="footer-meta-link" href={privacyHref}>Privacy Policy</a>
+        </div>
+
+        <a class="footer-housing-link" href="">
+          <img src="/images/equal-housing.svg" loading="lazy" alt="Equal Opportunity Housing" />
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-cookie-overlay" class="footer-cookie-overlay" aria-hidden="true">
+    <div class="hw-contain footer-cookie-overlay-inner">
+      <div
+        class="footer-cookie-panel"
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="footer-cookie-title"
+      >
+        <div id="footer-cookie-title" class="footer-cookie-kicker">Cookie Settings</div>
+
+        <p class="footer-cookie-text">
+          We use cookies and other technologies for marketing, to analyze site performance,
+          and to improve your experience on our site. We also share information about your
+          use of our site with our social media, advertising and analytics partners using
+          these technologies. By clicking "Accept" you agree to the use of these
+          technologies as described in our
+          <a href={privacyHref}>Privacy Policy</a>. If you click Reject, only strictly
+          necessary technologies will be used.
+        </p>
+
+        <div class="footer-cookie-actions">
+          <button type="button" class="footer-cookie-button" data-cookie-consent="accepted">
+            Accept
+          </button>
+          <button
+            type="button"
+            class="footer-cookie-button is-secondary"
+            data-cookie-consent="rejected"
+          >
+            Reject
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<style lang="scss">
+  .site-footer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .footer-bottom-right {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.75rem;
+  }
+
+  .footer-housing-link {
+    display: inline-flex;
+    align-items: flex-end;
+    flex: 0 0 auto;
+  }
+
+  .footer-meta-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.35rem;
+  }
+
+  .footer-meta-link {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.08rem;
+    line-height: 1.4;
+    transition: color 0.2s ease, opacity 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  .footer-cookie-overlay {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: var(--darkgreen);
+    min-height: var(--footer-cookie-min-height, 0px);
+    max-height: 100vh;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+
+    &.is-active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+  }
+
+  .footer-cookie-overlay-inner {
+    width: 100%;
+    min-height: var(--footer-cookie-min-height, 0px);
+    display: flex;
+    align-items: center;
+  }
+
+  .footer-cookie-panel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "title text actions";
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 3rem 0;
+  }
+
+  .footer-cookie-kicker {
+    grid-area: title;
+    margin: 0;
+    font-size: calc(1rem + 2vw);
+    line-height: 0.95;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .footer-cookie-text {
+    grid-area: text;
+    margin: 0;
+    padding: 0 7vw;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.78);
+
+    a {
+      color: var(--white);
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+  }
+
+  .footer-cookie-actions {
+    grid-area: actions;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .footer-cookie-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    border-radius: 999px;
+    min-width: 120px;
+    padding: 0.92rem 1.35rem;
+    cursor: pointer;
+    font-size: 1.08rem;
+    line-height: 1;
+    flex: 0 0 auto;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--white);
+
+    &.is-active {
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--darkgreen);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.32);
+      color: var(--white);
+    }
+
+    &.is-secondary {
+      background: transparent;
+    }
+  }
+
+  @media all and (max-width: 1159px) {
+    .footer-cookie-panel {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "title actions"
+        "text actions";
+    }
+
+    .footer-cookie-text {
+      padding: 0 7vw 0 0;
+    }
+  }
+
+  @media all and (max-width: 59.375em) {
+    .footer-bottom-right {
+      width: 100%;
+      margin-top: 1.5rem;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .footer-meta-links {
+      justify-content: flex-start;
+    }
+  }
+
+  @media all and (max-width: 40em) {
+    .footer-meta-links {
+      gap: 0.35rem 1rem;
+    }
+
+    .footer-cookie-panel {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "title"
+        "text"
+        "actions";
+    }
+
+    .footer-cookie-text {
+      padding: 0;
+    }
+
+    .footer-cookie-actions {
+      width: 100%;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .footer-cookie-button {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  function initFooterCookieSettings() {
+    const footer = document.getElementById("footer");
+    if (!footer) return;
+
+    const overlay = footer.querySelector("#footer-cookie-overlay");
+    const openButtons = footer.querySelectorAll("[data-cookie-settings-open]");
+    const consentButtons = footer.querySelectorAll("[data-cookie-consent]");
+    const acceptButton = footer.querySelector('[data-cookie-consent="accepted"]');
+
+    if (!overlay || consentButtons.length === 0) return;
+
+    const consentApi = window.ParkRowConsent;
+    const syncOverlayHeight = () => {
+      const footerHeight = Math.ceil(footer.getBoundingClientRect().height);
+      overlay.style.setProperty("--footer-cookie-min-height", `${footerHeight}px`);
+    };
+
+    const setOverlayOpen = (isOpen, trigger) => {
+      syncOverlayHeight();
+      document.documentElement.classList.toggle("cookie-settings-open", isOpen);
+      overlay.classList.toggle("is-active", isOpen);
+      overlay.setAttribute("aria-hidden", String(!isOpen));
+
+      if (isOpen) {
+        footer._cookieSettingsTrigger = trigger || document.activeElement;
+        window.requestAnimationFrame(() => acceptButton?.focus());
+        return;
+      }
+
+      const lastTrigger = footer._cookieSettingsTrigger;
+      if (lastTrigger instanceof HTMLElement) {
+        lastTrigger.focus();
+      }
+    };
+
+    if (footer.dataset.cookieSettingsReady !== "true") {
+      footer.dataset.cookieSettingsReady = "true";
+      syncOverlayHeight();
+
+      openButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          setOverlayOpen(true, button);
+        });
+      });
+
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+          setOverlayOpen(false);
+        }
+      });
+
+      consentButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const value = button.dataset.cookieConsent;
+          if (!value || !consentApi?.write) return;
+
+          consentApi.write(value);
+          setOverlayOpen(false);
+        });
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && overlay.classList.contains("is-active")) {
+          setOverlayOpen(false);
+        }
+      });
+
+      window.addEventListener("resize", syncOverlayHeight);
+
+      if ("ResizeObserver" in window) {
+        const overlayHeightObserver = new ResizeObserver(syncOverlayHeight);
+        overlayHeightObserver.observe(footer);
+      }
+    }
+
+    syncOverlayHeight();
+    setOverlayOpen(false);
+  }
+
+  initFooterCookieSettings();
+  document.addEventListener("astro:page-load", initFooterCookieSettings);
+</script>

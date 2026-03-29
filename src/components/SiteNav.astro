@@ -1,6 +1,7 @@
 ---
 import { getHeaderMenu } from "../lib/wp/getHeaderMenu";
 import { getHeaderMenuCN } from "../lib/wp/getHeaderMenuCn";
+import { getHideLanguage } from "../lib/wp/getHideLanguage";
 import LanguageSwitcher from "../components/ui/LanguageSwitcher.astro";
 
 interface Props {
@@ -54,6 +55,7 @@ if (!_cachedHeaderMenu) {
 // FETCH CN TITLES (SEPARATE, SAFE)
 // -----------------------------------------------------------------------------
 const headerMenuCN = await getHeaderMenuCN();
+const hideLanguage = await getHideLanguage();
 
 
 const headerMenu = _cachedHeaderMenu;
@@ -68,7 +70,7 @@ const headerMenu = _cachedHeaderMenu;
   <div class="header-inner">
     <div class="hw-contain flex-wrap tal align-items-center">
 
-      <LanguageSwitcher position="header" key={Astro.url.pathname} />
+      <LanguageSwitcher position="header" hidden={hideLanguage} key={Astro.url.pathname} />
 
       <a class="logo pr" id="header-logo-a" href={homeHref} aria-label="Home">
   <svg 

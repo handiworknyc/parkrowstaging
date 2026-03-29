@@ -7,6 +7,8 @@ export type PreviewFlexiblePage = {
   uri?: string;
   title?: string;
   layouts?: any[];
+  content?: string | { rendered?: string };
+  contentHtml?: string;
   _syncedAt?: string;
   [key: string]: unknown;
 };

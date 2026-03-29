@@ -4,6 +4,8 @@ export const prerender = false;
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
 import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+import PageContent from "../../components/wp/PageContent.astro";
+import { getFlexiblePageContentHtml } from "../../lib/wp/page";
 
 const PREVIEW_SECRET = (
   import.meta.env.PREVIEW_SECRET ||
@@ -47,6 +49,8 @@ if (hasPreviewAccess && !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
+
+const contentHtml = getFlexiblePageContentHtml(page);
 ---
 
 {hasPreviewAccess && page ? (
@@ -56,7 +60,11 @@ if (hasPreviewAccess && !page) {
     noIndex={true}
     isPreview={true}
   >
-    <LayoutRenderer layouts={page.layouts || []} skipSplash={true} />
+    {page.layouts?.length ? (
+      <LayoutRenderer layouts={page.layouts} skipSplash={true} />
+    ) : (
+      <PageContent html={contentHtml} />
+    )}
   </BaseLayout>
 ) : (
   "Page Not found"

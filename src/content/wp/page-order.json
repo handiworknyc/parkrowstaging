@@ -1,5 +1,9 @@
 [
   {
+    "uri": "/terms-of-use/",
+    "title": "Terms of Use"
+  },
+  {
     "uri": "/inquire/",
     "title": "Inquire"
   },
@@ -34,5 +38,9 @@
   {
     "uri": "/",
     "title": "Home"
+  },
+  {
+    "uri": "/privacy-policy/",
+    "title": "Privacy Policy"
   }
 ]

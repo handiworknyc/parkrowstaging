@@ -1407,6 +1407,7 @@ ul.two-col-list.wide-list-columns {
     
     /* FASTER transitions for instant feel */
     transition: transform 0.2s cubic-bezier(0.2, 0.0, 0, 1.0), /* Faster, snappier easing */
+                opacity 0.2s ease-out,
                 background-color 0.3s ease-out,
                 backdrop-filter 0.3s ease-out;
   }
@@ -1424,6 +1425,11 @@ ul.two-col-list.wide-list-columns {
 /* Hide on scroll down (when NOT at footer) */
 .mob-bottom-bar.is-hidden:not(.footer-visible .mob-bottom-bar) {
   transform: translateZ(0) translateY(100%);
+}
+
+.cookie-settings-open .mob-bottom-bar {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Modal states */

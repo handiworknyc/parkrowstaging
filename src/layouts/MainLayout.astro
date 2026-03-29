@@ -162,6 +162,77 @@
 		HW.$html = document.documentElement;
 	</script>
 
+	<script is:inline>
+		(() => {
+			const storageKey = "parkrow-cookie-consent";
+			const consentAttr = "data-cookie-consent";
+
+			const readConsent = () => {
+				try {
+					return window.localStorage.getItem(storageKey);
+				} catch {
+					return null;
+				}
+			};
+
+			const syncKnownTrackers = (value) => {
+				const granted = value === "accepted";
+
+				if (typeof window.gtag === "function") {
+					window.gtag("consent", "update", {
+						analytics_storage: granted ? "granted" : "denied",
+						ad_storage: granted ? "granted" : "denied",
+						ad_user_data: granted ? "granted" : "denied",
+						ad_personalization: granted ? "granted" : "denied",
+					});
+				}
+
+				if (Array.isArray(window.dataLayer)) {
+					window.dataLayer.push({
+						event: "parkrow_cookie_consent",
+						parkrow_cookie_consent: value || "pending",
+					});
+				}
+			};
+
+			const applyConsent = (value) => {
+				if (value) {
+					document.documentElement.setAttribute(consentAttr, value);
+				} else {
+					document.documentElement.removeAttribute(consentAttr);
+				}
+
+				syncKnownTrackers(value);
+			};
+
+			const writeConsent = (value) => {
+				if (value !== "accepted" && value !== "rejected") return;
+
+				try {
+					window.localStorage.setItem(storageKey, value);
+				} catch {}
+
+				applyConsent(value);
+				window.dispatchEvent(
+					new CustomEvent("parkrow:cookie-consent", {
+						detail: { value },
+					})
+				);
+			};
+
+			applyConsent(readConsent());
+
+			window.ParkRowConsent = {
+				storageKey,
+				read: readConsent,
+				write: writeConsent,
+				allowsTracking() {
+					return readConsent() === "accepted";
+				},
+			};
+		})();
+	</script>
+
 	{/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
 	{shouldWarmCriticalVideo && (
 		<link rel="modulepreload" href={videoJsUrl} fetchpriority="high" />
@@ -637,6 +708,33 @@
 	const isHome = () => document.body.classList.contains("home");
 	const isFirstLoad = () => HW.$html.classList.contains("first-load");
 
+	function normalizeRoutePath(pathname = "/") {
+		let normalized = String(pathname || "/").trim();
+		if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+		normalized = normalized.replace(/^\/zh(?=\/|$)/, "") || "/";
+		if (!normalized.endsWith("/")) normalized = `${normalized}/`;
+		return normalized;
+	}
+
+	function shouldResetScrollForRoute(pathname = window.location.pathname) {
+		const normalized = normalizeRoutePath(pathname);
+		return normalized === "/privacy-policy/" || normalized === "/terms-of-use/";
+	}
+
+	function resetScrollToTop() {
+		if (locoScroll && shouldUseLocomotiveScroll()) {
+			locoScroll.scrollTo(0, {
+				duration: 0,
+				disableLerp: true,
+				immediate: true,
+			});
+		}
+
+		window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+		document.documentElement.scrollTop = 0;
+		document.body.scrollTop = 0;
+	}
+
 	function shouldUseLocomotiveScroll() {
 		if (!isIOS) return true;
 		return CONFIG.ENABLE_LOCO_ON_MOBILE;
@@ -690,7 +788,17 @@
 		locoScroll?.stop();
 	});
 
+	document.addEventListener("astro:before-swap", (event) => {
+		const nextPath = event.newDocument?.location?.pathname || window.location.pathname;
+		if (!shouldResetScrollForRoute(nextPath)) return;
+		resetScrollToTop();
+	});
+
 	document.addEventListener("astro:after-swap", () => {
+		if (shouldResetScrollForRoute()) {
+			requestAnimationFrame(() => resetScrollToTop());
+		}
+
 		if (!locoScroll) return;
 
 		if (!isFirstLoad() || !isScrollLocked()) {

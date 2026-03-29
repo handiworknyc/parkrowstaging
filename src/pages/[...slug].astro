@@ -5,10 +5,12 @@ export const prerender = true;
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
 import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
+import PageContent from "../components/wp/PageContent.astro";
 
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads";
+import { getFlexiblePageContentHtml } from "../lib/wp/page";
 
 // ---------------- Static paths ----------------
 export async function getStaticPaths() {
@@ -32,6 +34,7 @@ const lang = 'en';
 
 // ---------------- Fetch ----------------
 const page = await getFlexiblePageByUri(uri);
+const contentHtml = getFlexiblePageContentHtml(page);
 
 if (!page) {
   Astro.response.status = 404;
@@ -58,7 +61,11 @@ if (page?.layouts) {
     preloads={preloads}
     lang={lang}
   >
-    <LayoutRenderer layouts={page.layouts || []} lang={lang} />
+    {page.layouts?.length ? (
+      <LayoutRenderer layouts={page.layouts} lang={lang} />
+    ) : (
+      <PageContent html={contentHtml} />
+    )}
   </BaseLayout>
 ) : (
   "Page Not found"

@@ -1,0 +1,82 @@
+---
+import * as cheerio from "cheerio";
+
+interface Props {
+  html?: string;
+}
+
+const { html = "" } = Astro.props as Props;
+
+function normalizeContentHtml(rawHtml: string): string {
+  const normalized = typeof rawHtml === "string" ? rawHtml.trim() : "";
+
+  if (!normalized) {
+    return "";
+  }
+
+  const $ = cheerio.load(normalized, null, false);
+  const firstDirectH2 = $.root().children("h2").first();
+
+  if (firstDirectH2.length) {
+    const promotedHeading = $("<h1></h1>");
+
+    Object.entries(firstDirectH2.attr() || {}).forEach(([name, value]) => {
+      if (typeof value === "string") {
+        promotedHeading.attr(name, value);
+      }
+    });
+
+    promotedHeading.addClass("post-content-fallback__lead-heading");
+    promotedHeading.html(firstDirectH2.html() || "");
+    firstDirectH2.replaceWith(promotedHeading);
+  }
+
+  return $.root().html() || normalized;
+}
+
+const contentHtml = normalizeContentHtml(html);
+---
+
+{contentHtml ? (
+  <section class="hw-contain pt-[calc(var(--headerHeight)+4rem)] pb-24 lg:pb-32">
+    <article
+      class="post-content post-content-fallback max-w-[60rem] mx-auto text-[1.4rem] leading-[2rem]"
+      set:html={contentHtml}
+    />
+  </section>
+) : (
+  <div class="prose mx-auto my-12 text-center opacity-70">
+    <p>No content yet.</p>
+  </div>
+)}
+
+<style>
+  .post-content-fallback :global(:is(h1, h2, h3, h4, h5, h6)) {
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
+  }
+
+  .post-content-fallback :global(h1) {
+    font-size: 2.5rem;
+    line-height: 3rem;
+  }
+
+  .post-content-fallback :global(h2) {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+
+  .post-content-fallback :global(h3) {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .post-content-fallback :global(h4) {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__lead-heading) {
+    margin-bottom: 0;
+    text-align: center;
+  }
+</style>

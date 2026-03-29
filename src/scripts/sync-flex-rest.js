@@ -652,6 +652,15 @@ async function fetchFloorplanDisclaimer() {
   return json;
 }
 
+async function fetchHideLanguage() {
+  const url = new URL("/wp-json/astro/v1/hide-language", WP_BASE);
+  const { json } = await fetchJSON(url);
+
+  return {
+    hide_language: !!json?.hide_language,
+  };
+}
+
 /* -------------------------------------------
    SEO-Friendly Download & Cache
    Format: "my-image-hash.jpg.webp"
@@ -989,6 +998,7 @@ async function run() {
   const outFloorPlanDetail = path.join(process.cwd(), "src", "content", "wp", "floor-plan-detail.json");
   const outPanoramicViews = path.join(process.cwd(), "src", "content", "wp", "panoramic-views.json");
   const outFloorplanDisclaimer = path.join(process.cwd(), "src", "content", "wp", "floorplan-disclaimer.json");
+  const outHideLanguage = path.join(process.cwd(), "src", "content", "wp", "hide-language.json");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
@@ -1062,6 +1072,21 @@ async function run() {
     );
   } catch (error) {
     console.error(`❌ Failed to sync Floorplan Disclaimer: ${error?.message || error}`);
+  }
+
+  /* -------- HIDE LANGUAGE -------- */
+  try {
+    console.log("🌐 Fetching Hide Language flag…");
+    const hideLanguage = await fetchHideLanguage();
+
+    writeJSONIfChanged(
+      outHideLanguage,
+      hideLanguage,
+      "✨ Hide language flag updated",
+      "⏩ Hide language flag unchanged — skip write"
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Hide Language flag: ${error?.message || error}`);
   }
 
   /* -------- PAGES -------- */
@@ -1142,15 +1167,9 @@ async function run() {
       try {
         const data = await fetchFlexibleForPage(uri);
         const layouts = Array.isArray(data?.layouts) ? data.layouts : [];
-        
-        if (!layouts.length) {
-          skipped++;
-          continue;
-        }
 
         const cleanPath = toPathname(uri);
         const pageTitle = data.title?.rendered || data.title || "Untitled Page";
-        
         pageManifest.push({ uri: cleanPath, title: pageTitle });
 
         // 1. Collect ALL image URLs from this page (with isPanorama context)
@@ -1188,12 +1207,12 @@ async function run() {
         const transformedData = replaceImageUrls(data, urlMap);
 
         // 4. Build Prefetch Map
-        const firstRow = layouts[0];
+        const firstRow = layouts[0] || null;
         const entry = { path: cleanPath };
         let hasEntry = false;
 
         // VIDEO
-        const videoField = firstRow.video || (firstRow.data && firstRow.data.video);
+        const videoField = firstRow?.video || (firstRow?.data && firstRow.data.video);
         if (videoField && Array.isArray(videoField)) {
           const videoObj = videoField[0];
           if (videoObj && videoObj.cf_stream_video) {
