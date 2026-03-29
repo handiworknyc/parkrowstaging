@@ -122,6 +122,11 @@ const headerMenu = _cachedHeaderMenu;
         </div>
       </nav>
 
+      <div class="header-utility-links">
+        <a class="header-utility-link" href="tel:425-555-1234">425-555-1234</a>
+        <a class="header-utility-link" href="/inquire">Inquire</a>
+      </div>
+
       <div class="nav-toggle-wrap flex-wrap align-items-center">
         <button
           class="nav-toggle"
@@ -433,5 +438,45 @@ document.addEventListener("astro:after-swap", debugChineseMenuInjection);
 
 :global(html[lang="zh"] a.has-cn-title .header-link--title-cn) {
   display: inline-block;
+}
+
+.header-utility-links {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--containerPadding) + 73px + 1.5rem);
+  display: none;
+  align-items: center;
+  gap: 3.1rem;
+  transform: translateY(-50%);
+}
+
+.header-utility-link {
+  display: inline-flex;
+  align-items: center;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid transparent;
+  color: inherit;
+  font-family: "Hanken Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.1rem;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: border-color 0.2s ease;
+}
+
+.header-utility-link:hover,
+.header-utility-link:focus-visible {
+  border-bottom-color: currentColor;
+}
+
+@media (min-width: 700px) {
+  .header-utility-links {
+    display: flex;
+  }
+}
+
+:global(html.penthouses:not(.modal-open):not(.modal-closing)) .header-utility-link {
+  color: var(--white);
 }
 </style>

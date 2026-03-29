@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 const MAX_SCALE = 5;
+const INITIAL_SCALE = 1;
+const SCALE_STEP = 0.35;
 
 const ROOT_STYLE = {
   width: "100%",
@@ -20,7 +22,7 @@ const VIEWPORT_STYLE = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  overflow: "hidden",
+  overflow: "visible",
   overscrollBehavior: "contain",
 };
 
@@ -33,11 +35,12 @@ const CONTENT_STYLE = {
 };
 
 const CONTROLS_STYLE = {
-  position: "absolute",
-  top: "var(--floorplans-reset-top, 1rem)",
-  right: "3.75rem",
-  zIndex: 2,
+  position: "fixed",
+  top: "calc(var(--headerHeight) + var(--floorplans-reset-top, 1rem))",
+  right: "var(--floorplans-reset-right, 5.75rem)",
+  zIndex: 3,
   display: "flex",
+  gap: "0.5rem",
 };
 
 const CONTROL_BUTTON_STYLE = {
@@ -58,6 +61,12 @@ const CONTROL_BUTTON_STYLE = {
   lineHeight: 1,
 };
 
+const ICON_CONTROL_BUTTON_STYLE = {
+  ...CONTROL_BUTTON_STYLE,
+  minWidth: "2.75rem",
+  padding: 0,
+};
+
 function queueLayout(callback) {
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(callback);
@@ -66,6 +75,13 @@ function queueLayout(callback) {
 
 function isModalVisible(modal) {
   return Boolean(modal && !modal.hidden && modal.classList.contains("is-visible"));
+}
+
+function resetToInitialView(transformRef) {
+  transformRef.current?.resetTransform(0);
+  window.requestAnimationFrame(() => {
+    transformRef.current?.centerView(undefined, 0);
+  });
 }
 
 export default function FloorplanZoomViewer({
@@ -95,8 +111,7 @@ export default function FloorplanZoomViewer({
 
       if (visible) {
         queueLayout(() => {
-          transformRef.current?.centerView(1, 0);
-          transformRef.current?.resetTransform(0);
+          resetToInitialView(transformRef);
         });
       }
     };
@@ -112,6 +127,31 @@ export default function FloorplanZoomViewer({
     };
   }, []);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return;
+
+    const modal = root.closest("[data-floorplans-modal]");
+    if (!(modal instanceof HTMLElement)) return;
+
+    const scrollRegion = modal.querySelector("[data-floorplans-modal-scroll]");
+    if (!(scrollRegion instanceof HTMLElement)) return;
+
+    const handleWheel = (event) => {
+      if (event.ctrlKey || event.deltaY === 0) return;
+      if (scrollRegion.scrollHeight <= scrollRegion.clientHeight) return;
+
+      scrollRegion.scrollTop += event.deltaY;
+      event.preventDefault();
+    };
+
+    root.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      root.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   const handleImageLoad = () => {
     const root = rootRef.current;
     if (!(root instanceof HTMLElement)) return;
@@ -120,7 +160,7 @@ export default function FloorplanZoomViewer({
     if (!isModalVisible(modal)) return;
 
     queueLayout(() => {
-      transformRef.current?.centerView(1, 0);
+      resetToInitialView(transformRef);
     });
   };
 
@@ -131,6 +171,7 @@ export default function FloorplanZoomViewer({
     maxWidth: "100%",
     maxHeight: "100%",
     objectFit: "contain",
+    objectPosition: "center center",
   };
 
   if (imageAspectRatio) {
@@ -157,26 +198,48 @@ export default function FloorplanZoomViewer({
         centerOnInit
         centerZoomedOut
         doubleClick={{ disabled: true }}
+        initialScale={INITIAL_SCALE}
         maxScale={MAX_SCALE}
-        minScale={1}
+        minScale={INITIAL_SCALE}
         panning={{
           velocityDisabled: true,
           wheelPanning: false,
         }}
         pinch={{ disabled: false }}
-        wheel={{
-          disabled: false,
-          step: 0.15,
-          touchPadDisabled: false,
-        }}
+        wheel={{ disabled: true }}
       >
-        {({ resetTransform }) => (
+        {({ zoomIn, zoomOut }) => (
           <>
-            <div style={CONTROLS_STYLE}>
+            <div style={CONTROLS_STYLE} role="group" aria-label={`Zoom controls for ${alt}`}>
               <button
                 type="button"
+                className="floorplans-zoom-button floorplans-zoom-button--icon"
+                style={ICON_CONTROL_BUTTON_STYLE}
+                onClick={() => zoomIn(SCALE_STEP)}
+                aria-label={`Zoom in on ${alt}`}
+              >
+                <span
+                  className="floorplans-zoom-button-icon floorplans-zoom-button-icon--plus"
+                  aria-hidden="true"
+                ></span>
+              </button>
+              <button
+                type="button"
+                className="floorplans-zoom-button floorplans-zoom-button--icon"
+                style={ICON_CONTROL_BUTTON_STYLE}
+                onClick={() => zoomOut(SCALE_STEP)}
+                aria-label={`Zoom out on ${alt}`}
+              >
+                <span
+                  className="floorplans-zoom-button-icon floorplans-zoom-button-icon--minus"
+                  aria-hidden="true"
+                ></span>
+              </button>
+              <button
+                type="button"
+                className="floorplans-zoom-button floorplans-zoom-button--reset"
                 style={CONTROL_BUTTON_STYLE}
-                onClick={() => resetTransform()}
+                onClick={() => resetToInitialView(transformRef)}
                 aria-label={`Reset zoom for ${alt}`}
               >
                 Reset zoom

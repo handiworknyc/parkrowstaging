@@ -115,6 +115,57 @@ if (!function_exists('parkrow_astro_sync_prepare_image')) {
     }
 }
 
+if (!function_exists('parkrow_astro_sync_prepare_file')) {
+    function parkrow_astro_sync_prepare_file($file) {
+        if (empty($file)) {
+            return null;
+        }
+
+        if (is_numeric($file)) {
+            $attachment_id = absint($file);
+            $file_path = get_attached_file($attachment_id);
+            $mime_type = get_post_mime_type($attachment_id);
+
+            $file = array(
+                'ID' => $attachment_id,
+                'url' => wp_get_attachment_url($attachment_id),
+                'title' => get_the_title($attachment_id),
+                'filename' => $file_path ? wp_basename($file_path) : '',
+                'mime_type' => $mime_type,
+                'subtype' => is_string($mime_type) && false !== strpos($mime_type, '/')
+                    ? sanitize_key(substr(strrchr($mime_type, '/'), 1))
+                    : '',
+                'filesize' => $file_path && file_exists($file_path) ? (int) filesize($file_path) : 0,
+            );
+        } elseif (is_string($file)) {
+            $file = array(
+                'url' => $file,
+            );
+        }
+
+        if (!is_array($file)) {
+            return null;
+        }
+
+        $payload = array(
+            'id' => !empty($file['ID']) ? absint($file['ID']) : 0,
+            'url' => !empty($file['url']) ? esc_url_raw($file['url']) : '',
+            'title' => isset($file['title']) ? sanitize_text_field($file['title']) : '',
+            'filename' => !empty($file['filename']) ? sanitize_file_name($file['filename']) : '',
+            'mime_type' => !empty($file['mime_type']) ? sanitize_mime_type($file['mime_type']) : '',
+            'subtype' => !empty($file['subtype']) ? sanitize_key($file['subtype']) : '',
+            'filesize' => !empty($file['filesize']) ? absint($file['filesize']) : 0,
+        );
+
+        return array_filter(
+            $payload,
+            static function ($value) {
+                return null !== $value && '' !== $value;
+            }
+        );
+    }
+}
+
 if (!function_exists('parkrow_astro_sync_get_floor_plan_detail')) {
     function parkrow_astro_sync_get_floor_plan_detail($page_id) {
         $rows = get_field('floor_plan_detail', $page_id);
@@ -130,11 +181,9 @@ if (!function_exists('parkrow_astro_sync_get_floor_plan_detail')) {
             }
 
             $items[] = array(
-                'acf_fc_layout' => !empty($row['acf_fc_layout']) ? sanitize_key($row['acf_fc_layout']) : 'floor_plan',
                 'unit' => isset($row['unit']) ? sanitize_text_field($row['unit']) : '',
-                'exterior' => isset($row['exterior']) ? sanitize_text_field($row['exterior']) : '',
                 'floor_plan_image' => parkrow_astro_sync_prepare_image($row['floor_plan_image'] ?? null),
-                'exposure' => isset($row['exposure']) ? sanitize_text_field($row['exposure']) : '',
+                'floor_plan_pdf' => parkrow_astro_sync_prepare_file($row['floor_plan_pdf'] ?? null),
             );
         }
 
@@ -167,14 +216,33 @@ if (!function_exists('parkrow_astro_sync_get_panoramic_views')) {
     }
 }
 
+if (!function_exists('parkrow_astro_sync_get_floorplan_disclaimer')) {
+    function parkrow_astro_sync_get_floorplan_disclaimer($page_id) {
+        $value = get_field('floorplan_disclaimer', $page_id);
+
+        if (is_string($value) || is_numeric($value)) {
+            return sanitize_textarea_field((string) $value);
+        }
+
+        return '';
+    }
+}
+
 if (!function_exists('parkrow_astro_sync_build_response')) {
-    function parkrow_astro_sync_build_response($page_id, $field_name, $items) {
+    function parkrow_astro_sync_build_response($page_id, $field_name, $value) {
         $payload = parkrow_astro_sync_get_page_payload($page_id);
         if (is_wp_error($payload)) {
             return $payload;
         }
 
-        $payload[$field_name] = is_array($items) ? $items : array();
+        if (is_array($value) || is_scalar($value)) {
+            $payload[$field_name] = $value;
+        } elseif (null === $value) {
+            $payload[$field_name] = '';
+        } else {
+            $payload[$field_name] = array();
+        }
+
         $payload['_syncedAt'] = gmdate('Y-m-d H:i:s');
 
         return new WP_REST_Response($payload, 200);
@@ -241,6 +309,38 @@ add_action('rest_api_init', function () {
                     $page_id,
                     'views',
                     parkrow_astro_sync_get_panoramic_views($page_id)
+                );
+            },
+        )
+    );
+
+    register_rest_route(
+        'astro/v1',
+        '/floorplan-disclaimer',
+        array(
+            'methods' => WP_REST_Server::READABLE,
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'page_id' => array(
+                    'description' => 'Optional page ID override. Defaults to PARKROW_ASTRO_SYNC_PAGE_ID.',
+                    'sanitize_callback' => 'absint',
+                ),
+            ),
+            'callback' => function ($request) {
+                if (!function_exists('get_field')) {
+                    return new WP_Error(
+                        'parkrow_astro_sync_missing_acf',
+                        'Advanced Custom Fields is required for this endpoint.',
+                        array('status' => 500)
+                    );
+                }
+
+                $page_id = parkrow_astro_sync_resolve_page_id($request);
+
+                return parkrow_astro_sync_build_response(
+                    $page_id,
+                    'floorplan_disclaimer',
+                    parkrow_astro_sync_get_floorplan_disclaimer($page_id)
                 );
             },
         )

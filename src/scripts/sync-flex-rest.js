@@ -193,6 +193,130 @@ function writeJSONIfChanged(file, data, updatedMessage, unchangedMessage) {
   return true;
 }
 
+function normalizeTrimmedString(value) {
+  return typeof value === "string" ? value.trim() : String(value ?? "").trim();
+}
+
+function normalizePositiveNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+}
+
+function pickStructuredUrl(value) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const candidates = [value.url, value.source_url, value.sourceUrl, value.href, value.link];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  return "";
+}
+
+function normalizeFloorPlanAsset(value, { includeDimensions = false } = {}) {
+  const url = pickStructuredUrl(value);
+  if (!url) return null;
+
+  const normalized = { url };
+
+  if (value && typeof value === "object") {
+    const id = Number(value.id ?? value.ID ?? 0);
+    if (Number.isInteger(id) && id > 0) {
+      normalized.id = id;
+    }
+
+    const title = normalizeTrimmedString(value.title);
+    if (title) {
+      normalized.title = title;
+    }
+
+    const filename = normalizeTrimmedString(value.filename);
+    if (filename) {
+      normalized.filename = filename;
+    }
+
+    const mimeType = normalizeTrimmedString(value.mime_type ?? value.mimeType);
+    if (mimeType) {
+      normalized.mime_type = mimeType;
+    }
+
+    const subtype = normalizeTrimmedString(value.subtype);
+    if (subtype) {
+      normalized.subtype = subtype;
+    }
+
+    const filesize = normalizePositiveNumber(value.filesize);
+    if (filesize) {
+      normalized.filesize = filesize;
+    }
+
+    if (includeDimensions) {
+      const width = normalizePositiveNumber(value.width);
+      const height = normalizePositiveNumber(value.height);
+
+      if (width) {
+        normalized.width = width;
+      }
+
+      if (height) {
+        normalized.height = height;
+      }
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeFloorPlanDetailRow(row) {
+  if (!row || typeof row !== "object") {
+    return null;
+  }
+
+  const unit = normalizeTrimmedString(row.unit ?? row.unitNumber);
+  const floorPlanImage = normalizeFloorPlanAsset(
+    row.floor_plan_image ?? row.floorPlanImage,
+    { includeDimensions: true }
+  );
+  const floorPlanPdf = normalizeFloorPlanAsset(
+    row.floor_plan_pdf ?? row.floorPlanPdf ?? row.pdf ?? row.pdf_url ?? row.pdfUrl
+  );
+
+  const normalized = {};
+
+  if (unit) {
+    normalized.unit = unit;
+  }
+
+  if (floorPlanImage) {
+    normalized.floor_plan_image = floorPlanImage;
+  }
+
+  if (floorPlanPdf) {
+    normalized.floor_plan_pdf = floorPlanPdf;
+  }
+
+  return Object.keys(normalized).length ? normalized : null;
+}
+
+function normalizeFloorPlanDetailPayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const rows = Array.isArray(source.floor_plan_detail) ? source.floor_plan_detail : [];
+
+  return {
+    ...source,
+    floor_plan_detail: rows.map(normalizeFloorPlanDetailRow).filter(Boolean),
+  };
+}
+
 function normalizeHost(host) {
   return String(host || "")
     .replace(/^www\./i, "")
@@ -518,6 +642,12 @@ async function fetchFloorPlanDetail() {
 
 async function fetchPanoramicViews() {
   const url = new URL("/wp-json/astro/v1/panoramic-views", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
+async function fetchFloorplanDisclaimer() {
+  const url = new URL("/wp-json/astro/v1/floorplan-disclaimer", WP_BASE);
   const { json } = await fetchJSON(url);
   return json;
 }
@@ -858,6 +988,7 @@ async function run() {
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
   const outFloorPlanDetail = path.join(process.cwd(), "src", "content", "wp", "floor-plan-detail.json");
   const outPanoramicViews = path.join(process.cwd(), "src", "content", "wp", "panoramic-views.json");
+  const outFloorplanDisclaimer = path.join(process.cwd(), "src", "content", "wp", "floorplan-disclaimer.json");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
@@ -889,7 +1020,8 @@ async function run() {
   try {
     console.log("🧭 Fetching Floor Plan Detail…");
     const floorPlanDetail = await fetchFloorPlanDetail();
-    const transformed = await cacheStructuredDataImages(floorPlanDetail, imgCacheDir);
+    const normalizedFloorPlanDetail = normalizeFloorPlanDetailPayload(floorPlanDetail);
+    const transformed = await cacheStructuredDataImages(normalizedFloorPlanDetail, imgCacheDir);
 
     writeJSONIfChanged(
       outFloorPlanDetail,
@@ -915,6 +1047,21 @@ async function run() {
     );
   } catch (error) {
     console.error(`❌ Failed to sync Panoramic Views: ${error?.message || error}`);
+  }
+
+  /* -------- FLOORPLAN DISCLAIMER -------- */
+  try {
+    console.log("📝 Fetching Floorplan Disclaimer…");
+    const floorplanDisclaimer = await fetchFloorplanDisclaimer();
+
+    writeJSONIfChanged(
+      outFloorplanDisclaimer,
+      floorplanDisclaimer,
+      "✨ Floorplan disclaimer updated",
+      "⏩ Floorplan disclaimer unchanged — skip write"
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Floorplan Disclaimer: ${error?.message || error}`);
   }
 
   /* -------- PAGES -------- */

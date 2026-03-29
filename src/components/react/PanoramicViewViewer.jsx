@@ -166,6 +166,31 @@ export default function PanoramicViewViewer({
   }, [activeView]);
 
   useEffect(() => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return;
+
+    const modal = root.closest("[data-floorplans-panorama-modal]");
+    if (!(modal instanceof HTMLElement)) return;
+
+    const scrollRegion = modal.querySelector("[data-floorplans-panorama-scroll]");
+    if (!(scrollRegion instanceof HTMLElement)) return;
+
+    const handleWheel = (event) => {
+      if (event.ctrlKey || event.deltaY === 0) return;
+      if (scrollRegion.scrollHeight <= scrollRegion.clientHeight) return;
+
+      scrollRegion.scrollTop += event.deltaY;
+      event.preventDefault();
+    };
+
+    root.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      root.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
+  useEffect(() => {
     applyViewTransform(activeView);
   }, [activeView]);
 

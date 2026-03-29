@@ -5,6 +5,7 @@ import FloorplanZoomViewer from "@/components/react/FloorplanZoomViewer.jsx";
 import PanoramicViewViewer from "@/components/react/PanoramicViewViewer.jsx";
 import inventory from "@/content/wp/avesdo-floorplans.json";
 import floorPlanDetailPage from "@/content/wp/floor-plan-detail.json";
+import floorplanDisclaimerPage from "@/content/wp/floorplan-disclaimer.json";
 import panoramicViewsPage from "@/content/wp/panoramic-views.json";
 
 const { rowIndex = 0 } = Astro.props;
@@ -135,6 +136,73 @@ function parseUnitFloor(unitNumber: string | number | null | undefined) {
   return Number.isFinite(floor) ? floor : null;
 }
 
+function normalizeUnitNumber(value: string | number | null | undefined) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.length >= 3 ? digits : "";
+}
+
+function extractFilenameStem(value: string | null | undefined) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+
+  const pathname = normalized.split(/[?#]/, 1)[0] ?? "";
+  const filename = pathname.split("/").pop() ?? "";
+  if (!filename) return "";
+
+  const stem = filename.replace(/\.[^.]+$/i, "");
+  return stem.replace(/-[0-9a-f]{8,}$/i, "");
+}
+
+function expandSharedUnitRange(startValue: string, endValue: string) {
+  const start = normalizeUnitNumber(startValue);
+  const end = normalizeUnitNumber(endValue);
+  if (!start || !end) return [];
+
+  const startFloor = parseUnitFloor(start);
+  const endFloor = parseUnitFloor(end);
+  const startSuffix = start.slice(-2);
+  const endSuffix = end.slice(-2);
+  if (startFloor === null || endFloor === null || startSuffix !== endSuffix) return [];
+
+  const minFloor = Math.min(startFloor, endFloor);
+  const maxFloor = Math.max(startFloor, endFloor);
+
+  return Array.from({ length: maxFloor - minFloor + 1 }, (_, index) => {
+    return `${minFloor + index}${startSuffix}`;
+  });
+}
+
+function extractUnitKeysFromSpec(value: string | null | undefined) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return [];
+
+  const matches = normalized.match(/\d{3,4}/g) ?? [];
+  if (!matches.length) return [];
+
+  if (matches.length === 2) {
+    const expanded = expandSharedUnitRange(matches[0], matches[1]);
+    if (expanded.length) {
+      return expanded;
+    }
+  }
+
+  return [...new Set(matches.map((match) => normalizeUnitNumber(match)).filter(Boolean))];
+}
+
+function getDetailUnitKeys(detail: any) {
+  const image = detail?.floor_plan_image;
+  const imageFilenameKeys = extractUnitKeysFromSpec(image?.filename);
+  if (imageFilenameKeys.length) return imageFilenameKeys;
+
+  const imageTitleKeys = extractUnitKeysFromSpec(image?.title);
+  if (imageTitleKeys.length) return imageTitleKeys;
+
+  const imageUrlKeys = extractUnitKeysFromSpec(extractFilenameStem(image?.url));
+  if (imageUrlKeys.length) return imageUrlKeys;
+
+  return extractUnitKeysFromSpec(detail?.unit ?? detail?.unitNumber);
+}
+
 function floorSpecMatches(spec: string | null | undefined, floor: number | null) {
   if (floor === null) return false;
 
@@ -203,47 +271,44 @@ const rawDetails = Array.isArray(floorPlanDetailPage?.floor_plan_detail)
   ? floorPlanDetailPage.floor_plan_detail
   : [];
 const details = rawDetails.flatMap((detail) => {
-    const image = detail?.floor_plan_image;
-    const imageUrl = String(image?.url ?? "").trim();
-    const svgSize = imageUrl ? getSvgIntrinsicSize(imageUrl) : null;
-    const fallbackImageWidth = Number(image?.width);
-    const fallbackImageHeight = Number(image?.height);
-    const imageWidth =
-      svgSize?.width ??
-      (Number.isFinite(fallbackImageWidth) && fallbackImageWidth > 0
-        ? fallbackImageWidth
-        : undefined);
-    const imageHeight =
-      svgSize?.height ??
-      (Number.isFinite(fallbackImageHeight) && fallbackImageHeight > 0
-        ? fallbackImageHeight
-        : undefined);
-    const pdfUrl = pickUrl(
-      detail?.pdf_url,
-      detail?.pdfUrl,
-      detail?.pdf,
-      detail?.floor_plan_pdf,
-      detail?.floorPlanPdf
-    );
+  const image = detail?.floor_plan_image;
+  const imageUrl = String(image?.url ?? "").trim();
+  const svgSize = imageUrl ? getSvgIntrinsicSize(imageUrl) : null;
+  const fallbackImageWidth = Number(image?.width);
+  const fallbackImageHeight = Number(image?.height);
+  const imageWidth =
+    svgSize?.width ??
+    (Number.isFinite(fallbackImageWidth) && fallbackImageWidth > 0
+      ? fallbackImageWidth
+      : undefined);
+  const imageHeight =
+    svgSize?.height ??
+    (Number.isFinite(fallbackImageHeight) && fallbackImageHeight > 0
+      ? fallbackImageHeight
+      : undefined);
+  const pdfUrl = pickUrl(
+    detail?.pdf_url,
+    detail?.pdfUrl,
+    detail?.pdf,
+    detail?.floor_plan_pdf,
+    detail?.floorPlanPdf
+  );
+  const unitKeys = getDetailUnitKeys(detail);
 
-    return imageUrl
-      ? [
-          {
-            unit: String(detail?.unit ?? "").trim(),
-            exterior: String(detail?.exterior ?? "").trim(),
-            exposure: String(detail?.exposure ?? "").trim(),
-            imageUrl,
-            pdfUrl,
-            imageWidth,
-            imageHeight,
-            imageAspectRatio:
-              imageWidth && imageHeight ? String(imageWidth / imageHeight) : undefined,
-          },
-        ]
-      : [];
-  });
+  return imageUrl
+    ? unitKeys.map((unit) => ({
+        unit,
+        exterior: String(detail?.exterior ?? "").trim(),
+        exposure: String(detail?.exposure ?? "").trim(),
+        imageUrl,
+        pdfUrl,
+        imageWidth,
+        imageHeight,
+        imageAspectRatio: imageWidth && imageHeight ? String(imageWidth / imageHeight) : undefined,
+      }))
+    : [];
+});
 
-const defaultDetail = details[0] ?? null;
 const detailMap = new Map(details.map((detail) => [detail.unit, detail]));
 
 const units = Array.isArray(inventory?.units)
@@ -256,7 +321,7 @@ const units = Array.isArray(inventory?.units)
       )
       .map((unit) => {
         const unitNumber = String(unit?.unitNumber ?? "").trim();
-        const matchedDetail = detailMap.get(unitNumber) ?? defaultDetail;
+        const matchedDetail = detailMap.get(unitNumber) ?? null;
         const panoramicView = getPanoramicView(unitNumber);
         const pdfUrl = derivePdfUrl(String(unit?.floorPlanImage ?? ""));
 
@@ -273,6 +338,7 @@ const units = Array.isArray(inventory?.units)
         };
       })
   : [];
+const floorplanDisclaimer = String(floorplanDisclaimerPage?.floorplan_disclaimer ?? "").trim();
 const hasOrientation = units.some((unit) => String(unit?.orientation ?? "").trim());
 const columnTemplate = hasOrientation
   ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
@@ -307,7 +373,18 @@ function formatExterior(value: number | string | null | undefined) {
     <div id={tableId} class="floorplans-table" style={tableStyle}>
       <div class="floorplans-head-row">
         <div class="floorplans-head hw-contain">
-          <div class="floorplans-cell floorplans-cell--unit">Residence</div>
+          <div class="floorplans-cell floorplans-cell--unit">
+            <button
+              type="button"
+              class="floorplans-sort-button floorplans-sort-button--start"
+              data-sort-key="unitNumber"
+              data-label="Residence"
+              aria-pressed="false"
+            >
+              <span class="floorplans-sort-label">Residence</span>
+              <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+            </button>
+          </div>
           <div class="floorplans-cell floorplans-cell--metric">
             <button
               type="button"
@@ -345,7 +422,18 @@ function formatExterior(value: number | string | null | undefined) {
             </button>
           </div>
           {hasOrientation && (
-            <div class="floorplans-cell floorplans-cell--orientation">Exposure</div>
+            <div class="floorplans-cell floorplans-cell--orientation">
+              <button
+                type="button"
+                class="floorplans-sort-button"
+                data-sort-key="exposure"
+                data-label="Exposure"
+                aria-pressed="false"
+              >
+                <span class="floorplans-sort-label">Exposure</span>
+                <span class="floorplans-sort-indicator" aria-hidden="true"></span>
+              </button>
+            </div>
           )}
           <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
         </div>
@@ -357,7 +445,8 @@ function formatExterior(value: number | string | null | undefined) {
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
           const panoramaId = `${detailId}-panorama`;
           const exteriorLabel = formatExterior(unit.detail?.exterior);
-          const exposureLabel = formatOrientation(unit.orientation);
+          const exposureSortValue = String(unit.orientation ?? "").trim();
+          const exposureLabel = formatOrientation(exposureSortValue);
           const panorama = unit.detail?.panoramicView;
           const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
           const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
@@ -371,6 +460,7 @@ function formatExterior(value: number | string | null | undefined) {
               data-bedrooms={unit.bedrooms}
               data-bathrooms={unit.bathrooms}
               data-area={unit.area}
+              data-exposure={exposureSortValue}
             >
               <div
                 class={`floorplans-row hw-contain${hasDetail ? " floorplans-row--interactive" : ""}`}
@@ -398,9 +488,6 @@ function formatExterior(value: number | string | null | undefined) {
                   {hasDetail ? (
                     <span
                       class="floorplans-view-link"
-                      data-floorplans-toggle-label
-                      data-collapsed-label="View"
-                      data-expanded-label="Close"
                     >
                       View
                     </span>
@@ -436,57 +523,67 @@ function formatExterior(value: number | string | null | undefined) {
                       Close
                     </button>
 
-                    <div class="floorplans-detail-inner">
-                      <div class="floorplans-detail-copy">
-                        <div class="floorplans-detail-meta">
-                          <p>Residence {unit.unitNumber}</p>
-                          <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
-                          <p>Interior: {numberFormat.format(unit.area)} SF</p>
-                          {exteriorLabel && <p>Exterior: {exteriorLabel} SF</p>}
-                          <p>Exposure: {exposureLabel}</p>
-                        </div>
-
-                        {(hasPanorama || pdfUrl) && (
-                          <div class="floorplans-detail-actions">
-                            {hasPanorama && (
-                              <button
-                                type="button"
-                                class="floorplans-detail-action floorplans-detail-action--view"
-                                data-floorplans-panorama-open
-                                aria-haspopup="dialog"
-                                aria-expanded="false"
-                                aria-controls={panoramaId}
-                              >
-                                See View
-                              </button>
-                            )}
-
-                            {pdfUrl && (
-                              <a
-                                href={pdfUrl}
-                                class="floorplans-detail-action floorplans-detail-action--download"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download={pdfFilename}
-                              >
-                                Download PDF
-                              </a>
-                            )}
-                          </div>
-                        )}
+                    <div class="floorplans-detail-copy">
+                      <div class="floorplans-detail-meta">
+                        <p>Residence {unit.unitNumber}</p>
+                        <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
+                        <p>Interior: {numberFormat.format(unit.area)} SF</p>
+                        {exteriorLabel && <p>Exterior: {exteriorLabel} SF</p>}
+                        <p>Exposure: {exposureLabel}</p>
                       </div>
 
-                      <div class="floorplans-detail-visual">
-                        <div class="floorplans-detail-viewer">
-                          <FloorplanZoomViewer
-                            client:load
-                            src={unit.detail.imageUrl}
-                            width={unit.detail.imageWidth}
-                            height={unit.detail.imageHeight}
-                            imageAspectRatio={unit.detail.imageAspectRatio}
-                            alt={`Floor plan for unit ${unit.unitNumber}`}
-                          />
+                      {(hasPanorama || pdfUrl) && (
+                        <div class="floorplans-detail-actions">
+                          {hasPanorama && (
+                            <button
+                              type="button"
+                              class="floorplans-detail-action floorplans-detail-action--view"
+                              data-floorplans-panorama-open
+                              aria-haspopup="dialog"
+                              aria-expanded="false"
+                              aria-controls={panoramaId}
+                            >
+                              See View
+                            </button>
+                          )}
+
+                          {pdfUrl && (
+                            <a
+                              href={pdfUrl}
+                              class="floorplans-detail-action floorplans-detail-action--download"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={pdfFilename}
+                            >
+                              Download PDF
+                            </a>
+                          )}
                         </div>
+                      )}
+                    </div>
+
+                    <div class="floorplans-modal-scroll" data-floorplans-modal-scroll>
+                      <div class="floorplans-detail-shell">
+                        <div class="floorplans-detail-inner">
+                          <div class="floorplans-detail-visual">
+                            <div class="floorplans-detail-viewer">
+                              <FloorplanZoomViewer
+                                client:load
+                                src={unit.detail.imageUrl}
+                                width={unit.detail.imageWidth}
+                                height={unit.detail.imageHeight}
+                                imageAspectRatio={unit.detail.imageAspectRatio}
+                                alt={`Floor plan for unit ${unit.unitNumber}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {floorplanDisclaimer && (
+                          <div class="floorplans-detail-disclaimer">
+                            <p>{floorplanDisclaimer}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -518,17 +615,29 @@ function formatExterior(value: number | string | null | undefined) {
                             </div>
                           </div>
 
-                          <div class="floorplans-panorama-viewer">
-                            <PanoramicViewViewer
-                              client:load
-                              daySrc={panorama.dayUrl}
-                              dayWidth={panorama.dayWidth}
-                              dayHeight={panorama.dayHeight}
-                              nightSrc={panorama.nightUrl}
-                              nightWidth={panorama.nightWidth}
-                              nightHeight={panorama.nightHeight}
-                              alt={`Panoramic view for unit ${unit.unitNumber}`}
-                            />
+                          <div class="floorplans-panorama-scroll" data-floorplans-panorama-scroll>
+                            <div class="floorplans-panorama-shell">
+                              <div class="floorplans-panorama-stage">
+                                <div class="floorplans-panorama-viewer">
+                                  <PanoramicViewViewer
+                                    client:load
+                                    daySrc={panorama.dayUrl}
+                                    dayWidth={panorama.dayWidth}
+                                    dayHeight={panorama.dayHeight}
+                                    nightSrc={panorama.nightUrl}
+                                    nightWidth={panorama.nightWidth}
+                                    nightHeight={panorama.nightHeight}
+                                    alt={`Panoramic view for unit ${unit.unitNumber}`}
+                                  />
+                                </div>
+                              </div>
+
+                              {floorplanDisclaimer && (
+                                <div class="floorplans-detail-disclaimer floorplans-panorama-disclaimer">
+                                  <p>{floorplanDisclaimer}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -566,6 +675,7 @@ function formatExterior(value: number | string | null | undefined) {
         const abortController = new AbortController();
 
         const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
+        const numericSortKeys = new Set(["bedrooms", "bathrooms", "area"]);
         let sortKey = "";
         let sortDir = "asc";
         let headerHiddenBeforeModal = false;
@@ -723,6 +833,11 @@ function formatExterior(value: number | string | null | undefined) {
               }
             });
 
+            const scrollRegion = modal.querySelector("[data-floorplans-panorama-scroll]");
+            if (scrollRegion instanceof HTMLElement) {
+              scrollRegion.scrollTop = 0;
+            }
+
             const closeButton = modal.querySelector("[data-floorplans-panorama-close-button]");
             if (closeButton instanceof HTMLElement) {
               closeButton.focus({ preventScroll: true });
@@ -810,7 +925,6 @@ function formatExterior(value: number | string | null | undefined) {
         const setItemOpen = (item, open, restoreFocus = false) => {
           const row = item.querySelector("[data-floorplans-row]");
           const modal = row instanceof HTMLElement ? getItemModal(item, row) : null;
-          const label = item.querySelector("[data-floorplans-toggle-label]");
 
           if (!(row instanceof HTMLElement) || !(modal instanceof HTMLElement)) return;
 
@@ -826,6 +940,10 @@ function formatExterior(value: number | string | null | undefined) {
 
             modal.hidden = false;
             modal.classList.remove("is-closing", "is-visible");
+            const scrollRegion = modal.querySelector("[data-floorplans-modal-scroll]");
+            if (scrollRegion instanceof HTMLElement) {
+              scrollRegion.scrollTop = 0;
+            }
             headerHiddenBeforeModal = isHeaderHidden();
             setHeaderHidden(false);
             lockPageScroll();
@@ -840,18 +958,10 @@ function formatExterior(value: number | string | null | undefined) {
               closeButton.focus({ preventScroll: true });
             }
 
-            if (label instanceof HTMLElement) {
-              label.textContent = label.dataset.expandedLabel || "Close";
-            }
-
             return;
           }
 
           closePanoramaInItem(item, false, true);
-
-          if (label instanceof HTMLElement) {
-            label.textContent = label.dataset.collapsedLabel || "View";
-          }
 
           clearModalCloseTimer(modal);
           modal.classList.remove("is-visible");
@@ -877,13 +987,33 @@ function formatExterior(value: number | string | null | undefined) {
           closeOpenItem();
           setItemOpen(item, true);
         };
+        const compareUnitNumbers = (valueA, valueB) =>
+          String(valueA ?? "").localeCompare(String(valueB ?? ""), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          });
+        const compareTextValues = (valueA, valueB) => {
+          const textA = String(valueA ?? "").trim();
+          const textB = String(valueB ?? "").trim();
+          const hasTextA = textA.length > 0;
+          const hasTextB = textB.length > 0;
+
+          if (hasTextA !== hasTextB) {
+            return hasTextA ? -1 : 1;
+          }
+
+          return textA.localeCompare(textB, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          });
+        };
 
         const updateButtons = () => {
           buttons.forEach((button) => {
             const active = button.dataset.sortKey === sortKey;
             const indicator = button.querySelector(".floorplans-sort-indicator");
-            if (indicator) {
-              indicator.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "";
+            if (indicator instanceof HTMLElement) {
+              indicator.dataset.sortDirection = active ? sortDir : "";
             }
             button.setAttribute("aria-pressed", active ? "true" : "false");
           });
@@ -893,18 +1023,22 @@ function formatExterior(value: number | string | null | undefined) {
           const items = getItems();
 
           items.sort((itemA, itemB) => {
-            const valueA = Number(itemA.dataset[key] || 0);
-            const valueB = Number(itemB.dataset[key] || 0);
+            if (numericSortKeys.has(key)) {
+              const valueA = Number(itemA.dataset[key] || 0);
+              const valueB = Number(itemB.dataset[key] || 0);
 
-            if (valueA !== valueB) {
-              return dir === "asc" ? valueA - valueB : valueB - valueA;
+              if (valueA !== valueB) {
+                return dir === "asc" ? valueA - valueB : valueB - valueA;
+              }
+            } else {
+              const comparison = compareTextValues(itemA.dataset[key], itemB.dataset[key]);
+
+              if (comparison !== 0) {
+                return dir === "asc" ? comparison : -comparison;
+              }
             }
 
-            return (itemA.dataset.unitNumber || "").localeCompare(
-              itemB.dataset.unitNumber || "",
-              undefined,
-              { numeric: true, sensitivity: "base" }
-            );
+            return compareUnitNumbers(itemA.dataset.unitNumber, itemB.dataset.unitNumber);
           });
 
           items.forEach((item) => body.appendChild(item));
@@ -1005,6 +1139,7 @@ function formatExterior(value: number | string | null | undefined) {
   }
 
   .floorplans-wrap {
+    --floorplans-chevron-icon: url("data:image/svg+xml,%3Csvg%20width%3D%229%22%20height%3D%2215%22%20viewBox%3D%220%200%209%2015%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0.353516%2014.3535L7.35352%207.35352L0.353516%200.353516%22%20stroke%3D%22black%22/%3E%3C/svg%3E");
     width: 100%;
   }
 
@@ -1107,17 +1242,80 @@ function formatExterior(value: number | string | null | undefined) {
     white-space: nowrap;
   }
 
+  .floorplans-sort-button--start {
+    grid-template-columns: auto auto 1fr;
+    text-align: left;
+  }
+
   .floorplans-sort-label {
     grid-column: 2;
     justify-self: center;
   }
 
+  .floorplans-sort-button--start .floorplans-sort-label {
+    grid-column: 1;
+    justify-self: start;
+  }
+
   .floorplans-sort-indicator {
     grid-column: 3;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
     justify-self: start;
-    width: 1ch;
-    margin-left: 0.35rem;
-    text-align: center;
+    width: 1.0625rem;
+    height: 0.9375rem;
+    padding-left: 0.25rem;
+    box-sizing: content-box;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
+  .floorplans-cell--unit .floorplans-sort-indicator {
+	position: relative;
+	top: 2px 
+  }
+
+  .floorplans-cell:not(.floorplans-cell--unit) .floorplans-sort-indicator[data-sort-direction='desc'] {
+	position: relative;
+	top: 1px 
+  }
+
+
+
+
+  .floorplans-sort-button--start .floorplans-sort-indicator {
+    grid-column: 2;
+  }
+
+  .floorplans-sort-indicator::after {
+    content: "";
+    display: block;
+    width: 0.5625rem;
+    height: 0.9375rem;
+    background-image: var(--floorplans-chevron-icon);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    transform-origin: center;
+    transition: transform 160ms ease;
+  }
+
+  .floorplans-sort-indicator[data-sort-direction="asc"] {
+    opacity: 1;
+  }
+
+  .floorplans-sort-indicator[data-sort-direction="desc"] {
+    opacity: 1;
+  }
+
+  .floorplans-sort-indicator[data-sort-direction="asc"]::after {
+    transform: rotate(-90deg);
+  }
+
+  .floorplans-sort-indicator[data-sort-direction="desc"]::after {
+    transform: rotate(90deg);
   }
 
   .floorplans-view-link {
@@ -1139,7 +1337,7 @@ function formatExterior(value: number | string | null | undefined) {
     width: 0.5625rem;
     height: 0.9375rem;
     margin-left: 0.75rem;
-    background-image: url("data:image/svg+xml,%3Csvg%20width%3D%229%22%20height%3D%2215%22%20viewBox%3D%220%200%209%2015%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0.353516%2014.3535L7.35352%207.35352L0.353516%200.353516%22%20stroke%3D%22black%22/%3E%3C/svg%3E");
+    background-image: var(--floorplans-chevron-icon);
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
@@ -1193,10 +1391,19 @@ function formatExterior(value: number | string | null | undefined) {
     overflow: hidden;
   }
 
+  .floorplans-modal-scroll {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .floorplans-modal-close {
     appearance: none;
     position: absolute;
-    top: 1rem;
+    top: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1211,10 +1418,11 @@ function formatExterior(value: number | string | null | undefined) {
     font-size: 0;
     line-height: 0;
     padding: 0;
+    transition: background-color 160ms ease;
   }
 
   .floorplans-modal-close {
-    right: 1rem;
+    right: 2rem;
   }
 
   .floorplans-modal-close::before,
@@ -1222,7 +1430,7 @@ function formatExterior(value: number | string | null | undefined) {
     content: "";
     position: absolute;
     width: 1.75rem;
-    height: 2px;
+    height: 1px;
     background: currentColor;
     top: 50%;
     left: 50%;
@@ -1237,18 +1445,31 @@ function formatExterior(value: number | string | null | undefined) {
     transform: translate(-50%, -50%) rotate(-45deg);
   }
 
-  .floorplans-detail-inner {
+  .floorplans-detail-shell {
     position: relative;
-    height: 100%;
-    padding: 0 1.5rem 1.5rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .floorplans-detail-inner {
+    box-sizing: border-box;
+    position: relative;
+    height: calc(100vh - var(--headerHeight));
+    height: calc(100dvh - var(--headerHeight));
+    min-height: calc(100vh - var(--headerHeight));
+    min-height: calc(100dvh - var(--headerHeight));
+    padding: 0;
   }
 
   .floorplans-detail-copy {
+    box-sizing: border-box;
     position: absolute;
-    top: 1rem;
-    left: 1.5rem;
-    z-index: 1;
-    max-width: min(18rem, calc(100% - 3rem));
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: min(21rem, 100%);
+    max-width: 100%;
+    padding: 2rem;
     color: #3a2a22;
   }
 
@@ -1330,15 +1551,17 @@ function formatExterior(value: number | string | null | undefined) {
     justify-content: center;
     min-width: 0;
     height: 100%;
-    overflow: hidden;
+    overflow: visible;
     overscroll-behavior: contain;
     position: relative;
   }
 
   .floorplans-detail-viewer {
-    --floorplans-reset-top: 1rem;
+    --floorplans-reset-top: 2rem;
+    --floorplans-reset-right: 5.75rem;
     width: 100%;
-    height: 100%;
+    height: min(70vh, calc(100% - 4rem));
+    max-height: calc(100% - 4rem);
     min-width: 0;
     min-height: 0;
   }
@@ -1347,6 +1570,74 @@ function formatExterior(value: number | string | null | undefined) {
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button:hover),
+  .floorplans-detail-viewer :global(.floorplans-zoom-button:focus-visible),
+  .floorplans-modal-close:hover,
+  .floorplans-modal-close:focus-visible {
+    background: var(--pink) !important;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon) {
+    position: relative;
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon)::before,
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon--plus)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon)::before {
+    width: 1rem;
+    height: 1.5px;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon--minus)::before {
+    width: 1.15rem;
+  }
+
+  .floorplans-detail-viewer :global(.floorplans-zoom-button-icon--plus)::after {
+    width: 1.5px;
+    height: 1rem;
+  }
+
+  .floorplans-detail-disclaimer {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+    padding: 4.5rem 2rem 4.25rem;
+    border-top: 1px solid rgba(58, 42, 34, 0.12);
+    background: #efeeec;
+    color: #3a2a22;
+  }
+
+  .floorplans-detail-disclaimer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3rem;
+    background: linear-gradient(180deg, rgba(239, 238, 236, 0) 0%, #efeeec 100%);
+    pointer-events: none;
+  }
+
+  .floorplans-detail-disclaimer p {
+    margin: 0 auto;
+    max-width: 58rem;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
   .floorplans-panorama-modal[hidden] {
@@ -1389,6 +1680,28 @@ function formatExterior(value: number | string | null | undefined) {
     color: #fff;
   }
 
+  .floorplans-panorama-scroll {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .floorplans-panorama-shell {
+    min-height: 0;
+  }
+
+  .floorplans-panorama-stage {
+    box-sizing: border-box;
+    position: relative;
+    height: calc(100vh - var(--headerHeight));
+    height: calc(100dvh - var(--headerHeight));
+    min-height: calc(100vh - var(--headerHeight));
+    min-height: calc(100dvh - var(--headerHeight));
+  }
+
   .floorplans-panorama-viewer {
     width: 100%;
     height: 100%;
@@ -1402,36 +1715,12 @@ function formatExterior(value: number | string | null | undefined) {
     height: 100%;
   }
 
+  .floorplans-panorama-disclaimer {
+    color: #3a2a22;
+  }
+
   .floorplans-empty {
     margin-top: 1rem;
   }
 
-  @media (max-width: 48rem) {
-    .floorplans-modal-close {
-      top: 0.75rem;
-    }
-
-    .floorplans-modal-close {
-      right: 0.75rem;
-    }
-
-    .floorplans-detail-inner {
-      padding: 0 1rem 1rem;
-    }
-
-    .floorplans-detail-copy {
-      top: 1rem;
-      left: 1rem;
-      max-width: min(16rem, calc(100% - 2rem));
-    }
-
-    .floorplans-detail-actions {
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-
-    .floorplans-detail-viewer {
-      --floorplans-reset-top: 0.75rem;
-    }
-  }
 </style>
