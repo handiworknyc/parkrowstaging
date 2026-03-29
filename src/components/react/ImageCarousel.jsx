@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Carousel,
@@ -21,6 +22,20 @@ const TEXT_FADE_OVERLAP = 0.1;
 const TEXT_FADE_IN_DELAY = TEXT_FADE_OUT_DURATION - TEXT_FADE_OVERLAP;
 const TEXT_FADE_IN_EASE = [0.32, 0, 0.2, 1];
 const TEXT_FADE_OUT_EASE = [0.22, 1, 0.36, 1];
+
+async function loadFsLightboxConstructor() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (typeof window.FsLightbox === "function") {
+    return window.FsLightbox;
+  }
+
+  await import("../../scripts/plugins/fslightbox.js");
+
+  return typeof window.FsLightbox === "function" ? window.FsLightbox : null;
+}
 
 function getColumnClass(index, total, items) {
   if (total === 1) {
@@ -159,6 +174,16 @@ function isStandaloneListHeading(html) {
   return /^<h4\b[^>]*>[\s\S]*<\/h4>$/i.test((html || "").trim());
 }
 
+function getLightboxButtonLabel(image, index, total) {
+  const readableLabel = stripHtml(image.caption || image.alt || "").trim();
+
+  if (readableLabel) {
+    return `Open gallery image ${index + 1} of ${total}: ${readableLabel}`;
+  }
+
+  return `Open gallery image ${index + 1} of ${total}`;
+}
+
 function ColumnContentInner({ item }) {
   if (!hasRenderableItem(item)) {
     return null;
@@ -239,12 +264,31 @@ function ContentColumns({ items }) {
 }
 
 const Slide = React.memo(
-  function Slide({ image }) {
-    const figureClassName = image.caption ? "slide-figure has-caption" : "slide-figure";
+  function Slide({ image, index, gallerySize, onOpenLightbox }) {
+    const isLightboxEnabled = typeof onOpenLightbox === "function" && Boolean(image.lightboxSrc || image.src);
+    const figureClassName = [
+      "slide-figure",
+      image.caption ? "has-caption" : "",
+      isLightboxEnabled ? "is-lightbox-enabled" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     return (
       <figure className={figureClassName}>
         <div className="image-wrapper">
+          {isLightboxEnabled && (
+            <button
+              type="button"
+              className="carousel-lightbox-trigger"
+              onClick={() => onOpenLightbox(index)}
+              aria-label={getLightboxButtonLabel(image, index, gallerySize)}
+            >
+              <span className="carousel-lightbox-indicator" aria-hidden="true">
+                <Search size={20} strokeWidth={2.25} />
+              </span>
+            </button>
+          )}
           <img
             draggable={false}
             className="photo"
@@ -281,6 +325,9 @@ export default function ImageCarousel({
   });
   const rootRef = useRef(null);
   const frameIdsRef = useRef([]);
+  const lightboxRef = useRef(null);
+  const lightboxInitPromiseRef = useRef(null);
+  const lightboxSignatureRef = useRef("");
 
   const defaultContentItems = useMemo(
     () => normalizeContentItems(defaultContent),
@@ -459,6 +506,16 @@ export default function ImageCarousel({
       ? hasLeftSlot || hasRightSlot
       : hasRenderableContent(defaultContentItems));
 
+  const lightboxSources = useMemo(
+    () => images.map((image) => image.lightboxSrc || image.src),
+    [images]
+  );
+
+  const lightboxSignature = useMemo(
+    () => JSON.stringify(lightboxSources),
+    [lightboxSources]
+  );
+
   const carouselOpts = useMemo(
     () => ({
       align: "center",
@@ -613,6 +670,74 @@ export default function ImageCarousel({
     api?.scrollNext();
   }, [api]);
 
+  const ensureLightbox = useCallback(async () => {
+    if (lightboxSources.length === 0) {
+      lightboxRef.current = null;
+      lightboxInitPromiseRef.current = null;
+      lightboxSignatureRef.current = "";
+      return null;
+    }
+
+    if (
+      lightboxRef.current
+      && lightboxSignatureRef.current === lightboxSignature
+    ) {
+      return lightboxRef.current;
+    }
+
+    if (lightboxSignatureRef.current !== lightboxSignature) {
+      lightboxRef.current?.close?.();
+      lightboxRef.current = null;
+      lightboxInitPromiseRef.current = null;
+    }
+
+    if (!lightboxInitPromiseRef.current) {
+      lightboxInitPromiseRef.current = (async () => {
+        const FsLightbox = await loadFsLightboxConstructor();
+
+        if (!FsLightbox) {
+          return null;
+        }
+
+        const nextInstance = new FsLightbox();
+        nextInstance.props.sources = [...lightboxSources];
+        nextInstance.props.loadOnlyCurrentSource = true;
+        nextInstance.setup();
+
+        lightboxRef.current = nextInstance;
+        lightboxSignatureRef.current = lightboxSignature;
+
+        return nextInstance;
+      })();
+    }
+
+    const instance = await lightboxInitPromiseRef.current;
+
+    if (!instance) {
+      lightboxInitPromiseRef.current = null;
+      lightboxRef.current = null;
+      lightboxSignatureRef.current = "";
+    }
+
+    return instance;
+  }, [lightboxSignature, lightboxSources]);
+
+  useEffect(() => {
+    void ensureLightbox();
+  }, [ensureLightbox]);
+
+  useEffect(() => () => {
+    lightboxRef.current?.close?.();
+    lightboxRef.current = null;
+    lightboxInitPromiseRef.current = null;
+    lightboxSignatureRef.current = "";
+  }, []);
+
+  const handleOpenLightbox = useCallback(async (index) => {
+    const instance = await ensureLightbox();
+    instance?.open(index);
+  }, [ensureLightbox]);
+
   if (!Array.isArray(images) || images.length === 0) {
     return null;
   }
@@ -627,12 +752,17 @@ export default function ImageCarousel({
       <div className="carousel-container">
         <Carousel setApi={setApi} className="w-full mx-auto" opts={carouselOpts}>
           <CarouselContent className="-ml-5">
-            {images.map((image) => (
+            {images.map((image, index) => (
               <CarouselItem
                 key={image.id}
                 className="carousel-slide-item pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
               >
-                <Slide image={image} />
+                <Slide
+                  image={image}
+                  index={index}
+                  gallerySize={images.length}
+                  onOpenLightbox={handleOpenLightbox}
+                />
               </CarouselItem>
             ))}
           </CarouselContent>

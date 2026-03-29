@@ -54,10 +54,17 @@ const carouselImages = Array.isArray(images)
   ? images.map((item, index) => {
       const imgData = item.image || {};
       const mediumUrl = imgData.sizes?.intch_med;
+      const lightboxUrl =
+        imgData.sizes?.intch_xl ||
+        imgData.sizes?.["2048x2048"] ||
+        imgData.sizes?.large ||
+        imgData.url ||
+        mediumUrl;
 
       return {
         id: imgData.ID || imgData.id || index,
         src: mediumUrl || imgData.url,
+        lightboxSrc: lightboxUrl,
         alt: imgData.alt || imgData.title || `Image ${index + 1}`,
         caption: item.caption || "",
         slideContent: Array.isArray(item.slide_content) ? item.slide_content : null,

@@ -1165,7 +1165,7 @@ ul.two-col-list.wide-list-columns {
     width: 100%;
     overflow: hidden;
     position: relative;
-    pointer-events: none;
+    pointer-events: auto;
     user-select: none;
     border-radius: calc(.25rem + .75vw);
     backface-visibility: hidden;
@@ -1188,6 +1188,77 @@ ul.two-col-list.wide-list-columns {
     object-fit: cover;
     display: block;
     pointer-events: none;
+}
+
+.carousel-module .is-lightbox-enabled .image-wrapper,
+.carousel-module .carousel-lightbox-trigger {
+	cursor: zoom-in;
+}
+
+.carousel-module .carousel-lightbox-trigger {
+	position: absolute;
+	inset: 0;
+	z-index: 12;
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	border-radius: inherit;
+	background: transparent;
+}
+
+.carousel-module .carousel-lightbox-trigger::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		140deg,
+		rgba(0, 0, 0, 0.4) 0%,
+		rgba(0, 0, 0, 0.18) 4%,
+		rgba(0, 0, 0, 0) 13%
+	);
+	opacity: 0;
+	transition: opacity 180ms ease;
+	pointer-events: none;
+}
+
+.carousel-module .carousel-lightbox-indicator {
+	position: absolute;
+	top: 1.15rem;
+	left: 1.15rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	opacity: 0;
+	transform: translate3d(0, -0.35rem, 0);
+	transition:
+		opacity 180ms ease,
+		transform 180ms ease;
+	pointer-events: none;
+}
+
+.carousel-module .carousel-lightbox-indicator svg {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.carousel-module .carousel-lightbox-trigger:hover::before,
+.carousel-module .carousel-lightbox-trigger:focus-visible::before {
+	opacity: 1;
+}
+
+.carousel-module .carousel-lightbox-trigger:hover .carousel-lightbox-indicator,
+.carousel-module .carousel-lightbox-trigger:focus-visible .carousel-lightbox-indicator {
+	opacity: 1;
+	transform: translate3d(0, 0, 0);
+}
+
+.carousel-module .carousel-lightbox-trigger:focus-visible {
+	outline: 2px solid rgba(255, 255, 255, 0.85);
+	outline-offset: -2px;
 }
 
 @media (min-width: 1800px) {
