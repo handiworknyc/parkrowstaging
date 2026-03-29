@@ -1137,6 +1137,29 @@ ul.two-col-list.wide-list-columns {
 
 }
 
+.carousel-module .carousel-natural-aspect {
+	.carousel-slide-item {
+		flex: 0 0 auto;
+		width: fit-content;
+		min-width: 0;
+	}
+
+	.slide-figure {
+		width: fit-content;
+	}
+
+	.image-wrapper {
+		width: fit-content;
+		display: block;
+	}
+
+	.photo {
+		width: auto;
+		max-width: none;
+		object-fit: contain;
+	}
+}
+
 
 .carousel-module .image-wrapper {
     width: 100%;

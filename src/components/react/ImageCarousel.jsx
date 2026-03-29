@@ -240,8 +240,10 @@ function ContentColumns({ items }) {
 
 const Slide = React.memo(
   function Slide({ image }) {
+    const figureClassName = image.caption ? "slide-figure has-caption" : "slide-figure";
+
     return (
-      <figure className={image.caption ? "slide-figure has-caption" : "slide-figure"}>
+      <figure className={figureClassName}>
         <div className="image-wrapper">
           <img
             draggable={false}
@@ -628,7 +630,7 @@ export default function ImageCarousel({
             {images.map((image) => (
               <CarouselItem
                 key={image.id}
-                className="pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
+                className="carousel-slide-item pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
               >
                 <Slide image={image} />
               </CarouselItem>
