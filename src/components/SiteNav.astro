@@ -14,6 +14,7 @@ interface Props {
 const WP_BASE_URL = (import.meta.env.WP_BASE_URL || "")
   .trim()
   .replace(/\/$/, "");
+const CN_MENU_DEBUG_ENABLED = import.meta.env.PUBLIC_CN_MENU_DEBUG === "1";
 const { lang = "en" } = Astro.props as Props;
 const homeHref = lang === "zh" ? "/zh" : "/";
 
@@ -153,104 +154,99 @@ const headerMenu = _cachedHeaderMenu;
   set:html={JSON.stringify(headerMenuCN)}
 ></script>
 
-<script is:inline>
-  function debugChineseMenuInjection() {
-    console.group("🇨🇳 Header Menu CN Debug");
+<script is:inline define:vars={{ CN_MENU_DEBUG_ENABLED }}>
+  function applyChineseMenuTitles() {
+    const debug = CN_MENU_DEBUG_ENABLED;
+    const log = (...args) => debug && console.log(...args);
+    const error = (...args) => debug && console.error(...args);
+    const beginGroup = (label) => debug && console.group(label);
+    const endGroup = () => debug && console.groupEnd();
 
-    // 1️⃣ Is the JSON payload present?
+    beginGroup("Header Menu CN Debug");
+
     const dataEl = document.getElementById("header-menu-cn");
-    console.log("JSON element found:", !!dataEl);
+    log("JSON element found:", !!dataEl);
 
     if (!dataEl) {
-      console.error("❌ #header-menu-cn script tag not found");
-      console.groupEnd();
+      error("#header-menu-cn script tag not found");
+      endGroup();
       return;
     }
 
-    let CN_MAP = {};
+    let cnMap = {};
     try {
-      CN_MAP = JSON.parse(dataEl.textContent || "{}");
+      cnMap = JSON.parse(dataEl.textContent || "{}");
     } catch (e) {
-      console.error("❌ Failed to parse CN JSON", e);
-      console.groupEnd();
+      error("Failed to parse CN JSON", e);
+      endGroup();
       return;
     }
 
-    console.log("CN_MAP:", CN_MAP);
-    console.log("CN_MAP keys:", Object.keys(CN_MAP));
+    log("CN_MAP:", cnMap);
+    log("CN_MAP keys:", Object.keys(cnMap));
 
-    // 2️⃣ What menu <li>s actually exist?
     const allLis = [...document.querySelectorAll("#main-nav li")];
-    console.log(
-      "Menu <li> count:",
-      allLis.length
-    );
-    console.log(
-      "Menu <li> classes:",
-      allLis.map(li => li.className)
-    );
+    log("Menu <li> count:", allLis.length);
+    log("Menu <li> classes:", allLis.map((li) => li.className));
 
-    // 3️⃣ Try to resolve each CN item
-    for (const [id, cn] of Object.entries(CN_MAP)) {
-      console.group(`Menu item ID ${id}`);
+    for (const [id, cn] of Object.entries(cnMap)) {
+      beginGroup(`Menu item ID ${id}`);
 
       const liByClass = document.querySelector(`.menu-item-${id}`);
       const liById = document.getElementById(`nav-menu-item-${id}`);
-
-      console.log("li via .menu-item-ID:", liByClass);
-      console.log("li via #nav-menu-item-ID:", liById);
-
       const li = liByClass || liById;
+
+      log("li via .menu-item-ID:", liByClass);
+      log("li via #nav-menu-item-ID:", liById);
+
       if (!li) {
-        console.error("❌ No <li> found for menu item", id);
-        console.groupEnd();
+        error("No <li> found for menu item", id);
+        endGroup();
         continue;
       }
 
       const link = li.querySelector("a");
-      console.log("<a> found:", link);
+      log("<a> found:", link);
 
       if (!link) {
-        console.error("❌ No <a> inside menu item", id);
-        console.groupEnd();
+        error("No <a> inside menu item", id);
+        endGroup();
         continue;
       }
 
-      const enSpan = link.querySelector(".header-link--title");
+      let enSpan = link.querySelector(".header-link--title");
       const cnSpan = link.querySelector(".header-link--title-cn");
 
-      console.log("EN span exists:", !!enSpan);
-      console.log("CN span exists:", !!cnSpan);
+      log("EN span exists:", !!enSpan);
+      log("CN span exists:", !!cnSpan);
 
-      // Inject visibly for debugging
       if (!enSpan) {
-        const s = document.createElement("span");
-        s.className = "header-link--title";
-        s.textContent = link.textContent || "";
+        enSpan = document.createElement("span");
+        enSpan.className = "header-link--title";
+        enSpan.textContent = link.textContent || "";
         link.textContent = "";
-        link.appendChild(s);
-        console.log("✅ EN span injected");
+        link.appendChild(enSpan);
+        log("EN span injected");
       }
 
-		if (!cnSpan) {
-		const s = document.createElement("span");
-		s.className = "header-link--title-cn";
-		s.textContent = cn;
-		link.appendChild(s);
+      if (!cnSpan) {
+        const newCnSpan = document.createElement("span");
+        newCnSpan.className = "header-link--title-cn";
+        newCnSpan.textContent = cn;
+        link.appendChild(newCnSpan);
+        log("CN span injected");
+      }
 
-		link.classList.add("has-cn-title"); // ✅ ALWAYS add
-		}
+      link.classList.add("has-cn-title");
 
-      console.groupEnd();
+      endGroup();
     }
 
-    console.groupEnd();
+    endGroup();
   }
 
-
-document.addEventListener("astro:page-load", debugChineseMenuInjection);
-document.addEventListener("astro:after-swap", debugChineseMenuInjection);
-
+  document.addEventListener("astro:page-load", applyChineseMenuTitles);
+  document.addEventListener("astro:after-swap", applyChineseMenuTitles);
 </script>
 
 

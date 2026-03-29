@@ -190,6 +190,12 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
     <script>
       import { initCFVideo } from "/src/scripts/videojs.js";
 
+      const CFVIDEO_DEBUG = false;
+      const cfVideoLog = (...args: unknown[]): void => {
+        if (!CFVIDEO_DEBUG) return;
+        console.log("[CFVideo]", ...args);
+      };
+
       const CONFIG = {
         SELECTOR: ".hw-vid-wrap",
         FIRST_LOAD_CLASS: "first-load",
@@ -233,7 +239,10 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
 
       function initVideo(element: HTMLElement, reason: string): void {
         const id = element.getAttribute("data-id");
-        if (!id) return;
+        if (!id) {
+          cfVideoLog("Skipping init: missing data-id", { reason });
+          return;
+        }
         
         // ✅ CRITICAL FIX 2: Detect critical status
         const isCritical = element.getAttribute("data-critical") === "true";
@@ -242,6 +251,12 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
         const shouldAnimate = isFirstLoad() && !isCritical;
         
         removeLoadingState(element, shouldAnimate);
+        cfVideoLog("Initializing video", {
+          id,
+          reason,
+          isCritical,
+          shouldAnimate,
+        });
 
         // ✅ CRITICAL FIX 3: Prioritize execution
         if (isCritical) {
@@ -257,6 +272,10 @@ const wrapperClass = `hw-vid-wrap ${!critical ? "loading" : ""}`;
 
       function initAllVideos(reason: string): void {
         const videos = document.querySelectorAll(CONFIG.SELECTOR);
+        cfVideoLog("Initializing all videos", {
+          reason,
+          count: videos.length,
+        });
 
         videos.forEach((video) => {
           initVideo(video as HTMLElement, reason);

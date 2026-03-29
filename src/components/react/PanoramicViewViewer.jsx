@@ -39,7 +39,7 @@ const TOGGLE_WRAP_STYLE = {
 };
 
 const TOGGLE_GROUP_STYLE = {
-  marginTop: "1rem",
+  marginTop: "1.5rem",
   display: "inline-flex",
   alignItems: "center",
   gap: "0.75rem",

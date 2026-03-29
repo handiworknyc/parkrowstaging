@@ -7,6 +7,53 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import SlideNavigation from "../ui/SlideNavigation";
+import fslightboxScriptUrl from "../../scripts/plugins/fslightbox.js?url";
+
+const DEBUG_CAROUSEL_LIGHTBOX = false;
+
+function resolveCarouselLightboxDebugFlag() {
+  if (DEBUG_CAROUSEL_LIGHTBOX) {
+    return true;
+  }
+
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    if (Boolean(window.__carouselLightboxDebug)) {
+      return true;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("debug-carousel-lightbox")) {
+      window.__carouselLightboxDebug = true;
+      return true;
+    }
+
+    if (window.localStorage?.getItem("debug-carousel-lightbox") === "true") {
+      window.__carouselLightboxDebug = true;
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
+
+function debugCarouselLightbox(scope, message, details) {
+  if (!resolveCarouselLightboxDebugFlag() || typeof console === "undefined") {
+    return;
+  }
+
+  const prefix = `[CarouselLightbox][${new Date().toISOString()}][${scope}] ${message}`;
+
+  if (typeof details === "undefined") {
+    console.debug(prefix);
+    return;
+  }
+
+  console.debug(prefix, details);
+}
 
 const EMPTY_CONTENT_ITEM = Object.freeze({
   title: "",
@@ -14,6 +61,9 @@ const EMPTY_CONTENT_ITEM = Object.freeze({
   twoColList: false,
   wideListColumns: false,
   listItems: [],
+  enhancedListItems: [],
+  key: "",
+  weight: 0,
 });
 
 const TEXT_FADE_DURATION = 0.7;
@@ -32,9 +82,68 @@ async function loadFsLightboxConstructor() {
     return window.FsLightbox;
   }
 
-  await import("../../scripts/plugins/fslightbox.js");
+  if (!window.__carouselFsLightboxScriptPromise) {
+    window.__carouselFsLightboxScriptPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[data-carousel-fslightbox-script="true"]');
+
+      if (existingScript instanceof HTMLScriptElement) {
+        existingScript.addEventListener("load", () => resolve(), { once: true });
+        existingScript.addEventListener("error", (event) => reject(event), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = fslightboxScriptUrl;
+      script.async = true;
+      script.dataset.carouselFslightboxScript = "true";
+      script.addEventListener("load", () => resolve(), { once: true });
+      script.addEventListener("error", (event) => reject(event), { once: true });
+      document.head.appendChild(script);
+    }).catch((error) => {
+      window.__carouselFsLightboxScriptPromise = null;
+      throw error;
+    });
+  }
+
+  await window.__carouselFsLightboxScriptPromise;
 
   return typeof window.FsLightbox === "function" ? window.FsLightbox : null;
+}
+
+function teardownFsLightboxInstance(instance) {
+  if (!instance) {
+    return;
+  }
+
+  try {
+    instance.core?.globalEventsController?.removeListeners?.();
+  } catch {}
+
+  try {
+    if (instance.data?.isFullscreenOpen) {
+      instance.core?.fullscreenToggler?.exitFullscreen?.();
+    }
+  } catch {}
+
+  try {
+    instance.core?.scrollbarRecompensor?.removeRecompense?.();
+  } catch {}
+
+  if (instance.slideSwipingProps) {
+    instance.slideSwipingProps.isSwiping = false;
+  }
+
+  try {
+    const container = instance.elements?.container;
+    if (container?.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+  } catch {}
+
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.remove("fslightbox-open");
+    document.body?.style.removeProperty("margin-right");
+  }
 }
 
 function getColumnClass(index, total, items) {
@@ -55,7 +164,7 @@ function getColumnClass(index, total, items) {
 }
 
 function normalizeContentItem(item) {
-  return {
+  return buildContentItem({
     title: item?.title || "",
     text: item?.text || "",
     twoColList: item?.two_col_list || false,
@@ -64,7 +173,7 @@ function normalizeContentItem(item) {
       typeof item?.list === "string"
         ? item.list.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
         : [],
-  };
+  });
 }
 
 function normalizeContentItems(rawContent) {
@@ -76,23 +185,23 @@ function normalizeContentItems(rawContent) {
 }
 
 function toLeftSlotItem(item) {
-  return {
+  return buildContentItem({
     title: item?.title || "",
     text: item?.text || "",
     twoColList: false,
     wideListColumns: false,
     listItems: [],
-  };
+  });
 }
 
 function toRightSlotItem(item) {
-  return {
+  return buildContentItem({
     title: "",
     text: "",
     twoColList: item?.twoColList || false,
     wideListColumns: item?.wideListColumns || false,
     listItems: item?.listItems || [],
-  };
+  });
 }
 
 function hasRenderableItem(item) {
@@ -128,7 +237,14 @@ function getItemWeight(item) {
     return 0;
   }
 
-  const listLength = item.listItems.reduce(
+  if (typeof item?.weight === "number") {
+    return item.weight;
+  }
+
+  const listItems = Array.isArray(item?.enhancedListItems)
+    ? item.enhancedListItems
+    : item.listItems;
+  const listLength = listItems.reduce(
     (sum, line) => sum + stripHtml(line).length,
     0
   );
@@ -139,6 +255,10 @@ function getItemWeight(item) {
 function getItemKey(item) {
   if (!hasRenderableItem(item)) {
     return "";
+  }
+
+  if (typeof item?.key === "string") {
+    return item.key;
   }
 
   return JSON.stringify({
@@ -170,6 +290,43 @@ function enhanceListItemHtml(html) {
   });
 }
 
+function buildContentItem({
+  title = "",
+  text = "",
+  twoColList = false,
+  wideListColumns = false,
+  listItems = [],
+}) {
+  const normalizedListItems = Array.isArray(listItems) ? listItems : [];
+  const enhancedListItems = normalizedListItems.map((line) => enhanceListItemHtml(line));
+  const hasContent = Boolean(title || text || normalizedListItems.length > 0);
+  const weight = hasContent
+    ? stripHtml(title).length
+      + stripHtml(text).length
+      + enhancedListItems.reduce((sum, line) => sum + stripHtml(line).length, 0)
+    : 0;
+  const key = hasContent
+    ? JSON.stringify({
+      title,
+      text,
+      listItems: normalizedListItems,
+      twoColList,
+      wideListColumns,
+    })
+    : "";
+
+  return {
+    title,
+    text,
+    twoColList,
+    wideListColumns,
+    listItems: normalizedListItems,
+    enhancedListItems,
+    key,
+    weight,
+  };
+}
+
 function isStandaloneListHeading(html) {
   return /^<h4\b[^>]*>[\s\S]*<\/h4>$/i.test((html || "").trim());
 }
@@ -197,11 +354,14 @@ function ColumnContentInner({ item }) {
     .filter(Boolean)
     .join(" ");
 
-  const standaloneHeadingCount = item.listItems.filter(isStandaloneListHeading).length;
-  const liftedHeadingHtml = standaloneHeadingCount === 1 && isStandaloneListHeading(item.listItems[0])
-    ? enhanceListItemHtml(item.listItems[0])
+  const enhancedListItems = Array.isArray(item.enhancedListItems)
+    ? item.enhancedListItems
+    : item.listItems.map((line) => enhanceListItemHtml(line));
+  const standaloneHeadingCount = enhancedListItems.filter(isStandaloneListHeading).length;
+  const liftedHeadingHtml = standaloneHeadingCount === 1 && isStandaloneListHeading(enhancedListItems[0])
+    ? enhancedListItems[0]
     : null;
-  const renderedListItems = liftedHeadingHtml ? item.listItems.slice(1) : item.listItems;
+  const renderedListItems = liftedHeadingHtml ? enhancedListItems.slice(1) : enhancedListItems;
 
   return (
     <>
@@ -228,7 +388,7 @@ function ColumnContentInner({ item }) {
           {renderedListItems.map((line, lineIndex) => (
             <li
               key={`list-item-${lineIndex}`}
-              dangerouslySetInnerHTML={{ __html: enhanceListItemHtml(line) }}
+              dangerouslySetInnerHTML={{ __html: line }}
             />
           ))}
         </ul>
@@ -264,8 +424,9 @@ function ContentColumns({ items }) {
 }
 
 const Slide = React.memo(
-  function Slide({ image, index, gallerySize, onOpenLightbox }) {
-    const isLightboxEnabled = typeof onOpenLightbox === "function" && Boolean(image.lightboxSrc || image.src);
+  function Slide({ image, index, gallerySize, onOpenLightbox, lightboxReady }) {
+    const isLightboxEnabled = lightboxReady && typeof onOpenLightbox === "function" && Boolean(image.lightboxSrc || image.src);
+    const lightboxSource = image.lightboxSrc || image.src || "";
     const figureClassName = [
       "slide-figure",
       image.caption ? "has-caption" : "",
@@ -281,8 +442,19 @@ const Slide = React.memo(
             <button
               type="button"
               className="carousel-lightbox-trigger"
-              onClick={() => onOpenLightbox(index)}
+              onClick={(event) => {
+                event.preventDefault();
+                debugCarouselLightbox(`slide-${image.id ?? index}`, "trigger click", {
+                  index,
+                  lightboxReady,
+                  source: lightboxSource,
+                });
+                void onOpenLightbox(index);
+              }}
               aria-label={getLightboxButtonLabel(image, index, gallerySize)}
+              data-carousel-lightbox-trigger=""
+              data-carousel-lightbox-index={index}
+              data-carousel-lightbox-source={lightboxSource}
             >
               <span className="carousel-lightbox-indicator" aria-hidden="true">
                 <Search size={20} strokeWidth={2.25} />
@@ -323,11 +495,13 @@ export default function ImageCarousel({
     canPrev: false,
     canNext: true,
   });
+  const debugScope = instanceId || "carousel";
   const rootRef = useRef(null);
   const frameIdsRef = useRef([]);
   const lightboxRef = useRef(null);
-  const lightboxInitPromiseRef = useRef(null);
-  const lightboxSignatureRef = useRef("");
+  const log = useCallback((message, details) => {
+    debugCarouselLightbox(debugScope, message, details);
+  }, [debugScope]);
 
   const defaultContentItems = useMemo(
     () => normalizeContentItems(defaultContent),
@@ -511,11 +685,6 @@ export default function ImageCarousel({
     [images]
   );
 
-  const lightboxSignature = useMemo(
-    () => JSON.stringify(lightboxSources),
-    [lightboxSources]
-  );
-
   const carouselOpts = useMemo(
     () => ({
       align: "center",
@@ -529,9 +698,25 @@ export default function ImageCarousel({
   );
 
   const clearScheduledReinit = useCallback(() => {
+    log("clearScheduledReinit", {
+      pendingFrames: frameIdsRef.current.length,
+      frameIds: [...frameIdsRef.current],
+    });
     frameIdsRef.current.forEach((frameId) => cancelAnimationFrame(frameId));
     frameIdsRef.current = [];
-  }, []);
+  }, [log]);
+
+  const destroyLightbox = useCallback(() => {
+    const currentInstance = lightboxRef.current;
+    lightboxRef.current = null;
+    log("destroyLightbox", {
+      hadInstance: Boolean(currentInstance),
+      hasContainer: Boolean(currentInstance?.elements?.container),
+      isInitialized: currentInstance?.data?.isInitialized ?? null,
+      isFullscreenOpen: currentInstance?.data?.isFullscreenOpen ?? null,
+    });
+    teardownFsLightboxInstance(currentInstance);
+  }, [log]);
 
   const syncDisplayedContent = useCallback((selectedIndex) => {
     const nextLeftItem = linkedLeftItems[selectedIndex];
@@ -572,6 +757,11 @@ export default function ImageCarousel({
     if (!api) return;
 
     const selectedIndex = api.selectedScrollSnap();
+    log("updateNav", {
+      selectedIndex,
+      canPrev: api.canScrollPrev(),
+      canNext: api.canScrollNext(),
+    });
 
     setNavState({
       current: selectedIndex + 1,
@@ -582,13 +772,31 @@ export default function ImageCarousel({
     syncDisplayedContent(selectedIndex);
   }, [api, syncDisplayedContent]);
 
-  const scheduleReinit = useCallback(() => {
-    if (!api?.reInit) return;
+  const scheduleReinit = useCallback((reason = "unspecified") => {
+    if (!api?.reInit) {
+      log("scheduleReinit skipped", {
+        reason,
+        hasApi: Boolean(api),
+        hasReInit: Boolean(api?.reInit),
+      });
+      return;
+    }
 
+    log("scheduleReinit queued", {
+      reason,
+      slideCount: api.slideNodes?.().length ?? null,
+    });
     clearScheduledReinit();
 
     const firstFrame = requestAnimationFrame(() => {
+      log("scheduleReinit first frame", { reason, firstFrame });
       const secondFrame = requestAnimationFrame(() => {
+        log("scheduleReinit executing", {
+          reason,
+          secondFrame,
+          slideCount: api.slideNodes?.().length ?? null,
+          selectedIndex: api.selectedScrollSnap?.() ?? null,
+        });
         api.reInit();
         setReady(true);
         updateNav();
@@ -599,12 +807,23 @@ export default function ImageCarousel({
     });
 
     frameIdsRef.current.push(firstFrame);
-  }, [api, clearScheduledReinit, updateNav]);
+  }, [api, clearScheduledReinit, log, updateNav]);
 
   useEffect(() => {
-    if (!api) return;
+    if (!api) {
+      log("api effect skipped", { hasApi: false });
+      return;
+    }
+
+    log("api effect attach", {
+      slideCount: api.slideNodes?.().length ?? null,
+    });
 
     const handleReady = () => {
+      log("api ready event", {
+        selectedIndex: api.selectedScrollSnap?.() ?? null,
+        slideCount: api.slideNodes?.().length ?? null,
+      });
       setReady(true);
       updateNav();
     };
@@ -617,126 +836,171 @@ export default function ImageCarousel({
     api.on("reInit", handleReady);
     api.on("select", updateNav);
 
-    scheduleReinit();
+    scheduleReinit("api-effect");
 
     return () => {
+      log("api effect detach");
       api.off("init", handleReady);
       api.off("reInit", handleReady);
       api.off("select", updateNav);
     };
-  }, [api, scheduleReinit, updateNav]);
+  }, [api, log, scheduleReinit, updateNav]);
+
+  const handlePrev = useCallback(() => {
+    log("handlePrev", {
+      selectedIndex: api?.selectedScrollSnap?.() ?? null,
+    });
+    api?.scrollPrev();
+  }, [api, log]);
+
+  const handleNext = useCallback(() => {
+    log("handleNext", {
+      selectedIndex: api?.selectedScrollSnap?.() ?? null,
+    });
+    api?.scrollNext();
+  }, [api, log]);
+
+  const createLightboxInstance = useCallback(async () => {
+    if (lightboxSources.length === 0) {
+      log("createLightboxInstance skipped", { reason: "no-sources" });
+      return null;
+    }
+
+    log("createLightboxInstance start", {
+      sourceCount: lightboxSources.length,
+      sources: [...lightboxSources],
+    });
+    const FsLightbox = await loadFsLightboxConstructor();
+
+    if (!FsLightbox) {
+      log("createLightboxInstance failed", { reason: "constructor-missing" });
+      return null;
+    }
+
+    const nextInstance = new FsLightbox();
+    nextInstance.props.sources = [...lightboxSources];
+    nextInstance.props.loadOnlyCurrentSource = true;
+    nextInstance.setup();
+
+    log("createLightboxInstance success", {
+      sourceCount: nextInstance.props.sources.length,
+    });
+
+    return nextInstance;
+  }, [lightboxSources, log]);
 
   useEffect(() => {
-    if (!api || !rootRef.current) return;
+    if (typeof window !== "undefined") {
+      window.__carouselLightboxDebug = resolveCarouselLightboxDebugFlag();
+    }
 
-    const handleAstroPageLoad = () => scheduleReinit();
-    const handleLocoReady = () => scheduleReinit();
-    const handleResize = () => scheduleReinit();
+    if (!rootRef.current) {
+      log("lifecycle effect skipped", { reason: "missing-root" });
+      return;
+    }
+
+    log("lifecycle effect attach", {
+      ready,
+      imageCount: images.length,
+    });
+
+    const handleAstroBeforeSwap = () => {
+      log("event astro:before-swap");
+      clearScheduledReinit();
+      destroyLightbox();
+    };
+    const handleLocoReady = () => {
+      log("event loco:ready");
+      scheduleReinit("loco:ready");
+    };
+    const handleResize = () => {
+      log("event resize", {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+      scheduleReinit("resize");
+    };
     const handleAssetLoad = (event) => {
       const target = event.target;
       if (target?.tagName === "IMG" || target?.tagName === "VIDEO") {
-        scheduleReinit();
+        log("event asset-load", {
+          tagName: target.tagName,
+          currentSrc: target.currentSrc || target.src || null,
+        });
+        scheduleReinit(`asset:${target.tagName.toLowerCase()}`);
       }
     };
 
-    document.addEventListener("astro:page-load", handleAstroPageLoad);
+    document.addEventListener("astro:before-swap", handleAstroBeforeSwap);
     document.addEventListener("loco:ready", handleLocoReady);
-    window.addEventListener("resize", handleResize, { passive: true });
     rootRef.current.addEventListener("load", handleAssetLoad, true);
 
     let resizeObserver = null;
     if ("ResizeObserver" in window) {
       resizeObserver = new ResizeObserver(() => {
-        scheduleReinit();
+        scheduleReinit("resize-observer");
       });
       resizeObserver.observe(rootRef.current);
+    } else {
+      window.addEventListener("resize", handleResize, { passive: true });
     }
 
     return () => {
-      document.removeEventListener("astro:page-load", handleAstroPageLoad);
+      log("lifecycle effect detach");
+      document.removeEventListener("astro:before-swap", handleAstroBeforeSwap);
       document.removeEventListener("loco:ready", handleLocoReady);
       window.removeEventListener("resize", handleResize);
       rootRef.current?.removeEventListener("load", handleAssetLoad, true);
       resizeObserver?.disconnect();
       clearScheduledReinit();
     };
-  }, [api, clearScheduledReinit, scheduleReinit]);
-
-  const handlePrev = useCallback(() => {
-    api?.scrollPrev();
-  }, [api]);
-
-  const handleNext = useCallback(() => {
-    api?.scrollNext();
-  }, [api]);
-
-  const ensureLightbox = useCallback(async () => {
-    if (lightboxSources.length === 0) {
-      lightboxRef.current = null;
-      lightboxInitPromiseRef.current = null;
-      lightboxSignatureRef.current = "";
-      return null;
-    }
-
-    if (
-      lightboxRef.current
-      && lightboxSignatureRef.current === lightboxSignature
-    ) {
-      return lightboxRef.current;
-    }
-
-    if (lightboxSignatureRef.current !== lightboxSignature) {
-      lightboxRef.current?.close?.();
-      lightboxRef.current = null;
-      lightboxInitPromiseRef.current = null;
-    }
-
-    if (!lightboxInitPromiseRef.current) {
-      lightboxInitPromiseRef.current = (async () => {
-        const FsLightbox = await loadFsLightboxConstructor();
-
-        if (!FsLightbox) {
-          return null;
-        }
-
-        const nextInstance = new FsLightbox();
-        nextInstance.props.sources = [...lightboxSources];
-        nextInstance.props.loadOnlyCurrentSource = true;
-        nextInstance.setup();
-
-        lightboxRef.current = nextInstance;
-        lightboxSignatureRef.current = lightboxSignature;
-
-        return nextInstance;
-      })();
-    }
-
-    const instance = await lightboxInitPromiseRef.current;
-
-    if (!instance) {
-      lightboxInitPromiseRef.current = null;
-      lightboxRef.current = null;
-      lightboxSignatureRef.current = "";
-    }
-
-    return instance;
-  }, [lightboxSignature, lightboxSources]);
+  }, [clearScheduledReinit, destroyLightbox, images.length, log, ready, scheduleReinit]);
 
   useEffect(() => {
-    void ensureLightbox();
-  }, [ensureLightbox]);
+    log("ready changed", { ready });
+  }, [log, ready]);
 
   useEffect(() => () => {
-    lightboxRef.current?.close?.();
-    lightboxRef.current = null;
-    lightboxInitPromiseRef.current = null;
-    lightboxSignatureRef.current = "";
-  }, []);
+    log("component unmount");
+    destroyLightbox();
+  }, [destroyLightbox, log]);
 
   const handleOpenLightbox = useCallback(async (index) => {
-    const instance = await ensureLightbox();
-    instance?.open(index);
-  }, [ensureLightbox]);
+    log("handleOpenLightbox start", {
+      index,
+      ready,
+      hasGlobalDestroyer: typeof window.__destroyCarouselFsLightboxActiveInstance === "function",
+      imageCount: images.length,
+    });
+
+    window.__destroyCarouselFsLightboxActiveInstance?.();
+    destroyLightbox();
+
+    const instance = await createLightboxInstance();
+
+    if (!instance) {
+      log("handleOpenLightbox failed", { index });
+      return;
+    }
+
+    lightboxRef.current = instance;
+    log("handleOpenLightbox open", {
+      index,
+      sourceCount: instance.props.sources.length,
+    });
+    instance.open(index);
+
+    requestAnimationFrame(() => {
+      const container = instance.elements?.container;
+      log("handleOpenLightbox post-open", {
+        index,
+        bodyContainsContainer: Boolean(container && document.body?.contains(container)),
+        containerClassName: container?.className || null,
+        containerConnected: Boolean(container?.isConnected),
+        documentElementHasOpenClass: document.documentElement.classList.contains("fslightbox-open"),
+      });
+    });
+  }, [createLightboxInstance, destroyLightbox, images.length, log, ready]);
 
   if (!Array.isArray(images) || images.length === 0) {
     return null;
@@ -748,6 +1012,7 @@ export default function ImageCarousel({
       className="carousel-wrapper"
       data-ready={ready}
       data-carousel-instance={instanceId || undefined}
+      data-carousel-lightbox-root=""
     >
       <div className="carousel-container">
         <Carousel setApi={setApi} className="w-full mx-auto" opts={carouselOpts}>
@@ -762,6 +1027,7 @@ export default function ImageCarousel({
                   index={index}
                   gallerySize={images.length}
                   onOpenLightbox={handleOpenLightbox}
+                  lightboxReady={ready}
                 />
               </CarouselItem>
             ))}

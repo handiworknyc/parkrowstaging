@@ -1715,6 +1715,15 @@ function formatExterior(value: number | string | null | undefined) {
     height: 100%;
   }
 
+  @media (max-width: 1149px) {
+    .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
+      width: min(100%, 80vw) !important;
+      height: auto !important;
+      max-width: min(100%, 80vw) !important;
+      max-height: 100% !important;
+    }
+  }
+
   .floorplans-panorama-disclaimer {
     color: #3a2a22;
   }

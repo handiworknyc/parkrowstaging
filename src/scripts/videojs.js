@@ -7,7 +7,7 @@ import {
 /* -----------------------------------------------------
    CONFIG
 ----------------------------------------------------- */
-const DEBUG_VIDEO = true;
+const VIDEOJS_DEBUG = false;
 const LOG_VER = "v4";
 const WARMUP_PLAY_DURATION_MS = 2500;
 
@@ -22,8 +22,23 @@ const isIpad =
   typeof HW !== "undefined" && HW.isIpad === true;
 const isIOS = isMobile || isIpad;
 
+function configureVideoJsLogging() {
+  if (typeof videojs.log?.level === "function") {
+    videojs.log.level(VIDEOJS_DEBUG ? "debug" : "off");
+  }
+
+  if (
+    !VIDEOJS_DEBUG &&
+    typeof videojs.log?.history?.disable === "function"
+  ) {
+    videojs.log.history.disable();
+  }
+}
+
+configureVideoJsLogging();
+
 function vlog(videoId, ...args) {
-  if (!DEBUG_VIDEO) return;
+  if (!VIDEOJS_DEBUG) return;
   console.log(`[CFVideo:${LOG_VER}:${videoId}]`, ...args);
 }
 
@@ -198,6 +213,7 @@ export function initCFVideo(videoId, reason = "init") {
 
   const player = videojs(el, {
     controls: hasControls,
+    debug: VIDEOJS_DEBUG,
     loop: true,
     preload: shouldDelaySource ? false : true,
     muted: true,

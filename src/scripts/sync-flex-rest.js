@@ -8,6 +8,14 @@ import { promisify } from "node:util";
 import cwebp from "cwebp-bin";
 
 const execFileP = promisify(execFile);
+const CLOUDFLARE_FALLBACK_POSTER_BLUR_PX = 40;
+const CLOUDFLARE_FALLBACK_POSTER_VARIANTS = [
+  { key: "intch_full", width: 2400 },
+  { key: "intch_xl", width: 1700 },
+  { key: "intch_lg", width: 1400 },
+  { key: "intch_med", width: 1000 },
+  { key: "intch_sm", width: 600 },
+];
 
 function hashJSON(data) {
   return crypto.createHash("sha1").update(JSON.stringify(data)).digest("hex").slice(0, 12);
@@ -268,6 +276,271 @@ function normalizeFlexiblePagePayload(value) {
     ...value,
     seo: normalizePageSeo(value.seo),
   };
+}
+
+function isHttpUrl(value) {
+  return typeof value === "string" && /^https?:\/\//i.test(value.trim());
+}
+
+function isLocalImgCacheUrl(value) {
+  return typeof value === "string" && value.startsWith("/img-cache/");
+}
+
+function hasUsableImageUrl(value) {
+  const url = pickStructuredUrl(value);
+  return isHttpUrl(url) || isLocalImgCacheUrl(url);
+}
+
+function getAssetFetchHeaders(url) {
+  if (!AUTH || !isHttpUrl(url)) return {};
+
+  try {
+    const target = new URL(url);
+    const wpBaseUrl = new URL(WP_BASE);
+
+    if (normalizeHost(target.hostname) === normalizeHost(wpBaseUrl.hostname)) {
+      return authHeaders();
+    }
+  } catch {}
+
+  return {};
+}
+
+function parseCloudflarePosterInfo(streamUrl) {
+  if (!isHttpUrl(streamUrl)) return null;
+
+  try {
+    const url = new URL(streamUrl.trim());
+    const parts = url.pathname.split("/").filter(Boolean);
+    const manifestIndex = parts.indexOf("manifest");
+    const videoId = manifestIndex > 0 ? parts[manifestIndex - 1] : parts[0];
+
+    if (!videoId) return null;
+
+    return {
+      videoId,
+      posterUrl: `${url.protocol}//${url.host}/${videoId}/thumbnails/thumbnail.jpg`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function probeImageDimensions(filePath) {
+  try {
+    const { stdout } = await execFileP("ffprobe", [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=width,height",
+      "-of",
+      "json",
+      filePath,
+    ]);
+    const parsed = JSON.parse(stdout);
+    const stream = parsed?.streams?.[0];
+    const width = normalizePositiveNumber(stream?.width);
+    const height = normalizePositiveNumber(stream?.height);
+
+    if (!width || !height) {
+      return null;
+    }
+
+    return {
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildCloudflarePosterVariants(videoId, posterUrl, outputDir) {
+  const safeVideoId =
+    String(videoId || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "") || "cf-video";
+
+  return CLOUDFLARE_FALLBACK_POSTER_VARIANTS.map(({ key, width }) => {
+    const hash = crypto
+      .createHash("md5")
+      .update(`${posterUrl}|blur=${CLOUDFLARE_FALLBACK_POSTER_BLUR_PX}|width=${width}`)
+      .digest("hex")
+      .slice(0, 8);
+    const filename = `cf-video-${safeVideoId}-poster-blur-${width}w-${hash}.webp`;
+
+    return {
+      key,
+      width,
+      filename,
+      publicUrl: `/img-cache/${filename}`,
+      localPath: path.join(outputDir, filename),
+    };
+  });
+}
+
+async function generateBlurredPosterVariant(inputPath, variant) {
+  if (fs.existsSync(variant.localPath)) {
+    return;
+  }
+
+  const tempPng = path.join(
+    path.dirname(variant.localPath),
+    `${path.basename(variant.localPath, ".webp")}.tmp.png`
+  );
+
+  try {
+    await execFileP("ffmpeg", [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-y",
+      "-i",
+      inputPath,
+      "-vf",
+      `boxblur=${CLOUDFLARE_FALLBACK_POSTER_BLUR_PX}:1,scale='min(iw,${variant.width})':-2`,
+      "-frames:v",
+      "1",
+      tempPng,
+    ]);
+    await execFileP(cwebp, [tempPng, "-q", "95", "-o", variant.localPath]);
+  } finally {
+    if (fs.existsSync(tempPng)) {
+      fs.unlinkSync(tempPng);
+    }
+  }
+}
+
+async function buildCloudflarePosterFallback(streamUrl, outputDir) {
+  const posterInfo = parseCloudflarePosterInfo(streamUrl);
+  if (!posterInfo) return null;
+
+  const { videoId, posterUrl } = posterInfo;
+  const variants = buildCloudflarePosterVariants(videoId, posterUrl, outputDir);
+  const missingVariants = variants.filter((variant) => !fs.existsSync(variant.localPath));
+
+  if (missingVariants.length > 0) {
+    const sourceHash = crypto
+      .createHash("md5")
+      .update(`${posterUrl}|source`)
+      .digest("hex")
+      .slice(0, 8);
+    const tempInput = path.join(outputDir, `cf-video-${videoId}-poster-source-${sourceHash}.jpg`);
+
+    try {
+      const res = await fetch(posterUrl, {
+        headers: { ...getAssetFetchHeaders(posterUrl) },
+      });
+
+      if (!res.ok) {
+        console.warn(`⚠️ Failed to download Cloudflare poster ${posterUrl} (${res.status})`);
+        return null;
+      }
+
+      fs.writeFileSync(tempInput, Buffer.from(await res.arrayBuffer()));
+
+      for (const variant of missingVariants) {
+        try {
+          await generateBlurredPosterVariant(tempInput, variant);
+        } catch (error) {
+          console.warn(
+            `⚠️ Failed to generate blurred Cloudflare poster ${variant.filename}:`,
+            error?.message || error
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(
+        `⚠️ Error creating Cloudflare poster fallback for ${videoId}:`,
+        error?.message || error
+      );
+      return null;
+    } finally {
+      if (fs.existsSync(tempInput)) {
+        fs.unlinkSync(tempInput);
+      }
+    }
+  }
+
+  const availableVariants = [];
+  for (const variant of variants) {
+    if (!fs.existsSync(variant.localPath)) continue;
+
+    const dims = await probeImageDimensions(variant.localPath);
+    availableVariants.push({
+      ...variant,
+      widthValue: dims?.width || variant.width,
+      heightValue: dims?.height || null,
+    });
+  }
+
+  if (!availableVariants.length) {
+    return null;
+  }
+
+  const sizes = {};
+  for (const variant of availableVariants) {
+    sizes[variant.key] = variant.publicUrl;
+    sizes[`${variant.key}-width`] = variant.widthValue;
+
+    if (variant.heightValue) {
+      sizes[`${variant.key}-height`] = variant.heightValue;
+    }
+  }
+
+  const primaryVariant =
+    availableVariants.find((variant) => variant.key === "intch_full") ||
+    availableVariants.find((variant) => variant.key === "intch_xl") ||
+    availableVariants[0];
+
+  return {
+    title: `cf-video-${videoId}-poster-fallback`,
+    filename: primaryVariant.filename,
+    url: primaryVariant.publicUrl,
+    alt: "",
+    mime_type: "image/webp",
+    sizes,
+  };
+}
+
+async function getCloudflarePosterFallback(streamUrl, outputDir, cache) {
+  const cacheKey = normalizeTrimmedString(streamUrl);
+  if (!cacheKey) return null;
+
+  if (!cache.has(cacheKey)) {
+    cache.set(cacheKey, buildCloudflarePosterFallback(cacheKey, outputDir));
+  }
+
+  return cache.get(cacheKey);
+}
+
+async function injectCloudflarePosterFallbacks(node, outputDir, cache = new Map()) {
+  if (!node || typeof node !== "object") {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      await injectCloudflarePosterFallbacks(item, outputDir, cache);
+    }
+    return node;
+  }
+
+  const streamUrl = normalizeTrimmedString(node.cf_stream_video);
+  if (streamUrl && !hasUsableImageUrl(node.yt_img)) {
+    const fallback = await getCloudflarePosterFallback(streamUrl, outputDir, cache);
+    if (fallback) {
+      node.yt_img = fallback;
+    }
+  }
+
+  for (const value of Object.values(node)) {
+    await injectCloudflarePosterFallbacks(value, outputDir, cache);
+  }
+
+  return node;
 }
 
 function normalizeFloorPlanAsset(value, { includeDimensions = false } = {}) {
@@ -720,6 +993,14 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
   try {
     let processUrl = url;
 
+    if (isLocalImgCacheUrl(processUrl)) {
+      return processUrl;
+    }
+
+    if (!isHttpUrl(processUrl)) {
+      return null;
+    }
+
     // 1. STRIP .webp if it is a double extension
     if (processUrl.toLowerCase().endsWith('.webp')) {
       const withoutWebp = processUrl.slice(0, -5);
@@ -760,9 +1041,11 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     }
 
     // 7. Download to Buffer
-    const res = await fetch(url, { headers: { ...authHeaders() } });
+    const res = await fetch(processUrl, {
+      headers: { ...getAssetFetchHeaders(processUrl) },
+    });
     if (!res.ok) {
-      console.warn(`⚠️ Failed to download ${url} (${res.status})`);
+      console.warn(`⚠️ Failed to download ${processUrl} (${res.status})`);
       return null;
     }
     const buffer = Buffer.from(await res.arrayBuffer());
@@ -820,23 +1103,34 @@ function recurseFindImages(obj, collected = new Set(), parentContext = {}) {
 
   // 1. Check if object looks like a WP Image (has 'url')
   if (typeof obj.url === 'string') {
+    const directUrl = obj.url.trim();
     
     // A. Add Full Size (always)
-    if (obj.url.match(/\.(jpeg|jpg|png|webp|gif|svg)(?:[?#].*)?$/i)) {
-      collected.add(JSON.stringify({ url: obj.url, isPanorama }));
+    if (!isLocalImgCacheUrl(directUrl) && directUrl.match(/\.(jpeg|jpg|png|webp|gif|svg)(?:[?#].*)?$/i)) {
+      collected.add(JSON.stringify({ url: directUrl, isPanorama }));
     }
 
     // B. Check 'sizes' for intch_ candidates
     if (obj.sizes && typeof obj.sizes === 'object') {
       for (const [key, val] of Object.entries(obj.sizes)) {
         if (key.startsWith('intch_')) {
-          if (typeof val === 'string') {
+          if (typeof val === 'string' && !isLocalImgCacheUrl(val)) {
             collected.add(JSON.stringify({ url: val, isPanorama }));
           } 
-          else if (val && typeof val === 'object' && typeof val.url === 'string') {
+          else if (
+            val &&
+            typeof val === 'object' &&
+            typeof val.url === 'string' &&
+            !isLocalImgCacheUrl(val.url)
+          ) {
             collected.add(JSON.stringify({ url: val.url, isPanorama }));
           }
-          else if (val && typeof val === 'object' && typeof val.source_url === 'string') {
+          else if (
+            val &&
+            typeof val === 'object' &&
+            typeof val.source_url === 'string' &&
+            !isLocalImgCacheUrl(val.source_url)
+          ) {
             collected.add(JSON.stringify({ url: val.source_url, isPanorama }));
           }
         }
@@ -1157,6 +1451,7 @@ async function run() {
 
   const prefetchMap = [];
   const pageManifest = []; 
+  const cloudflarePosterFallbackCache = new Map();
 
   /* -------- GRAVITY FORMS SYNC -------- */
   try {
@@ -1215,6 +1510,11 @@ async function run() {
       try {
         const data = await fetchFlexibleForPage(uri);
         const normalizedData = normalizeFlexiblePagePayload(data);
+        await injectCloudflarePosterFallbacks(
+          normalizedData,
+          imgCacheDir,
+          cloudflarePosterFallbackCache
+        );
         const layouts = Array.isArray(normalizedData?.layouts) ? normalizedData.layouts : [];
 
         const cleanPath = toPathname(uri);
@@ -1330,6 +1630,11 @@ async function run() {
   try {
     console.log("🔄 Fetching Specials…");
     const specials = await fetchSpecials();
+    await injectCloudflarePosterFallbacks(
+      specials,
+      imgCacheDir,
+      cloudflarePosterFallbackCache
+    );
     
     // Transform image URLs in specials
     const imageUrlStrings = recurseFindImages(specials);

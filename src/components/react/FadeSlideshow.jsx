@@ -41,6 +41,10 @@ function isLongSectionTitle(title) {
   return lines.some(l => l.length >= 18);
 }
 
+function getSectionContentKey(...parts) {
+  return JSON.stringify(parts.map((part) => part || null));
+}
+
 export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null, tallestSectionIndex = 0 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [disableBlur, setDisableBlur] = useState(false);
@@ -133,33 +137,68 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   );
 
   const tallestContent = allSectionContents[tallestSectionIndex];
+  const staticSectionTitle = useMemo(() => {
+    if (!allSectionContents.length) return null;
+
+    const [firstTitle] = allSectionContents.map((content) => content?.title || null);
+    if (!firstTitle) return null;
+
+    return allSectionContents.every((content) => (content?.title || null) === firstTitle)
+      ? firstTitle
+      : null;
+  }, [allSectionContents]);
+  const slideshowHasAnyBody = useMemo(
+    () => allSectionContents.some((content) => content?.h3 || content?.text),
+    [allSectionContents]
+  );
+  const currentSectionBodyKey = useMemo(
+    () => getSectionContentKey(currentSectionContent?.h3, currentSectionContent?.text),
+    [currentSectionContent]
+  );
+  const currentHasBody = !!(currentSectionContent?.h3 || currentSectionContent?.text);
+
+  const renderSectionTitle = (title) => {
+    if (!title) return null;
+
+    return (
+      <h2
+        className={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
+          isLongSectionTitle(title) ? "long-title" : ""
+        }`}
+        dangerouslySetInnerHTML={{ __html: title }}
+      />
+    );
+  };
+
+  const renderSectionBody = (content) => {
+    if (!(content?.h3 || content?.text)) return null;
+
+    return (
+      <>
+        {content.h3 && (
+          <h3
+            className="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
+            dangerouslySetInnerHTML={{ __html: content.h3 }}
+          />
+        )}
+        {content.text && (
+          <div
+            className="section-text"
+            dangerouslySetInnerHTML={{ __html: content.text }}
+          />
+        )}
+      </>
+    );
+  };
 
   // Shared renderer for section content inner markup
   const renderSectionInner = (content) => (
     <div className="row">
       <div className="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
         <div className="row">
-          {content.title && (
-            <h2
-              className={`antiga section-title min-[1400px]:col-5 min-[960px]:col-6 col-12 min-[960px]:mb-0 min-[700px]:mb-7 ${
-                isLongSectionTitle(content.title) ? "long-title" : ""
-              }`}
-              dangerouslySetInnerHTML={{ __html: content.title }}
-            />
-          )}
+          {renderSectionTitle(content.title)}
           <div className="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
-            {content.h3 && (
-              <h3
-                className="figure figure-h3 min-[960px]:mt-0 min-[700px]:mt-5 max-[699px]:mt-[4.75rem]"
-                dangerouslySetInnerHTML={{ __html: content.h3 }}
-              />
-            )}
-            {content.text && (
-              <div
-                className="section-text"
-                dangerouslySetInnerHTML={{ __html: content.text }}
-              />
-            )}
+            {renderSectionBody(content)}
           </div>
         </div>
       </div>
@@ -183,28 +222,66 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         </div>
       )}
 
-      {/* Active slide: absolutely positioned on top, cross-fades */}
-      <AnimatePresence mode="wait">
-        {currentSectionContent && (
-          <motion.div
-            key={`section-${currentIndex}`}
-            className={`flex-section-content hw-contain slideshow-section-inner slideshow-section-active ${
-              !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
-            }`}
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
-            }}
-            exit={{ 
-              opacity: 0,
-              transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
-            }}
-          >
-            {renderSectionInner(currentSectionContent)}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* When the title is identical across slides, keep it mounted and only fade the changing copy */}
+      {staticSectionTitle ? (
+        <div
+          className={`flex-section-content hw-contain slideshow-section-inner slideshow-section-active ${
+            !slideshowHasAnyBody ? "title-only" : ""
+          }`}
+        >
+          <div className="row">
+            <div className="min-[1400px]:push-1 min-[1400px]:col-10 min-[1180px]:col-11 col-12 flex">
+              <div className="row">
+                {renderSectionTitle(staticSectionTitle)}
+                {slideshowHasAnyBody && (
+                  <div className="section-text-wrap max-[960px]:ml-0 ml-auto min-[1400px]:col-5 min-[1100px]:col-5 min-[960px]:col-6 max-[1180px]:min-[1100px]:push-1 col-12">
+                    <AnimatePresence mode="wait" initial={false}>
+                      {currentHasBody && (
+                        <motion.div
+                          key={`section-copy-${currentSectionBodyKey}`}
+                          initial={{ opacity: 0 }}
+                          animate={{
+                            opacity: 1,
+                            transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+                          }}
+                          exit={{
+                            opacity: 0,
+                            transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
+                          }}
+                        >
+                          {renderSectionBody(currentSectionContent)}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <AnimatePresence mode="wait">
+          {currentSectionContent && (
+            <motion.div
+              key={`section-${currentIndex}`}
+              className={`flex-section-content hw-contain slideshow-section-inner slideshow-section-active ${
+                !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
+              }`}
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 1,
+                transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+              }}
+              exit={{ 
+                opacity: 0,
+                transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
+              }}
+            >
+              {renderSectionInner(currentSectionContent)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   ) : null;
 

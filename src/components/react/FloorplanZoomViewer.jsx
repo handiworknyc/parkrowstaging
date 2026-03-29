@@ -6,6 +6,7 @@ import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 const MAX_SCALE = 5;
 const INITIAL_SCALE = 1;
 const SCALE_STEP = 0.35;
+const ZOOM_ANIMATION_MS = 200;
 
 const ROOT_STYLE = {
   width: "100%",
@@ -77,10 +78,33 @@ function isModalVisible(modal) {
   return Boolean(modal && !modal.hidden && modal.classList.contains("is-visible"));
 }
 
-function resetToInitialView(transformRef) {
+function roundScale(scale) {
+  return Math.round(scale * 1000) / 1000;
+}
+
+function clampScale(scale) {
+  return Math.min(MAX_SCALE, Math.max(INITIAL_SCALE, roundScale(scale)));
+}
+
+function getNextScale(currentScale, direction) {
+  return clampScale(currentScale * Math.exp(direction * SCALE_STEP));
+}
+
+function centerOnImage(transformRef, imageRef, scale = INITIAL_SCALE, animationTime = 0) {
+  const image = imageRef.current;
+
+  if (image instanceof HTMLElement) {
+    transformRef.current?.zoomToElement(image, scale, animationTime);
+    return;
+  }
+
+  transformRef.current?.centerView(scale, animationTime);
+}
+
+function resetToInitialView(transformRef, imageRef) {
   transformRef.current?.resetTransform(0);
   window.requestAnimationFrame(() => {
-    transformRef.current?.centerView(undefined, 0);
+    centerOnImage(transformRef, imageRef, INITIAL_SCALE, 0);
   });
 }
 
@@ -93,6 +117,8 @@ export default function FloorplanZoomViewer({
 }) {
   const rootRef = useRef(null);
   const transformRef = useRef(null);
+  const imageRef = useRef(null);
+  const isSvg = /\.svg(?:[?#].*)?$/i.test(String(src ?? ""));
 
   useEffect(() => {
     const root = rootRef.current;
@@ -111,7 +137,7 @@ export default function FloorplanZoomViewer({
 
       if (visible) {
         queueLayout(() => {
-          resetToInitialView(transformRef);
+          resetToInitialView(transformRef, imageRef);
         });
       }
     };
@@ -160,8 +186,17 @@ export default function FloorplanZoomViewer({
     if (!isModalVisible(modal)) return;
 
     queueLayout(() => {
-      resetToInitialView(transformRef);
+      resetToInitialView(transformRef, imageRef);
     });
+  };
+
+  const handleZoomButton = (direction) => {
+    const currentScale = transformRef.current?.instance?.transformState?.scale ?? INITIAL_SCALE;
+    const nextScale = getNextScale(currentScale, direction);
+
+    if (nextScale === currentScale) return;
+
+    centerOnImage(transformRef, imageRef, nextScale, ZOOM_ANIMATION_MS);
   };
 
   const imageStyle = {
@@ -181,10 +216,12 @@ export default function FloorplanZoomViewer({
   const image = (
     <img
       alt={alt}
+      className={isSvg ? "floorplans-zoom-image floorplans-zoom-image--svg" : "floorplans-zoom-image"}
       decoding="async"
       height={height}
       loading="eager"
       onLoad={handleImageLoad}
+      ref={imageRef}
       src={src}
       style={imageStyle}
       width={width}
@@ -208,14 +245,14 @@ export default function FloorplanZoomViewer({
         pinch={{ disabled: false }}
         wheel={{ disabled: true }}
       >
-        {({ zoomIn, zoomOut }) => (
+        {() => (
           <>
             <div style={CONTROLS_STYLE} role="group" aria-label={`Zoom controls for ${alt}`}>
               <button
                 type="button"
                 className="floorplans-zoom-button floorplans-zoom-button--icon"
                 style={ICON_CONTROL_BUTTON_STYLE}
-                onClick={() => zoomIn(SCALE_STEP)}
+                onClick={() => handleZoomButton(1)}
                 aria-label={`Zoom in on ${alt}`}
               >
                 <span
@@ -227,7 +264,7 @@ export default function FloorplanZoomViewer({
                 type="button"
                 className="floorplans-zoom-button floorplans-zoom-button--icon"
                 style={ICON_CONTROL_BUTTON_STYLE}
-                onClick={() => zoomOut(SCALE_STEP)}
+                onClick={() => handleZoomButton(-1)}
                 aria-label={`Zoom out on ${alt}`}
               >
                 <span
@@ -239,7 +276,7 @@ export default function FloorplanZoomViewer({
                 type="button"
                 className="floorplans-zoom-button floorplans-zoom-button--reset"
                 style={CONTROL_BUTTON_STYLE}
-                onClick={() => resetToInitialView(transformRef)}
+                onClick={() => resetToInitialView(transformRef, imageRef)}
                 aria-label={`Reset zoom for ${alt}`}
               >
                 Reset zoom

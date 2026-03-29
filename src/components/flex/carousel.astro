@@ -1,5 +1,9 @@
 ---
 import ImageCarousel from "../react/ImageCarousel.jsx";
+import fslightboxScriptUrl from "../../scripts/plugins/fslightbox.js?url";
+import "../../styles/fslightbox.css";
+
+const DEBUG_CAROUSEL_LIGHTBOX = false;
 
 /* ---------------- Props ---------------- */
 interface Props {
@@ -141,6 +145,352 @@ const instanceId = transitionName;
       transition:name={transitionName}
     />
   </div>
+)}
+
+{hasImages && (
+  <script define:vars={{ debugCarouselLightbox: DEBUG_CAROUSEL_LIGHTBOX, carouselInstanceId: instanceId, carouselFslightboxScriptUrl: fslightboxScriptUrl }}>
+    const DEBUG_CAROUSEL_LIGHTBOX = Boolean(debugCarouselLightbox);
+    const CAROUSEL_INSTANCE_ID = carouselInstanceId || "carousel";
+    const CAROUSEL_FSLIGHTBOX_SCRIPT_URL = carouselFslightboxScriptUrl;
+    const rootSelector = "[data-carousel-lightbox-root]";
+    const triggerSelector = "[data-carousel-lightbox-trigger]";
+
+    function resolveCarouselLightboxDebugFlag() {
+      if (DEBUG_CAROUSEL_LIGHTBOX) {
+        return true;
+      }
+
+      if (typeof window === "undefined") {
+        return false;
+      }
+
+      try {
+        if (Boolean(window.__carouselLightboxDebug)) {
+          return true;
+        }
+
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has("debug-carousel-lightbox")) {
+          window.__carouselLightboxDebug = true;
+          return true;
+        }
+
+        if (window.localStorage?.getItem("debug-carousel-lightbox") === "true") {
+          window.__carouselLightboxDebug = true;
+          return true;
+        }
+      } catch {}
+
+      return false;
+    }
+
+    const activeDebugCarouselLightbox = resolveCarouselLightboxDebugFlag();
+
+    function logCarouselLightbox(message, details) {
+      const isDebugEnabled = activeDebugCarouselLightbox || Boolean(window.__carouselLightboxDebug);
+
+      if (!isDebugEnabled || typeof console === "undefined") {
+        return;
+      }
+
+      const prefix = `[CarouselLightbox][${new Date().toISOString()}][${CAROUSEL_INSTANCE_ID}] ${message}`;
+
+      if (typeof details === "undefined") {
+        console.debug(prefix);
+        return;
+      }
+
+      console.debug(prefix, details);
+    }
+
+    window.__carouselLightboxDebug = activeDebugCarouselLightbox;
+
+    const state = window["__carouselFsLightboxState"] || {
+      activeInstance: null,
+      log: null,
+      lastInstanceId: null,
+    };
+
+    state.log = logCarouselLightbox;
+    state.lastInstanceId = CAROUSEL_INSTANCE_ID;
+    window["__carouselFsLightboxState"] = state;
+
+    async function loadCarouselFsLightboxConstructor() {
+      logCarouselLightbox("loadCarouselFsLightboxConstructor start", {
+        hasConstructor: typeof window["FsLightbox"] === "function",
+        scriptUrl: CAROUSEL_FSLIGHTBOX_SCRIPT_URL,
+      });
+
+      if (typeof window === "undefined") {
+        logCarouselLightbox("loadCarouselFsLightboxConstructor skipped", { reason: "no-window" });
+        return null;
+      }
+
+      if (typeof window["FsLightbox"] === "function") {
+        logCarouselLightbox("loadCarouselFsLightboxConstructor reuse-existing");
+        return window["FsLightbox"];
+      }
+
+      if (!window["__carouselFsLightboxScriptPromise"]) {
+        window["__carouselFsLightboxScriptPromise"] = new Promise((resolve, reject) => {
+          const existingScript = document.querySelector('script[data-carousel-fslightbox-script="true"]');
+
+          if (existingScript instanceof HTMLScriptElement) {
+            logCarouselLightbox("loadCarouselFsLightboxConstructor waiting-for-existing-script");
+            existingScript.addEventListener("load", () => resolve(), { once: true });
+            existingScript.addEventListener("error", (event) => reject(event), { once: true });
+            return;
+          }
+
+          const script = document.createElement("script");
+          script.src = CAROUSEL_FSLIGHTBOX_SCRIPT_URL;
+          script.async = true;
+          script.dataset.carouselFslightboxScript = "true";
+          logCarouselLightbox("loadCarouselFsLightboxConstructor append-script", {
+            scriptUrl: script.src,
+          });
+          script.addEventListener("load", () => resolve(), { once: true });
+          script.addEventListener("error", (event) => reject(event), { once: true });
+          document.head.appendChild(script);
+        }).catch((error) => {
+          logCarouselLightbox("loadCarouselFsLightboxConstructor script-error", {
+            scriptUrl: CAROUSEL_FSLIGHTBOX_SCRIPT_URL,
+            error,
+          });
+          window["__carouselFsLightboxScriptPromise"] = null;
+          throw error;
+        });
+      }
+
+      await window["__carouselFsLightboxScriptPromise"];
+
+      logCarouselLightbox("loadCarouselFsLightboxConstructor imported", {
+        hasConstructor: typeof window["FsLightbox"] === "function",
+      });
+
+      return typeof window["FsLightbox"] === "function" ? window["FsLightbox"] : null;
+    }
+
+    function teardownCarouselFsLightboxInstance(instance) {
+      if (!instance) {
+        logCarouselLightbox("teardownCarouselFsLightboxInstance skipped", { reason: "no-instance" });
+        return;
+      }
+
+      logCarouselLightbox("teardownCarouselFsLightboxInstance start", {
+        hasContainer: Boolean(instance.elements?.container),
+        isInitialized: instance.data?.isInitialized ?? null,
+        isFullscreenOpen: instance.data?.isFullscreenOpen ?? null,
+      });
+
+      try {
+        instance.core?.globalEventsController?.removeListeners?.();
+      } catch {}
+
+      try {
+        if (instance.data?.isFullscreenOpen) {
+          instance.core?.fullscreenToggler?.exitFullscreen?.();
+        }
+      } catch {}
+
+      try {
+        instance.core?.scrollbarRecompensor?.removeRecompense?.();
+      } catch {}
+
+      if (instance.slideSwipingProps) {
+        instance.slideSwipingProps.isSwiping = false;
+      }
+
+      try {
+        const container = instance.elements?.container;
+        if (container?.parentNode) {
+          container.parentNode.removeChild(container);
+        }
+      } catch {}
+
+      document.documentElement.classList.remove("fslightbox-open");
+      document.body?.style.removeProperty("margin-right");
+      logCarouselLightbox("teardownCarouselFsLightboxInstance complete");
+    }
+
+    if (!window["__carouselFsLightboxState"]) {
+    const destroyActiveInstance = () => {
+      const currentInstance = state.activeInstance;
+      state.activeInstance = null;
+      logCarouselLightbox("destroyActiveInstance", {
+        hadInstance: Boolean(currentInstance),
+      });
+      teardownCarouselFsLightboxInstance(currentInstance);
+    };
+
+    const collectSources = (root) => {
+      const sources = Array.from(root.querySelectorAll(triggerSelector))
+        .map((element) => element.getAttribute("data-carousel-lightbox-source") || "")
+        .filter(Boolean);
+      logCarouselLightbox("collectSources", {
+        sourceCount: sources.length,
+        sources,
+      });
+      return sources;
+    };
+
+    const openFromRoot = async (root, index = 0) => {
+      if (!(root instanceof HTMLElement)) {
+        logCarouselLightbox("openFromRoot aborted", {
+          reason: "invalid-root",
+          index,
+        });
+        return false;
+      }
+
+      logCarouselLightbox("openFromRoot start", {
+        index,
+        rootReady: root.dataset.ready ?? null,
+        rootInstance: root.dataset.carouselInstance ?? null,
+        hasPluginStyleTag: Boolean(document.querySelector(".fslightbox-styles")),
+      });
+      const sources = collectSources(root);
+
+      if (sources.length === 0) {
+        logCarouselLightbox("openFromRoot aborted", {
+          reason: "no-sources",
+          index,
+        });
+        return false;
+      }
+
+      const FsLightbox = await loadCarouselFsLightboxConstructor();
+
+      if (!FsLightbox) {
+        logCarouselLightbox("openFromRoot aborted", {
+          reason: "missing-constructor",
+          index,
+        });
+        return false;
+      }
+
+      destroyActiveInstance();
+
+      const nextInstance = new FsLightbox();
+      nextInstance.props.sources = sources;
+      nextInstance.props.loadOnlyCurrentSource = true;
+      nextInstance.setup();
+
+      state.activeInstance = nextInstance;
+
+      const boundedIndex = Math.max(0, Math.min(index, sources.length - 1));
+      logCarouselLightbox("openFromRoot opening", {
+        requestedIndex: index,
+        boundedIndex,
+        sourceCount: sources.length,
+      });
+      nextInstance.open(boundedIndex);
+
+      logCarouselLightbox("openFromRoot success", {
+        boundedIndex,
+        hasActiveInstance: Boolean(state.activeInstance),
+      });
+
+      requestAnimationFrame(() => {
+        const container = nextInstance.elements?.container;
+        logCarouselLightbox("openFromRoot post-open", {
+          boundedIndex,
+          bodyContainsContainer: Boolean(container && document.body?.contains(container)),
+          containerClassName: container?.className || null,
+          containerConnected: Boolean(container?.isConnected),
+          documentElementHasOpenClass: document.documentElement.classList.contains("fslightbox-open"),
+          hasPluginStyleTag: Boolean(document.querySelector(".fslightbox-styles")),
+        });
+      });
+
+      return true;
+    };
+
+    window["__destroyCarouselFsLightboxActiveInstance"] = destroyActiveInstance;
+    window["__openCarouselFsLightbox"] = async (rootOrTrigger, index = 0) => {
+      if (rootOrTrigger instanceof HTMLElement && rootOrTrigger.matches(rootSelector)) {
+        return openFromRoot(rootOrTrigger, index);
+      }
+
+      const root = rootOrTrigger instanceof HTMLElement
+        ? rootOrTrigger.closest(rootSelector)
+        : null;
+
+      return openFromRoot(root, index);
+    };
+
+    if (!window["__carouselFsLightboxDelegatedClickInstalled"]) {
+      logCarouselLightbox("installing global fallback helper");
+      document.addEventListener("click", (event) => {
+        const currentState = window["__carouselFsLightboxState"];
+        const currentLog = typeof currentState?.log === "function"
+          ? currentState.log
+          : () => {};
+
+        if (event.defaultPrevented) {
+          currentLog("delegated click skipped", { reason: "defaultPrevented" });
+          return;
+        }
+
+        const target = event.target;
+        const trigger = target instanceof Element
+          ? target.closest(triggerSelector)
+          : null;
+
+        if (!(trigger instanceof HTMLElement)) {
+          return;
+        }
+
+        currentLog("delegated click trigger detected", {
+          index: trigger.dataset.carouselLightboxIndex || null,
+          source: trigger.dataset.carouselLightboxSource || null,
+        });
+
+        const root = trigger.closest(rootSelector);
+
+        if (!(root instanceof HTMLElement)) {
+          currentLog("delegated click aborted", { reason: "missing-root" });
+          return;
+        }
+
+        if (root.dataset.carouselInstance) {
+          currentLog("delegated click skipped", {
+            reason: "react-managed",
+            rootInstance: root.dataset.carouselInstance,
+          });
+          return;
+        }
+
+        const rawIndex = Number(trigger.dataset.carouselLightboxIndex || "0");
+        const nextIndex = Number.isNaN(rawIndex) ? 0 : rawIndex;
+
+        event.preventDefault();
+        currentLog("delegated click opening", {
+          index: nextIndex,
+          rootReady: root.dataset.ready ?? null,
+          rootInstance: root.dataset.carouselInstance ?? null,
+        });
+        void window["__openCarouselFsLightbox"]?.(root, nextIndex);
+      });
+      window["__carouselFsLightboxDelegatedClickInstalled"] = true;
+    } else {
+      logCarouselLightbox("global fallback helper refreshed");
+    }
+
+    if (!window["__carouselFsLightboxBeforeSwapInstalled"]) {
+      document.addEventListener("astro:before-swap", () => {
+        const currentState = window["__carouselFsLightboxState"];
+        const currentLog = typeof currentState?.log === "function"
+          ? currentState.log
+          : () => {};
+        currentLog("event astro:before-swap", {
+          helperInstanceId: currentState?.lastInstanceId ?? null,
+        });
+        window["__destroyCarouselFsLightboxActiveInstance"]?.();
+      });
+      window["__carouselFsLightboxBeforeSwapInstalled"] = true;
+    }
+  </script>
 )}
 
 {/* Fallback Text Content */}

@@ -59,6 +59,14 @@ function getScrollY(): number {
   );
 }
 
+function isFloorplansModalOpen(): boolean {
+  return (
+    document.querySelector(
+      "[data-floorplans-modal]:not([hidden]), [data-floorplans-panorama-modal]:not([hidden])"
+    ) instanceof HTMLElement
+  );
+}
+
 function normalizeConfig(
   config: string | string[] | HeaderConfig | HeaderConfig[]
 ): HeaderConfig[] {
@@ -85,15 +93,17 @@ function getState(): StickyState {
 
 function setHeaderHidden(state: StickyState, key: string, hidden: boolean) {
   const headerState = state.headers.get(key);
-  if (!headerState || headerState.hidden === hidden) return;
+  const nextHidden = hidden && !isFloorplansModalOpen();
+  if (!headerState || headerState.hidden === nextHidden) return;
 
-  headerState.hidden = hidden;
-  headerState.element.classList.toggle("is-hidden", hidden);
+  headerState.hidden = nextHidden;
+  headerState.element.classList.toggle("is-hidden", nextHidden);
 }
 
 function forceHeaderHidden(hidden: boolean) {
   const state = getState();
   const scrollY = getScrollY();
+  const nextHidden = hidden && !isFloorplansModalOpen();
   let applied = false;
 
   cleanupStaleHeaders(state);
@@ -111,7 +121,7 @@ function forceHeaderHidden(hidden: boolean) {
   if (!applied) {
     document
       .querySelectorAll<HTMLElement>("#header")
-      .forEach((element) => element.classList.toggle("is-hidden", hidden));
+      .forEach((element) => element.classList.toggle("is-hidden", nextHidden));
   }
 
   state.lastY = scrollY;
@@ -129,6 +139,20 @@ function createScrollHandler(state: StickyState) {
   function onScrollRaf() {
     const y = getScrollY();
     const dy = y - state.lastY;
+
+    if (isFloorplansModalOpen()) {
+      state.headers.forEach((headerState, key) => {
+        setHeaderHidden(state, key, false);
+
+        if (headerState.bannerScroll) {
+          updateBannerScroll(headerState.element, y);
+        }
+      });
+
+      state.lastY = y;
+      state.ticking = false;
+      return;
+    }
 
     const shouldHide = dy > CONFIG.DOWN_THRESHOLD && y > CONFIG.HIDE_AFTER;
     const shouldShow = dy < -CONFIG.UP_THRESHOLD || y <= 0;
