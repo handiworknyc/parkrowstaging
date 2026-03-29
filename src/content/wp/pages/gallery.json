@@ -42,6 +42,7 @@
       },
       "label_above": "Residences",
       "label_above_chinese": "",
+      "natural_aspect": false,
       "images": [
         {
           "image": {
@@ -880,6 +881,7 @@
       },
       "label_above": "Amenities",
       "label_above_chinese": "",
+      "natural_aspect": false,
       "images": [
         {
           "image": {
@@ -1703,5 +1705,5 @@
       "content": false
     }
   ],
-  "_syncedAt": "2026-03-29 19:04:22"
+  "_syncedAt": "2026-03-29 19:49:07"
 }
