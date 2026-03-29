@@ -2,8 +2,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import FloorplanZoomViewer from "@/components/react/FloorplanZoomViewer.jsx";
+import PanoramicViewViewer from "@/components/react/PanoramicViewViewer.jsx";
 import inventory from "@/content/wp/avesdo-floorplans.json";
 import floorPlanDetailPage from "@/content/wp/floor-plan-detail.json";
+import panoramicViewsPage from "@/content/wp/panoramic-views.json";
 
 const { rowIndex = 0 } = Astro.props;
 const tableId = `floorplans-${rowIndex}`;
@@ -68,6 +70,135 @@ function getSvgIntrinsicSize(imageUrl: string) {
   return null;
 }
 
+function extractUrl(value: unknown) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (value && typeof value === "object") {
+    if ("url" in value && typeof value.url === "string") {
+      return value.url.trim();
+    }
+
+    if ("href" in value && typeof value.href === "string") {
+      return value.href.trim();
+    }
+
+    if ("link" in value && typeof value.link === "string") {
+      return value.link.trim();
+    }
+  }
+
+  return "";
+}
+
+function extractAsset(value: unknown) {
+  if (typeof value === "string") {
+    const url = value.trim();
+    return url ? { url } : null;
+  }
+
+  if (value && typeof value === "object") {
+    const url = extractUrl(value);
+    if (!url) return null;
+
+    const width =
+      "width" in value && Number.isFinite(Number(value.width)) && Number(value.width) > 0
+        ? Number(value.width)
+        : undefined;
+    const height =
+      "height" in value && Number.isFinite(Number(value.height)) && Number(value.height) > 0
+        ? Number(value.height)
+        : undefined;
+
+    return { url, width, height };
+  }
+
+  return null;
+}
+
+function pickUrl(...values: unknown[]) {
+  for (const value of values) {
+    const url = extractUrl(value);
+    if (url) return url;
+  }
+
+  return "";
+}
+
+function parseUnitFloor(unitNumber: string | number | null | undefined) {
+  const digits = String(unitNumber ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+
+  const floorDigits = digits.length > 2 ? digits.slice(0, -2) : digits;
+  const floor = Number.parseInt(floorDigits, 10);
+  return Number.isFinite(floor) ? floor : null;
+}
+
+function floorSpecMatches(spec: string | null | undefined, floor: number | null) {
+  if (floor === null) return false;
+
+  const normalized = String(spec ?? "").trim();
+  if (!normalized) return false;
+
+  return normalized.split(/[\n\r,\/]+/).some((token) => {
+    const trimmed = token.trim();
+    if (!trimmed) return false;
+
+    const rangeMatch = trimmed.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+    if (rangeMatch) {
+      const start = Number.parseInt(rangeMatch[1], 10);
+      const end = Number.parseInt(rangeMatch[2], 10);
+      const min = Math.min(start, end);
+      const max = Math.max(start, end);
+      return floor >= min && floor <= max;
+    }
+
+    const single = Number.parseInt(trimmed, 10);
+    return Number.isFinite(single) && single === floor;
+  });
+}
+
+function derivePdfUrl(sourceUrl: string | null | undefined) {
+  const normalized = String(sourceUrl ?? "").trim();
+  if (!normalized) return "";
+
+  const match = normalized.match(/^([^?#]+)([?#].*)?$/);
+  if (!match) return "";
+
+  const [, pathname, suffix = ""] = match;
+  if (/\.pdf$/i.test(pathname)) {
+    return normalized;
+  }
+
+  if (!/\.(?:jpe?g|png|webp|gif|svg)$/i.test(pathname)) {
+    return "";
+  }
+
+  return `${pathname.replace(/\.[^.]+$/i, ".pdf")}${suffix}`;
+}
+
+const panoramicViews = Array.isArray(panoramicViewsPage?.views) ? panoramicViewsPage.views : [];
+
+function getPanoramicView(unitNumber: string) {
+  const floor = parseUnitFloor(unitNumber);
+  const matchedView =
+    panoramicViews.find((view) => floorSpecMatches(view?.floors, floor)) ?? panoramicViews[0];
+  const dayView = extractAsset(matchedView?.day_view);
+  const nightView = extractAsset(matchedView?.night_view);
+
+  if (!dayView?.url && !nightView?.url) return null;
+
+  return {
+    dayUrl: dayView?.url || nightView?.url || "",
+    dayWidth: dayView?.width ?? nightView?.width,
+    dayHeight: dayView?.height ?? nightView?.height,
+    nightUrl: nightView?.url || "",
+    nightWidth: nightView?.width ?? dayView?.width,
+    nightHeight: nightView?.height ?? dayView?.height,
+  };
+}
+
 const rawDetails = Array.isArray(floorPlanDetailPage?.floor_plan_detail)
   ? floorPlanDetailPage.floor_plan_detail
   : [];
@@ -87,6 +218,13 @@ const details = rawDetails.flatMap((detail) => {
       (Number.isFinite(fallbackImageHeight) && fallbackImageHeight > 0
         ? fallbackImageHeight
         : undefined);
+    const pdfUrl = pickUrl(
+      detail?.pdf_url,
+      detail?.pdfUrl,
+      detail?.pdf,
+      detail?.floor_plan_pdf,
+      detail?.floorPlanPdf
+    );
 
     return imageUrl
       ? [
@@ -95,6 +233,7 @@ const details = rawDetails.flatMap((detail) => {
             exterior: String(detail?.exterior ?? "").trim(),
             exposure: String(detail?.exposure ?? "").trim(),
             imageUrl,
+            pdfUrl,
             imageWidth,
             imageHeight,
             imageAspectRatio:
@@ -118,6 +257,8 @@ const units = Array.isArray(inventory?.units)
       .map((unit) => {
         const unitNumber = String(unit?.unitNumber ?? "").trim();
         const matchedDetail = detailMap.get(unitNumber) ?? defaultDetail;
+        const panoramicView = getPanoramicView(unitNumber);
+        const pdfUrl = derivePdfUrl(String(unit?.floorPlanImage ?? ""));
 
         return {
           ...unit,
@@ -125,6 +266,8 @@ const units = Array.isArray(inventory?.units)
             ? {
                 ...matchedDetail,
                 unit: unitNumber,
+                panoramicView,
+                pdfUrl: matchedDetail.pdfUrl || pdfUrl,
               }
             : null,
         };
@@ -212,8 +355,13 @@ function formatExterior(value: number | string | null | undefined) {
         {units.map((unit) => {
           const hasDetail = Boolean(unit.detail?.imageUrl);
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
+          const panoramaId = `${detailId}-panorama`;
           const exteriorLabel = formatExterior(unit.detail?.exterior);
           const exposureLabel = formatOrientation(unit.orientation);
+          const panorama = unit.detail?.panoramicView;
+          const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
+          const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
+          const pdfFilename = pdfUrl ? `park-row-residence-${unit.unitNumber}.pdf` : undefined;
 
           return (
             <div
@@ -291,11 +439,41 @@ function formatExterior(value: number | string | null | undefined) {
                     <div class="floorplans-detail-inner">
                       <div class="floorplans-detail-copy">
                         <div class="floorplans-detail-meta">
+                          <p>Residence {unit.unitNumber}</p>
                           <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
                           <p>Interior: {numberFormat.format(unit.area)} SF</p>
                           {exteriorLabel && <p>Exterior: {exteriorLabel} SF</p>}
                           <p>Exposure: {exposureLabel}</p>
                         </div>
+
+                        {(hasPanorama || pdfUrl) && (
+                          <div class="floorplans-detail-actions">
+                            {hasPanorama && (
+                              <button
+                                type="button"
+                                class="floorplans-detail-action floorplans-detail-action--view"
+                                data-floorplans-panorama-open
+                                aria-haspopup="dialog"
+                                aria-expanded="false"
+                                aria-controls={panoramaId}
+                              >
+                                See View
+                              </button>
+                            )}
+
+                            {pdfUrl && (
+                              <a
+                                href={pdfUrl}
+                                class="floorplans-detail-action floorplans-detail-action--download"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download={pdfFilename}
+                              >
+                                Download PDF
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div class="floorplans-detail-visual">
@@ -311,6 +489,50 @@ function formatExterior(value: number | string | null | undefined) {
                         </div>
                       </div>
                     </div>
+
+                    {hasPanorama && (
+                      <div
+                        id={panoramaId}
+                        class="floorplans-panorama-modal"
+                        data-floorplans-panorama-modal
+                        hidden
+                      >
+                        <div
+                          class="floorplans-panorama-card"
+                          role="dialog"
+                          aria-label={`Panoramic view for unit ${unit.unitNumber}`}
+                        >
+                          <button
+                            type="button"
+                            class="floorplans-modal-close floorplans-panorama-close"
+                            data-floorplans-panorama-close
+                            data-floorplans-panorama-close-button
+                            aria-label={`Close panoramic view for unit ${unit.unitNumber}`}
+                          >
+                            Close
+                          </button>
+
+                          <div class="floorplans-detail-copy floorplans-panorama-copy">
+                            <div class="floorplans-detail-meta">
+                              <p>Residence {unit.unitNumber}</p>
+                            </div>
+                          </div>
+
+                          <div class="floorplans-panorama-viewer">
+                            <PanoramicViewViewer
+                              client:load
+                              daySrc={panorama.dayUrl}
+                              dayWidth={panorama.dayWidth}
+                              dayHeight={panorama.dayHeight}
+                              nightSrc={panorama.nightUrl}
+                              nightWidth={panorama.nightWidth}
+                              nightHeight={panorama.nightHeight}
+                              alt={`Panoramic view for unit ${unit.unitNumber}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -352,6 +574,8 @@ function formatExterior(value: number | string | null | undefined) {
         let activeScrollLockMode = "none";
         const modalFadeMs = 400;
         const modalCloseTimers = new WeakMap();
+        const panoramaFadeMs = 300;
+        const panoramaCloseTimers = new WeakMap();
         const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
         const getOpenItem = () =>
           getItems().find((item) => item.classList.contains("is-modal-open"));
@@ -457,6 +681,83 @@ function formatExterior(value: number | string | null | undefined) {
             modalCloseTimers.delete(modal);
           }
         };
+        const clearPanoramaCloseTimer = (modal) => {
+          const closeTimer = panoramaCloseTimers.get(modal);
+          if (closeTimer) {
+            window.clearTimeout(closeTimer);
+            panoramaCloseTimers.delete(modal);
+          }
+        };
+        const finalizePanoramaClose = (item, modal, restoreFocus = false) => {
+          const trigger = getPanoramaTrigger(item);
+
+          clearPanoramaCloseTimer(modal);
+          modal.hidden = true;
+          modal.classList.remove("is-visible", "is-closing");
+          item.classList.remove("is-panorama-open");
+
+          if (trigger instanceof HTMLElement) {
+            trigger.setAttribute("aria-expanded", "false");
+
+            if (restoreFocus) {
+              trigger.focus({ preventScroll: true });
+            }
+          }
+        };
+        const setPanoramaOpen = (item, open, restoreFocus = false) => {
+          const modal = getPanoramaModal(item);
+          const trigger = getPanoramaTrigger(item);
+
+          if (!(modal instanceof HTMLElement) || !(trigger instanceof HTMLElement)) return false;
+
+          if (open) {
+            clearPanoramaCloseTimer(modal);
+            item.classList.add("is-panorama-open");
+            modal.hidden = false;
+            modal.classList.remove("is-closing", "is-visible");
+            trigger.setAttribute("aria-expanded", "true");
+
+            requestAnimationFrame(() => {
+              if (!modal.hidden) {
+                modal.classList.add("is-visible");
+              }
+            });
+
+            const closeButton = modal.querySelector("[data-floorplans-panorama-close-button]");
+            if (closeButton instanceof HTMLElement) {
+              closeButton.focus({ preventScroll: true });
+            }
+
+            return true;
+          }
+
+          clearPanoramaCloseTimer(modal);
+          modal.classList.remove("is-visible");
+          modal.classList.add("is-closing");
+
+          const closeTimer = window.setTimeout(() => {
+            finalizePanoramaClose(item, modal, restoreFocus);
+          }, panoramaFadeMs);
+          panoramaCloseTimers.set(modal, closeTimer);
+          return true;
+        };
+        const closePanoramaInItem = (item, restoreFocus = false, immediate = false) => {
+          if (!(item instanceof HTMLElement)) return false;
+          if (!item.classList.contains("is-panorama-open")) return false;
+
+          const modal = getPanoramaModal(item);
+          if (!(modal instanceof HTMLElement)) {
+            item.classList.remove("is-panorama-open");
+            return false;
+          }
+
+          if (immediate) {
+            finalizePanoramaClose(item, modal, restoreFocus);
+            return true;
+          }
+
+          return setPanoramaOpen(item, false, restoreFocus);
+        };
         const finalizeItemClose = (item, modal, row, restoreFocus = false) => {
           clearModalCloseTimer(modal);
           modal.hidden = true;
@@ -487,6 +788,24 @@ function formatExterior(value: number | string | null | undefined) {
 
           const modalInItem = item.querySelector("[data-floorplans-modal]");
           return modalInItem instanceof HTMLElement ? modalInItem : null;
+        };
+        const getPanoramaModal = (item) => {
+          if (!(item instanceof HTMLElement)) return null;
+          const row = item.querySelector("[data-floorplans-row]");
+          const itemModal = row instanceof HTMLElement ? getItemModal(item, row) : null;
+          if (!(itemModal instanceof HTMLElement)) return null;
+
+          const panoramaModal = itemModal.querySelector("[data-floorplans-panorama-modal]");
+          return panoramaModal instanceof HTMLElement ? panoramaModal : null;
+        };
+        const getPanoramaTrigger = (item) => {
+          if (!(item instanceof HTMLElement)) return null;
+          const row = item.querySelector("[data-floorplans-row]");
+          const itemModal = row instanceof HTMLElement ? getItemModal(item, row) : null;
+          if (!(itemModal instanceof HTMLElement)) return null;
+
+          const trigger = itemModal.querySelector("[data-floorplans-panorama-open]");
+          return trigger instanceof HTMLElement ? trigger : null;
         };
         const setItemOpen = (item, open, restoreFocus = false) => {
           const row = item.querySelector("[data-floorplans-row]");
@@ -527,6 +846,8 @@ function formatExterior(value: number | string | null | undefined) {
 
             return;
           }
+
+          closePanoramaInItem(item, false, true);
 
           if (label instanceof HTMLElement) {
             label.textContent = label.dataset.collapsedLabel || "View";
@@ -609,6 +930,16 @@ function formatExterior(value: number | string | null | undefined) {
           if (modal instanceof HTMLElement) {
             modal.addEventListener("click", (event) => {
               if (!(event.target instanceof HTMLElement)) return;
+              if (event.target.closest("[data-floorplans-panorama-open]")) {
+                event.preventDefault();
+                setPanoramaOpen(item, true);
+                return;
+              }
+              if (event.target.closest("[data-floorplans-panorama-close]")) {
+                event.preventDefault();
+                closePanoramaInItem(item, true);
+                return;
+              }
               if (event.target.closest("[data-floorplans-close]")) {
                 closeOpenItem(true);
               }
@@ -633,6 +964,10 @@ function formatExterior(value: number | string | null | undefined) {
           "keydown",
           (event) => {
             if (event.key === "Escape") {
+              const openItem = getOpenItem();
+              if (closePanoramaInItem(openItem, true)) {
+                return;
+              }
               closeOpenItem(true);
             }
           },
@@ -737,7 +1072,7 @@ function formatExterior(value: number | string | null | undefined) {
   }
 
   .floorplans-cell--unit {
-    font-family: "Figure", "Hanken Grotesk", system-ui, sans-serif;
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
     font-size: 1.75rem;
     line-height: 2.25rem;
     font-weight: 400;
@@ -918,7 +1253,7 @@ function formatExterior(value: number | string | null | undefined) {
   }
 
   .floorplans-detail-meta {
-    font-family: "Figure", "Hanken Grotesk", system-ui, sans-serif;
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
     font-weight: 400;
     text-transform: uppercase;
     font-size: 1.5rem;
@@ -927,6 +1262,66 @@ function formatExterior(value: number | string | null | undefined) {
 
   .floorplans-detail-meta p {
     margin: 0;
+  }
+
+  .floorplans-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .floorplans-detail-action {
+    appearance: none;
+    background: transparent;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 10rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 1rem 0.125rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background-color 160ms ease;
+  }
+
+  .floorplans-detail-action:hover {
+    background: rgba(58, 42, 34, 0.06);
+  }
+
+  .floorplans-detail-action:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .floorplans-detail-action::after {
+    content: "";
+    display: block;
+    flex: 0 0 auto;
+    margin-left: 0.625rem;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .floorplans-detail-action--view::after {
+    width: 1rem;
+    height: 0.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M6%208C4.66667%208%203.46876%207.6477%202.40629%206.94311C1.34381%206.23758%200.541713%205.25655%200%204C0.541713%202.74346%201.34381%201.76242%202.40629%201.05689C3.46876%200.352298%204.66667%200%206%200C7.33333%200%208.53124%200.352531%209.59372%201.05759C10.6562%201.76265%2011.4583%202.74346%2012%204C11.4583%205.25655%2010.6562%206.23758%209.59372%206.94311C8.53124%207.6477%207.33333%208%206%208ZM6%207.30192C7.1358%207.30192%208.15413%207.01361%209.055%206.437C9.95586%205.86038%2010.6634%205.04805%2011.1777%204C10.6629%202.95102%209.95511%202.13845%209.05425%201.5623C8.15339%200.986155%207.1353%200.697848%206%200.697382C4.8647%200.696917%203.84637%200.985224%202.94501%201.5623C2.04365%202.13938%201.33608%202.95195%200.822297%204C1.33757%205.04898%202.04539%205.86155%202.94575%206.4377C3.84612%207.01385%204.8642%207.30145%206%207.30192ZM6%206C6.59858%206%207.10563%205.8064%207.52114%205.4192C7.93665%205.032%208.14441%204.55893%208.14441%204C8.14441%203.44107%207.93665%202.968%207.52114%202.5808C7.10563%202.1936%206.59858%202%206%202C5.40142%202%204.89438%202.1936%204.47886%202.5808C4.06335%202.968%203.85584%203.44107%203.85634%204C3.85684%204.55893%204.06435%205.032%204.47886%205.4192C4.89338%205.8064%205.40042%205.99953%206%206ZM6%205.30262C5.61142%205.30262%205.28171%205.17603%205.01085%204.92286C4.73999%204.67016%204.60457%204.36254%204.60457%204C4.60457%203.63746%204.73999%203.32984%205.01085%203.07714C5.28171%202.82443%205.61142%202.69808%206%202.69808C6.38858%202.69808%206.71829%202.82443%206.98915%203.07714C7.26051%203.32984%207.39619%203.63746%207.39619%204C7.39619%204.36254%207.26051%204.67016%206.98915%204.92286C6.71829%205.17603%206.38858%205.30262%206%205.30262Z%22%20fill%3D%22black%22/%3E%3C/svg%3E");
+  }
+
+  .floorplans-detail-action--download::after {
+    width: 0.75rem;
+    height: 1rem;
+    background-image: url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20version%3D%221.1%22%20viewBox%3D%220%200%2018%2028%22%3E%3Cpath%20d%3D%22M16.3%2C18.3l-6.3%2C6.3V1c0-.6-.5-1-1-1s-1%2C.4-1%2C1v23.6l-6.3-6.3c-.4-.4-1-.4-1.4%2C0s-.4%2C1%2C0%2C1.4l8%2C8s0%2C0%2C0%2C0c0%2C0%2C.2.1.3.2h0c.1%2C0%2C.2%2C0%2C.4%2C0s.3%2C0%2C.4%2C0c.1%2C0%2C.2-.1.3-.2l8-8c.4-.4.4-1%2C0-1.4s-1-.4-1.4%2C0Z%22/%3E%3C/svg%3E");
   }
 
   .floorplans-detail-visual {
@@ -954,6 +1349,59 @@ function formatExterior(value: number | string | null | undefined) {
     height: 100%;
   }
 
+  .floorplans-panorama-modal[hidden] {
+    display: none;
+  }
+
+  .floorplans-panorama-modal {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s var(--cubicBez);
+    background: #efeeec;
+  }
+
+  .floorplans-panorama-modal.is-closing,
+  .floorplans-panorama-modal.is-visible {
+    pointer-events: auto;
+  }
+
+  .floorplans-panorama-modal.is-visible {
+    opacity: 1;
+  }
+
+  .floorplans-panorama-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #efeeec;
+  }
+
+  .floorplans-panorama-close {
+    z-index: 4;
+  }
+
+  .floorplans-panorama-copy {
+    z-index: 3;
+    color: #fff;
+  }
+
+  .floorplans-panorama-viewer {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .floorplans-panorama-viewer :global(astro-island) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
   .floorplans-empty {
     margin-top: 1rem;
   }
@@ -975,6 +1423,11 @@ function formatExterior(value: number | string | null | undefined) {
       top: 1rem;
       left: 1rem;
       max-width: min(16rem, calc(100% - 2rem));
+    }
+
+    .floorplans-detail-actions {
+      gap: 0.5rem;
+      margin-top: 1rem;
     }
 
     .floorplans-detail-viewer {
