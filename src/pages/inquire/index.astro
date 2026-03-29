@@ -4,6 +4,7 @@ export const prerender = true;
 import BaseLayout from "../../layouts/MainLayout.astro";
 import GravityFormWrapper from "@/components/gf/GravityFormWrapper";
 import PageTitle from "@/components/flex/page_title.astro";
+import { getFlexiblePageMeta } from "@/lib/wp/page";
 
 import page from "@/content/wp/pages/inquire.json";
 import contactTerms from "@/content/wp/contact-terms.json";
@@ -17,9 +18,14 @@ const usePageTitle =
   firstLayout?.acf_fc_layout === "page_title";
 
 const titleData = firstLayout?.data || firstLayout || {};
+const pageMeta = getFlexiblePageMeta(page, "Contact");
 ---
 
-<BaseLayout title="Contact">
+<BaseLayout
+  title={pageMeta.title}
+  description={pageMeta.description}
+  seo={pageMeta.seo}
+>
   <section class="hw-contain contact-form-section-wrap relative min-h-[var(--jsVhUnits100)]">
 
     <!-- ================================

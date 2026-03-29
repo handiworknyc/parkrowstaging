@@ -222,6 +222,54 @@ function pickStructuredUrl(value) {
   return "";
 }
 
+function normalizeSeoImage(value) {
+  const url = pickStructuredUrl(value);
+  if (!url) return null;
+
+  const id = normalizePositiveNumber(value?.id ?? value?.ID);
+  const width = normalizePositiveNumber(value?.width);
+  const height = normalizePositiveNumber(value?.height);
+
+  return {
+    id: id ? Math.round(id) : null,
+    url,
+    width: width ? Math.round(width) : null,
+    height: height ? Math.round(height) : null,
+    alt: normalizeTrimmedString(value?.alt || ""),
+  };
+}
+
+function normalizePageSeo(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const title = normalizeTrimmedString(value.title || "");
+  const description = normalizeTrimmedString(value.description || "");
+  const image = normalizeSeoImage(value.image);
+
+  if (!title && !description && !image) {
+    return null;
+  }
+
+  return {
+    title,
+    description,
+    image,
+  };
+}
+
+function normalizeFlexiblePagePayload(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    ...value,
+    seo: normalizePageSeo(value.seo),
+  };
+}
+
 function normalizeFloorPlanAsset(value, { includeDimensions = false } = {}) {
   const url = pickStructuredUrl(value);
   if (!url) return null;
@@ -1166,10 +1214,14 @@ async function run() {
     for (const uri of pageUris) {
       try {
         const data = await fetchFlexibleForPage(uri);
-        const layouts = Array.isArray(data?.layouts) ? data.layouts : [];
+        const normalizedData = normalizeFlexiblePagePayload(data);
+        const layouts = Array.isArray(normalizedData?.layouts) ? normalizedData.layouts : [];
 
         const cleanPath = toPathname(uri);
-        const pageTitle = data.title?.rendered || data.title || "Untitled Page";
+        const pageTitle =
+          normalizedData?.title?.rendered ||
+          normalizedData?.title ||
+          "Untitled Page";
         pageManifest.push({ uri: cleanPath, title: pageTitle });
 
         // 1. Collect ALL image URLs from this page (with isPanorama context)
@@ -1183,6 +1235,10 @@ async function run() {
           }
           const context = isPanoramaLayout ? { isPanorama: true } : {};
           recurseFindImages(layout, imageUrlStrings, context);
+        }
+
+        if (normalizedData?.seo) {
+          recurseFindImages(normalizedData.seo, imageUrlStrings);
         }
         
         // Parse JSON strings back to objects
@@ -1204,7 +1260,7 @@ async function run() {
         }
 
         // 3. ✅ REPLACE URLs in the data object
-        const transformedData = replaceImageUrls(data, urlMap);
+        const transformedData = replaceImageUrls(normalizedData, urlMap);
 
         // 4. Build Prefetch Map
         const firstRow = layouts[0] || null;

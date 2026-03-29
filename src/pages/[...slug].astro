@@ -10,7 +10,7 @@ import PageContent from "../components/wp/PageContent.astro";
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads";
-import { getFlexiblePageContentHtml } from "../lib/wp/page";
+import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../lib/wp/page";
 
 // ---------------- Static paths ----------------
 export async function getStaticPaths() {
@@ -35,6 +35,7 @@ const lang = 'en';
 // ---------------- Fetch ----------------
 const page = await getFlexiblePageByUri(uri);
 const contentHtml = getFlexiblePageContentHtml(page);
+const pageMeta = getFlexiblePageMeta(page, "Park Row");
 
 if (!page) {
   Astro.response.status = 404;
@@ -55,7 +56,9 @@ if (page?.layouts) {
 
 {page ? (
   <BaseLayout
-    title={page.title}
+    title={pageMeta.title}
+    description={pageMeta.description}
+    seo={pageMeta.seo}
     lcp={lcpData}
     lcpVideo={lcpVideoData}
     preloads={preloads}

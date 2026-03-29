@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { authHeaders } from "./env";
+import type { FlexiblePageSeo } from "./page";
 
 export type PreviewFlexiblePage = {
   kind?: string;
@@ -9,6 +10,7 @@ export type PreviewFlexiblePage = {
   layouts?: any[];
   content?: string | { rendered?: string };
   contentHtml?: string;
+  seo?: FlexiblePageSeo | null;
   _syncedAt?: string;
   [key: string]: unknown;
 };

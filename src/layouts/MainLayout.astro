@@ -24,9 +24,23 @@
 	media?: string;
 	}
 
+	interface SeoImage {
+		url: string;
+		width?: number | null;
+		height?: number | null;
+		alt?: string;
+	}
+
+	interface PageSeo {
+		title?: string;
+		description?: string;
+		image?: SeoImage | null;
+	}
+
 	interface Props {
 		title?: string;
 		description?: string;
+		seo?: PageSeo | null;
 		lcp?: PreloadItem | PreloadItem[] | null;
 		lcpVideo?: {
 			href?: string | null;
@@ -44,6 +58,7 @@
 	const {
 	title = "",
 	description = "",
+	seo = null,
 	lcp = null,
 	lcpVideo = null,
 	preloads = [],
@@ -58,6 +73,28 @@
 
 	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
 	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
+
+	function normalizeMetaText(value: unknown): string {
+		return typeof value === "string" ? value.trim() : "";
+	}
+
+	function normalizePositiveInteger(value: unknown): number | null {
+		const numeric = Number(value);
+		return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+	}
+
+	const siteUrl = Astro.site ? new URL(Astro.site.toString()) : Astro.url;
+
+	function toAbsoluteUrl(raw: string): string {
+		const normalized = normalizeMetaText(raw);
+		if (!normalized) return "";
+
+		try {
+			return new URL(normalized, siteUrl).toString();
+		} catch {
+			return normalized;
+		}
+	}
 
 	function normalizePrefetchPath(pathname: string): string {
 		let normalized = (pathname || "/").trim();
@@ -128,11 +165,24 @@
 	// Normalize path for layout logic (strip /zh)
 	const normalizedPathname =
 	lang === 'zh' ? rawPathname.replace(/^\/zh/, '') || '/' : rawPathname;
+	const canonicalPath = lang === 'zh' ? `/zh${normalizedPathname}` : normalizedPathname;
+	const canonicalHref = toAbsoluteUrl(canonicalPath);
+	const alternateEnHref = toAbsoluteUrl(normalizedPathname);
+	const alternateZhHref = toAbsoluteUrl(`/zh${normalizedPathname === '/' ? '' : normalizedPathname}`);
 	const currentPrefetchPath = normalizePrefetchPath(normalizedPathname);
 	const lcpEntries = Array.isArray(lcp) ? lcp.filter(Boolean) : lcp ? [lcp] : [];
 	const criticalVideoPreloadVariants = getResponsiveCriticalVideoPreloadVariants(lcpVideo);
 	const shouldWarmCriticalVideo = criticalVideoPreloadVariants.length > 0;
 	const preloadedAssetUrls = collectPreloadedAssetUrls(lcp, lcpVideo, preloads);
+	const metaTitle = normalizeMetaText(seo?.title) || title;
+	const metaDescription = normalizeMetaText(seo?.description) || description;
+	const metaImageUrl = toAbsoluteUrl(seo?.image?.url || "");
+	const metaImageWidth = normalizePositiveInteger(seo?.image?.width);
+	const metaImageHeight = normalizePositiveInteger(seo?.image?.height);
+	const metaImageAlt = metaImageUrl
+		? normalizeMetaText(seo?.image?.alt) || metaTitle
+		: "";
+	const twitterCard = metaImageUrl ? "summary_large_image" : "summary";
 
 	const segments = normalizedPathname.split("/").filter(Boolean);
 	const bodyClasses = segments.length ? segments.join(" ") : "home";
@@ -286,26 +336,39 @@
 	<meta name="viewport" content="width=device-width" />
 	<meta name="generator" content={Astro.generator} />
 	{noIndex && <meta name="robots" content="noindex, nofollow" />}
-	<title>{title}</title>
+	<title>{metaTitle}</title>
 
 	<link
 	rel="canonical"
-	href={`${Astro.site}${lang === 'zh' ? `/zh${normalizedPathname}` : normalizedPathname}`}
+	href={canonicalHref}
 	/>
 
 	<link
 	rel="alternate"
 	hreflang="en"
-	href={`${Astro.site}${normalizedPathname}`}
+	href={alternateEnHref}
 	/>
 
 	<link
 	rel="alternate"
 	hreflang="zh"
-	href={`${Astro.site}/zh${normalizedPathname === '/' ? '' : normalizedPathname}`}
+	href={alternateZhHref}
 	/>
 
-	{description && <meta name="description" content={description} />}
+	{metaDescription && <meta name="description" content={metaDescription} />}
+	{metaTitle && <meta property="og:title" content={metaTitle} />}
+	{metaDescription && <meta property="og:description" content={metaDescription} />}
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={canonicalHref} />
+	<meta name="twitter:card" content={twitterCard} />
+	{metaTitle && <meta name="twitter:title" content={metaTitle} />}
+	{metaDescription && <meta name="twitter:description" content={metaDescription} />}
+	{metaImageUrl && <meta property="og:image" content={metaImageUrl} />}
+	{metaImageWidth && <meta property="og:image:width" content={String(metaImageWidth)} />}
+	{metaImageHeight && <meta property="og:image:height" content={String(metaImageHeight)} />}
+	{metaImageAlt && <meta property="og:image:alt" content={metaImageAlt} />}
+	{metaImageUrl && <meta name="twitter:image" content={metaImageUrl} />}
+	{metaImageAlt && <meta name="twitter:image:alt" content={metaImageAlt} />}
 
 	{/* LCP Image Preload */}
 	{lcpEntries.map((item) => (

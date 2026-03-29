@@ -14,7 +14,7 @@ const lang = 'zh';
 import { normalizeLayouts } from "../../lib/wp/normalize";
 import { getLcpImage, getLcpVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
-import { getFlexiblePageContentHtml } from "../../lib/wp/page";
+import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
 let page = null;
 
@@ -25,7 +25,7 @@ try {
   page = null;
 }
 
-const title = page?.title ?? "Park Row";
+const pageMeta = getFlexiblePageMeta(page, "Park Row");
 const layouts = page?.layouts ?? [];
 const contentHtml = getFlexiblePageContentHtml(page);
 
@@ -42,7 +42,9 @@ if (layouts.length > 0) {
 ---
 
 <BaseLayout
-  title={title}
+  title={pageMeta.title}
+  description={pageMeta.description}
+  seo={pageMeta.seo}
   lcp={lcpData}
   lcpVideo={lcpVideo}
   preloads={preloads}

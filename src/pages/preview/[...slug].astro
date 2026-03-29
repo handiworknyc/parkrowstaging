@@ -5,7 +5,7 @@ import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
 import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
 import PageContent from "../../components/wp/PageContent.astro";
-import { getFlexiblePageContentHtml } from "../../lib/wp/page";
+import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
 const PREVIEW_SECRET = (
   import.meta.env.PREVIEW_SECRET ||
@@ -57,11 +57,14 @@ if (hasPreviewAccess && !page) {
 }
 
 const contentHtml = getFlexiblePageContentHtml(page);
+const pageMeta = getFlexiblePageMeta(page, "Preview");
 ---
 
 {hasPreviewAccess && page ? (
   <BaseLayout
-    title={page.title || "Preview"}
+    title={pageMeta.title}
+    description={pageMeta.description}
+    seo={pageMeta.seo}
     cacheControl="private, no-store, max-age=0, must-revalidate"
     noIndex={true}
   >
