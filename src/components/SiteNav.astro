@@ -245,6 +245,14 @@ const headerMenu = _cachedHeaderMenu;
     endGroup();
   }
 
+  const initChineseMenuTitles = () => applyChineseMenuTitles();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initChineseMenuTitles, { once: true });
+  } else {
+    initChineseMenuTitles();
+  }
+
   document.addEventListener("astro:page-load", applyChineseMenuTitles);
   document.addEventListener("astro:after-swap", applyChineseMenuTitles);
 </script>
@@ -368,6 +376,14 @@ const headerMenu = _cachedHeaderMenu;
     });
   }
 
+  const bootNav = () => initNav();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootNav, { once: true });
+  } else {
+    bootNav();
+  }
+
   document.addEventListener("astro:page-load", initNav);
 </script>
 
@@ -411,6 +427,14 @@ const headerMenu = _cachedHeaderMenu;
 
       a.setAttribute("href", next);
     });
+  }
+
+  const initLocalizedHeaderLinks = () => localizeHeaderLinks();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLocalizedHeaderLinks, { once: true });
+  } else {
+    initLocalizedHeaderLinks();
   }
 
   // Initial load
