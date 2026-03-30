@@ -344,7 +344,7 @@ const columnTemplate = hasOrientation
   ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
   : "minmax(8rem, 1.5fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)";
 const tableStyle = {
-  minWidth: hasOrientation ? "840px" : "720px",
+  "--floorplans-table-min-width": hasOrientation ? "840px" : "720px",
   "--floorplans-columns": columnTemplate,
 };
 
@@ -370,7 +370,12 @@ function formatExterior(value: number | string | null | undefined) {
 
 <div class="floorplans-wrap" data-floorplans-table>
   <div class="floorplans-scroller">
-    <div id={tableId} class="floorplans-table" style={tableStyle}>
+    <div
+      id={tableId}
+      class="floorplans-table"
+      data-has-orientation={hasOrientation ? "true" : "false"}
+      style={tableStyle}
+    >
       <div class="floorplans-head-row">
         <div class="floorplans-head hw-contain">
           <div class="floorplans-cell floorplans-cell--unit">
@@ -381,7 +386,10 @@ function formatExterior(value: number | string | null | undefined) {
               data-label="Residence"
               aria-pressed="false"
             >
-              <span class="floorplans-sort-label">Residence</span>
+              <span class="floorplans-sort-label">
+                <span class="floorplans-sort-text floorplans-sort-text--full">Residence</span>
+                <span class="floorplans-sort-text floorplans-sort-text--short">Unit</span>
+              </span>
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
           </div>
@@ -393,7 +401,10 @@ function formatExterior(value: number | string | null | undefined) {
               data-label="Bedrooms"
               aria-pressed="false"
             >
-              <span class="floorplans-sort-label">Bedrooms</span>
+              <span class="floorplans-sort-label">
+                <span class="floorplans-sort-text floorplans-sort-text--full">Bedrooms</span>
+                <span class="floorplans-sort-text floorplans-sort-text--short">Beds</span>
+              </span>
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
           </div>
@@ -405,7 +416,10 @@ function formatExterior(value: number | string | null | undefined) {
               data-label="Bathrooms"
               aria-pressed="false"
             >
-              <span class="floorplans-sort-label">Bathrooms</span>
+              <span class="floorplans-sort-label">
+                <span class="floorplans-sort-text floorplans-sort-text--full">Bathrooms</span>
+                <span class="floorplans-sort-text floorplans-sort-text--short">Baths</span>
+              </span>
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
           </div>
@@ -435,7 +449,10 @@ function formatExterior(value: number | string | null | undefined) {
               </button>
             </div>
           )}
-          <div class="floorplans-cell floorplans-cell--action">Floorplan View</div>
+          <div class="floorplans-cell floorplans-cell--action">
+            <span class="floorplans-action-label">Floorplan View</span>
+            <span class="floorplans-action-placeholder" aria-hidden="true">View</span>
+          </div>
         </div>
       </div>
 
@@ -676,6 +693,7 @@ function formatExterior(value: number | string | null | undefined) {
 
         const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
         const numericSortKeys = new Set(["bedrooms", "bathrooms", "area"]);
+        const mobileWidthQuery = window.matchMedia("(max-width: 884px)");
         let sortKey = "";
         let sortDir = "asc";
         let headerHiddenBeforeModal = false;
@@ -686,6 +704,7 @@ function formatExterior(value: number | string | null | undefined) {
         const modalCloseTimers = new WeakMap();
         const panoramaFadeMs = 300;
         const panoramaCloseTimers = new WeakMap();
+        let mobileColumnSyncFrame = 0;
         const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
         const getOpenItem = () =>
           getItems().find((item) => item.classList.contains("is-modal-open"));
@@ -1007,6 +1026,38 @@ function formatExterior(value: number | string | null | undefined) {
             sensitivity: "base",
           });
         };
+        const syncMobileColumnWidths = () => {
+          mobileColumnSyncFrame = 0;
+
+          if (!mobileWidthQuery.matches) {
+            root.style.removeProperty("--floorplans-mobile-unit-column");
+            return;
+          }
+
+          const unitCells = [
+            ...root.querySelectorAll(".floorplans-head .floorplans-cell--unit"),
+            ...root.querySelectorAll(".floorplans-row .floorplans-cell--unit"),
+          ].filter((cell) => cell instanceof HTMLElement);
+
+          if (!unitCells.length) return;
+
+          const unitColumnWidth = Math.ceil(
+            unitCells.reduce((maxWidth, cell) => {
+              return Math.max(maxWidth, cell.getBoundingClientRect().width);
+            }, 0)
+          );
+
+          if (unitColumnWidth > 0) {
+            root.style.setProperty("--floorplans-mobile-unit-column", `${unitColumnWidth}px`);
+          }
+        };
+        const scheduleMobileColumnSync = () => {
+          if (mobileColumnSyncFrame) return;
+
+          mobileColumnSyncFrame = window.requestAnimationFrame(() => {
+            syncMobileColumnWidths();
+          });
+        };
 
         const updateButtons = () => {
           buttons.forEach((button) => {
@@ -1108,10 +1159,25 @@ function formatExterior(value: number | string | null | undefined) {
           { signal: abortController.signal }
         );
 
+        window.addEventListener("resize", scheduleMobileColumnSync, {
+          signal: abortController.signal,
+        });
+        mobileWidthQuery.addEventListener("change", scheduleMobileColumnSync, {
+          signal: abortController.signal,
+        });
+        document.fonts?.ready?.then(() => {
+          scheduleMobileColumnSync();
+        });
+
         updateButtons();
+        scheduleMobileColumnSync();
         document.addEventListener(
           "astro:before-swap",
           () => {
+            if (mobileColumnSyncFrame) {
+              window.cancelAnimationFrame(mobileColumnSyncFrame);
+              mobileColumnSyncFrame = 0;
+            }
             closeOpenItem();
             abortController.abort();
           },
@@ -1145,7 +1211,7 @@ function formatExterior(value: number | string | null | undefined) {
 
   .floorplans-table {
     width: 100%;
-    min-width: 720px;
+    min-width: var(--floorplans-table-min-width, 720px);
     font-family: "Hanken Grotesk", system-ui, sans-serif;
     font-size: 1.33rem;
     line-height: 1.75rem;
@@ -1250,6 +1316,18 @@ function formatExterior(value: number | string | null | undefined) {
   .floorplans-sort-label {
     grid-column: 2;
     justify-self: center;
+  }
+
+  .floorplans-sort-text--short {
+    display: none;
+  }
+
+  .floorplans-action-label {
+    display: inline;
+  }
+
+  .floorplans-action-placeholder {
+    display: none;
   }
 
   .floorplans-sort-button--start .floorplans-sort-label {
@@ -1721,6 +1799,147 @@ function formatExterior(value: number | string | null | undefined) {
       height: auto !important;
       max-width: min(100%, 80vw) !important;
       max-height: 100% !important;
+    }
+  }
+
+  @media (max-width: 884px) {
+    .floorplans-table[data-has-orientation="false"] .floorplans-head,
+    .floorplans-table[data-has-orientation="false"] .floorplans-row {
+      grid-template-columns:
+        var(--floorplans-mobile-unit-column, max-content)
+        repeat(3, minmax(0, 1fr))
+        max-content;
+    }
+
+    .floorplans-table[data-has-orientation="true"] .floorplans-head,
+    .floorplans-table[data-has-orientation="true"] .floorplans-row {
+      grid-template-columns:
+        var(--floorplans-mobile-unit-column, max-content)
+        repeat(4, minmax(0, 1fr))
+        max-content;
+    }
+
+    .floorplans-sort-button:not(.floorplans-sort-button--start) {
+      grid-template-columns: 1.3125rem minmax(0, 1fr) 1.3125rem;
+    }
+
+    .floorplans-sort-button:not(.floorplans-sort-button--start)::before {
+      content: "";
+      grid-column: 1;
+      display: block;
+      width: 1.3125rem;
+    }
+
+    .floorplans-sort-text--full {
+      display: none;
+    }
+
+    .floorplans-sort-text--short {
+      display: inline;
+    }
+
+    .floorplans-action-label {
+      display: none;
+    }
+
+    .floorplans-action-placeholder {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.75rem;
+      padding: 4px 20px 2px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      white-space: nowrap;
+      line-height: 1;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .floorplans-action-placeholder::after {
+      content: "";
+      width: 0.5625rem;
+      height: 0.9375rem;
+      margin-left: 0.75rem;
+      flex: 0 0 auto;
+    }
+  }
+
+  @media (max-width: 839px) {
+    .floorplans-table {
+      display: table;
+      width: 100%;
+      min-width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+
+    .floorplans-head-row {
+      display: table-header-group;
+      border-bottom: 0;
+    }
+
+    .floorplans-head {
+      display: table-row;
+      width: auto;
+      grid-template-columns: none;
+    }
+
+    .floorplans-body {
+      display: table-row-group;
+    }
+
+    .floorplans-item {
+      display: contents;
+      border-bottom: 0;
+    }
+
+    .floorplans-row {
+      display: table-row;
+      width: auto;
+      grid-template-columns: none;
+      justify-content: initial;
+    }
+
+    .floorplans-cell {
+      display: table-cell;
+      width: auto;
+      min-width: 0;
+      vertical-align: middle;
+    }
+
+    .floorplans-head .floorplans-cell,
+    .floorplans-row .floorplans-cell {
+      border-bottom: 1px solid var(--brown);
+    }
+
+    .floorplans-head .floorplans-cell:first-child,
+    .floorplans-row .floorplans-cell:first-child {
+      padding-left: var(--containerPadding);
+    }
+
+    .floorplans-head .floorplans-cell:last-child,
+    .floorplans-row .floorplans-cell:last-child {
+      padding-right: var(--containerPadding);
+    }
+  }
+
+  @media (max-width: 499px) {
+    .floorplans-head .floorplans-cell--orientation,
+    .floorplans-row .floorplans-cell--orientation {
+      display: none;
+    }
+  }
+
+  @media (max-width: 409px) {
+    .floorplans-cell--unit {
+      font-size: 1.35rem;
+      line-height: 2rem;
+    }
+
+    .floorplans-view-link {
+      padding: 4px 12px 2px;
     }
   }
 
