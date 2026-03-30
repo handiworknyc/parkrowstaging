@@ -6,6 +6,9 @@ const MOBILE_BLUR_MEDIA_QUERY =
   "(max-width: 768px), (hover: none) and (pointer: coarse)";
 const SLIDE_EXIT_DURATION_SECONDS = 4;
 const SLIDE_TRANSITION_EASE = [0.19, 1, 0.32, 1];
+const CUBIC_BEZ_EASE = [0.36, 0.01, 0.1, 1.01];
+const SECTION_COPY_FADE_IN_DURATION_SECONDS = 1.1;
+const SECTION_COPY_FADE_IN_DELAY_SECONDS = 0.2;
 
 // 1. Helper function
 const getSlideImageProps = (slide) => {
@@ -178,6 +181,8 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const slide = activeEntry?.slide || slides[0];
   const exitFilter = disableBlur ? "blur(0px)" : "blur(5px)";
   const captionOverlayBlur = disableBlur ? "0px" : "11px";
+  const captionFadeDuration = disableBlur ? 0.8 : 2.25;
+  const captionFadeDelay = disableBlur ? 0.15 : 0.65;
 
   // Resolve section content for the current slide
   const currentSectionContent = useMemo(
@@ -310,7 +315,11 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
                           initial={{ opacity: 0 }}
                           animate={{
                             opacity: 1,
-                            transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+                            transition: {
+                              duration: SECTION_COPY_FADE_IN_DURATION_SECONDS,
+                              ease: CUBIC_BEZ_EASE,
+                              delay: SECTION_COPY_FADE_IN_DELAY_SECONDS,
+                            }
                           }}
                           exit={{
                             opacity: 0,
@@ -338,7 +347,11 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
               initial={{ opacity: 0 }}
               animate={{ 
                 opacity: 1,
-                transition: { duration: 0.8, ease: [0.2, 1, 0.4, 1], delay: 0.3 }
+                transition: {
+                  duration: SECTION_COPY_FADE_IN_DURATION_SECONDS,
+                  ease: CUBIC_BEZ_EASE,
+                  delay: SECTION_COPY_FADE_IN_DELAY_SECONDS,
+                }
               }}
               exit={{ 
                 opacity: 0,
@@ -359,6 +372,40 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
       ? <div className={sectionBgColorClass}>{sectionContentBlock}</div>
       : sectionContentBlock
     : null;
+
+  const exitingSlideInitial = disableBlur
+    ? {
+        zIndex: 3,
+        opacity: 1,
+      }
+    : {
+        zIndex: 3,
+        opacity: 1,
+        WebkitMaskPosition: "0% 0%",
+        maskPosition: "0% 0%",
+        filter: "blur(0px)",
+      };
+
+  const exitingSlideAnimate = disableBlur
+    ? {
+        zIndex: 3,
+        opacity: 0,
+        transition: {
+          duration: 0.7,
+          ease: SLIDE_TRANSITION_EASE,
+        },
+      }
+    : {
+        zIndex: 3,
+        opacity: 1,
+        WebkitMaskPosition: "100% 100%",
+        maskPosition: "100% 100%",
+        filter: exitFilter,
+        transition: {
+          duration: SLIDE_EXIT_DURATION_SECONDS,
+          ease: SLIDE_TRANSITION_EASE,
+        },
+      };
 
   const renderSlideImage = (entry, index, options = {}) => {
     if (!entry?.imageProps?.src) {
@@ -386,7 +433,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         alt={entry.slide.alt || `Slide ${entry.index + 1}`}
         decoding="async"
         loading="eager"
-        fetchPriority={fetchPriority}
+        fetchpriority={fetchPriority}
       />
     );
   };
@@ -424,25 +471,9 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
               className={`slide-figure absolute inset-0 w-full h-full pointer-events-none ${
                 entry.slide.caption ? "has-caption" : ""
               }`}
-              initial={{
-                zIndex: 3,
-                opacity: 1,
-                WebkitMaskPosition: "0% 0%",
-                maskPosition: "0% 0%",
-                filter: "blur(0px)",
-              }}
-              animate={{
-                zIndex: 3,
-                opacity: 1,
-                WebkitMaskPosition: "100% 100%",
-                maskPosition: "100% 100%",
-                filter: exitFilter,
-                transition: {
-                  duration: SLIDE_EXIT_DURATION_SECONDS,
-                  ease: SLIDE_TRANSITION_EASE,
-                },
-              }}
-              style={maskStyle}
+              initial={exitingSlideInitial}
+              animate={exitingSlideAnimate}
+              style={disableBlur ? undefined : maskStyle}
               onAnimationComplete={() => {
                 setExitingSlides((current) =>
                   current.filter((item) => item.key !== entry.key)
@@ -482,9 +513,9 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
                 animate={{
                   opacity: 1,
                   transition: {
-                    duration: 2.25,
+                    duration: captionFadeDuration,
                     ease: [0.2, 1, 0.4, 1],
-                    delay: 0.65,
+                    delay: captionFadeDelay,
                   },
                 }}
                 exit={{

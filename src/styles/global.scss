@@ -725,6 +725,12 @@ ul.two-col-list {
   column-gap: .75rem;
 }
 
+ul.two-col-list li {
+  break-inside: avoid;
+  break-inside: avoid-column;
+  -webkit-column-break-inside: avoid;
+}
+
 ul.section-text.wide-list-columns {
   max-width: none;
 }
