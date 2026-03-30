@@ -13,6 +13,7 @@ const ROOT_STYLE = {
 };
 
 const VIEWPORT_STYLE = {
+  position: "relative",
   width: "100%",
   height: "100%",
   minWidth: 0,
@@ -100,6 +101,7 @@ export default function PanoramicViewViewer({
   });
   const [activeView, setActiveView] = useState(daySrc ? "day" : "night");
   const [isPanning, setIsPanning] = useState(false);
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const [mobileToggleHost, setMobileToggleHost] = useState(null);
 
   useEffect(() => {
@@ -207,13 +209,16 @@ export default function PanoramicViewViewer({
 
     const copy = modal.querySelector(".floorplans-panorama-copy");
     if (!(copy instanceof HTMLElement)) {
+      setIsMobileLayout(false);
       setMobileToggleHost(null);
       return;
     }
 
     const mobileQuery = window.matchMedia(MOBILE_TOGGLE_MEDIA_QUERY);
     const syncToggleHost = () => {
-      setMobileToggleHost(mobileQuery.matches ? copy : null);
+      const isMobile = mobileQuery.matches;
+      setIsMobileLayout(isMobile);
+      setMobileToggleHost(isMobile ? copy : null);
     };
 
     if (typeof mobileQuery.addEventListener === "function") {
@@ -283,6 +288,19 @@ export default function PanoramicViewViewer({
     ...VIEWPORT_STYLE,
     cursor: isPanning ? "grabbing" : "grab",
   };
+  const showDay = activeView !== "night";
+  const showNight = activeView === "night" && nightSrc;
+  const viewportClassName = [
+    "floorplans-panorama-viewport",
+    isMobileLayout && showDay ? "floorplans-panorama-viewport--day-underlay" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const viewportProps = {
+    "data-panorama-viewport": "",
+    "data-panorama-mobile-layout": isMobileLayout ? "true" : undefined,
+    "data-panorama-daytime-underlay": isMobileLayout && showDay ? "true" : undefined,
+  };
 
   const handleViewChange = (nextView) => {
     if (nextView === activeView) return;
@@ -291,11 +309,9 @@ export default function PanoramicViewViewer({
     setActiveView(nextView);
   };
 
-  const showDay = activeView !== "night";
-  const showNight = activeView === "night" && nightSrc;
   const toggleControls =
     daySrc || nightSrc ? (
-      <div style={mobileToggleHost ? MOBILE_TOGGLE_WRAP_STYLE : TOGGLE_WRAP_STYLE}>
+      <div style={isMobileLayout ? MOBILE_TOGGLE_WRAP_STYLE : TOGGLE_WRAP_STYLE}>
         <div style={TOGGLE_GROUP_STYLE}>
           {daySrc && (
             <button
@@ -371,7 +387,12 @@ export default function PanoramicViewViewer({
         pinch={{ disabled: true }}
         wheel={{ disabled: true }}
       >
-        <TransformComponent contentStyle={CONTENT_STYLE} wrapperStyle={viewportStyle}>
+        <TransformComponent
+          contentStyle={CONTENT_STYLE}
+          wrapperClass={viewportClassName}
+          wrapperProps={viewportProps}
+          wrapperStyle={viewportStyle}
+        >
           <div style={stageStyle}>
             {daySrc && (
               <img

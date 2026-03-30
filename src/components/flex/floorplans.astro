@@ -1889,6 +1889,29 @@ function formatExterior(value: number | string | null | undefined) {
     height: 100%;
   }
 
+  .floorplans-panorama-viewer :global(.floorplans-panorama-viewport) {
+    position: relative;
+  }
+
+  .floorplans-panorama-viewer
+    :global(.floorplans-panorama-viewport--day-underlay[data-panorama-daytime-underlay="true"])::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: linear-gradient(
+      140deg,
+      rgba(0, 0, 0, 0.28) 0px,
+      rgba(0, 0, 0, 0.08) 142px,
+      rgba(0, 0, 0, 0) 308px
+    );
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
   @media (min-width: 815px) and (max-width: 1149px) {
     .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
       width: min(100%, 80vw) !important;
