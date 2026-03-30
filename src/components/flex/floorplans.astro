@@ -1906,19 +1906,24 @@ function formatExterior(value: number | string | null | undefined) {
     .floorplans-detail-viewer {
       height: max(
         0px,
-        calc(100% - var(--floorplans-detail-copy-height, 0px))
+        calc(100% - var(--floorplans-detail-copy-height, 0px) - 2.5rem)
       );
       max-height: max(
         0px,
-        calc(100% - var(--floorplans-detail-copy-height, 0px))
+        calc(100% - var(--floorplans-detail-copy-height, 0px) - 2.5rem)
       );
     }
 
+    .floorplans-detail-viewer :global(.floorplans-zoom-content--svg) {
+      align-items: flex-start !important;
+    }
+
     .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
-      width: auto !important;
-      height: 100% !important;
-      max-width: 100% !important;
+      width: min(100%, 80vw) !important;
+      height: auto !important;
+      max-width: min(100%, 80vw) !important;
       max-height: 100% !important;
+      object-position: center center !important;
     }
   }
 

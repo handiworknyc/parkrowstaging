@@ -7,6 +7,7 @@ const MAX_SCALE = 5;
 const INITIAL_SCALE = 1;
 const SCALE_STEP = 0.35;
 const ZOOM_ANIMATION_MS = 200;
+const MOBILE_TOP_ALIGN_QUERY = "(max-width: 814px)";
 
 const ROOT_STYLE = {
   width: "100%",
@@ -101,8 +102,13 @@ function centerOnImage(transformRef, imageRef, scale = INITIAL_SCALE, animationT
   transformRef.current?.centerView(scale, animationTime);
 }
 
-function resetToInitialView(transformRef, imageRef) {
+function resetToInitialView(transformRef, imageRef, topAligned = false) {
   transformRef.current?.resetTransform(0);
+
+  if (topAligned) {
+    return;
+  }
+
   window.requestAnimationFrame(() => {
     centerOnImage(transformRef, imageRef, INITIAL_SCALE, 0);
   });
@@ -119,9 +125,13 @@ export default function FloorplanZoomViewer({
   const transformRef = useRef(null);
   const imageRef = useRef(null);
   const isSvg = /\.svg(?:[?#].*)?$/i.test(String(src ?? ""));
+  const shouldUseTopAlignedInitialView = () =>
+    isSvg &&
+    typeof window !== "undefined" &&
+    window.matchMedia(MOBILE_TOP_ALIGN_QUERY).matches;
   const queueResetToInitialView = () => {
     queueLayout(() => {
-      resetToInitialView(transformRef, imageRef);
+      resetToInitialView(transformRef, imageRef, shouldUseTopAlignedInitialView());
     });
   };
 
@@ -194,6 +204,28 @@ export default function FloorplanZoomViewer({
       observer.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSvg || typeof window === "undefined") return;
+
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return;
+
+    const modal = root.closest("[data-floorplans-modal]");
+    if (!(modal instanceof HTMLElement)) return;
+
+    const mediaQuery = window.matchMedia(MOBILE_TOP_ALIGN_QUERY);
+    const handleChange = () => {
+      if (!isModalVisible(modal)) return;
+      queueResetToInitialView();
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, [isSvg]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -323,6 +355,7 @@ export default function FloorplanZoomViewer({
               </button>
             </div>
             <TransformComponent
+              contentClass={isSvg ? "floorplans-zoom-content floorplans-zoom-content--svg" : "floorplans-zoom-content"}
               contentStyle={CONTENT_STYLE}
               wrapperStyle={VIEWPORT_STYLE}
             >

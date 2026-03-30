@@ -230,8 +230,6 @@ export default function PanoramicViewViewer({
       } else if (typeof mobileQuery.removeListener === "function") {
         mobileQuery.removeListener(syncToggleHost);
       }
-
-      setMobileToggleHost(null);
     };
   }, [daySrc, nightSrc]);
 
