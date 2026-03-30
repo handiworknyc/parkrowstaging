@@ -179,7 +179,6 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
   const activeEntry = slidesWithImageProps[currentIndex] || null;
   const slide = activeEntry?.slide || slides[0];
-  const exitFilter = disableBlur ? "blur(0px)" : "blur(5px)";
   const captionOverlayBlur = disableBlur ? "0px" : "11px";
   const captionFadeDuration = disableBlur ? 0.8 : 2.25;
   const captionFadeDelay = disableBlur ? 0.15 : 0.65;
@@ -383,7 +382,6 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         opacity: 1,
         WebkitMaskPosition: "0% 0%",
         maskPosition: "0% 0%",
-        filter: "blur(0px)",
       };
 
   const exitingSlideAnimate = disableBlur
@@ -400,7 +398,6 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         opacity: 1,
         WebkitMaskPosition: "100% 100%",
         maskPosition: "100% 100%",
-        filter: exitFilter,
         transition: {
           duration: SLIDE_EXIT_DURATION_SECONDS,
           ease: SLIDE_TRANSITION_EASE,
