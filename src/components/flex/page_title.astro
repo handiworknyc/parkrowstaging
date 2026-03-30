@@ -5,6 +5,7 @@ const {
   h1 = "",
   h2 = "",
   description = "",
+  smaller_text = false,
   className = ""
 } = Astro.props;
 
@@ -70,7 +71,9 @@ const sectionClass = [
         class={
           hasSubhead
             ? "text-[1.25rem] mx-auto"
-            : "figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto"
+            : smaller_text
+              ? "text-[1.25rem] max-w-[36em] leading-[1.75rem] mx-auto"
+              : "figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto"
         }
         set:html={pageText}
       />

@@ -21,7 +21,7 @@
       "h1": "Choose your Perspective",
       "h2": "",
       "description": "Every home at Park Row is unique in orientation and outlook—framing either the serene greens of the park or the luminous expanse of Lake Washington.<br />\r\n<br />\r\nExplore floor plans to discover the layout that fits your rhythm of life.",
-      "smaller_text": false,
+      "smaller_text": true,
       "h1_chinese": "",
       "h2_chinese": "",
       "description_chinese": ""
@@ -43,7 +43,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-03-30 19:30:38",
+  "_syncedAt": "2026-03-30 21:33:19",
   "seo": {
     "title": "Floor Plans - Jesse Rosenfield Site",
     "description": "",
