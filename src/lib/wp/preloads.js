@@ -33,7 +33,7 @@ export function getPreloads(rows) {
     .filter((r) => r.name === "full_width_slideshow")
     .flatMap((r) => {
       const images = r.data.images || [];
-      return images.slice(0, 1); // 🔑 Only first slide
+      return images.slice(0, 3); // Keep the next few hero slides warm for the wipe transition
     })
     .map((item) => {
       const img = item.image || item || {};

@@ -119,6 +119,11 @@ export default function FloorplanZoomViewer({
   const transformRef = useRef(null);
   const imageRef = useRef(null);
   const isSvg = /\.svg(?:[?#].*)?$/i.test(String(src ?? ""));
+  const queueResetToInitialView = () => {
+    queueLayout(() => {
+      resetToInitialView(transformRef, imageRef);
+    });
+  };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -136,9 +141,7 @@ export default function FloorplanZoomViewer({
       wasVisible = visible;
 
       if (visible) {
-        queueLayout(() => {
-          resetToInitialView(transformRef, imageRef);
-        });
+        queueResetToInitialView();
       }
     };
 
@@ -147,6 +150,45 @@ export default function FloorplanZoomViewer({
       attributes: true,
       attributeFilter: ["class", "hidden"],
     });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement) || !("ResizeObserver" in window)) return;
+
+    const modal = root.closest("[data-floorplans-modal]");
+    if (!(modal instanceof HTMLElement)) return;
+
+    let previousWidth = 0;
+    let previousHeight = 0;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      const nextWidth = entry.contentRect.width;
+      const nextHeight = entry.contentRect.height;
+      if (nextWidth <= 0 || nextHeight <= 0) return;
+
+      if (
+        Math.abs(nextWidth - previousWidth) < 1 &&
+        Math.abs(nextHeight - previousHeight) < 1
+      ) {
+        return;
+      }
+
+      previousWidth = nextWidth;
+      previousHeight = nextHeight;
+
+      if (!isModalVisible(modal)) return;
+
+      queueResetToInitialView();
+    });
+
+    observer.observe(root);
 
     return () => {
       observer.disconnect();
@@ -185,9 +227,7 @@ export default function FloorplanZoomViewer({
     const modal = root.closest("[data-floorplans-modal]");
     if (!isModalVisible(modal)) return;
 
-    queueLayout(() => {
-      resetToInitialView(transformRef, imageRef);
-    });
+    queueResetToInitialView();
   };
 
   const handleZoomButton = (direction) => {

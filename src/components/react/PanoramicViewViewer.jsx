@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 const ROOT_STYLE = {
@@ -37,6 +38,12 @@ const TOGGLE_WRAP_STYLE = {
   transform: "translateX(-50%)",
   zIndex: 2,
 };
+
+const MOBILE_TOGGLE_WRAP_STYLE = {
+  position: "relative",
+};
+
+const MOBILE_TOGGLE_MEDIA_QUERY = "(max-width: 474px)";
 
 const TOGGLE_GROUP_STYLE = {
   marginTop: "1.5rem",
@@ -93,6 +100,7 @@ export default function PanoramicViewViewer({
   });
   const [activeView, setActiveView] = useState(daySrc ? "day" : "night");
   const [isPanning, setIsPanning] = useState(false);
+  const [mobileToggleHost, setMobileToggleHost] = useState(null);
 
   useEffect(() => {
     setActiveView(daySrc ? "day" : "night");
@@ -191,6 +199,43 @@ export default function PanoramicViewViewer({
   }, []);
 
   useEffect(() => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return;
+
+    const modal = root.closest("[data-floorplans-panorama-modal]");
+    if (!(modal instanceof HTMLElement)) return;
+
+    const copy = modal.querySelector(".floorplans-panorama-copy");
+    if (!(copy instanceof HTMLElement)) {
+      setMobileToggleHost(null);
+      return;
+    }
+
+    const mobileQuery = window.matchMedia(MOBILE_TOGGLE_MEDIA_QUERY);
+    const syncToggleHost = () => {
+      setMobileToggleHost(mobileQuery.matches ? copy : null);
+    };
+
+    if (typeof mobileQuery.addEventListener === "function") {
+      mobileQuery.addEventListener("change", syncToggleHost);
+    } else if (typeof mobileQuery.addListener === "function") {
+      mobileQuery.addListener(syncToggleHost);
+    }
+
+    syncToggleHost();
+
+    return () => {
+      if (typeof mobileQuery.removeEventListener === "function") {
+        mobileQuery.removeEventListener("change", syncToggleHost);
+      } else if (typeof mobileQuery.removeListener === "function") {
+        mobileQuery.removeListener(syncToggleHost);
+      }
+
+      setMobileToggleHost(null);
+    };
+  }, [daySrc, nightSrc]);
+
+  useEffect(() => {
     applyViewTransform(activeView);
   }, [activeView]);
 
@@ -250,46 +295,49 @@ export default function PanoramicViewViewer({
 
   const showDay = activeView !== "night";
   const showNight = activeView === "night" && nightSrc;
+  const toggleControls =
+    daySrc || nightSrc ? (
+      <div style={mobileToggleHost ? MOBILE_TOGGLE_WRAP_STYLE : TOGGLE_WRAP_STYLE}>
+        <div style={TOGGLE_GROUP_STYLE}>
+          {daySrc && (
+            <button
+              type="button"
+              style={{
+                ...TOGGLE_BUTTON_STYLE,
+                opacity: showDay ? 1 : 0.45,
+                textDecoration: showDay ? "underline" : "none",
+                textUnderlineOffset: "0.25em",
+              }}
+              onClick={() => handleViewChange("day")}
+              aria-pressed={showDay ? "true" : "false"}
+            >
+              Day Time
+            </button>
+          )}
+          {daySrc && nightSrc && <span style={TOGGLE_SEPARATOR_STYLE}>|</span>}
+          {nightSrc && (
+            <button
+              type="button"
+              style={{
+                ...TOGGLE_BUTTON_STYLE,
+                opacity: showNight ? 1 : 0.45,
+                textDecoration: showNight ? "underline" : "none",
+                textUnderlineOffset: "0.25em",
+              }}
+              onClick={() => handleViewChange("night")}
+              aria-pressed={showNight ? "true" : "false"}
+            >
+              Evening
+            </button>
+          )}
+        </div>
+      </div>
+    ) : null;
 
   return (
     <div ref={rootRef} style={ROOT_STYLE}>
-      {(daySrc || nightSrc) && (
-        <div style={TOGGLE_WRAP_STYLE}>
-          <div style={TOGGLE_GROUP_STYLE}>
-            {daySrc && (
-              <button
-                type="button"
-                style={{
-                  ...TOGGLE_BUTTON_STYLE,
-                  opacity: showDay ? 1 : 0.45,
-                  textDecoration: showDay ? "underline" : "none",
-                  textUnderlineOffset: "0.25em",
-                }}
-                onClick={() => handleViewChange("day")}
-                aria-pressed={showDay ? "true" : "false"}
-              >
-                Day Time
-              </button>
-            )}
-            {daySrc && nightSrc && <span style={TOGGLE_SEPARATOR_STYLE}>|</span>}
-            {nightSrc && (
-              <button
-                type="button"
-                style={{
-                  ...TOGGLE_BUTTON_STYLE,
-                  opacity: showNight ? 1 : 0.45,
-                  textDecoration: showNight ? "underline" : "none",
-                  textUnderlineOffset: "0.25em",
-                }}
-                onClick={() => handleViewChange("night")}
-                aria-pressed={showNight ? "true" : "false"}
-              >
-                Evening
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {!mobileToggleHost && toggleControls}
+      {mobileToggleHost && toggleControls ? createPortal(toggleControls, mobileToggleHost) : null}
 
       <TransformWrapper
         ref={transformRef}

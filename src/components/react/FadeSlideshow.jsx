@@ -1,9 +1,11 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import SlideNavigation from "../ui/SlideNavigation"; 
 
 const MOBILE_BLUR_MEDIA_QUERY =
   "(max-width: 768px), (hover: none) and (pointer: coarse)";
+const SLIDE_EXIT_DURATION_SECONDS = 4;
+const SLIDE_TRANSITION_EASE = [0.19, 1, 0.32, 1];
 
 // 1. Helper function
 const getSlideImageProps = (slide) => {
@@ -48,6 +50,9 @@ function getSectionContentKey(...parts) {
 export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null, tallestSectionIndex = 0 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [disableBlur, setDisableBlur] = useState(false);
+  const [exitingSlides, setExitingSlides] = useState([]);
+  const imageRefs = useRef([]);
+  const transitionCounterRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) {
@@ -74,48 +79,111 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
     };
   }, []);
 
+  const slidesWithImageProps = useMemo(
+    () =>
+      slides.map((slide, index) => ({
+        key: slide.id || index,
+        index,
+        slide,
+        imageProps: getSlideImageProps(slide),
+      })),
+    [slides]
+  );
+
+  useEffect(() => {
+    imageRefs.current = imageRefs.current.slice(0, slidesWithImageProps.length);
+  }, [slidesWithImageProps.length]);
+
+  useEffect(() => {
+    if (slidesWithImageProps.length === 0) {
+      setCurrentIndex(0);
+      setExitingSlides([]);
+      return;
+    }
+
+    setCurrentIndex((prev) => Math.min(prev, slidesWithImageProps.length - 1));
+  }, [slidesWithImageProps.length]);
+
+  useEffect(() => {
+    const cleanups = [];
+
+    imageRefs.current.forEach((image) => {
+      if (!(image instanceof HTMLImageElement)) {
+        return;
+      }
+
+      const warmImage = () => {
+        if (typeof image.decode === "function") {
+          void image.decode().catch(() => {});
+        }
+      };
+
+      if (image.complete && image.naturalWidth > 0) {
+        warmImage();
+        return;
+      }
+
+      image.addEventListener("load", warmImage, { once: true });
+      cleanups.push(() => {
+        image.removeEventListener("load", warmImage);
+      });
+    });
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup());
+    };
+  }, [slidesWithImageProps]);
+
+  const advanceSlide = useCallback(
+    (getNextIndex) => {
+      setCurrentIndex((prevIndex) => {
+        if (slidesWithImageProps.length <= 1) {
+          return prevIndex;
+        }
+
+        const nextIndex = getNextIndex(prevIndex);
+
+        if (nextIndex === prevIndex) {
+          return prevIndex;
+        }
+
+        const previousEntry = slidesWithImageProps[prevIndex];
+
+        if (previousEntry) {
+          transitionCounterRef.current += 1;
+          setExitingSlides((current) => [
+            ...current,
+            {
+              key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
+              ...previousEntry,
+            },
+          ]);
+        }
+
+        return nextIndex;
+      });
+    },
+    [slidesWithImageProps]
+  );
+
   const handleNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
+    advanceSlide((prev) => (prev + 1) % slidesWithImageProps.length);
+  }, [advanceSlide, slidesWithImageProps.length]);
 
   const handlePrev = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
+    advanceSlide((prev) => (prev - 1 + slidesWithImageProps.length) % slidesWithImageProps.length);
+  }, [advanceSlide, slidesWithImageProps.length]);
 
-  const slide = slides[currentIndex];
-  const { src: primary, srcSet } = getSlideImageProps(slide);
+  const activeEntry = slidesWithImageProps[currentIndex] || null;
+  const slide = activeEntry?.slide || slides[0];
   const exitFilter = disableBlur ? "blur(0px)" : "blur(5px)";
   const captionOverlayBlur = disableBlur ? "0px" : "11px";
 
   // Resolve section content for the current slide
   const currentSectionContent = useMemo(
     () => resolveSectionContent(slide, sectionContent),
-    [currentIndex, slide, sectionContent]
+    [slide, sectionContent]
   );
-
-  // ---- Variants & Styles ----
-  const wipeVariants = {
-    initial: { 
-        zIndex: 1, 
-        opacity: 1,
-        filter: "blur(0px)" 
-    },
-    animate: {
-      zIndex: 2,
-      opacity: 1,
-      WebkitMaskPosition: "0% 0%",
-      maskPosition: "0% 0%",
-      filter: "blur(0px)"
-    },
-    exit: {
-      zIndex: 3,
-      opacity: 1,
-      WebkitMaskPosition: "100% 100%",
-      maskPosition: "100% 100%",
-      filter: exitFilter,
-      transition: { duration: 4, ease:  [0.19, 1, 0.32, 1] },
-    },
-  };
 
   // UPDATED: Extremely wide gradient for feathering
   const maskStyle = {
@@ -292,56 +360,144 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
       : sectionContentBlock
     : null;
 
+  const renderSlideImage = (entry, index, options = {}) => {
+    if (!entry?.imageProps?.src) {
+      return null;
+    }
+
+    const {
+      className = "photo absolute w-full h-full object-cover",
+      fetchPriority = index === 0 ? "high" : "low",
+      refIndex = index,
+    } = options;
+
+    return (
+      <img
+        ref={(node) => {
+          if (typeof refIndex === "number") {
+            imageRefs.current[refIndex] = node;
+          }
+        }}
+        draggable={false}
+        className={className}
+        src={entry.imageProps.src}
+        srcSet={entry.imageProps.srcSet}
+        sizes="(max-width: 1200px) 100vw, 100vw"
+        alt={entry.slide.alt || `Slide ${entry.index + 1}`}
+        decoding="async"
+        loading="eager"
+        fetchPriority={fetchPriority}
+      />
+    );
+  };
+
   // Image slideshow block
   const slideshowBlock = (
     <div className="full-width-slideshow-wrap relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
       <div className="relative w-full h-full">
         <div className="relative w-full h-full overflow-hidden">
-          <AnimatePresence initial={false}>
+          {slidesWithImageProps.map((entry, index) => {
+            const isCurrent = index === currentIndex;
+
+            return (
+              <figure
+                key={`base-${entry.key}`}
+                className={`slide-figure absolute inset-0 w-full h-full pointer-events-none ${
+                  entry.slide.caption ? "has-caption" : ""
+                }`}
+                aria-hidden={!isCurrent}
+                style={{
+                  opacity: isCurrent ? 1 : 0,
+                  zIndex: isCurrent ? 1 : 0,
+                }}
+              >
+                <div className="image-wrapper w-full h-full">
+                  {renderSlideImage(entry, index)}
+                </div>
+              </figure>
+            );
+          })}
+
+          {exitingSlides.map((entry) => (
             <motion.figure
-              key={currentIndex}
-              className={`slide-figure absolute inset-0 w-full h-full ${
-                slide.caption ? "has-caption" : ""
+              key={entry.key}
+              className={`slide-figure absolute inset-0 w-full h-full pointer-events-none ${
+                entry.slide.caption ? "has-caption" : ""
               }`}
-              variants={wipeVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
+              initial={{
+                zIndex: 3,
+                opacity: 1,
+                WebkitMaskPosition: "0% 0%",
+                maskPosition: "0% 0%",
+                filter: "blur(0px)",
+              }}
+              animate={{
+                zIndex: 3,
+                opacity: 1,
+                WebkitMaskPosition: "100% 100%",
+                maskPosition: "100% 100%",
+                filter: exitFilter,
+                transition: {
+                  duration: SLIDE_EXIT_DURATION_SECONDS,
+                  ease: SLIDE_TRANSITION_EASE,
+                },
+              }}
               style={maskStyle}
+              onAnimationComplete={() => {
+                setExitingSlides((current) =>
+                  current.filter((item) => item.key !== entry.key)
+                );
+              }}
             >
               <div className="image-wrapper w-full h-full">
-                <motion.img
-                  draggable={false}
-                  className="photo absolute w-full h-full object-cover"
-                  src={primary}
-                  srcSet={srcSet}
-                  sizes="(max-width: 1200px) 100vw, 100vw"
-                  alt={slide.alt || `Slide ${currentIndex + 1}`}
-                  decoding="async" 
-                />
-
-                {slide.caption && (
+                {renderSlideImage(entry, entry.index, {
+                  fetchPriority: "low",
+                  refIndex: null,
+                })}
+                {entry.slide.caption && (
                   <motion.figcaption
                     className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
-                    initial={{ opacity: 0 }}
-                    animate={{ 
-                      opacity: 1, 
-                      transition: { 
-                          duration: 2.25, 
-                          ease: [0.2, 1, 0.4, 1], 
-                          delay: 0.65
-                      }
-                    }}
-                    exit={{ 
-                      opacity: 0, 
-                      transition: { duration: 0.8, ease:  [0.19, 1, 0.32, 1] } 
+                    initial={{ opacity: 1 }}
+                    animate={{
+                      opacity: 0,
+                      transition: {
+                        duration: 0.8,
+                        ease: SLIDE_TRANSITION_EASE,
+                      },
                     }}
                   >
-                    {slide.caption}
+                    {entry.slide.caption}
                   </motion.figcaption>
                 )}
               </div>
             </motion.figure>
+          ))}
+
+          <AnimatePresence initial={false} mode="wait">
+            {slide?.caption && (
+              <motion.figcaption
+                key={`caption-${currentIndex}`}
+                className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  transition: {
+                    duration: 2.25,
+                    ease: [0.2, 1, 0.4, 1],
+                    delay: 0.65,
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  transition: {
+                    duration: 0.8,
+                    ease: SLIDE_TRANSITION_EASE,
+                  },
+                }}
+              >
+                {slide.caption}
+              </motion.figcaption>
+            )}
           </AnimatePresence>
         </div>
 

@@ -694,6 +694,7 @@ function formatExterior(value: number | string | null | undefined) {
         const buttons = Array.from(root.querySelectorAll("[data-sort-key]"));
         const numericSortKeys = new Set(["bedrooms", "bathrooms", "area"]);
         const mobileWidthQuery = window.matchMedia("(max-width: 884px)");
+        const detailCopyHeightQuery = window.matchMedia("(max-width: 814px)");
         let sortKey = "";
         let sortDir = "asc";
         let headerHiddenBeforeModal = false;
@@ -705,6 +706,8 @@ function formatExterior(value: number | string | null | undefined) {
         const panoramaFadeMs = 300;
         const panoramaCloseTimers = new WeakMap();
         let mobileColumnSyncFrame = 0;
+        const detailCopySyncFrames = new Map();
+        const detailCopyObservers = [];
         const getItems = () => Array.from(body.querySelectorAll("[data-unit-item]"));
         const getOpenItem = () =>
           getItems().find((item) => item.classList.contains("is-modal-open"));
@@ -941,6 +944,81 @@ function formatExterior(value: number | string | null | undefined) {
           const trigger = itemModal.querySelector("[data-floorplans-panorama-open]");
           return trigger instanceof HTMLElement ? trigger : null;
         };
+        const getModalCard = (modal) => {
+          if (!(modal instanceof HTMLElement)) return null;
+
+          const modalCard = modal.querySelector("[data-floorplans-modal-card]");
+          return modalCard instanceof HTMLElement ? modalCard : null;
+        };
+        const getModalDetailCopy = (modal) => {
+          const modalCard = getModalCard(modal);
+          if (!(modalCard instanceof HTMLElement)) return null;
+
+          return (
+            Array.from(modalCard.children).find(
+              (child) =>
+                child instanceof HTMLElement &&
+                child.classList.contains("floorplans-detail-copy")
+            ) ?? null
+          );
+        };
+        const syncModalDetailCopyHeight = (modal) => {
+          const modalCard = getModalCard(modal);
+          const detailCopy = getModalDetailCopy(modal);
+
+          if (!(modalCard instanceof HTMLElement)) return;
+
+          if (
+            !(detailCopy instanceof HTMLElement) ||
+            modal.hidden ||
+            !detailCopyHeightQuery.matches
+          ) {
+            modalCard.style.removeProperty("--floorplans-detail-copy-height");
+            return;
+          }
+
+          const detailCopyHeight = Math.ceil(detailCopy.getBoundingClientRect().height);
+          if (detailCopyHeight > 0) {
+            modalCard.style.setProperty(
+              "--floorplans-detail-copy-height",
+              `${detailCopyHeight}px`
+            );
+          }
+        };
+        const scheduleModalDetailCopyHeightSync = (modal) => {
+          if (!(modal instanceof HTMLElement)) return;
+
+          const pendingFrame = detailCopySyncFrames.get(modal);
+          if (pendingFrame) return;
+
+          const nextFrame = window.requestAnimationFrame(() => {
+            detailCopySyncFrames.delete(modal);
+            syncModalDetailCopyHeight(modal);
+          });
+
+          detailCopySyncFrames.set(modal, nextFrame);
+        };
+        const observeModalDetailCopy = (modal) => {
+          if (!(modal instanceof HTMLElement) || !("ResizeObserver" in window)) return;
+
+          const modalCard = getModalCard(modal);
+          const detailCopy = getModalDetailCopy(modal);
+          if (!(modalCard instanceof HTMLElement) || !(detailCopy instanceof HTMLElement)) return;
+
+          const observer = new ResizeObserver(() => {
+            scheduleModalDetailCopyHeightSync(modal);
+          });
+
+          observer.observe(modalCard);
+          observer.observe(detailCopy);
+          detailCopyObservers.push(observer);
+        };
+        const scheduleOpenModalDetailCopyHeightSync = () => {
+          const openModal = document.querySelector("[data-floorplans-modal]:not([hidden])");
+          if (openModal instanceof HTMLElement) {
+            scheduleModalDetailCopyHeightSync(openModal);
+          }
+        };
         const setItemOpen = (item, open, restoreFocus = false) => {
           const row = item.querySelector("[data-floorplans-row]");
           const modal = row instanceof HTMLElement ? getItemModal(item, row) : null;
@@ -959,6 +1037,7 @@ function formatExterior(value: number | string | null | undefined) {
 
             modal.hidden = false;
             modal.classList.remove("is-closing", "is-visible");
+            syncModalDetailCopyHeight(modal);
             const scrollRegion = modal.querySelector("[data-floorplans-modal-scroll]");
             if (scrollRegion instanceof HTMLElement) {
               scrollRegion.scrollTop = 0;
@@ -967,6 +1046,7 @@ function formatExterior(value: number | string | null | undefined) {
             setHeaderHidden(false);
             lockPageScroll();
             requestAnimationFrame(() => {
+              scheduleModalDetailCopyHeightSync(modal);
               if (!modal.hidden) {
                 modal.classList.add("is-visible");
               }
@@ -1113,6 +1193,7 @@ function formatExterior(value: number | string | null | undefined) {
           }
 
           if (modal instanceof HTMLElement) {
+            observeModalDetailCopy(modal);
             modal.addEventListener("click", (event) => {
               if (!(event.target instanceof HTMLElement)) return;
               if (event.target.closest("[data-floorplans-panorama-open]")) {
@@ -1165,8 +1246,15 @@ function formatExterior(value: number | string | null | undefined) {
         mobileWidthQuery.addEventListener("change", scheduleMobileColumnSync, {
           signal: abortController.signal,
         });
+        window.addEventListener("resize", scheduleOpenModalDetailCopyHeightSync, {
+          signal: abortController.signal,
+        });
+        detailCopyHeightQuery.addEventListener("change", scheduleOpenModalDetailCopyHeightSync, {
+          signal: abortController.signal,
+        });
         document.fonts?.ready?.then(() => {
           scheduleMobileColumnSync();
+          scheduleOpenModalDetailCopyHeightSync();
         });
 
         updateButtons();
@@ -1174,6 +1262,13 @@ function formatExterior(value: number | string | null | undefined) {
         document.addEventListener(
           "astro:before-swap",
           () => {
+            detailCopySyncFrames.forEach((frame) => {
+              window.cancelAnimationFrame(frame);
+            });
+            detailCopySyncFrames.clear();
+            detailCopyObservers.forEach((observer) => {
+              observer.disconnect();
+            });
             if (mobileColumnSyncFrame) {
               window.cancelAnimationFrame(mobileColumnSyncFrame);
               mobileColumnSyncFrame = 0;
@@ -1461,6 +1556,7 @@ function formatExterior(value: number | string | null | undefined) {
   }
 
   .floorplans-modal-card {
+    --floorplans-detail-copy-height: 0px;
     position: relative;
     z-index: 1;
     width: 100%;
@@ -1793,11 +1889,35 @@ function formatExterior(value: number | string | null | undefined) {
     height: 100%;
   }
 
-  @media (max-width: 1149px) {
+  @media (min-width: 815px) and (max-width: 1149px) {
     .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
       width: min(100%, 80vw) !important;
       height: auto !important;
       max-width: min(100%, 80vw) !important;
+      max-height: 100% !important;
+    }
+  }
+
+  @media (max-width: 814px) {
+    .floorplans-detail-visual {
+      align-items: flex-end;
+    }
+
+    .floorplans-detail-viewer {
+      height: max(
+        0px,
+        calc(100% - var(--floorplans-detail-copy-height, 0px))
+      );
+      max-height: max(
+        0px,
+        calc(100% - var(--floorplans-detail-copy-height, 0px))
+      );
+    }
+
+    .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
+      width: auto !important;
+      height: 100% !important;
+      max-width: 100% !important;
       max-height: 100% !important;
     }
   }
