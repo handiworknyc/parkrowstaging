@@ -170,6 +170,14 @@
 	const alternateEnHref = toAbsoluteUrl(normalizedPathname);
 	const alternateZhHref = toAbsoluteUrl(`/zh${normalizedPathname === '/' ? '' : normalizedPathname}`);
 	const currentPrefetchPath = normalizePrefetchPath(normalizedPathname);
+	const isFloorplansPage =
+		currentPrefetchPath === "/floor-plans/" || currentPrefetchPath === "/floorplans/";
+	const floorplansTransitionBypassPaths = [
+		"/floor-plans/",
+		"/floorplans/",
+		"/zh/floor-plans/",
+		"/zh/floorplans/",
+	];
 	const lcpEntries = Array.isArray(lcp) ? lcp.filter(Boolean) : lcp ? [lcp] : [];
 	const criticalVideoPreloadVariants = getResponsiveCriticalVideoPreloadVariants(lcpVideo);
 	const shouldWarmCriticalVideo = criticalVideoPreloadVariants.length > 0;
@@ -726,7 +734,70 @@
 
 	<script src={headerCriticalUrl} defer></script>
 
-	<ClientRouter prefetch="load" />
+	{!isFloorplansPage && <ClientRouter prefetch="load" />}
+
+	<script
+		is:inline
+		define:vars={{ floorplansTransitionBypassPaths }}
+	>
+		(() => {
+			const normalizePathname = (pathname) => {
+				let normalized = String(pathname || "/").trim();
+				if (!normalized) normalized = "/";
+				if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+				normalized = normalized.replace(/\/+$/, "");
+				return normalized ? `${normalized}/` : "/";
+			};
+
+			const bypassPaths = new Set(
+				(floorplansTransitionBypassPaths || []).map((pathname) =>
+					normalizePathname(pathname)
+				)
+			);
+
+			const shouldBypassFloorplansTransition = (href) => {
+				if (!href) return false;
+				if (
+					href.startsWith("#") ||
+					href.startsWith("mailto:") ||
+					href.startsWith("tel:") ||
+					href.startsWith("javascript:")
+				) {
+					return false;
+				}
+
+				try {
+					const url = new URL(href, window.location.href);
+					if (url.origin !== window.location.origin) return false;
+					return bypassPaths.has(normalizePathname(url.pathname));
+				} catch {
+					return false;
+				}
+			};
+
+			const syncFloorplansReloadLinks = (root = document) => {
+				root.querySelectorAll("a[href]").forEach((link) => {
+					if (!(link instanceof HTMLAnchorElement)) return;
+					if (!shouldBypassFloorplansTransition(link.getAttribute("href"))) return;
+					link.setAttribute("data-astro-reload", "");
+				});
+			};
+
+			window.__syncFloorplansReloadLinks = syncFloorplansReloadLinks;
+
+			if (!window.__floorplansReloadLinksInitialized) {
+				window.__floorplansReloadLinksInitialized = true;
+				document.addEventListener("astro:page-load", () => {
+					window.__syncFloorplansReloadLinks?.();
+				});
+				document.addEventListener("astro:after-swap", () => {
+					window.__syncFloorplansReloadLinks?.();
+				});
+			}
+
+			syncFloorplansReloadLinks();
+		})();
+	</script>
 
 	<script>
 		document.addEventListener("astro:before-swap", (ev) => {
