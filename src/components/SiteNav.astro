@@ -128,7 +128,7 @@ const headerMenu = _cachedHeaderMenu;
         </div>
       </nav>
 
-      <div class="header-utility-links">
+      <div class={`header-utility-links${hideLanguage ? " header-utility-links--left" : ""}`}>
         {socialPhoneHref && (
           <a class="header-utility-link" href={socialPhoneHref}>{socialPhone}</a>
         )}
@@ -475,6 +475,11 @@ const headerMenu = _cachedHeaderMenu;
   align-items: center;
   gap: 3.1rem;
   transform: translateY(-50%);
+}
+
+.header-utility-links--left {
+  left: var(--containerPadding);
+  right: auto;
 }
 
 .header-utility-link {

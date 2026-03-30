@@ -464,6 +464,20 @@ ul.section-text li:has(h4) h4.figure {
     padding-bottom: 1rem;
 }
 
+@media (min-width: 1100px) {
+	.carousel-slide-content-active > .section-text-list-heading:first-child,
+	.column-content > .section-text-list-heading:first-child {
+		margin-top: 0.625rem;
+	}
+}
+
+@media (max-width: 1099px) {
+	.carousel-slide-content-active > .section-text-list-heading:first-child,
+	.column-content > .section-text-list-heading:first-child {
+		margin-top: 0.375rem;
+	}
+}
+
 .next-link {
 	letter-spacing: .03em;
 
@@ -782,7 +796,7 @@ ul.two-col-list.wide-list-columns {
 @media (max-width: 1024px) {
 	.section-text-wrap *,
 	.column-content * {
-		max-width: 420px;
+		max-width: 600px;
 	}
 }
 

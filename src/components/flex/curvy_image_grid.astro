@@ -173,6 +173,7 @@ const mobileBleedClass =
     class:list={[
         "column-content",
         "curvy-image-content",
+        isSingle && "is-single-image-content",
         `text-align-${vars.text_align}`,
         "min-[1400px]:col-3",
         "min-[1024px]:col-4",
@@ -253,6 +254,10 @@ const mobileBleedClass =
 }
 
 @media (max-width: 759px) {
+  .curvy-image-content.is-single-image-content {
+    padding-top: 2rem;
+  }
+
   .grid-container.is-quote-true {
     grid-auto-rows: auto;
   }

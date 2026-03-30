@@ -671,7 +671,7 @@ export default function ImageCarousel({
   );
 
   const contentWrapClass = useMemo(
-    () => `full-bleed-content-wrap ${useWideRightLayout ? "mt-24" : "mt-16"}`,
+    () => `full-bleed-content-wrap ${useWideRightLayout ? "mt-16 min-[990px]:mt-24" : "mt-16"}`,
     [useWideRightLayout]
   );
 
