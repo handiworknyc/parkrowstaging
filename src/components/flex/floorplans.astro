@@ -494,7 +494,7 @@ function formatExterior(value: number | string | null | undefined) {
                   {formatBathrooms(unit.bathrooms)}
                 </div>
                 <div class="floorplans-cell floorplans-cell--metric">
-                  {numberFormat.format(unit.area)}
+                  {numberFormat.format(unit.area)} sf
                 </div>
                 {hasOrientation && (
                   <div class="floorplans-cell floorplans-cell--orientation">
@@ -544,8 +544,8 @@ function formatExterior(value: number | string | null | undefined) {
                       <div class="floorplans-detail-meta">
                         <p>Residence {unit.unitNumber}</p>
                         <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
-                        <p>Interior: {numberFormat.format(unit.area)} SF</p>
-                        {exteriorLabel && <p>Exterior: {exteriorLabel} SF</p>}
+                        <p>Interior: {numberFormat.format(unit.area)} sf</p>
+                        {exteriorLabel && <p>Exterior: {exteriorLabel} sf</p>}
                         <p>Exposure: {exposureLabel}</p>
                       </div>
 
@@ -1820,14 +1820,36 @@ function formatExterior(value: number | string | null | undefined) {
     }
 
     .floorplans-sort-button:not(.floorplans-sort-button--start) {
-      grid-template-columns: 1.3125rem minmax(0, 1fr) 1.3125rem;
+      display: flex;
+      justify-content: center;
+      gap: 3px;
     }
 
     .floorplans-sort-button:not(.floorplans-sort-button--start)::before {
-      content: "";
-      grid-column: 1;
-      display: block;
-      width: 1.3125rem;
+      content: none;
+    }
+
+    .floorplans-sort-button:not(.floorplans-sort-button--start) .floorplans-sort-label {
+      justify-self: auto;
+    }
+
+    .floorplans-sort-button:not(.floorplans-sort-button--start) .floorplans-sort-indicator {
+      width: 0.5625rem;
+      padding-left: 2px;
+      justify-self: auto;
+    }
+
+    .floorplans-cell--unit .floorplans-sort-indicator[data-sort-direction="asc"] {
+      top: 0.5px;
+    }
+
+    .floorplans-cell--unit .floorplans-sort-indicator[data-sort-direction="desc"] {
+      top: 2px;
+    }
+
+    .floorplans-sort-button:not(.floorplans-sort-button--start)
+      .floorplans-sort-indicator[data-sort-direction=""] {
+      visibility: hidden;
     }
 
     .floorplans-sort-text--full {
@@ -1909,6 +1931,12 @@ function formatExterior(value: number | string | null | undefined) {
       vertical-align: middle;
     }
 
+    .floorplans-head .floorplans-cell--action,
+    .floorplans-row .floorplans-cell--action {
+      width: 1%;
+      white-space: nowrap;
+    }
+
     .floorplans-head .floorplans-cell,
     .floorplans-row .floorplans-cell {
       border-bottom: 1px solid var(--brown);
@@ -1939,6 +1967,7 @@ function formatExterior(value: number | string | null | undefined) {
     }
 
     .floorplans-view-link {
+      font-size: 1.2rem;
       padding: 4px 12px 2px;
     }
   }
