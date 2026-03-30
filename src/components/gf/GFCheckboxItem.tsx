@@ -10,6 +10,7 @@ type Props = {
   value: string;
   isSelected?: boolean;
   isRequired?: boolean;
+  layout?: 'inline' | 'split';
   onChange?: (checked: boolean) => void;
 };
 
@@ -18,6 +19,7 @@ export function GFCheckboxItem({
   value,
   isSelected = false,
   isRequired,
+  layout = 'inline',
   onChange,
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
@@ -37,7 +39,14 @@ export function GFCheckboxItem({
   );
 
   return (
-    <label className="flex items-center gap-3 cursor-pointer select-none">
+    <label
+      className={[
+        'gf-checkbox-item',
+        layout === 'split' && 'gf-checkbox-item--split',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <input
         {...inputProps}
         ref={ref}
@@ -48,6 +57,7 @@ export function GFCheckboxItem({
       {/* Checkbox */}
       <span
         className={`
+          gf-checkbox-box
           relative
           h-7 w-7
           rounded
@@ -101,7 +111,7 @@ export function GFCheckboxItem({
         </AnimatePresence>
       </span>
 
-      <span className="gf-checkbox-label">{text}</span>
+      <span className="gf-checkbox-item-text">{text}</span>
     </label>
   );
 }

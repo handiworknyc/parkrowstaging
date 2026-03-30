@@ -2,6 +2,7 @@
 import { getHeaderMenu } from "../lib/wp/getHeaderMenu";
 import { getHeaderMenuCN } from "../lib/wp/getHeaderMenuCn";
 import { getHideLanguage } from "../lib/wp/getHideLanguage";
+import { getSocialPhone, toTelHref } from "../lib/wp/getSocialMedia";
 import LanguageSwitcher from "../components/ui/LanguageSwitcher.astro";
 
 interface Props {
@@ -57,6 +58,8 @@ if (!_cachedHeaderMenu) {
 // -----------------------------------------------------------------------------
 const headerMenuCN = await getHeaderMenuCN();
 const hideLanguage = await getHideLanguage();
+const socialPhone = await getSocialPhone();
+const socialPhoneHref = toTelHref(socialPhone);
 
 
 const headerMenu = _cachedHeaderMenu;
@@ -126,7 +129,9 @@ const headerMenu = _cachedHeaderMenu;
       </nav>
 
       <div class="header-utility-links">
-        <a class="header-utility-link" href="tel:425-555-1234">425-555-1234</a>
+        {socialPhoneHref && (
+          <a class="header-utility-link" href={socialPhoneHref}>{socialPhone}</a>
+        )}
         <a class="header-utility-link" href="/inquire">Inquire</a>
       </div>
 

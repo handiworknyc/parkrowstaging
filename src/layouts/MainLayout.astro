@@ -4,6 +4,7 @@
 	import SiteFooter from "../components/SiteFooter.astro";
 	import SiteNav from "../components/SiteNav.astro";
 	import PromoPopup from "../components/PromoPopup.astro";
+	import { getSocialPhone, toTelHref } from "../lib/wp/getSocialMedia";
 	import {
 		getResponsiveCriticalVideoPreloadUrls,
 		getResponsiveCriticalVideoPreloadVariants,
@@ -70,6 +71,8 @@
 
 
 	const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+	const socialPhone = await getSocialPhone();
+	const socialPhoneHref = toTelHref(socialPhone);
 
 	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
 	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
@@ -983,9 +986,11 @@
 			<a class="icon-arrow-right icon-after border-btn white">
 			Inquire
 			</a>
-			<a class="ml-auto c-white mob-bar-phone" href="tel:425-555-1234">
-			425-555-1234
-			</a>
+			{socialPhoneHref && (
+				<a class="ml-auto c-white mob-bar-phone" href={socialPhoneHref}>
+				{socialPhone}
+				</a>
+			)}
 		</div>
 		</div>
 

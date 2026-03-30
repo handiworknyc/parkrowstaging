@@ -47,6 +47,48 @@ export default function GFCheckboxGroup({
     state
   );
 
+  const isSingleOption = options.length === 1;
+  const singleOption = isSingleOption ? options[0] : null;
+
+  if (singleOption) {
+    return (
+      <fieldset
+        {...groupProps}
+        className={[
+          'gf-field',
+          'field-checkbox',
+          'field-checkbox-single',
+          error && 'gf-error',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <legend className="sr-only">{label}</legend>
+
+        <GFCheckboxItem
+          value={singleOption.value}
+          text={singleOption.text}
+          layout="split"
+          isSelected={value.includes(singleOption.value)}
+          isRequired={isRequired}
+          onChange={(checked) => {
+            const next = checked
+              ? [singleOption.value]
+              : [];
+
+            onChange?.(next);
+          }}
+        />
+
+        {error && errorMessage && (
+          <div className="gf-error-message sr-only">
+            {errorMessage}
+          </div>
+        )}
+      </fieldset>
+    );
+  }
+
   return (
     <fieldset
       {...groupProps}
@@ -62,7 +104,6 @@ export default function GFCheckboxGroup({
       <legend className="sr-only">{label}</legend>
 
       <div className="gf-checkbox-row">
-        {/* LEFT COLUMN */}
         <div className="gf-checkbox-label">
           {label}
           {isRequired && (
@@ -70,13 +111,13 @@ export default function GFCheckboxGroup({
           )}
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="gf-checkbox-options">
           {options.map((o) => (
             <GFCheckboxItem
               key={o.value}
               value={o.value}
               text={o.text}
+              layout="inline"
               isSelected={value.includes(o.value)}
               isRequired={isRequired}
               onChange={(checked) => {

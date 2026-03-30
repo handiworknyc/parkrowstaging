@@ -313,7 +313,6 @@ const instanceId = transitionName;
       logCarouselLightbox("teardownCarouselFsLightboxInstance complete");
     }
 
-    if (!window["__carouselFsLightboxState"]) {
     const destroyActiveInstance = () => {
       const currentInstance = state.activeInstance;
       state.activeInstance = null;

@@ -982,6 +982,12 @@ async function fetchHideLanguage() {
   };
 }
 
+async function fetchSocialMedia() {
+  const url = new URL("/wp-json/astro/v1/social-media", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
 /* -------------------------------------------
    SEO-Friendly Download & Cache
    Format: "my-image-hash.jpg.webp"
@@ -1341,6 +1347,7 @@ async function run() {
   const outPanoramicViews = path.join(process.cwd(), "src", "content", "wp", "panoramic-views.json");
   const outFloorplanDisclaimer = path.join(process.cwd(), "src", "content", "wp", "floorplan-disclaimer.json");
   const outHideLanguage = path.join(process.cwd(), "src", "content", "wp", "hide-language.json");
+  const outSocialMedia = path.join(process.cwd(), "src", "content", "wp", "social-media.json");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
@@ -1429,6 +1436,22 @@ async function run() {
     );
   } catch (error) {
     console.error(`❌ Failed to sync Hide Language flag: ${error?.message || error}`);
+  }
+
+  /* -------- SOCIAL MEDIA -------- */
+  try {
+    console.log("📱 Fetching Social Media…");
+    const socialMedia = await fetchSocialMedia();
+    const transformed = await cacheStructuredDataImages(socialMedia, imgCacheDir);
+
+    writeJSONIfChanged(
+      outSocialMedia,
+      transformed.data,
+      `✨ Social media updated (${transformed.transformedImageCount} images transformed)`,
+      "⏩ Social media unchanged — skip write"
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Social Media: ${error?.message || error}`);
   }
 
   /* -------- PAGES -------- */

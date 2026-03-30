@@ -78,6 +78,30 @@ function runAfterFrames(callback, frames = 1) {
   });
 }
 
+function waitForFirstFrame(videoEl, callback) {
+  if (!videoEl) {
+    callback();
+    return;
+  }
+
+  if (isIOS) {
+    requestAnimationFrame(() => requestAnimationFrame(callback));
+    return;
+  }
+
+  if (typeof videoEl.requestVideoFrameCallback === "function") {
+    videoEl.requestVideoFrameCallback(() => callback());
+    return;
+  }
+
+  const onTimeUpdate = () => {
+    videoEl.removeEventListener("timeupdate", onTimeUpdate);
+    callback();
+  };
+
+  videoEl.addEventListener("timeupdate", onTimeUpdate, { once: true });
+}
+
 function isFirstLoadSplashActive() {
   const isFirstLoad = HW.$html.classList.contains("first-load");
   const splashActive = isFirstLoad && window.hwSplashActive === true;
@@ -463,15 +487,19 @@ export function initCFVideo(videoId, reason = "init") {
       return;
     }
 
-    // splash declares real playback
-    if (isSplashVideo && !window.__HW_SPLASH_PLAYING__) {
-      window.__HW_SPLASH_PLAYING__ = true;
-      vlog(videoId, "splash started playing → splash:playing");
-      window.dispatchEvent(new CustomEvent("splash:playing"));
-    }
+    waitForFirstFrame(el, () => {
+      if (player.isDisposed() || player.paused()) return;
 
-    vlog(videoId, "playing → fade in");
-    setPlaying();
+      // Treat splash playback as active only after the first frame is painted.
+      if (isSplashVideo && !window.__HW_SPLASH_PLAYING__) {
+        window.__HW_SPLASH_PLAYING__ = true;
+        vlog(videoId, "splash first frame painted → splash:playing");
+        window.dispatchEvent(new CustomEvent("splash:playing"));
+      }
+
+      vlog(videoId, "first frame confirmed → fade in");
+      setPlaying();
+    });
   });
 
   player.on("pause", setPaused);
