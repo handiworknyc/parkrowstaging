@@ -42,6 +42,26 @@ function getColumnClass(index: number, total: number): string {
   return "min-[1050px]:col-4 min-[990px]:col-5 col-12 column-content";
 }
 
+function getCarouselImageData(item: any) {
+  if (typeof item === "string") {
+    return { url: item };
+  }
+
+  if (typeof item?.image === "string") {
+    return { url: item.image };
+  }
+
+  if (item?.image && typeof item.image === "object") {
+    return item.image;
+  }
+
+  if (item && typeof item === "object" && (item.url || item.src || item.sizes)) {
+    return item;
+  }
+
+  return null;
+}
+
 /* ---------------- Data Processing ---------------- */
 const processedContent = Array.isArray(content)
   ? content.map((item) => ({
@@ -55,28 +75,37 @@ const processedContent = Array.isArray(content)
   : [];
 
 const carouselImages = Array.isArray(images)
-  ? images.map((item, index) => {
-      const imgData = item.image || {};
-      const mediumUrl = imgData.sizes?.intch_med;
+  ? images.flatMap((item, index) => {
+      const imgData = getCarouselImageData(item);
+      const mediumUrl = imgData?.sizes?.intch_med;
+      const imageUrl = mediumUrl || imgData?.url || imgData?.src;
+
+      if (!imgData || !imageUrl) {
+        return [];
+      }
+
       const lightboxUrl =
         imgData.sizes?.intch_xl ||
         imgData.sizes?.["2048x2048"] ||
         imgData.sizes?.large ||
         imgData.url ||
-        mediumUrl;
+        imgData.src ||
+        imageUrl;
 
-      return {
-        id: imgData.ID || imgData.id || index,
-        src: mediumUrl || imgData.url,
-        lightboxSrc: lightboxUrl,
-        alt: imgData.alt || imgData.title || `Image ${index + 1}`,
-        caption: item.caption || "",
-        slideContent: Array.isArray(item.slide_content) ? item.slide_content : null,
-        aspectRatio:
-          imgData.width && imgData.height
-            ? imgData.width / imgData.height
-            : 4 / 3,
-      };
+      return [
+        {
+          id: imgData.ID || imgData.id || index,
+          src: imageUrl,
+          lightboxSrc: lightboxUrl,
+          alt: imgData.alt || imgData.title || `Image ${index + 1}`,
+          caption: item?.caption || "",
+          slideContent: Array.isArray(item?.slide_content) ? item.slide_content : null,
+          aspectRatio:
+            imgData.width && imgData.height
+              ? imgData.width / imgData.height
+              : 4 / 3,
+        },
+      ];
     })
   : [];
 
