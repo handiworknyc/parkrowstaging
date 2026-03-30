@@ -41,7 +41,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 3840,
             "height": 2160,
             "sizes": {
@@ -216,7 +216,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1724,
             "sizes": {
@@ -394,7 +394,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 1021,
                 "height": 540,
                 "sizes": {
@@ -547,7 +547,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 3840,
                 "height": 2160,
                 "sizes": {
@@ -691,6 +691,10 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-03-30 08:03:17",
-  "seo": null
+  "_syncedAt": "2026-03-30 14:04:07",
+  "seo": {
+    "title": "Building - Jesse Rosenfield Site",
+    "description": "",
+    "image": null
+  }
 }
