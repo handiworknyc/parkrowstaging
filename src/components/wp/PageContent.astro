@@ -7,6 +7,66 @@ interface Props {
 
 const { html = "" } = Astro.props as Props;
 
+function replaceElementTag($: any, element: any, tagName: string) {
+  const source = $(element);
+  const replacement = $(`<${tagName}></${tagName}>`);
+
+  Object.entries(source.attr() || {}).forEach(([name, value]) => {
+    if (typeof value === "string") {
+      replacement.attr(name, value);
+    }
+  });
+
+  replacement.html(source.html() || "");
+  source.replaceWith(replacement);
+
+  return replacement;
+}
+
+function isEmptyParagraph($: any, element: any) {
+  const paragraph = $(element);
+
+  if (paragraph.find("img, picture, video, iframe, embed, object, svg, canvas").length) {
+    return false;
+  }
+
+  const text = paragraph.text().replace(/\u00a0/g, "").trim();
+
+  if (text) {
+    return false;
+  }
+
+  const innerHtml = (paragraph.html() || "").replace(/&nbsp;/gi, "").trim();
+
+  return !innerHtml || /^(\s|<br\s*\/?>)*$/i.test(innerHtml);
+}
+
+function isIgnorableLeadingNode($: any, node: any) {
+  if (!node) {
+    return false;
+  }
+
+  if (node.type === "text") {
+    return !$(node).text().replace(/\u00a0/g, "").trim();
+  }
+
+  if (node.type === "comment") {
+    return true;
+  }
+
+  const tagName = typeof node.name === "string" ? node.name.toLowerCase() : "";
+
+  if (tagName === "br" || tagName === "meta" || tagName === "title") {
+    return true;
+  }
+
+  if (tagName === "p") {
+    return isEmptyParagraph($, node);
+  }
+
+  return false;
+}
+
 function normalizeContentHtml(rawHtml: string): string {
   const normalized = typeof rawHtml === "string" ? rawHtml.trim() : "";
 
@@ -15,21 +75,47 @@ function normalizeContentHtml(rawHtml: string): string {
   }
 
   const $ = cheerio.load(normalized, null, false);
-  const firstDirectH2 = $.root().children("h2").first();
+  $("meta, title").remove();
 
-  if (firstDirectH2.length) {
-    const promotedHeading = $("<h1></h1>");
+  $("p").each((_, paragraph) => {
+    if (isEmptyParagraph($, paragraph)) {
+      $(paragraph).remove();
+    }
+  });
 
-    Object.entries(firstDirectH2.attr() || {}).forEach(([name, value]) => {
-      if (typeof value === "string") {
-        promotedHeading.attr(name, value);
-      }
+  let leadingNode = $.root().contents().first();
+
+  while (leadingNode.length && isIgnorableLeadingNode($, leadingNode.get(0))) {
+    leadingNode.remove();
+    leadingNode = $.root().contents().first();
+  }
+
+  const firstH1 = $("h1").first();
+
+  if (!firstH1.length) {
+    const firstDirectH2 = $.root().children("h2").first();
+
+    if (firstDirectH2.length) {
+      const promotedHeading = replaceElementTag($, firstDirectH2, "h1");
+      promotedHeading.addClass("post-content-fallback__lead-heading");
+    }
+  }
+
+  $("h1")
+    .slice(1)
+    .each((_, heading) => {
+      replaceElementTag($, heading, "h2");
     });
 
-    promotedHeading.addClass("post-content-fallback__lead-heading");
-    promotedHeading.html(firstDirectH2.html() || "");
-    firstDirectH2.replaceWith(promotedHeading);
-  }
+  $("table").each((_, table) => {
+    const tableElement = $(table);
+
+    if (tableElement.parent(".post-content-fallback__table-wrap").length) {
+      return;
+    }
+
+    tableElement.wrap('<div class="post-content-fallback__table-wrap"></div>');
+  });
 
   return $.root().html() || normalized;
 }
@@ -60,6 +146,10 @@ const contentHtml = normalizeContentHtml(html);
     line-height: 3rem;
   }
 
+  .post-content-fallback :global(h1:first-of-type) {
+    text-align: center;
+  }
+
   .post-content-fallback :global(h2) {
     font-size: 1.75rem;
     line-height: 2.25rem;
@@ -78,5 +168,93 @@ const contentHtml = normalizeContentHtml(html);
   .post-content-fallback :global(.post-content-fallback__lead-heading) {
     margin-bottom: 0;
     text-align: center;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap) {
+    --table-breakout: clamp(0rem, 8vw, 10rem);
+    --table-width: min(
+      calc(100vw - (var(--containerPadding) * 2)),
+      calc(100% + (var(--table-breakout) * 2))
+    );
+    width: 100%;
+    max-width: 100%;
+    margin: 2.75rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid rgba(8, 32, 19, 0.14);
+    border-radius: 1.5rem;
+    background: #fff;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap table) {
+    width: 100%;
+    min-width: 54rem;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    color: var(--brown);
+    font-size: 1.15rem;
+    line-height: 1.65rem;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap :is(td, th)) {
+    padding: 1.35rem 1.5rem;
+    vertical-align: top;
+    border-right: 1px solid rgba(8, 32, 19, 0.12);
+    border-bottom: 1px solid rgba(8, 32, 19, 0.12);
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap tr:first-child > :is(td, th)) {
+    background: var(--darkgreen);
+    color: #fff;
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap tr:nth-child(2) > :is(td, th)) {
+    background: rgb(241 242 242 / 20%);
+    font-weight: 600;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap tr > :last-child) {
+    border-right: 0;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap tr:last-child > :is(td, th)) {
+    border-bottom: 0;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap :is(td, th) > :last-child) {
+    margin-bottom: 0;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap :is(td, th) :is(ul, ol)) {
+    margin: 0.85rem 0 0 1.35rem;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap :is(td, th) li) {
+    margin-bottom: 0.65rem;
+  }
+
+  .post-content-fallback :global(.post-content-fallback__table-wrap :is(td, th) li:last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 960px) {
+    .post-content-fallback :global(.post-content-fallback__table-wrap) {
+      width: var(--table-width);
+      max-width: none;
+      margin-left: calc((100% - var(--table-width)) / 2);
+      margin-right: calc((100% - var(--table-width)) / 2);
+    }
+
+    .post-content-fallback :global(.post-content-fallback__table-wrap table) {
+      font-size: 1.2rem;
+      line-height: 1.75rem;
+    }
   }
 </style>

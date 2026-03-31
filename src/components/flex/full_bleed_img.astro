@@ -24,6 +24,33 @@ const hasCriticalMobileStream =
   isCritical &&
   typeof v?.[0]?.cf_stream_mob === "string" &&
   v[0].cf_stream_mob.trim().length > 0;
+const primaryVideo = v?.[0];
+
+function getPositiveNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+const desktopPoster = primaryVideo?.yt_img && typeof primaryVideo.yt_img === "object"
+  ? primaryVideo.yt_img
+  : null;
+const mobilePoster = primaryVideo?.yt_img_mob && typeof primaryVideo.yt_img_mob === "object"
+  ? primaryVideo.yt_img_mob
+  : null;
+const naturalAspectRequested =
+  vars.natural_aspect === true || primaryVideo?.natural_aspect === true;
+const naturalAspectWidth =
+  getPositiveNumber(desktopPoster?.width) ?? getPositiveNumber(mobilePoster?.width);
+const naturalAspectHeight =
+  getPositiveNumber(desktopPoster?.height) ?? getPositiveNumber(mobilePoster?.height);
+const naturalAspectRatio =
+  naturalAspectWidth && naturalAspectHeight
+    ? `${naturalAspectWidth} / ${naturalAspectHeight}`
+    : null;
+const naturalAspectEnabled = naturalAspectRequested && !!naturalAspectRatio;
+const naturalAspectStyle = naturalAspectEnabled
+  ? `--natural-aspect-ratio: ${naturalAspectRatio};`
+  : undefined;
 
 // ✅ 2. Detect panorama mode
 const isPanorama = vars.panorama === true;
@@ -186,6 +213,7 @@ const videoClasses = [
   "img-load-par",
   "pr",
   "full-bleed-img-inner",
+  naturalAspectEnabled && "full-bleed-natural-aspect",
   vars.round_corner && "round-corner",
   `corner-pos-${vars.corner_pos}`,
   !hasDesktopStream && !hasCriticalMobileStream && "no-video",
@@ -197,7 +225,7 @@ const videoClasses = [
   <div class="hw-contain">
     <div class="row">
       <div class:list={layoutClasses}>
-        <div class:list={videoClasses}>
+        <div class:list={videoClasses} style={naturalAspectStyle}>
           {v && (
             <CFVideo
               video={v}
@@ -231,7 +259,7 @@ const videoClasses = [
   <>
 
   <div class="full-bleed-column">
-    <div class:list={videoClasses} {...locoSpeedAttr}>
+    <div class:list={videoClasses} style={naturalAspectStyle} {...locoSpeedAttr}>
       {v && (
         <CFVideo
           video={v}

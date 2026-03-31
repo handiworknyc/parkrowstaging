@@ -490,6 +490,7 @@ export default function ImageCarousel({
 }) {
   const [api, setApi] = useState(null);
   const [ready, setReady] = useState(false);
+  const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
   const [navState, setNavState] = useState({
     current: 0,
     canPrev: false,
@@ -798,8 +799,20 @@ export default function ImageCarousel({
           selectedIndex: api.selectedScrollSnap?.() ?? null,
         });
         api.reInit();
-        setReady(true);
         updateNav();
+
+        const readyFrame = requestAnimationFrame(() => {
+          log("scheduleReinit ready frame", {
+            reason,
+            readyFrame,
+            selectedIndex: api.selectedScrollSnap?.() ?? null,
+          });
+          setReady(true);
+          frameIdsRef.current = frameIdsRef.current.filter((id) => id !== readyFrame);
+        });
+
+        frameIdsRef.current = frameIdsRef.current.filter((id) => id !== secondFrame);
+        frameIdsRef.current.push(readyFrame);
       });
 
       frameIdsRef.current = frameIdsRef.current.filter((id) => id !== firstFrame);
@@ -824,7 +837,6 @@ export default function ImageCarousel({
         selectedIndex: api.selectedScrollSnap?.() ?? null,
         slideCount: api.slideNodes?.().length ?? null,
       });
-      setReady(true);
       updateNav();
     };
 
@@ -960,6 +972,66 @@ export default function ImageCarousel({
     log("ready changed", { ready });
   }, [log, ready]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !rootRef.current) {
+      return;
+    }
+
+    const node = rootRef.current;
+    const reveal = (reason) => {
+      log("viewport reveal", { reason });
+      setHasEnteredViewport(true);
+    };
+
+    const isInViewport = () => {
+      const rect = node.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+      return (
+        rect.bottom > 0
+        && rect.right > 0
+        && rect.top < viewportHeight
+        && rect.left < viewportWidth
+      );
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      reveal("no-intersection-observer");
+      return;
+    }
+
+    if (isInViewport()) {
+      reveal("initial-viewport");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting && entry.intersectionRatio <= 0) {
+            return;
+          }
+
+          reveal("intersection");
+          observer.disconnect();
+        });
+      },
+      {
+        rootMargin: "0px 0px -12% 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(node);
+    log("viewport observer attach");
+
+    return () => {
+      log("viewport observer detach");
+      observer.disconnect();
+    };
+  }, [log]);
+
   useEffect(() => () => {
     log("component unmount");
     destroyLightbox();
@@ -1011,6 +1083,7 @@ export default function ImageCarousel({
       ref={rootRef}
       className="carousel-wrapper"
       data-ready={ready}
+      data-revealed={hasEnteredViewport}
       data-carousel-instance={instanceId || undefined}
       data-carousel-lightbox-root=""
     >

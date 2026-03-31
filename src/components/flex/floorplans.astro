@@ -471,7 +471,7 @@ function formatExterior(value: number | string | null | undefined) {
 
           return (
             <div
-              class="floorplans-item"
+              class={`floorplans-item${hasDetail ? " floorplans-item--interactive" : ""}`}
               data-unit-item
               data-unit-number={unit.unitNumber}
               data-bedrooms={unit.bedrooms}
@@ -1345,6 +1345,10 @@ function formatExterior(value: number | string | null | undefined) {
     border-bottom: 1px solid var(--brown);
   }
 
+  .floorplans-item--interactive {
+    transition: background-color 160ms ease;
+  }
+
   .floorplans-row--interactive {
     cursor: pointer;
     transition: background-color 160ms ease;
@@ -2033,6 +2037,12 @@ function formatExterior(value: number | string | null | undefined) {
       height: 0.9375rem;
       margin-left: 0.75rem;
       flex: 0 0 auto;
+    }
+  }
+
+  @media (min-width: 840px) {
+    .floorplans-item--interactive:hover {
+      background: rgba(58, 42, 34, 0.05);
     }
   }
 

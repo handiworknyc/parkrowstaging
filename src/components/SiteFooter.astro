@@ -10,80 +10,82 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
 <div class="site-footer bg-darkgreen pt-14 pb-14 c-white" id="footer" transition:persist>
   <div class="hw-contain">
-    <div class="footer-top mb-5 items-start text-[1.1rem] flex-wrap">
-      <div
-        class="address text-white/50"
-        {...(hasAddress
-          ? {
-              itemscope: true,
-              itemtype: "https://schema.org/PostalAddress",
-            }
-          : {})}
-      >
-        {hasAddress && (
-          <>
-            {address.name && (
-              <div class="address-title caps c-white relative -top-[1.5px] tracking-[.03em]" itemprop="name">
-                {address.name}
+    <div class="footer-content">
+      <div class="footer-top mb-5 items-start text-[1.1rem] flex-wrap">
+        <div
+          class="address text-white/50"
+          {...(hasAddress
+            ? {
+                itemscope: true,
+                itemtype: "https://schema.org/PostalAddress",
+              }
+            : {})}
+        >
+          {hasAddress && (
+            <>
+              {address.name && (
+                <div class="address-title caps c-white relative -top-[1.5px] tracking-[.03em]" itemprop="name">
+                  {address.name}
+                </div>
+              )}
+
+              <div class="address-lines">
+                <span itemprop="streetAddress">{address.streetAddress}</span>
+                <br />
+                <span itemprop="addressLocality">
+                  {address.addressLocality}
+                </span>
+                ,{" "}
+                <span itemprop="addressRegion">
+                  {address.addressRegion}
+                </span>{" "}
+                <span itemprop="postalCode">
+                  {address.postalCode}
+                </span>
               </div>
-            )}
-
-            <div class="address-lines">
-              <span itemprop="streetAddress">{address.streetAddress}</span>
-              <br />
-              <span itemprop="addressLocality">
-                {address.addressLocality}
-              </span>
-              ,{" "}
-              <span itemprop="addressRegion">
-                {address.addressRegion}
-              </span>{" "}
-              <span itemprop="postalCode">
-                {address.postalCode}
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-
-	  <div class="footer-somed ml-auto">
-		<div>
-			<a href="https://www.facebook.com/ParkRowBellevue">
-				<img src="/images/fb.svg" loading="lazy" alt="Facebook profile" />
-			</a>
-			<a href="https://www.instagram.com/parkrowbellevue">
-				<img src="/images/insta.svg" class='insta' loading="lazy" alt="Instagram profile" />
-			</a>
-		</div>
-
-		<a class="caps press-link" style="display: none" href="">Press</a>
-	  </div>
-    </div>
-
-    <div class="footer-bottom justify-start flex-wrap pt-7">
-		
-      <a href="https://bosadevleopment.com">
-        <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
-      </a>
-
-      <div class="footer-bottom-right ml-auto items-end">
-        <div class="footer-meta-links" aria-label="Cookie settings and legal links">
-          <button
-            type="button"
-            class="footer-meta-link footer-cookie-trigger"
-            data-cookie-settings-open
-            aria-controls="footer-cookie-overlay"
-            aria-haspopup="dialog"
-          >
-            Cookie Settings
-          </button>
-          <a class="footer-meta-link" href={termsHref}>Terms of Use</a>
-          <a class="footer-meta-link" href={privacyHref}>Privacy Policy</a>
+            </>
+          )}
         </div>
 
-        <a class="footer-housing-link" href="">
-          <img src="/images/equal-housing.svg" loading="lazy" alt="Equal Opportunity Housing" />
+	    <div class="footer-somed ml-auto">
+		  <div>
+			  <a href="https://www.facebook.com/ParkRowBellevue">
+				  <img src="/images/fb.svg" loading="lazy" alt="Facebook profile" />
+			  </a>
+			  <a href="https://www.instagram.com/parkrowbellevue">
+				  <img src="/images/insta.svg" class='insta' loading="lazy" alt="Instagram profile" />
+			  </a>
+		  </div>
+
+		  <a class="caps press-link" style="display: none" href="">Press</a>
+	    </div>
+      </div>
+
+      <div class="footer-bottom justify-start flex-wrap pt-7">
+		
+        <a href="https://bosadevleopment.com">
+          <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
         </a>
+
+        <div class="footer-bottom-right ml-auto items-end">
+          <div class="footer-meta-links" aria-label="Cookie settings and legal links">
+            <button
+              type="button"
+              class="footer-meta-link footer-cookie-trigger"
+              data-cookie-settings-open
+              aria-controls="footer-cookie-overlay"
+              aria-haspopup="dialog"
+            >
+              Cookie Settings
+            </button>
+            <a class="footer-meta-link" href={termsHref}>Terms of Use</a>
+            <a class="footer-meta-link" href={privacyHref}>Privacy Policy</a>
+          </div>
+
+          <a class="footer-housing-link" href="">
+            <img src="/images/equal-housing.svg" loading="lazy" alt="Equal Opportunity Housing" />
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -131,6 +133,15 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     overflow: hidden;
   }
 
+  .footer-content {
+    transition: filter 0.25s var(--cubicBez);
+    will-change: filter;
+  }
+
+  :global(.cookie-settings-open) .footer-content {
+    filter: blur(10px);
+  }
+
   .footer-bottom-right {
     display: flex;
     align-items: flex-end;
@@ -171,31 +182,35 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
   .footer-cookie-overlay {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 9999;
-    background: var(--darkgreen);
-    min-height: var(--footer-cookie-min-height, 0px);
-    max-height: 100vh;
-    overflow-y: auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 1rem clamp(1rem, 2.5vw, 2rem)
+      max(1rem, calc(env(safe-area-inset-bottom) + 1rem));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.16) 100%);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.28s ease, visibility 0.28s ease;
+    transform: translateY(1rem);
+    transition:
+      opacity 0.28s ease,
+      visibility 0.28s ease,
+      transform 0.28s ease;
 
     &.is-active {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
+      transform: translateY(0);
     }
   }
 
   .footer-cookie-overlay-inner {
-    width: 100%;
-    min-height: var(--footer-cookie-min-height, 0px);
+    width: min(100%, 112rem);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
   }
 
   .footer-cookie-panel {
@@ -205,23 +220,27 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     grid-template-areas: "title text actions";
     align-items: flex-start;
     gap: 2rem;
-    padding: 3rem 0;
+    padding: clamp(1.15rem, 1rem + 1vw, 1.8rem);
+    background: var(--darkgreen);
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 -24px 50px rgba(0, 0, 0, 0.24);
   }
 
   .footer-cookie-kicker {
     grid-area: title;
     margin: 0;
-    font-size: calc(1rem + 2vw);
-    line-height: 0.95;
+    font-size: clamp(1rem, 0.82rem + 1vw, 1.65rem);
+    line-height: 1;
     color: rgba(255, 255, 255, 0.55);
   }
 
   .footer-cookie-text {
     grid-area: text;
     margin: 0;
-    padding: 0 7vw;
-    font-size: 1.08rem;
-    line-height: 1.6;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1.55;
     color: rgba(255, 255, 255, 0.78);
 
     a {
@@ -234,8 +253,10 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
   .footer-cookie-actions {
     grid-area: actions;
     display: inline-flex;
-    align-items: flex-start;
-    gap: 2rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .footer-cookie-button {
@@ -263,9 +284,9 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
     &:hover,
     &:focus-visible {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.32);
-      color: var(--white);
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--darkgreen);
     }
 
     &.is-secondary {
@@ -278,11 +299,7 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
         "title actions"
-        "text actions";
-    }
-
-    .footer-cookie-text {
-      padding: 0 7vw 0 0;
+        "text text";
     }
   }
 
@@ -300,6 +317,12 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
   }
 
   @media all and (max-width: 40em) {
+    .footer-cookie-overlay {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+      padding-bottom: max(0.75rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+    }
+
     .footer-meta-links {
       gap: 0.35rem 1rem;
     }
@@ -341,13 +364,30 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     if (!overlay || consentButtons.length === 0) return;
 
     const consentApi = window.ParkRowConsent;
-    const syncOverlayHeight = () => {
-      const footerHeight = Math.ceil(footer.getBoundingClientRect().height);
-      overlay.style.setProperty("--footer-cookie-min-height", `${footerHeight}px`);
+    const hasStoredConsent = () => {
+      const value = consentApi?.read?.();
+      return value === "accepted" || value === "rejected";
+    };
+
+    const shouldWaitForSplash = () => {
+      if (hasStoredConsent()) return false;
+
+      return (
+        document.documentElement.classList.contains("home") &&
+        !!document.querySelector("[data-splash-video]") &&
+        window.hwSplashActive === true &&
+        !document.documentElement.classList.contains("splash-dismissed")
+      );
+    };
+
+    const clearPendingAutoOpen = () => {
+      if (typeof footer._cookieSplashDismissHandler !== "function") return;
+
+      window.removeEventListener("splash:dismiss", footer._cookieSplashDismissHandler);
+      footer._cookieSplashDismissHandler = null;
     };
 
     const setOverlayOpen = (isOpen, trigger) => {
-      syncOverlayHeight();
       document.documentElement.classList.toggle("cookie-settings-open", isOpen);
       overlay.classList.toggle("is-active", isOpen);
       overlay.setAttribute("aria-hidden", String(!isOpen));
@@ -364,13 +404,35 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       }
     };
 
+    const maybeAutoOpen = () => {
+      clearPendingAutoOpen();
+
+      if (hasStoredConsent()) {
+        setOverlayOpen(false);
+        return;
+      }
+
+      if (shouldWaitForSplash()) {
+        const onSplashDismiss = () => {
+          footer._cookieSplashDismissHandler = null;
+          setOverlayOpen(true);
+        };
+
+        footer._cookieSplashDismissHandler = onSplashDismiss;
+        window.addEventListener("splash:dismiss", onSplashDismiss, { once: true });
+        return;
+      }
+
+      setOverlayOpen(true);
+    };
+
     if (footer.dataset.cookieSettingsReady !== "true") {
       footer.dataset.cookieSettingsReady = "true";
-      syncOverlayHeight();
 
       openButtons.forEach((button) => {
         button.addEventListener("click", (event) => {
           event.preventDefault();
+          clearPendingAutoOpen();
           setOverlayOpen(true, button);
         });
       });
@@ -386,6 +448,7 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
           const value = button.dataset.cookieConsent;
           if (!value || !consentApi?.write) return;
 
+          clearPendingAutoOpen();
           consentApi.write(value);
           setOverlayOpen(false);
         });
@@ -396,17 +459,9 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
           setOverlayOpen(false);
         }
       });
-
-      window.addEventListener("resize", syncOverlayHeight);
-
-      if ("ResizeObserver" in window) {
-        const overlayHeightObserver = new ResizeObserver(syncOverlayHeight);
-        overlayHeightObserver.observe(footer);
-      }
     }
 
-    syncOverlayHeight();
-    setOverlayOpen(false);
+    maybeAutoOpen();
   }
 
   initFooterCookieSettings();

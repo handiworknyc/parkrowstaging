@@ -646,6 +646,19 @@ ul.section-text li:has(h4) h4.figure {
   }
 }
 
+.full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner.full-bleed-natural-aspect {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  aspect-ratio: var(--natural-aspect-ratio);
+}
+
+.full_bleed_img-module:not(.rowindex-1) .full-bleed-img-inner.full-bleed-natural-aspect .hw-vid-wrap {
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+}
+
 
 
 
@@ -1144,8 +1157,16 @@ ul.two-col-list.wide-list-columns {
 .carousel-module {
 	.carousel-wrapper {
 		width: 100%;
-		opacity: 1;
+		opacity: 0;
 		transform: scale(1);
+		transition: opacity .85s var(--cubicBez);
+		will-change: opacity;
+		pointer-events: none;
+	}
+
+	.carousel-wrapper[data-ready="true"][data-revealed="true"] {
+		opacity: 1;
+		pointer-events: auto;
 	}
 
 	/* --- Slide Layout --- */
@@ -1155,6 +1176,12 @@ ul.two-col-list.wide-list-columns {
 		position: relative;
 	}
 
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.carousel-module .carousel-wrapper {
+		transition: none;
+	}
 }
 
 .carousel-module .carousel-natural-aspect {
