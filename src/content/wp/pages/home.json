@@ -156,6 +156,7 @@
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/45b6029259380dd00872b71a4e120217/manifest/video.m3u8",
           "cf_stream_mob": "",
           "mob_img_breakpoint": "",
+          "natural_aspect": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -320,6 +321,7 @@
           "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/09675e436e7ca79808119fb2599c4c90/manifest/video.m3u8",
           "cf_stream_mob": "",
           "mob_img_breakpoint": "",
+          "natural_aspect": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -495,6 +497,7 @@
           "cf_stream_video": "",
           "cf_stream_mob": "",
           "mob_img_breakpoint": "",
+          "natural_aspect": false,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -1244,7 +1247,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-03-31 17:50:22",
+  "_syncedAt": "2026-03-31 17:57:49",
   "seo": {
     "title": "Home - Jesse Rosenfield Site",
     "description": "",
