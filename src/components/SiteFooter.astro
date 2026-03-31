@@ -291,6 +291,13 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
     &.is-secondary {
       background: transparent;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--white);
+        color: #fff;
+      }
     }
   }
 
