@@ -332,7 +332,7 @@
           "cf_stream_video": "",
           "cf_stream_mob": "",
           "mob_img_breakpoint": "",
-          "natural_aspect": false,
+          "natural_aspect": true,
           "show_controls": false,
           "yt_hover": false,
           "yt_lb": "",
@@ -695,7 +695,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-03-31 17:57:49",
+  "_syncedAt": "2026-03-31 17:58:40",
   "seo": {
     "title": "Building - Jesse Rosenfield Site",
     "description": "",
