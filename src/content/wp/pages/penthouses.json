@@ -41,7 +41,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1343,
             "sizes": {
@@ -173,7 +173,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1343,
             "sizes": {
@@ -348,7 +348,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 4096,
             "height": 1434,
             "sizes": {
@@ -527,7 +527,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 2000,
                 "height": 2500,
                 "sizes": {
@@ -707,7 +707,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 1300,
             "sizes": {
@@ -883,7 +883,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2560,
             "height": 1664,
             "sizes": {
@@ -1058,7 +1058,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2560,
             "height": 1664,
             "sizes": {
@@ -1236,7 +1236,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 1600,
                 "height": 1480,
                 "sizes": {
@@ -1416,7 +1416,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2560,
             "height": 1446,
             "sizes": {
@@ -1567,7 +1567,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-01 21:21:06",
+  "_syncedAt": "2026-04-01 23:46:02",
   "seo": {
     "title": "Penthouses - Jesse Rosenfield Site",
     "description": "",
