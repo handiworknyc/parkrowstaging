@@ -153,8 +153,8 @@
             }
           },
           "yt_img_mob": false,
-          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/8c4c97300e700a60ac35a4afc15b76bd/manifest/video.m3u8",
-          "cf_stream_mob": "",
+          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/71bfd82e8bdd1d1cc212af932c8c5171/manifest/video.m3u8",
+          "cf_stream_mob": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/caa3be31eb8e922f804aea86f04b969c/manifest/video.m3u8",
           "mob_img_breakpoint": "",
           "natural_aspect": false,
           "show_controls": false,
@@ -2629,7 +2629,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-01 19:51:29",
+  "_syncedAt": "2026-04-01 20:52:56",
   "seo": {
     "title": "Residences - Jesse Rosenfield Site",
     "description": "",
