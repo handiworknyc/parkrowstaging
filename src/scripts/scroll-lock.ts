@@ -39,8 +39,7 @@ const state: ScrollLockState = {
   splashTimer: null,
   locoScroll: null,
   useNativeLock: false,
-  earlyLockActive: typeof window !== "undefined" && 
-                   typeof (window as any).__removeScrollLock === "function",
+  earlyLockActive: false,
 };
 
 // ------------------------------------
@@ -54,13 +53,45 @@ function isFirstLoad(): boolean {
   return HW.$html.classList.contains("first-load");
 }
 
+function isSplashDismissed(): boolean {
+  return HW.$html.classList.contains("splash-dismissed");
+}
+
+function hasSplashScrollLockClass(): boolean {
+  return HW.$html.classList.contains("splash-scroll-lock");
+}
+
+function hasEarlySplashLock(): boolean {
+  return isHome() && hasSplashScrollLockClass();
+}
+
+function syncEarlyLockState(): boolean {
+  state.earlyLockActive = hasEarlySplashLock();
+  return state.earlyLockActive;
+}
+
+function markSplashDismissed(): void {
+  if (!isHome()) return;
+
+  HW.$html.classList.add("splash-dismissed");
+  (window as any).hwSplashActive = false;
+}
+
+function releaseEarlySplashLock(): void {
+  if (!hasSplashScrollLockClass()) return;
+
+  HW.$html.classList.remove("splash-scroll-lock");
+  state.earlyLockActive = false;
+}
+
 function shouldLock(): boolean {
   const home = isHome();
-  const firstLoad = isFirstLoad();
+  const splashDismissed = isSplashDismissed();
+  const splashScrollLock = hasSplashScrollLockClass();
 
-  log("shouldLock check:", { home, firstLoad });
+  log("shouldLock check:", { home, splashDismissed, splashScrollLock });
 
-  if (!home || !firstLoad) return false;
+  if (!home || !splashScrollLock || splashDismissed) return false;
 
   return true;
 }
@@ -132,10 +163,11 @@ export function lockScroll(): void {
     return;
   }
 
+  syncEarlyLockState();
   state.locked = true;
+  state.useNativeLock = false;
 
   if (state.locoScroll) {
-    state.useNativeLock = false;
     requestAnimationFrame(() => state.locoScroll?.stop());
   } else if (!state.earlyLockActive) {
     // Only apply native lock if early lock didn't already do it
@@ -147,6 +179,8 @@ export function lockScroll(): void {
 }
 
 export function unlockScroll(source = "unknown"): void {
+  syncEarlyLockState();
+
   if (!state.locked && !state.earlyLockActive) {
     log("Not locked, skipping unlock");
     return;
@@ -154,20 +188,14 @@ export function unlockScroll(source = "unknown"): void {
 
   log("Unlock scroll:", source);
 
+  markSplashDismissed();
+  releaseEarlySplashLock();
   state.locked = false;
-  
-  // Remove early lock if it exists
-  if (state.earlyLockActive && typeof (window as any).__removeScrollLock === "function") {
-    log("Removing early lock");
-    (window as any).__removeScrollLock();
-    state.earlyLockActive = false;
-  } else {
-    // Normal unlock path
-    if (state.useNativeLock) {
-      unlockNativeScroll();
-    } else if (state.locoScroll) {
-      state.locoScroll.start();
-    }
+
+  if (state.useNativeLock) {
+    unlockNativeScroll();
+  } else if (state.locoScroll) {
+    state.locoScroll.start();
   }
 
   clearTimers();
@@ -179,6 +207,8 @@ export function unlockScroll(source = "unknown"): void {
 // INITIALIZATION
 // ------------------------------------
 export function initScrollLock(locoInstance?: any): void {
+  syncEarlyLockState();
+
   log("initScrollLock called", { 
     hasLoco: !!locoInstance,
     isHome: isHome(),
@@ -188,6 +218,12 @@ export function initScrollLock(locoInstance?: any): void {
   });
   
   state.locoScroll = locoInstance || null;
+
+  if (state.earlyLockActive && isSplashDismissed()) {
+    log("Splash already dismissed before lock init, unlocking early lock");
+    unlockScroll("splash-already-dismissed");
+    return;
+  }
 
   if (!shouldLock()) {
     log("Should not lock, exiting");

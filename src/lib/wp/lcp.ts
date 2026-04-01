@@ -27,6 +27,16 @@ function getResponsiveSizes(): string {
   ].join(", ");
 }
 
+function inferImageMimeType(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+
+  const normalized = String(url).split("?")[0].toLowerCase();
+  if (normalized.endsWith(".webp")) return "image/webp";
+  if (normalized.endsWith(".jpg") || normalized.endsWith(".jpeg")) return "image/jpeg";
+  if (normalized.endsWith(".png")) return "image/png";
+  return undefined;
+}
+
 function buildLcpPreloadItem({
   images,
   panorama = false,
@@ -47,7 +57,7 @@ function buildLcpPreloadItem({
     href,
     imagesrcset: buildResponsiveSrcSet(images, { panorama }),
     imagesizes,
-    type: "image/webp",
+    type: inferImageMimeType(href),
     media,
   };
 }

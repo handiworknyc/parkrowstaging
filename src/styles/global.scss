@@ -1651,7 +1651,7 @@ ul.two-col-list.wide-list-columns {
 
 
 
-html.first-load.home:not(.splash-dismissed) {
+html.home.splash-scroll-lock {
 	&,
 	body {
 		position: fixed;
@@ -1680,7 +1680,8 @@ html.first-load.home:not(.splash-dismissed) {
   opacity: 1;
   transform: scale(1);
   will-change: opacity, transform;
-  &,
+  transition: all 1.35s var(--cubicBez) !important;
+
   .hw-vid-poster-img,
   .hw-vid-wrap,
   .hw-vid-wrap .hw-vid-player {

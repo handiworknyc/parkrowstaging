@@ -4,6 +4,16 @@
  * Generate carousel and slideshow preloads
  * Returns array matching your existing MainLayout format
  */
+function inferImageMimeType(url) {
+  if (!url) return undefined;
+
+  const normalized = String(url).split("?")[0].toLowerCase();
+  if (normalized.endsWith(".webp")) return "image/webp";
+  if (normalized.endsWith(".jpg") || normalized.endsWith(".jpeg")) return "image/jpeg";
+  if (normalized.endsWith(".png")) return "image/png";
+  return undefined;
+}
+
 export function getPreloads(rows) {
   if (!rows || rows.length === 0) return [];
 
@@ -53,13 +63,14 @@ export function getPreloads(rows) {
       ].filter(Boolean).join(", ");
 
       const href = srcXL || srcLG || srcMED || srcSM;
+      const type = inferImageMimeType(href);
 
       return href
         ? {
             href,
             imagesrcset,
             imagesizes: "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1400px",
-            type: "image/webp",
+            type,
           }
         : null;
     })

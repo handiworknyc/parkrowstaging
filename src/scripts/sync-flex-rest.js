@@ -8,7 +8,6 @@ import { promisify } from "node:util";
 import cwebp from "cwebp-bin";
 
 const execFileP = promisify(execFile);
-const CLOUDFLARE_FALLBACK_POSTER_BLUR_PX = 40;
 const CLOUDFLARE_FALLBACK_POSTER_VARIANTS = [
   { key: "intch_full", width: 2400 },
   { key: "intch_xl", width: 1700 },
@@ -357,7 +356,7 @@ async function probeImageDimensions(filePath) {
   }
 }
 
-function buildCloudflarePosterVariants(videoId, posterUrl, outputDir) {
+function buildCloudflarePosterVariants(videoId, streamUrl, outputDir) {
   const safeVideoId =
     String(videoId || "")
       .toLowerCase()
@@ -366,10 +365,10 @@ function buildCloudflarePosterVariants(videoId, posterUrl, outputDir) {
   return CLOUDFLARE_FALLBACK_POSTER_VARIANTS.map(({ key, width }) => {
     const hash = crypto
       .createHash("md5")
-      .update(`${posterUrl}|blur=${CLOUDFLARE_FALLBACK_POSTER_BLUR_PX}|width=${width}`)
+      .update(`${streamUrl}|source=ffmpeg-first-frame|width=${width}`)
       .digest("hex")
       .slice(0, 8);
-    const filename = `cf-video-${safeVideoId}-poster-blur-${width}w-${hash}.webp`;
+    const filename = `cf-video-${safeVideoId}-poster-${width}w-${hash}.webp`;
 
     return {
       key,
@@ -381,7 +380,25 @@ function buildCloudflarePosterVariants(videoId, posterUrl, outputDir) {
   });
 }
 
-async function generateBlurredPosterVariant(inputPath, variant) {
+async function captureCloudflareFirstFrame(streamUrl, outputPath) {
+  if (fs.existsSync(outputPath)) {
+    return;
+  }
+
+  await execFileP("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    streamUrl,
+    "-frames:v",
+    "1",
+    outputPath,
+  ]);
+}
+
+async function generatePosterVariant(inputPath, variant) {
   if (fs.existsSync(variant.localPath)) {
     return;
   }
@@ -400,12 +417,12 @@ async function generateBlurredPosterVariant(inputPath, variant) {
       "-i",
       inputPath,
       "-vf",
-      `boxblur=${CLOUDFLARE_FALLBACK_POSTER_BLUR_PX}:1,scale='min(iw,${variant.width})':-2`,
+      `scale='min(iw,${variant.width})':-2:flags=lanczos`,
       "-frames:v",
       "1",
       tempPng,
     ]);
-    await execFileP(cwebp, [tempPng, "-q", "95", "-o", variant.localPath]);
+    await execFileP(cwebp, [tempPng, "-q", "100", "-o", variant.localPath]);
   } finally {
     if (fs.existsSync(tempPng)) {
       fs.unlinkSync(tempPng);
@@ -413,40 +430,31 @@ async function generateBlurredPosterVariant(inputPath, variant) {
   }
 }
 
-async function buildCloudflarePosterFallback(streamUrl, outputDir) {
+async function buildCloudflarePosterFallback(streamUrl, _outputDir) {
   const posterInfo = parseCloudflarePosterInfo(streamUrl);
   if (!posterInfo) return null;
 
-  const { videoId, posterUrl } = posterInfo;
-  const variants = buildCloudflarePosterVariants(videoId, posterUrl, outputDir);
+  const { videoId } = posterInfo;
+  const variants = buildCloudflarePosterVariants(videoId, streamUrl, _outputDir);
   const missingVariants = variants.filter((variant) => !fs.existsSync(variant.localPath));
 
   if (missingVariants.length > 0) {
     const sourceHash = crypto
       .createHash("md5")
-      .update(`${posterUrl}|source`)
+      .update(`${streamUrl}|source=ffmpeg-first-frame`)
       .digest("hex")
       .slice(0, 8);
-    const tempInput = path.join(outputDir, `cf-video-${videoId}-poster-source-${sourceHash}.jpg`);
+    const tempInput = path.join(_outputDir, `cf-video-${videoId}-poster-source-${sourceHash}.png`);
 
     try {
-      const res = await fetch(posterUrl, {
-        headers: { ...getAssetFetchHeaders(posterUrl) },
-      });
-
-      if (!res.ok) {
-        console.warn(`⚠️ Failed to download Cloudflare poster ${posterUrl} (${res.status})`);
-        return null;
-      }
-
-      fs.writeFileSync(tempInput, Buffer.from(await res.arrayBuffer()));
+      await captureCloudflareFirstFrame(streamUrl, tempInput);
 
       for (const variant of missingVariants) {
         try {
-          await generateBlurredPosterVariant(tempInput, variant);
+          await generatePosterVariant(tempInput, variant);
         } catch (error) {
           console.warn(
-            `⚠️ Failed to generate blurred Cloudflare poster ${variant.filename}:`,
+            `⚠️ Failed to generate Cloudflare poster ${variant.filename}:`,
             error?.message || error
           );
         }

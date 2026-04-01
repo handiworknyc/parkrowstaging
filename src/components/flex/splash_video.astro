@@ -182,6 +182,7 @@ const videoClasses = [
 <script>
   if (HW.$html.classList.contains("first-load")) {
     window.hwSplashActive = true;
+    HW.$html.classList.add("splash-scroll-lock");
   }
 
   window.__HW_SPLASH_PLAYING__ = false;
@@ -239,6 +240,7 @@ const videoClasses = [
   let splashObserver = null;
   let revealTimer = null;
   let idleDismissTimer = null;
+  let dismissListenersAttached = false;
 
   const REVEAL_DELAY = 850;
   const IDLE_DISMISS_DELAY = 6500;
@@ -246,6 +248,7 @@ const videoClasses = [
   function initSplashDismiss() {
     if (!HW.$html.classList.contains("first-load")) return;
     if (!HW.$html.classList.contains("home")) return;
+    if (HW.$html.classList.contains("splash-dismissed")) return;
 
     window.scrollTo(0, 0);
     
@@ -254,10 +257,12 @@ const videoClasses = [
 
     if (!splash || !splashpar) return;
 
-    observeSplashLazyLoaded(splash, splashpar);
+    attachDismissListeners();
+    startIdleDismissTimer();
+    observeSplashLazyLoaded();
   }
 
-  function observeSplashLazyLoaded(splash, splashpar) {
+  function observeSplashLazyLoaded() {
     if (splashLoaded) return;
 
     const markLoaded = () => {
@@ -268,9 +273,6 @@ const videoClasses = [
 
       clearTimeout(revealTimer);
       revealTimer = setTimeout(revealHomeUI, REVEAL_DELAY);
-
-      attachDismissListeners(splash, splashpar);
-      startIdleDismissTimer(splashpar);
 
       splashObserver?.disconnect();
       splashObserver = null;
@@ -295,7 +297,7 @@ const videoClasses = [
     });
   }
 
-  function startIdleDismissTimer(splashpar) {
+  function startIdleDismissTimer() {
     clearTimeout(idleDismissTimer);
 
     idleDismissTimer = setTimeout(() => {
@@ -315,13 +317,16 @@ const videoClasses = [
 
       cleanup.forEach((fn) => fn());
       cleanup.length = 0;
+      dismissListenersAttached = false;
 
       idleDismissTimer = null;
     }, IDLE_DISMISS_DELAY);
   }
 
-  function attachDismissListeners(splash, splashpar) {
-    if (splashDismissed) return;
+  function attachDismissListeners() {
+    if (splashDismissed || dismissListenersAttached) return;
+
+    dismissListenersAttached = true;
 
     let dismissTimer = null;
 
@@ -350,6 +355,7 @@ const videoClasses = [
 
         cleanup.forEach((fn) => fn());
         cleanup.length = 0;
+        dismissListenersAttached = false;
 
         dismissTimer = null;
       },300);
@@ -428,6 +434,8 @@ const videoClasses = [
 
     splashLoaded = false;
     splashDismissed = false;
+    dismissListenersAttached = false;
     window.hwSplashActive = false;
+    HW.$html.classList.remove("splash-scroll-lock");
   });
 </script>
