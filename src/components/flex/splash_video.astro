@@ -1,5 +1,10 @@
 ---
 import CFVideo from "../ui/CFVideo.astro";
+import {
+  renderFlatListItemsHtml,
+  renderTwoColListItemsHtml,
+  splitListItems,
+} from "../../lib/contentLists.js";
 
 const vars = { ...Astro.props };
 const v = vars.video;
@@ -30,9 +35,7 @@ const processedContent = rawContent.map((item) => ({
   title: item.title || "",
   text: item.text || "",
   twoColList: item.two_col_list || false,
-  listItems: item.list
-    ? item.list.split(/\r?\n/).filter((li) => li.trim())
-    : [],
+  listItems: splitListItems(item.list),
 }));
 
 // --- 2. Generate Content HTML (Columns) --- //
@@ -50,22 +53,17 @@ const contentColumnsHTML = processedContent
     const ulClass = `section-text ${
       item.twoColList ? "two-col-list" : ""
     }`.trim();
+    const listItemsHtml = item.twoColList
+      ? renderTwoColListItemsHtml(item.listItems)
+      : renderFlatListItemsHtml(item.listItems);
 
-    return `
-      <div class="${cssClass}">
-        ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ""}
-        ${item.text ? `<div class='section-text'>${item.text}</div>` : ""}
-        ${
-          item.listItems.length > 0
-            ? `
-          <ul class='${ulClass}'>
-            ${item.listItems.map((li) => `<li>${li}</li>`).join("")}
-          </ul>
-        `
-            : ""
-        }
-      </div>
-    `;
+    return [
+      `<div class="${cssClass}">`,
+      item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : "",
+      item.text ? `<div class='section-text'>${item.text}</div>` : "",
+      item.listItems.length > 0 ? `<ul class='${ulClass}'>${listItemsHtml}</ul>` : "",
+      "</div>",
+    ].join("");
   })
   .join("");
 

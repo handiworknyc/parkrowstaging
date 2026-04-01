@@ -8,6 +8,11 @@ import {
 } from "@/components/ui/carousel";
 import SlideNavigation from "../ui/SlideNavigation";
 import fslightboxScriptUrl from "../../scripts/plugins/fslightbox.js?url";
+import {
+  buildTwoColListGroups,
+  isStandaloneListHeading,
+  normalizeListItems,
+} from "../../lib/contentLists.js";
 
 const DEBUG_CAROUSEL_LIGHTBOX = false;
 
@@ -270,26 +275,6 @@ function getItemKey(item) {
   });
 }
 
-function enhanceListItemHtml(html) {
-  if (!html || !/<h4\b/i.test(html)) {
-    return html;
-  }
-
-  return html.replace(/<h4\b([^>]*)>/gi, (_match, attrs = "") => {
-    const classMatch = attrs.match(/\bclass=(["'])(.*?)\1/i);
-
-    if (classMatch) {
-      const quote = classMatch[1];
-      const classes = classMatch[2].split(/\s+/).filter(Boolean);
-      const nextClasses = Array.from(new Set([...classes, "figure"])).join(" ");
-
-      return `<h4${attrs.replace(classMatch[0], `class=${quote}${nextClasses}${quote}`)}>`;
-    }
-
-    return `<h4 class="figure"${attrs}>`;
-  });
-}
-
 function buildContentItem({
   title = "",
   text = "",
@@ -298,7 +283,7 @@ function buildContentItem({
   listItems = [],
 }) {
   const normalizedListItems = Array.isArray(listItems) ? listItems : [];
-  const enhancedListItems = normalizedListItems.map((line) => enhanceListItemHtml(line));
+  const enhancedListItems = normalizeListItems(normalizedListItems);
   const hasContent = Boolean(title || text || normalizedListItems.length > 0);
   const weight = hasContent
     ? stripHtml(title).length
@@ -327,10 +312,6 @@ function buildContentItem({
   };
 }
 
-function isStandaloneListHeading(html) {
-  return /^<h4\b[^>]*>[\s\S]*<\/h4>$/i.test((html || "").trim());
-}
-
 function getLightboxButtonLabel(image, index, total) {
   const readableLabel = stripHtml(image.caption || image.alt || "").trim();
 
@@ -356,7 +337,10 @@ function ColumnContentInner({ item }) {
 
   const enhancedListItems = Array.isArray(item.enhancedListItems)
     ? item.enhancedListItems
-    : item.listItems.map((line) => enhanceListItemHtml(line));
+    : normalizeListItems(item.listItems);
+  const groupedListSections = item.twoColList
+    ? buildTwoColListGroups(enhancedListItems)
+    : [];
   const standaloneHeadingCount = enhancedListItems.filter(isStandaloneListHeading).length;
   const liftedHeadingHtml = standaloneHeadingCount === 1 && isStandaloneListHeading(enhancedListItems[0])
     ? enhancedListItems[0]
@@ -383,7 +367,32 @@ function ColumnContentInner({ item }) {
           dangerouslySetInnerHTML={{ __html: liftedHeadingHtml }}
         />
       )}
-      {renderedListItems.length > 0 && (
+      {groupedListSections.length > 0 ? (
+        <ul className={ulClass}>
+          {groupedListSections.map((group, groupIndex) => (
+            <li
+              key={`list-group-${groupIndex}`}
+              className="two-col-list-group"
+            >
+              {group.headingHtml && (
+                <div
+                  dangerouslySetInnerHTML={{ __html: group.headingHtml }}
+                />
+              )}
+              {group.itemHtml.length > 0 && (
+                <ul className="section-text two-col-list-group-items">
+                  {group.itemHtml.map((line, lineIndex) => (
+                    <li
+                      key={`list-group-${groupIndex}-item-${lineIndex}`}
+                      dangerouslySetInnerHTML={{ __html: line }}
+                    />
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : renderedListItems.length > 0 && (
         <ul className={ulClass}>
           {renderedListItems.map((line, lineIndex) => (
             <li

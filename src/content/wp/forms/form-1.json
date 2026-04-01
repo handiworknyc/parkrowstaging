@@ -1451,7 +1451,8 @@
       "choices": [
         {
           "text": "Yes, send me updates",
-          "value": "Yes, send me updates"
+          "value": "Yes, send me updates",
+          "isSelected": true
         }
       ]
     }

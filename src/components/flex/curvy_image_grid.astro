@@ -1,5 +1,9 @@
 ---
 import CFVideo from "../ui/CFVideo.astro";
+import {
+  normalizeListItems,
+  renderTwoColListItemsHtml,
+} from "../../lib/contentLists.js";
 
 const vars = { ...Astro.props };
 
@@ -26,9 +30,8 @@ const useMobileSplit = isQuote && !isSingle;
 // ---------------------------------------------
 const title = vars.title || "";
 const text = vars.text || "";
-const listItems = (vars.list || "")
-  .split(/\r?\n/)
-  .filter((li) => li.trim());
+const listItems = normalizeListItems(vars.list || "");
+const twoColListItemsHtml = renderTwoColListItemsHtml(listItems);
 
 // ---------------------------------------------
 // 3. CAPTION
@@ -152,9 +155,10 @@ const mobileBleedClass =
                         {title && <h3 class="figure-h3 pb-0" set:html={title} />}
                         {text && <div class="section-text mt-5" set:html={text} />}
                         {listItems.length > 0 && (
-                            <ul class="section-text two-col-list min-[760px]:mt-6">
-                                {listItems.map((li) => <li set:html={li} />)}
-                            </ul>
+                            <ul
+                                class="section-text two-col-list min-[760px]:mt-6"
+                                set:html={twoColListItemsHtml}
+                            />
                         )}
                     </div>
                 )}
@@ -196,9 +200,10 @@ const mobileBleedClass =
       )}
 
       {listItems.length > 0 && (
-        <ul class="section-text two-col-list min-[760px]:mt-6">
-          {listItems.map((li) => <li set:html={li} />)}
-        </ul>
+        <ul
+          class="section-text two-col-list min-[760px]:mt-6"
+          set:html={twoColListItemsHtml}
+        />
       )}
 
     </div>

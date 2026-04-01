@@ -43,7 +43,9 @@
         
         z-index: 1; /* Bottom Layer */
         
-        transition: opacity 1s var(--cubicBez, ease-out);
+        transition:
+            opacity var(--hw-video-fade-duration, 1s)
+            var(--hw-video-fade-ease, var(--cubicBez, ease-out));
         pointer-events: none;
     }
 
@@ -56,7 +58,9 @@
     .hw-vid-player {
         z-index: 10; /* Top Layer */
         opacity: 0;  /* Hidden by default */
-        transition: opacity 1s var(--cubicBez, ease-out);
+        transition:
+            opacity var(--hw-video-fade-duration, 1s)
+            var(--hw-video-fade-ease, var(--cubicBez, ease-out));
     }
 
     .show-controls-false .hw-vid-player {
@@ -98,7 +102,9 @@ html:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
 /* 2. Enable Transition only on first load */
 .first-load .hw-vid-poster-img,
 .first-load .hw-vid-wrap {
-    transition: opacity 1s var(--cubicBez, ease-out);
+    transition:
+        opacity var(--hw-video-fade-duration, 1s)
+        var(--hw-video-fade-ease, var(--cubicBez, ease-out));
 }
 
 /* 3. The Fade-In Logic (Image Only) */
@@ -119,7 +125,9 @@ html:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
     /* No-Video Fallback */
     .no-video.hw-bg-vid {
         opacity: 0;
-        transition: opacity 1s var(--cubicBez, ease-out);
+        transition:
+            opacity var(--hw-video-fade-duration, 1s)
+            var(--hw-video-fade-ease, var(--cubicBez, ease-out));
     }
 }
 
@@ -235,7 +243,9 @@ html:not(.first-load) .rowindex-1 .hw-vid-wrap.loading .hw-vid-poster-img {
 
 .first-load .rowindex-1 .no-video.hw-bg-vid {
 	opacity: 0;
-	transition: opacity 1s var(--cubicBez, ease-out);
+	transition:
+		opacity var(--hw-video-fade-duration, 1s)
+		var(--hw-video-fade-ease, var(--cubicBez, ease-out));
 }
 
 .show-me.rowindex-1 .no-video.hw-bg-vid {

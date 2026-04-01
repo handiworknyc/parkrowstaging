@@ -341,8 +341,8 @@ const units = Array.isArray(inventory?.units)
 const floorplanDisclaimer = String(floorplanDisclaimerPage?.floorplan_disclaimer ?? "").trim();
 const hasOrientation = units.some((unit) => String(unit?.orientation ?? "").trim());
 const columnTemplate = hasOrientation
-  ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
-  : "minmax(8rem, 1.5fr) minmax(6rem, 0.8fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)";
+  ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
+  : "minmax(8rem, 1.5fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)";
 const tableStyle = {
   "--floorplans-table-min-width": hasOrientation ? "840px" : "720px",
   "--floorplans-columns": columnTemplate,
@@ -365,6 +365,13 @@ function formatExterior(value: number | string | null | undefined) {
 
   const numeric = Number(normalized.replace(/,/g, ""));
   return Number.isFinite(numeric) ? numberFormat.format(numeric) : normalized;
+}
+
+const penthouseUnitLabels = new Set(expandSharedUnitRange("2103", "2203"));
+
+function formatResidenceLabel(value: string | number | null | undefined) {
+  const unitNumber = String(value ?? "").trim();
+  return penthouseUnitLabels.has(normalizeUnitNumber(unitNumber)) ? `PH ${unitNumber}` : unitNumber;
 }
 ---
 
@@ -408,7 +415,7 @@ function formatExterior(value: number | string | null | undefined) {
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
           </div>
-          <div class="floorplans-cell floorplans-cell--metric">
+          <div class="floorplans-cell floorplans-cell--metric floorplans-cell--bathrooms">
             <button
               type="button"
               class="floorplans-sort-button"
@@ -428,10 +435,10 @@ function formatExterior(value: number | string | null | undefined) {
               type="button"
               class="floorplans-sort-button"
               data-sort-key="area"
-              data-label="Area"
+              data-label="SF"
               aria-pressed="false"
             >
-              <span class="floorplans-sort-label">Area</span>
+              <span class="floorplans-sort-label">SF</span>
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
           </div>
@@ -450,7 +457,7 @@ function formatExterior(value: number | string | null | undefined) {
             </div>
           )}
           <div class="floorplans-cell floorplans-cell--action">
-            <span class="floorplans-action-label">Floorplan View</span>
+            <span class="floorplans-action-label">Floor Plan View</span>
             <span class="floorplans-action-placeholder" aria-hidden="true">View</span>
           </div>
         </div>
@@ -461,6 +468,7 @@ function formatExterior(value: number | string | null | undefined) {
           const hasDetail = Boolean(unit.detail?.imageUrl);
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
           const panoramaId = `${detailId}-panorama`;
+          const unitLabel = formatResidenceLabel(unit.unitNumber);
           const exteriorLabel = formatExterior(unit.detail?.exterior);
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
@@ -488,9 +496,9 @@ function formatExterior(value: number | string | null | undefined) {
                 aria-expanded={hasDetail ? "false" : undefined}
                 aria-controls={hasDetail ? detailId : undefined}
               >
-                <div class="floorplans-cell floorplans-cell--unit">{unit.unitNumber}</div>
+                <div class="floorplans-cell floorplans-cell--unit">{unitLabel}</div>
                 <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
-                <div class="floorplans-cell floorplans-cell--metric">
+                <div class="floorplans-cell floorplans-cell--metric floorplans-cell--bathrooms">
                   {formatBathrooms(unit.bathrooms)}
                 </div>
                 <div class="floorplans-cell floorplans-cell--metric">
@@ -1385,6 +1393,10 @@ function formatExterior(value: number | string | null | undefined) {
     text-align: right;
   }
 
+  .floorplans-cell--bathrooms {
+    display: none;
+  }
+
   .floorplans-cell--metric,
   .floorplans-cell--orientation {
     justify-content: center;
@@ -1959,7 +1971,7 @@ function formatExterior(value: number | string | null | undefined) {
     .floorplans-table[data-has-orientation="false"] .floorplans-row {
       grid-template-columns:
         var(--floorplans-mobile-unit-column, max-content)
-        repeat(3, minmax(0, 1fr))
+        repeat(2, minmax(0, 1fr))
         max-content;
     }
 
@@ -1967,7 +1979,7 @@ function formatExterior(value: number | string | null | undefined) {
     .floorplans-table[data-has-orientation="true"] .floorplans-row {
       grid-template-columns:
         var(--floorplans-mobile-unit-column, max-content)
-        repeat(4, minmax(0, 1fr))
+        repeat(3, minmax(0, 1fr))
         max-content;
     }
 

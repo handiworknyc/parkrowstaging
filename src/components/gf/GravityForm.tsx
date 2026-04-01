@@ -18,7 +18,11 @@ import LogoLoader from './LogoLoader';
    TYPES
 ===================================================== */
 
-type GFChoice = { text: string; value: string };
+type GFChoice = {
+  text: string;
+  value: string;
+  isSelected?: boolean;
+};
 
 type GFConditionalRule = {
   fieldId: number;
@@ -197,6 +201,24 @@ function isFieldVisible(field: GFField, values: Record<string, any>): boolean {
   return logic.actionType === 'hide' ? !passes : passes;
 }
 
+function buildInitialValues(form: GFFormSchema): Record<string, any> {
+  const initialValues: Record<string, any> = {};
+
+  for (const field of form.fields) {
+    if (field.type !== 'checkbox') continue;
+
+    const selectedChoices = field.choices
+      ?.filter((choice) => choice.isSelected)
+      .map((choice) => choice.value) ?? [];
+
+    if (selectedChoices.length) {
+      initialValues[`input_${field.id}`] = selectedChoices;
+    }
+  }
+
+  return initialValues;
+}
+
 /* =====================================================
    COMPONENT
 ===================================================== */
@@ -208,7 +230,9 @@ export default function GravityForm({ form, onSuccess }: Props) {
   /* STATE */
   /* -------------------------------------------------- */
 
-  const [values, setValues] = useState<Record<string, any>>({});
+  const [values, setValues] = useState<Record<string, any>>(() =>
+    buildInitialValues(form)
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [submitting, setSubmitting] = useState(false);
@@ -228,6 +252,11 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
   const submitCountRef = useRef(0);
   const didAutoFocusRef = useRef(false);
+
+  useEffect(() => {
+    setValues(buildInitialValues(form));
+    setFieldErrors({});
+  }, [form]);
 
   useEffect(() => {
 	return () => {

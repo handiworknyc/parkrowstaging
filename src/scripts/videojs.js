@@ -181,6 +181,19 @@ export function initCFVideo(videoId, reason = "init") {
 
   const isCriticalVideo =
     wrap.dataset.critical === "true";
+  const isScrollControlled = wrap.dataset.scroll === "true";
+
+  /* -----------------------------------------------------
+     SOURCE DELAY LOGIC
+  ----------------------------------------------------- */
+  const shouldDelaySource =
+    isFirstLoad &&
+    splashActive &&
+    !isSplashVideo;
+  const shouldSuspendStreamingOffscreen =
+    isCriticalVideo && isScrollControlled;
+  let streamingSuspended = false;
+  const defaultPlayerPreload = shouldDelaySource ? "none" : "auto";
  
   /* -----------------------------------------------------
      FETCH PRIORITY (ONE PER PAGE)
@@ -209,14 +222,6 @@ export function initCFVideo(videoId, reason = "init") {
     vlog(videoId, "fetchpriority=high applied");
   }
 
-  /* -----------------------------------------------------
-     SOURCE DELAY LOGIC
-  ----------------------------------------------------- */
-  const shouldDelaySource =
-    isFirstLoad &&
-    splashActive &&
-    !isSplashVideo;
-
   // Select target bandwidth based on viewport
   const targetBandwidth = getTargetBandwidthForViewport(window.innerWidth);
 
@@ -239,11 +244,10 @@ export function initCFVideo(videoId, reason = "init") {
     controls: hasControls,
     debug: VIDEOJS_DEBUG,
     loop: true,
-    preload: shouldDelaySource ? false : true,
     muted: true,
     playsinline: true,
 
-    preload: shouldDelaySource ? "none" : "auto",
+    preload: defaultPlayerPreload,
 
     html5: {
       hls: {
@@ -277,7 +281,6 @@ export function initCFVideo(videoId, reason = "init") {
 
   let sourceUnlocked = !shouldDelaySource;
   let playbackUnlocked = !shouldDelaySource;
-  const isScrollControlled = wrap.dataset.scroll === "true";
   const scrollThreshold = parseFloat(wrap.dataset.threshold) || 0.6;
   const scrollParent = wrap.closest(".hw-player-parent") || wrap;
   let isIntersecting = !isScrollControlled;
@@ -314,6 +317,7 @@ export function initCFVideo(videoId, reason = "init") {
     if (isScrollControlled && !isIntersecting) return;
     if (!player.paused()) return;
 
+    resumeStreaming(`${reason}:resume-streaming`);
     vlog(videoId, `${reason} → play()`);
     const playPromise = player.play();
 
@@ -337,6 +341,56 @@ export function initCFVideo(videoId, reason = "init") {
       clearTimeout(warmupTimer);
       warmupTimer = null;
     }
+  }
+
+  function getVhsPlaylistController() {
+    try {
+      return player.tech(true)?.vhs?.playlistController_;
+    } catch (err) {
+      vlog(videoId, "failed to access VHS playlist controller", err);
+      return undefined;
+    }
+  }
+
+  function suspendStreaming(reason) {
+    if (!shouldSuspendStreamingOffscreen) return;
+    if (player.isDisposed()) return;
+    if (streamingSuspended) return;
+
+    clearWarmupTimer();
+    player.preload("none");
+
+    const playlistController = getVhsPlaylistController();
+    if (typeof playlistController?.pauseLoading === "function") {
+      try {
+        playlistController.pauseLoading();
+      } catch (err) {
+        vlog(videoId, `pauseLoading failed (${reason})`, err);
+      }
+    }
+
+    streamingSuspended = true;
+    vlog(videoId, `suspend streaming (${reason})`);
+  }
+
+  function resumeStreaming(reason) {
+    if (!shouldSuspendStreamingOffscreen) return;
+    if (player.isDisposed()) return;
+    if (!streamingSuspended) return;
+
+    player.preload(defaultPlayerPreload);
+
+    const playlistController = getVhsPlaylistController();
+    if (typeof playlistController?.load === "function") {
+      try {
+        playlistController.load();
+      } catch (err) {
+        vlog(videoId, `playlist load failed (${reason})`, err);
+      }
+    }
+
+    streamingSuspended = false;
+    vlog(videoId, `resume streaming (${reason})`);
   }
 
   function clearActiveSource(reason) {
@@ -409,6 +463,20 @@ export function initCFVideo(videoId, reason = "init") {
     player.load();
 
     activeManifestSrc = preferredManifestSrc;
+
+    if (streamingSuspended) {
+      player.preload("none");
+
+      const playlistController = getVhsPlaylistController();
+      if (typeof playlistController?.pauseLoading === "function") {
+        try {
+          playlistController.pauseLoading();
+        } catch (err) {
+          vlog(videoId, `pauseLoading failed after source sync (${reason})`, err);
+        }
+      }
+    }
+
     setPaused();
     return true;
   }
@@ -445,6 +513,7 @@ export function initCFVideo(videoId, reason = "init") {
     warmupActive = true;
     clearWarmupTimer();
 
+    resumeStreaming(`${reason}:resume-streaming`);
     const playPromise = player.play();
     if (playPromise && typeof playPromise.catch === "function") {
       playPromise.catch((err) => {
@@ -527,10 +596,18 @@ export function initCFVideo(videoId, reason = "init") {
           entries.forEach((entry) => {
             isIntersecting = entry.isIntersecting;
 
-            if (entry.isIntersecting && playbackUnlocked) {
-              schedulePlay("intersection");
-            } else if (!entry.isIntersecting && !player.paused() && !warmupActive) {
-              player.pause();
+            if (entry.isIntersecting) {
+              resumeStreaming("intersection-enter");
+
+              if (playbackUnlocked) {
+                schedulePlay("intersection");
+              }
+            } else {
+              if (!player.paused() && !warmupActive) {
+                player.pause();
+              }
+
+              suspendStreaming("intersection-exit");
             }
           });
         },
@@ -551,6 +628,10 @@ export function initCFVideo(videoId, reason = "init") {
 
       attachObserver();
       isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
+
+      if (!isIntersecting) {
+        suspendStreaming(`attach:${reason}:offscreen`);
+      }
     };
 
     const unlockPlaybackNow = (reason) => {
@@ -577,6 +658,11 @@ export function initCFVideo(videoId, reason = "init") {
 
     if (sourceUnlocked) {
       attachObserver();
+
+      if (!isIntersecting) {
+        suspendStreaming("initial-offscreen");
+      }
+
       schedulePlay("initial-visibility");
     } else {
       const unlockOnSplashPlaying = () => {
@@ -611,6 +697,12 @@ export function initCFVideo(videoId, reason = "init") {
     if (isScrollControlled) {
       isIntersecting = isElementVisibleEnough(scrollParent, scrollThreshold);
       attachObserver();
+
+      if (isIntersecting) {
+        resumeStreaming(`${reason}:visible`);
+      } else {
+        suspendStreaming(`${reason}:offscreen`);
+      }
     }
 
     syncPreferredSource(`${reason}:sync`, { allowAttach: sourceUnlocked });

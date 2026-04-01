@@ -2,6 +2,11 @@
 import ImageCarousel from "../react/ImageCarousel.jsx";
 import fslightboxScriptUrl from "../../scripts/plugins/fslightbox.js?url";
 import "../../styles/fslightbox.css";
+import {
+  renderFlatListItemsHtml,
+  renderTwoColListItemsHtml,
+  splitListItems,
+} from "../../lib/contentLists.js";
 
 const DEBUG_CAROUSEL_LIGHTBOX = false;
 
@@ -68,9 +73,7 @@ const processedContent = Array.isArray(content)
       title: item.title || "",
       text: item.text || "",
       twoColList: item.two_col_list || false,
-      listItems: item.list
-        ? item.list.split(/\r?\n/).filter((li: string) => li.trim())
-        : [],
+      listItems: splitListItems(item.list),
     }))
   : [];
 
@@ -114,18 +117,17 @@ const contentColumnsHTML = processedContent
   .map((item, index) => {
     const cssClass = getColumnClass(index, processedContent.length);
     const ulClass = `section-text ${item.twoColList ? "two-col-list" : ""}`.trim();
+    const listItemsHtml = item.twoColList
+      ? renderTwoColListItemsHtml(item.listItems)
+      : renderFlatListItemsHtml(item.listItems);
 
-    return `
-      <div class="${cssClass}">
-        ${item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : ""}
-        ${item.text ? `<div class='section-text'>${item.text}</div>` : ""}
-        ${
-          item.listItems.length > 0
-            ? `<ul class='${ulClass}'>${item.listItems.map((li: string) => `<li>${li}</li>`).join("")}</ul>`
-            : ""
-        }
-      </div>
-    `;
+    return [
+      `<div class="${cssClass}">`,
+      item.title ? `<h3 class='figure-h3'>${item.title}</h3>` : "",
+      item.text ? `<div class='section-text'>${item.text}</div>` : "",
+      item.listItems.length > 0 ? `<ul class='${ulClass}'>${listItemsHtml}</ul>` : "",
+      "</div>",
+    ].join("");
   })
   .join("");
 
