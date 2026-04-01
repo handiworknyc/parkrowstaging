@@ -318,7 +318,7 @@
             }
           },
           "yt_img_mob": false,
-          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/09675e436e7ca79808119fb2599c4c90/manifest/video.m3u8",
+          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/65fbe744c5577b764532b7cd24996cd8/manifest/video.m3u8",
           "cf_stream_mob": "",
           "mob_img_breakpoint": "",
           "natural_aspect": false,
@@ -1247,7 +1247,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-01 16:28:04",
+  "_syncedAt": "2026-04-01 16:57:37",
   "seo": {
     "title": "Home - Jesse Rosenfield Site",
     "description": "",
