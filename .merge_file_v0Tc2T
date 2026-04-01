@@ -201,26 +201,21 @@
             {
               "yt_img": {
                 "title": "cf-video-4e9116ca683a70213c57f136c07bfec0-poster-fallback",
-                "filename": "cf-video-4e9116ca683a70213c57f136c07bfec0-poster-2400w-09e285e2.webp",
-                "url": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-2400w-09e285e2.webp",
+                "filename": "cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-2400w-ef772d9a.webp",
+                "url": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-2400w-ef772d9a.webp",
                 "alt": "",
                 "mime_type": "image/webp",
                 "sizes": {
-                  "intch_full": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-2400w-09e285e2.webp",
-                  "intch_full-width": 1920,
-                  "intch_full-height": 1080,
-                  "intch_xl": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1700w-9de91456.webp",
+                  "intch_full": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-2400w-ef772d9a.webp",
+                  "intch_full-width": 2400,
+                  "intch_xl": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-1700w-c2ed8102.webp",
                   "intch_xl-width": 1700,
-                  "intch_xl-height": 956,
-                  "intch_lg": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1400w-f3a9864c.webp",
+                  "intch_lg": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-1400w-e39a7d81.webp",
                   "intch_lg-width": 1400,
-                  "intch_lg-height": 788,
-                  "intch_med": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1000w-f0d10662.webp",
+                  "intch_med": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-1000w-058f09cb.webp",
                   "intch_med-width": 1000,
-                  "intch_med-height": 562,
-                  "intch_sm": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-600w-4813acde.webp",
-                  "intch_sm-width": 600,
-                  "intch_sm-height": 338
+                  "intch_sm": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-blur-600w-26ac6495.webp",
+                  "intch_sm-width": 600
                 }
               },
               "yt_img_mob": false,
@@ -1469,7 +1464,7 @@
     {
       "acf_fc_layout": "section_header",
       "layout_settings": {
-        "section_title": "Balanced Living<br />\r\nin the Heart of Downtown",
+        "section_title": "Balanced Living in the Heart of Downtown",
         "section_h2": "From Park Row, Access is Easy.",
         "section_text": "<p>Bellevue, where park front serenity and downtown vitality exist in seamless balance, and every destination begins at your doorstep.</p>\n",
         "green_bg": false,
@@ -2056,7 +2051,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-01 19:51:26",
+  "_syncedAt": "2026-04-01 19:33:37",
   "seo": {
     "title": "Bellevue - Jesse Rosenfield Site",
     "description": "",
