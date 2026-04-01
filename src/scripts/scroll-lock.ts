@@ -16,7 +16,7 @@ const isIOS = isMobile || isIpad;
 // CONFIGURATION
 // ------------------------------------
 const CONFIG = {
-  SPLASH_FADE_DURATION: isIOS ? 650 : 1000,
+  SPLASH_FADE_DURATION: 1100,
   UNLOCK_TIMEOUT: 6600,
   WAIT_FOR_SPLASH: true,
 } as const;

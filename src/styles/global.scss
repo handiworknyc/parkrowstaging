@@ -1675,17 +1675,25 @@ html.home.splash-scroll-lock {
      makes alpha transitions clamp and feel like they "snap" at the end. */
   --hw-video-fade-duration: 650ms;
   --hw-video-fade-ease: linear;
+  --splash-dismiss-duration: 1000ms;
+  --splash-dismiss-opacity-ease: linear;
+  --splash-dismiss-transform-ease: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   overflow: hidden;
   opacity: 1;
   transform: scale(1);
   will-change: opacity, transform;
-  transition: all 1.35s var(--cubicBez) !important;
+  transition:
+    opacity var(--splash-dismiss-duration) var(--splash-dismiss-opacity-ease),
+    transform var(--splash-dismiss-duration) var(--splash-dismiss-transform-ease) !important;
 
   .hw-vid-poster-img,
   .hw-vid-wrap,
-  .hw-vid-wrap .hw-vid-player {
-  	transition: opacity .5s var(--cubicBez) !important;
+  .hw-vid-wrap .hw-vid-player,
+  .hw-vid-wrap:before {
+  	transition:
+      opacity var(--hw-video-fade-duration)
+      var(--hw-video-fade-ease) !important;
   }
 }
 
@@ -1771,10 +1779,15 @@ html:not(.hw-is-mobile) .child-lazy-loaded .splash-content {
 
 /* Dismissed state */
 .splash-dismissed .splash-video {
-  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
   transform: scale(1.04);
   pointer-events: none;
+}
+
+.splash-dismissed .splash-video .hw-vid-wrap:before,
+.splash-dismissed .splash-content {
+  opacity: 0;
+  transition-delay: 0s !important;
 }
 
 
