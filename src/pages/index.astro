@@ -8,7 +8,7 @@ import PageContent from "../components/wp/PageContent.astro";
 
 // ✅ IMPORT HELPER FUNCTIONS
 import { normalizeLayouts } from "../lib/wp/normalize";
-import { getLcpImage, getLcpVideo } from "../lib/wp/lcp";
+import { getLcpImage, getLcpVideo, hasSplashVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads"; // <--- NEW IMPORT
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../lib/wp/page";
 
@@ -26,11 +26,13 @@ const contentHtml = getFlexiblePageContentHtml(page);
 let lcpData = null;
 let lcpVideo = null;
 let preloads = []; // <--- NEW
+let hasHomeSplash = false;
 
 if (layouts.length > 0) {
   const rows = normalizeLayouts(layouts);
   lcpData = getLcpImage(rows);
   lcpVideo = getLcpVideo(rows);
+  hasHomeSplash = hasSplashVideo(rows);
   
   // ✅ GENERATE PRELOADS
   preloads = getPreloads(rows);
@@ -45,6 +47,7 @@ if (layouts.length > 0) {
   lcp={lcpData} 
   lcpVideo={lcpVideo} 
   preloads={preloads}
+  hasSplashVideo={hasHomeSplash}
 >
   {page
     ? layouts.length

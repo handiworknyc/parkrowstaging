@@ -156,3 +156,7 @@ export function getLcpVideo(rows: NormRow[]) {
 
   return null;
 }
+
+export function hasSplashVideo(rows: NormRow[]) {
+  return Array.isArray(rows) && rows[0]?.name === "splash_video";
+}

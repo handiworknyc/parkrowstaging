@@ -8,7 +8,7 @@ import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../../lib/api";
 import PageContent from "../../components/wp/PageContent.astro";
 
 import { normalizeLayouts } from "../../lib/wp/normalize";
-import { getLcpImage, getLcpVideo } from "../../lib/wp/lcp";
+import { getLcpImage, getLcpVideo, hasSplashVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
@@ -55,11 +55,13 @@ if (!page) {
 let lcpData = null;
 let lcpVideoData = null;
 let preloads = [];
+let pageHasSplashVideo = false;
 
 if (page?.layouts) {
   const rows = normalizeLayouts(page.layouts);
   lcpData = getLcpImage(rows);
   lcpVideoData = getLcpVideo(rows);
+  pageHasSplashVideo = hasSplashVideo(rows);
   preloads = getPreloads(rows);
 }
 ---
@@ -72,6 +74,7 @@ if (page?.layouts) {
     lcp={lcpData}
     lcpVideo={lcpVideoData}
     preloads={preloads}
+    hasSplashVideo={pageHasSplashVideo}
     lang={lang}
   >
     {page.layouts?.length ? (

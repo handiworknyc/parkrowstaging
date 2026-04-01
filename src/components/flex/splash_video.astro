@@ -179,10 +179,9 @@ const videoClasses = [
 ];
 ---
 
-<script>
+<script is:inline>
   if (HW.$html.classList.contains("first-load")) {
     window.hwSplashActive = true;
-    HW.$html.classList.add("splash-scroll-lock");
   }
 
   window.__HW_SPLASH_PLAYING__ = false;
@@ -226,7 +225,7 @@ const videoClasses = [
   </>
 )}
 
-<script>
+<script is:inline>
   const SPLASH_DEBUG = false;
   const splashLog = (...args) => {
     if (!SPLASH_DEBUG) return;
@@ -241,9 +240,21 @@ const videoClasses = [
   let revealTimer = null;
   let idleDismissTimer = null;
   let dismissListenersAttached = false;
+  let splashUnlockTimer = null;
 
   const REVEAL_DELAY = 850;
   const IDLE_DISMISS_DELAY = 6500;
+  const SPLASH_UNLOCK_DELAY = 1000;
+
+  function releaseSplashScrollLock() {
+    HW.$html.classList.remove("splash-scroll-lock");
+    splashUnlockTimer = null;
+  }
+
+  function scheduleSplashUnlock() {
+    clearTimeout(splashUnlockTimer);
+    splashUnlockTimer = setTimeout(releaseSplashScrollLock, SPLASH_UNLOCK_DELAY);
+  }
 
   function initSplashDismiss() {
     if (!HW.$html.classList.contains("first-load")) return;
@@ -315,6 +326,8 @@ const videoClasses = [
         })
       );
 
+      scheduleSplashUnlock();
+
       cleanup.forEach((fn) => fn());
       cleanup.length = 0;
       dismissListenersAttached = false;
@@ -352,6 +365,8 @@ const videoClasses = [
             detail: { source: "scroll-intent" },
           })
         );
+
+        scheduleSplashUnlock();
 
         cleanup.forEach((fn) => fn());
         cleanup.length = 0;
@@ -429,8 +444,10 @@ const videoClasses = [
 
     clearTimeout(revealTimer);
     clearTimeout(idleDismissTimer);
+    clearTimeout(splashUnlockTimer);
     revealTimer = null;
     idleDismissTimer = null;
+    splashUnlockTimer = null;
 
     splashLoaded = false;
     splashDismissed = false;

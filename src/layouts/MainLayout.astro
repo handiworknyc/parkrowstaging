@@ -53,6 +53,7 @@
 		cacheControl?: string;
 		noIndex?: boolean;
 		isPreview?: boolean;
+		hasSplashVideo?: boolean;
 	}
 
 	/* ---------------- Props & Config ---------------- */
@@ -67,6 +68,7 @@
 	cacheControl: cacheControlProp = "",
 	noIndex = false,
 	isPreview = false,
+	hasSplashVideo = false,
 	} = Astro.props;
 
 
@@ -197,6 +199,13 @@
 
 	const segments = normalizedPathname.split("/").filter(Boolean);
 	const bodyClasses = segments.length ? segments.join(" ") : "home";
+	const htmlClasses = [
+		isPreview ? "" : "first-load",
+		bodyClasses,
+		!isPreview && hasSplashVideo ? "splash-scroll-lock" : "",
+	]
+		.filter(Boolean)
+		.join(" ");
 
 
 	const cacheControl = cacheControlProp || "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
@@ -208,20 +217,24 @@
 	---
 
 	<html
-	lang={lang}
-	style="view-transition-name: main-content"
-	class={`${isPreview ? '' : 'first-load'} ${bodyClasses}`.trim()}
-	>
+		lang={lang}
+		style="view-transition-name: main-content"
+		class={htmlClasses}
+		>
 
 	<head>
 	<meta charset="utf-8" />
 
 	
 	{/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
-	<script is:inline>
-		window.HW = {};
-		HW.$html = document.documentElement;
-	</script>
+		<script
+			is:inline
+			define:vars={{ initialSplashActive: !isPreview && hasSplashVideo }}
+		>
+			window.HW = {};
+			HW.$html = document.documentElement;
+			window.hwSplashActive = initialSplashActive;
+		</script>
 
 	<script is:inline>
 		(() => {

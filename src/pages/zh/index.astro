@@ -12,7 +12,7 @@ const lang = 'zh';
 
 // ✅ HELPERS
 import { normalizeLayouts } from "../../lib/wp/normalize";
-import { getLcpImage, getLcpVideo } from "../../lib/wp/lcp";
+import { getLcpImage, getLcpVideo, hasSplashVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
@@ -32,11 +32,13 @@ const contentHtml = getFlexiblePageContentHtml(page);
 let lcpData = null;
 let lcpVideo = null;
 let preloads = [];
+let hasHomeSplash = false;
 
 if (layouts.length > 0) {
   const rows = normalizeLayouts(layouts);
   lcpData = getLcpImage(rows);
   lcpVideo = getLcpVideo(rows);
+  hasHomeSplash = hasSplashVideo(rows);
   preloads = getPreloads(rows);
 }
 ---
@@ -48,6 +50,7 @@ if (layouts.length > 0) {
   lcp={lcpData}
   lcpVideo={lcpVideo}
   preloads={preloads}
+  hasSplashVideo={hasHomeSplash}
   lang={lang}
 >
   {page
