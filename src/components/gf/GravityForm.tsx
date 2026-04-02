@@ -112,6 +112,16 @@ function extractSubmitError(parsed: any): string {
   return 'Unable to submit form. Please try again.';
 }
 
+function shouldEdgewiseDebug(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (import.meta.env.DEV) return true;
+
+  const value =
+    new URLSearchParams(window.location.search).get('edgewiseDebug') || '';
+
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+}
+
 function normalizeConditionalValue(value: unknown): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value.trim();
@@ -491,11 +501,21 @@ export default function GravityForm({ form, onSuccess }: Props) {
       }
 
       const endpoint = '/api/gf/submit';
+      const edgewiseDebug = shouldEdgewiseDebug();
+
+      if (edgewiseDebug) {
+        console.info('[GF] edgewise debug enabled', {
+          fieldKeys: Object.keys(submissionValues).sort(),
+          formId: form.id,
+          url: window.location.href,
+        });
+      }
 
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(edgewiseDebug ? { edgewise_debug: true } : {}),
           form_id: form.id,
           fields: submissionValues,
         }),
@@ -512,6 +532,14 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
       if (!parsed.ok) {
         throw new Error('Invalid server response');
+      }
+
+      if (parsed.data?.edgewise) {
+        if (parsed.data.edgewise.success) {
+          console.info('[GF] edgewise debug', parsed.data.edgewise);
+        } else {
+          console.warn('[GF] edgewise debug', parsed.data.edgewise);
+        }
       }
 
       if (!res.ok) {

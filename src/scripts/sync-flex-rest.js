@@ -947,7 +947,14 @@ function normalizeGFForm(form) {
             : Array.isArray(f.choices)
               ? f.choices.map(c => ({
                   text: c.text,
-                  value: c.value
+                  value: c.value,
+                  isSelected:
+                    !!c.isSelected ||
+                    (
+                      Number(form.id) === 1 &&
+                      Number(f.id) === 13 &&
+                      c.value === "Yes, send me updates"
+                    )
                 }))
               : undefined
       }))

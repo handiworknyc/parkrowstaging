@@ -21,6 +21,35 @@ export type ContactSubmitResult = {
   status: number;
 };
 
+type EdgewiseSkipReason =
+  | 'gravity_failed'
+  | 'missing_contact_fields'
+  | 'missing_project_id'
+  | 'missing_token';
+
+type EdgewiseFailureReason =
+  | 'graphql_error'
+  | 'no_lead_id'
+  | 'non_json_response'
+  | 'request_failed';
+
+type EdgewiseDebugInfo = {
+  attempted: boolean;
+  enabled: boolean;
+  errors?: Array<Record<string, unknown>>;
+  errorMessage?: string;
+  failureReason?: EdgewiseFailureReason;
+  input: Record<string, unknown>;
+  leadId?: string;
+  populatedFieldKeys: string[];
+  projectIdConfigured: boolean;
+  responseSnippet?: string;
+  responseStatus?: number;
+  skippedReason?: EdgewiseSkipReason;
+  success: boolean;
+  tokenConfigured: boolean;
+};
+
 function logResponse(
   service: string,
   result: {
@@ -74,6 +103,12 @@ function getEdgewiseToken(): string {
 
 function getEdgewiseProjectId(): string {
   return getEnv('EDGEWISE_PROJECT_ID');
+}
+
+function isTruthy(value: unknown): boolean {
+  return ['1', 'true', 'yes', 'on'].includes(
+    String(value ?? '').trim().toLowerCase()
+  );
 }
 
 function readField(fields: SubmissionFields, key: string): string {
@@ -133,6 +168,165 @@ function compact<T extends Record<string, unknown>>(value: T): Partial<T> {
   ) as Partial<T>;
 }
 
+function hasValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some((item) => hasValue(item));
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((item) =>
+      hasValue(item)
+    );
+  }
+
+  return true;
+}
+
+function getPopulatedFieldKeys(fields: SubmissionFields): string[] {
+  return Object.entries(fields)
+    .filter(([, value]) => hasValue(value))
+    .map(([key]) => key)
+    .sort();
+}
+
+function maskEmail(value: string): string {
+  const [local = '', domain = ''] = value.split('@');
+  const domainParts = domain.split('.');
+  const domainName = domainParts.shift() || '';
+  const suffix = domainParts.length ? `.${domainParts.join('.')}` : '';
+
+  if (!local || !domainName) return '[present]';
+
+  return `${local[0]}***@${domainName[0]}***${suffix}`;
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+
+  if (!digits) return '[present]';
+
+  return `***${digits.slice(-4)}`;
+}
+
+function summarizeDebugString(value: string, path: string[]): string {
+  const key = path[path.length - 1] || '';
+  const joined = path.join('.');
+
+  if (
+    joined === 'metadata.workingWithAgent' ||
+    key === 'countryCode' ||
+    key === 'projectId' ||
+    key === 'source'
+  ) {
+    return value;
+  }
+
+  if (key === 'email') return maskEmail(value);
+  if (key === 'phone') return maskPhone(value);
+
+  return '[present]';
+}
+
+function sanitizeDebugValue(
+  value: unknown,
+  path: string[] = []
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeDebugValue(item, path));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+        key,
+        sanitizeDebugValue(item, [...path, key]),
+      ])
+    );
+  }
+
+  if (typeof value === 'string') {
+    return summarizeDebugString(value, path);
+  }
+
+  return value;
+}
+
+function truncate(value: string, max = 700): string {
+  const normalized = value.trim();
+
+  if (normalized.length <= max) return normalized;
+
+  return `${normalized.slice(0, max)}...`;
+}
+
+function serializeGraphqlErrors(
+  value: unknown
+): Array<Record<string, unknown>> | undefined {
+  if (!Array.isArray(value) || !value.length) return undefined;
+
+  return value.map((entry) => {
+    const error =
+      entry && typeof entry === 'object'
+        ? (entry as Record<string, unknown>)
+        : {};
+    const extensions =
+      error.extensions && typeof error.extensions === 'object'
+        ? (error.extensions as Record<string, unknown>)
+        : {};
+
+    return compact({
+      code:
+        typeof extensions.code === 'string' ? extensions.code : undefined,
+      message: typeof error.message === 'string' ? error.message : undefined,
+      path: Array.isArray(error.path) ? error.path : undefined,
+    });
+  });
+}
+
+function buildEdgewiseDebugInfo(
+  fields: SubmissionFields,
+  input: Record<string, unknown>,
+  options: {
+    enabled: boolean;
+    projectIdConfigured: boolean;
+    tokenConfigured: boolean;
+  }
+): EdgewiseDebugInfo {
+  return {
+    attempted: false,
+    enabled: options.enabled,
+    input: sanitizeDebugValue(input) as Record<string, unknown>,
+    populatedFieldKeys: getPopulatedFieldKeys(fields),
+    projectIdConfigured: options.projectIdConfigured,
+    success: false,
+    tokenConfigured: options.tokenConfigured,
+  };
+}
+
+function appendEdgewiseDebug(
+  result: ContactSubmitResult,
+  debug: EdgewiseDebugInfo | null
+): ContactSubmitResult {
+  if (!debug?.enabled) return result;
+
+  try {
+    const parsed = JSON.parse(result.body);
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return result;
+    }
+
+    return {
+      ...result,
+      body: JSON.stringify({
+        ...parsed,
+        edgewise: debug,
+      }),
+    };
+  } catch {
+    return result;
+  }
+}
+
 function buildEdgewiseInput(fields: SubmissionFields) {
   const firstName = readField(fields, 'input_1');
   const lastName = readField(fields, 'input_3');
@@ -140,28 +334,27 @@ function buildEdgewiseInput(fields: SubmissionFields) {
   const phone = readField(fields, 'input_6');
   const source = readField(fields, 'input_10');
   const isAgent = readYesNo(fields, 'input_11');
-  const isWorkingWithAgent = readYesNo(fields, 'input_12');
-  const brokerageCompanyName = readField(fields, 'input_19');
+  const isRepresentedAnswer = readYesNo(fields, 'input_12');
+  const company = readField(fields, 'input_19');
   const agentFirstName = readField(fields, 'input_20');
   const agentLastName = readField(fields, 'input_21');
   const address = readField(fields, 'input_16');
   const city = readField(fields, 'input_14');
   const state = readField(fields, 'input_17');
   const postalCode = readField(fields, 'input_15');
+  const isRepresented = isAgent ? false : isRepresentedAnswer;
+  const agentName = [agentFirstName, agentLastName].filter(Boolean).join(' ');
   const edgewiseAddress = compact({
     thoroughfare: address,
     locality: city,
     administrativeArea: state,
     postalCode,
   });
-  const metadata = compact({
-    brokerageCompanyName,
-    workingWithAgent:
-      isWorkingWithAgent === undefined
+  const agent = compact({
+    name:
+      isAgent || isRepresented !== true || !agentName
         ? undefined
-        : String(isWorkingWithAgent),
-    agentFirstName,
-    agentLastName,
+        : agentName,
   });
 
   return compact({
@@ -171,8 +364,10 @@ function buildEdgewiseInput(fields: SubmissionFields) {
     phone,
     address: edgewiseAddress,
     source: source || undefined,
+    company: company || undefined,
+    agent,
     isAgent,
-    metadata,
+    isRepresented,
     subscribed: readCheckbox(fields, 'input_13'),
   });
 }
@@ -262,31 +457,53 @@ async function submitToGravity({
 }
 
 async function submitToEdgewise({
+  debugEnabled,
   fields,
-}: SubmitArgs): Promise<void> {
+}: SubmitArgs & {
+  debugEnabled?: boolean;
+}): Promise<EdgewiseDebugInfo> {
   const token = getEdgewiseToken();
   const input = buildEdgewiseInput(fields);
+  const debug = buildEdgewiseDebugInfo(fields, input, {
+    enabled: !!debugEnabled,
+    projectIdConfigured: !!input.projectId,
+    tokenConfigured: !!token,
+  });
+
+  console.info('[contact submit] edgewise request summary', {
+    input: debug.input,
+    populatedFieldKeys: debug.populatedFieldKeys,
+    projectIdConfigured: debug.projectIdConfigured,
+    tokenConfigured: debug.tokenConfigured,
+  });
 
   if (!token) {
-    console.warn('[contact submit] edgewise skipped: missing token');
-    return;
+    debug.skippedReason = 'missing_token';
+    console.warn('[contact submit] edgewise skipped: missing token', debug);
+    return debug;
   }
 
   if (!input.projectId) {
+    debug.skippedReason = 'missing_project_id';
     console.warn(
-      '[contact submit] edgewise skipped: missing EDGEWISE_PROJECT_ID'
+      '[contact submit] edgewise skipped: missing EDGEWISE_PROJECT_ID',
+      debug
     );
-    return;
+    return debug;
   }
 
   if (!input.name || !input.email) {
+    debug.skippedReason = 'missing_contact_fields';
     console.warn(
-      '[contact submit] edgewise skipped: missing required contact fields'
+      '[contact submit] edgewise skipped: missing required contact fields',
+      debug
     );
-    return;
+    return debug;
   }
 
   try {
+    debug.attempted = true;
+
     const response = await fetch(EDGEWISE_GRAPHQL_URL, {
       method: 'POST',
       headers: {
@@ -301,6 +518,8 @@ async function submitToEdgewise({
     });
 
     const text = await response.text();
+    debug.responseSnippet = truncate(text);
+    debug.responseStatus = response.status;
     logResponse('edgewise', {
       body: text,
       contentType: response.headers.get('content-type') || 'application/json',
@@ -312,35 +531,57 @@ async function submitToEdgewise({
     try {
       data = JSON.parse(text);
     } catch {
+      debug.failureReason = 'non_json_response';
       console.error(
         '[contact submit] edgewise returned non-JSON response',
-        text.slice(0, 300)
+        {
+          responseSnippet: debug.responseSnippet,
+          ...debug,
+        }
       );
-      return;
+      return debug;
     }
 
     if (!response.ok || data?.errors?.length) {
+      debug.errors = serializeGraphqlErrors(data?.errors);
+      debug.failureReason = 'graphql_error';
       console.error('[contact submit] edgewise GraphQL failed', {
+        debug,
         status: response.status,
         errors: data?.errors,
       });
-      return;
+      return debug;
     }
 
     if (!data?.data?.createLead?.id) {
+      debug.failureReason = 'no_lead_id';
       console.error(
         '[contact submit] edgewise GraphQL returned no lead id',
-        data
+        {
+          data,
+          debug,
+        }
       );
-      return;
+      return debug;
     }
 
+    debug.leadId = data.data.createLead.id;
+    debug.success = true;
     console.info('[contact submit] edgewise lead created', {
+      debug,
       id: data.data.createLead.id,
     });
   } catch (error) {
-    console.error('[contact submit] edgewise request failed', error);
+    debug.errorMessage =
+      error instanceof Error ? error.message : String(error);
+    debug.failureReason = 'request_failed';
+    console.error('[contact submit] edgewise request failed', {
+      debug,
+      error,
+    });
   }
+
+  return debug;
 }
 
 function gravitySubmissionSucceeded(result: ContactSubmitResult): boolean {
@@ -391,7 +632,8 @@ export async function submitContact(
     };
   }
 
-  const { form_id, fields } = body as {
+  const { edgewise_debug, form_id, fields } = body as {
+    edgewise_debug?: unknown;
     fields?: unknown;
     form_id?: number | string;
   };
@@ -416,6 +658,10 @@ export async function submitContact(
     ...(fields as SubmissionFields),
   };
   const gravityFields = buildGravityFields(normalizedFields);
+  const edgewiseDebugEnabled =
+    isTruthy(edgewise_debug) ||
+    isTruthy(getEnv('EDGEWISE_DEBUG')) ||
+    isTruthy(getEnv('PUBLIC_EDGEWISE_DEBUG'));
 
   const gravityResult = await submitToGravity({
     formId: form_id,
@@ -429,12 +675,31 @@ export async function submitContact(
     gravitySucceeded,
   });
 
+  let edgewiseDebug: EdgewiseDebugInfo | null = null;
+
   if (gravitySucceeded) {
-    await submitToEdgewise({
+    edgewiseDebug = await submitToEdgewise({
+      debugEnabled: edgewiseDebugEnabled,
       formId: form_id,
       fields: normalizedFields,
     });
+  } else if (edgewiseDebugEnabled) {
+    edgewiseDebug = buildEdgewiseDebugInfo(
+      normalizedFields,
+      buildEdgewiseInput(normalizedFields),
+      {
+        enabled: true,
+        projectIdConfigured: !!getEdgewiseProjectId(),
+        tokenConfigured: !!getEdgewiseToken(),
+      }
+    );
+    edgewiseDebug.skippedReason = 'gravity_failed';
+
+    console.info(
+      '[contact submit] edgewise skipped because gravity did not succeed',
+      edgewiseDebug
+    );
   }
 
-  return gravityResult;
+  return appendEdgewiseDebug(gravityResult, edgewiseDebug);
 }
