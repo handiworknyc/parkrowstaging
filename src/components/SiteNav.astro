@@ -19,6 +19,19 @@ const CN_MENU_DEBUG_ENABLED = import.meta.env.PUBLIC_CN_MENU_DEBUG === "1";
 const { lang = "en" } = Astro.props as Props;
 const homeHref = lang === "zh" ? "/zh" : "/";
 
+function normalizeHeaderThemePath(pathname: string) {
+  let normalized = pathname.trim() || "/";
+  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+  normalized = normalized.replace(/^\/zh(?=\/|$)/, "") || "/";
+  normalized = normalized.replace(/\/+$/, "") || "/";
+  return normalized;
+}
+
+const initialHeaderTheme =
+  normalizeHeaderThemePath(Astro.url.pathname) === "/penthouses"
+    ? "light"
+    : "default";
+
 // -----------------------------------------------------------------------------
 // ⚡ GLOBAL NAV CACHE (HTML ONLY)
 // -----------------------------------------------------------------------------
@@ -68,6 +81,7 @@ const headerMenu = _cachedHeaderMenu;
 <header
   id="header"
   class="group mob-menu-abs"
+  data-header-theme={initialHeaderTheme}
   transition:persist
   style="view-transition-name: page-header;"
 >
@@ -271,9 +285,50 @@ const headerMenu = _cachedHeaderMenu;
   import initStickyHeader from "/src/scripts/sticky-header.ts";
   import { animate } from "motion";
 
+  function normalizeHeaderThemePath(pathname = "/") {
+    let normalized = String(pathname || "/").trim();
+    if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+    normalized = normalized.replace(/^\/zh(?=\/|$)/, "") || "/";
+    normalized = normalized.replace(/\/+$/, "") || "/";
+    return normalized;
+  }
+
+  function getHeaderThemeForPath(pathname = window.location.pathname) {
+    return normalizeHeaderThemePath(pathname) === "/penthouses"
+      ? "light"
+      : "default";
+  }
+
+  function getPathnameFromHref(href) {
+    if (!href) return window.location.pathname;
+
+    if (
+      href.startsWith("#") ||
+      href.startsWith("mailto:") ||
+      href.startsWith("tel:") ||
+      href.startsWith("javascript:")
+    ) {
+      return window.location.pathname;
+    }
+
+    try {
+      return new URL(href, window.location.href).pathname;
+    } catch {
+      return window.location.pathname;
+    }
+  }
+
+  function syncPersistentHeaderTheme(pathname = window.location.pathname) {
+    const header = document.getElementById("header");
+    const nextTheme = getHeaderThemeForPath(pathname);
+    if (header) header.setAttribute("data-header-theme", nextTheme);
+    return nextTheme;
+  }
+
   function initNav() {
     initStickyHeader();
 
+    const header = document.getElementById("header");
     const toggle = document.querySelector(".nav-toggle");
     const wrapper = document.querySelector(".nav-toggle-wrap") || toggle;
     const modal = document.querySelector("#main-nav[data-nav-modal]");
@@ -281,13 +336,22 @@ const headerMenu = _cachedHeaderMenu;
     const html = document.documentElement;
 
     if (!toggle || !modal) return;
-    const getClosedLogoFill = () =>
-      html.classList.contains("penthouses") ? "var(--white)" : "var(--darkgreen)";
-    const syncLogoState = () => {
+    syncPersistentHeaderTheme();
+    const cancelLogoAnimations = () => {
+      if (!logoSvg || typeof logoSvg.getAnimations !== "function") return;
+      logoSvg.getAnimations().forEach((animation) => animation.cancel());
+    };
+    const getClosedLogoFill = (pathname = window.location.pathname) =>
+      getHeaderThemeForPath(pathname) === "light"
+        ? "var(--white)"
+        : "var(--darkgreen)";
+    const syncLogoState = (pathname = window.location.pathname) => {
       if (!logoSvg) return;
 
+      syncPersistentHeaderTheme(pathname);
+      cancelLogoAnimations();
       const isMenuOpen = modal.classList.contains("open");
-      const closedLogoFill = getClosedLogoFill();
+      const closedLogoFill = getClosedLogoFill(pathname);
       logoSvg.style.setProperty("--logo-fill", isMenuOpen ? "var(--pink)" : closedLogoFill);
       logoSvg.style.setProperty("--bofa-fill", closedLogoFill);
       logoSvg.style.setProperty("--bofa-op", isMenuOpen ? "0" : "1");
@@ -331,6 +395,7 @@ const headerMenu = _cachedHeaderMenu;
       html.classList.add("modal-opening", "modal-open");
       toggle.classList.add("active");
       modal.classList.add("open");
+      cancelLogoAnimations();
 
       if (typeof window.locoScroll !== "undefined") {
         window.locoScroll.stop();
@@ -343,8 +408,9 @@ const headerMenu = _cachedHeaderMenu;
       }
     };
 
-    const closeMenu = () => {
+    const closeMenu = (pathname = window.location.pathname) => {
       clearStates();
+      syncPersistentHeaderTheme(pathname);
       html.classList.add("modal-closing");
       toggle.classList.remove("active");
       modal.classList.remove("open");
@@ -353,7 +419,12 @@ const headerMenu = _cachedHeaderMenu;
       if (ul) ul.classList.remove("sal-animate");
 
       if (logoSvg) {
-        animate(logoSvg, { "--logo-fill": getClosedLogoFill(), "--bofa-op": 1 }, { duration: 0.3 });
+        cancelLogoAnimations();
+        animate(
+          logoSvg,
+          { "--logo-fill": getClosedLogoFill(pathname), "--bofa-op": 1 },
+          { duration: 0.3 }
+        );
       }
 
       if (typeof window.locoScroll !== "undefined") {
@@ -367,7 +438,10 @@ const headerMenu = _cachedHeaderMenu;
     });
 
     modal.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).closest("a")) closeMenu();
+      const link = (e.target as HTMLElement).closest("a");
+      if (!link) return;
+
+      closeMenu(getPathnameFromHref(link.getAttribute("href")));
     });
 
     modal.addEventListener("transitionend", () => {
@@ -379,6 +453,14 @@ const headerMenu = _cachedHeaderMenu;
         html.classList.add("modal-closed");
       }
     });
+
+    document.addEventListener("astro:before-swap", ((event: Event) => {
+      const nextPathname = (event as Event & { newDocument?: Document }).newDocument?.location
+        ?.pathname;
+
+      if (!nextPathname) return;
+      syncLogoState(nextPathname);
+    }) as EventListener);
   }
 
   const bootNav = () => initNav();
@@ -390,6 +472,7 @@ const headerMenu = _cachedHeaderMenu;
   }
 
   document.addEventListener("astro:page-load", initNav);
+  document.addEventListener("astro:after-swap", initNav);
 </script>
 
 
@@ -508,7 +591,7 @@ const headerMenu = _cachedHeaderMenu;
   }
 }
 
-:global(html.penthouses:not(.modal-open):not(.modal-closing)) .header-utility-link {
+:global(html:not(.modal-open):not(.modal-closing) #header[data-header-theme="light"]) .header-utility-link {
   color: var(--white);
 }
 </style>

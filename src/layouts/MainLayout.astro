@@ -233,7 +233,17 @@
 		>
 			window.HW = {};
 			HW.$html = document.documentElement;
-			window.hwSplashActive = initialSplashActive;
+			window.__hwSplashInitialCandidate = initialSplashActive;
+			window.__syncHwSplashActive = () => {
+				const html = document.documentElement;
+				window.hwSplashActive =
+					window.__hwSplashInitialCandidate === true &&
+					html.classList.contains("home") &&
+					html.classList.contains("first-load") &&
+					html.classList.contains("splash-scroll-lock");
+				return window.hwSplashActive;
+			};
+			window.__syncHwSplashActive();
 		</script>
 
 	<script is:inline>
@@ -815,11 +825,19 @@
 		})();
 	</script>
 
-	<script>
-		document.addEventListener("astro:before-swap", (ev) => {
-		ev.newDocument.documentElement.classList.remove("first-load");
-		});
-	</script>
+		<script>
+			document.addEventListener("astro:before-swap", (ev) => {
+			ev.newDocument.documentElement.classList.remove("first-load");
+			ev.newDocument.documentElement.classList.remove("splash-scroll-lock");
+			ev.newDocument.documentElement.classList.remove("splash-dismissed");
+			window.__hwSplashInitialCandidate = false;
+			window.hwSplashActive = false;
+			});
+
+			document.addEventListener("astro:after-swap", () => {
+			window.__syncHwSplashActive?.();
+			});
+		</script>
 
 	<script>
 	import LocomotiveScroll from "locomotive-scroll";

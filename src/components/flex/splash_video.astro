@@ -180,7 +180,10 @@ const videoClasses = [
 ---
 
 <script is:inline>
-  if (HW.$html.classList.contains("first-load")) {
+  if (
+    HW.$html.classList.contains("first-load") &&
+    HW.$html.classList.contains("splash-scroll-lock")
+  ) {
     window.hwSplashActive = true;
   }
 

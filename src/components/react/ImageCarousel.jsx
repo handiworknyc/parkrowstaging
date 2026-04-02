@@ -275,6 +275,12 @@ function getItemKey(item) {
   });
 }
 
+function getSlideKey(image, index) {
+  const idPart = image?.id ?? "image";
+  const srcPart = image?.src || image?.lightboxSrc || image?.full || "no-src";
+  return `${idPart}:${srcPart}:${index}`;
+}
+
 function buildContentItem({
   title = "",
   text = "",
@@ -1101,7 +1107,7 @@ export default function ImageCarousel({
           <CarouselContent className="-ml-5">
             {images.map((image, index) => (
               <CarouselItem
-                key={image.id}
+                key={getSlideKey(image, index)}
                 className="carousel-slide-item pl-5 basis-[85%] min-[1400px]:basis-[60%] min-[2200px]:basis-[40%]"
               >
                 <Slide

@@ -13,6 +13,32 @@ const { prevLayout, ...props } = Astro.props;
 // ---------------------------------------------
 const video = vars.video?.[0] || null;
 
+function getPositiveNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+const desktopPoster = video?.yt_img && typeof video.yt_img === "object"
+  ? video.yt_img
+  : null;
+const mobilePoster = video?.yt_img_mob && typeof video.yt_img_mob === "object"
+  ? video.yt_img_mob
+  : null;
+const naturalAspectRequested =
+  vars.natural_aspect === true || video?.natural_aspect === true;
+const naturalAspectWidth =
+  getPositiveNumber(desktopPoster?.width) ?? getPositiveNumber(mobilePoster?.width);
+const naturalAspectHeight =
+  getPositiveNumber(desktopPoster?.height) ?? getPositiveNumber(mobilePoster?.height);
+const naturalAspectRatio =
+  naturalAspectWidth && naturalAspectHeight
+    ? `${naturalAspectWidth} / ${naturalAspectHeight}`
+    : null;
+const naturalAspectEnabled = naturalAspectRequested && !!naturalAspectRatio;
+const naturalAspectStyle = naturalAspectEnabled
+  ? `--natural-aspect-ratio: ${naturalAspectRatio};`
+  : undefined;
+
 // ---------------------------------------------
 // 2. TEXT CONTENT
 // ---------------------------------------------
@@ -68,7 +94,17 @@ const bleedClass = isRight ? "bleed-right" : "bleed-left";
       "txt-img-column min-[1400px]:col-8 min-[1240px]:col-10 max-[1240px]:col-12 max-[1400px]:mb-16",
       bleedClass,
     ]}>
-      <div class="hw-bg-vid hw-player-parent img-load-par pr full-bleed-img-inner">
+      <div
+        class:list={[
+          "hw-bg-vid",
+          "hw-player-parent",
+          "img-load-par",
+          "pr",
+          "full-bleed-img-inner",
+          naturalAspectEnabled && "full-bleed-natural-aspect",
+        ]}
+        style={naturalAspectStyle}
+      >
         {video && <CFVideo video={[video]} />}
       </div>
 
