@@ -63,7 +63,7 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
       <div class="footer-bottom justify-start flex-wrap pt-7">
 		
-        <a href="https://bosadevleopment.com">
+        <a href="https://bosadevelopment.com">
           <img src="/images/bosa-logo.svg" loading="lazy" alt="Bosa Development Logo" />
         </a>
 
@@ -364,13 +364,18 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     if (!footer) return;
 
     const overlay = footer.querySelector("#footer-cookie-overlay");
-    const openButtons = footer.querySelectorAll("[data-cookie-settings-open]");
     const consentButtons = footer.querySelectorAll("[data-cookie-consent]");
     const acceptButton = footer.querySelector('[data-cookie-consent="accepted"]');
+    const triggerSelector = "[data-cookie-settings-open], .cookie-toggle";
 
     if (!overlay || consentButtons.length === 0) return;
 
     const consentApi = window.ParkRowConsent;
+    const getTriggerButtons = () =>
+      Array.from(document.querySelectorAll(triggerSelector)).filter(
+        (button) => button instanceof HTMLElement
+      );
+
     const hasStoredConsent = () => {
       const value = consentApi?.read?.();
       return value === "accepted" || value === "rejected";
@@ -394,10 +399,19 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       footer._cookieSplashDismissHandler = null;
     };
 
+    const syncTriggerButtons = (isOpen) => {
+      getTriggerButtons().forEach((button) => {
+        button.setAttribute("aria-controls", "footer-cookie-overlay");
+        button.setAttribute("aria-haspopup", "dialog");
+        button.setAttribute("aria-expanded", String(isOpen));
+      });
+    };
+
     const setOverlayOpen = (isOpen, trigger) => {
       document.documentElement.classList.toggle("cookie-settings-open", isOpen);
       overlay.classList.toggle("is-active", isOpen);
       overlay.setAttribute("aria-hidden", String(!isOpen));
+      syncTriggerButtons(isOpen);
 
       if (isOpen) {
         footer._cookieSettingsTrigger = trigger || document.activeElement;
@@ -405,10 +419,43 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
         return;
       }
 
-      const lastTrigger = footer._cookieSettingsTrigger;
+      const lastTrigger = trigger || footer._cookieSettingsTrigger;
       if (lastTrigger instanceof HTMLElement) {
         lastTrigger.focus();
       }
+    };
+
+    const openOverlay = (trigger) => {
+      clearPendingAutoOpen();
+      setOverlayOpen(true, trigger);
+    };
+
+    const closeOverlay = (trigger) => {
+      clearPendingAutoOpen();
+
+      if (trigger instanceof HTMLElement) {
+        footer._cookieSettingsTrigger = trigger;
+      }
+
+      setOverlayOpen(false);
+    };
+
+    const toggleOverlay = (trigger) => {
+      if (overlay.classList.contains("is-active")) {
+        closeOverlay(trigger);
+        return;
+      }
+
+      openOverlay(trigger);
+    };
+
+    window.ParkRowCookieSettings = {
+      open: openOverlay,
+      close: closeOverlay,
+      toggle: toggleOverlay,
+      isOpen() {
+        return overlay.classList.contains("is-active");
+      },
     };
 
     const maybeAutoOpen = () => {
@@ -436,17 +483,19 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     if (footer.dataset.cookieSettingsReady !== "true") {
       footer.dataset.cookieSettingsReady = "true";
 
-      openButtons.forEach((button) => {
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          clearPendingAutoOpen();
-          setOverlayOpen(true, button);
-        });
+      document.addEventListener("click", (event) => {
+        const trigger =
+          event.target instanceof Element ? event.target.closest(triggerSelector) : null;
+
+        if (!(trigger instanceof HTMLElement)) return;
+
+        event.preventDefault();
+        toggleOverlay(trigger);
       });
 
       overlay.addEventListener("click", (event) => {
         if (event.target === overlay) {
-          setOverlayOpen(false);
+          closeOverlay();
         }
       });
 
@@ -457,17 +506,18 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
           clearPendingAutoOpen();
           consentApi.write(value);
-          setOverlayOpen(false);
+          closeOverlay();
         });
       });
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && overlay.classList.contains("is-active")) {
-          setOverlayOpen(false);
+          closeOverlay();
         }
       });
     }
 
+    syncTriggerButtons(overlay.classList.contains("is-active"));
     maybeAutoOpen();
   }
 

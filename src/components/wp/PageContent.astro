@@ -109,24 +109,47 @@ function normalizeContentHtml(rawHtml: string): string {
 
   $("table").each((_, table) => {
     const tableElement = $(table);
+    const tableWrap = tableElement.parent(".post-content-fallback__table-wrap");
+    const hasStructuredHeader = tableElement.children("thead").length > 0;
 
-    if (tableElement.parent(".post-content-fallback__table-wrap").length) {
+    if (tableWrap.length) {
+      if (hasStructuredHeader) {
+        tableWrap.addClass("post-content-fallback__table-wrap--structured");
+      }
+
       return;
     }
 
-    tableElement.wrap('<div class="post-content-fallback__table-wrap"></div>');
+    const wrapperClasses = ["post-content-fallback__table-wrap"];
+
+    if (hasStructuredHeader) {
+      wrapperClasses.push("post-content-fallback__table-wrap--structured");
+    }
+
+    tableElement.wrap(`<div class="${wrapperClasses.join(" ")}"></div>`);
   });
 
   return $.root().html() || normalized;
 }
 
 const contentHtml = normalizeContentHtml(html);
+const normalizedPathname = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isLegalPage =
+  normalizedPathname === "/privacy-policy" ||
+  normalizedPathname === "/terms-of-use" ||
+  normalizedPathname === "/zh/privacy-policy" ||
+  normalizedPathname === "/zh/terms-of-use";
 ---
 
 {contentHtml ? (
   <section class="hw-contain pt-[calc(var(--headerHeight)+4rem)] pb-24 lg:pb-32">
     <article
-      class="post-content post-content-fallback max-w-[60rem] mx-auto text-[1.4rem] leading-[2rem]"
+      class:list={[
+        "post-content post-content-fallback max-w-[60rem] mx-auto text-[1.4rem] leading-[2rem]",
+        {
+          "post-content-fallback--legal": isLegalPage,
+        },
+      ]}
       set:html={contentHtml}
     />
   </section>
@@ -170,6 +193,37 @@ const contentHtml = normalizeContentHtml(html);
     text-align: center;
   }
 
+  .post-content-fallback--legal :global(a) {
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.16em;
+    transition: background-color 180ms ease;
+  }
+
+  .post-content-fallback--legal :global(button.cookie-toggle) {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.16em;
+    transition: background-color 180ms ease;
+  }
+
+  .post-content-fallback--legal :global(:is(a, button.cookie-toggle):is(:hover, :focus-visible)) {
+    background-color: var(--pink);
+  }
+
+  .post-content-fallback--legal :global(button.cookie-toggle:focus-visible) {
+    outline: 2px solid currentColor;
+    outline-offset: 0.18em;
+  }
+
   .post-content-fallback :global(.post-content-fallback__table-wrap) {
     --table-breakout: clamp(0rem, 8vw, 10rem);
     --table-width: min(
@@ -205,7 +259,13 @@ const contentHtml = normalizeContentHtml(html);
     border-bottom: 1px solid rgba(8, 32, 19, 0.12);
   }
 
-  .post-content-fallback :global(.post-content-fallback__table-wrap tr:first-child > :is(td, th)) {
+  .post-content-fallback
+    :global(
+      .post-content-fallback__table-wrap:not(.post-content-fallback__table-wrap--structured)
+        tbody
+        > tr:first-child
+        > :is(td, th)
+    ) {
     background: var(--darkgreen);
     color: #fff;
     font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
@@ -214,16 +274,39 @@ const contentHtml = normalizeContentHtml(html);
     text-transform: uppercase;
   }
 
-  .post-content-fallback :global(.post-content-fallback__table-wrap tr:nth-child(2) > :is(td, th)) {
+  .post-content-fallback
+    :global(
+      .post-content-fallback__table-wrap:not(.post-content-fallback__table-wrap--structured)
+        tbody
+        > tr:nth-child(2)
+        > :is(td, th)
+    ) {
     background: rgb(241 242 242 / 20%);
     font-weight: 600;
+  }
+
+  .post-content-fallback
+    :global(.post-content-fallback__table-wrap--structured thead > tr:first-child > :is(td, th)) {
+    background: var(--darkgreen);
+    color: #fff;
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .post-content-fallback
+    :global(.post-content-fallback__table-wrap--structured tbody > tr:nth-child(even) > :is(td, th)) {
+    background: rgb(241 242 242 / 20%);
   }
 
   .post-content-fallback :global(.post-content-fallback__table-wrap tr > :last-child) {
     border-right: 0;
   }
 
-  .post-content-fallback :global(.post-content-fallback__table-wrap tr:last-child > :is(td, th)) {
+  .post-content-fallback
+    :global(.post-content-fallback__table-wrap :is(tbody, tfoot) > tr:last-child > :is(td, th)) {
     border-bottom: 0;
   }
 
