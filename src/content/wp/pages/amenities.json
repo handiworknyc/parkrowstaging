@@ -1711,9 +1711,9 @@
       "content": [
         {
           "title": "Additional Amenities & Services",
-          "text": "<p>Concierge services, secure parking, and thoughtful conveniences make every day seamless, so residents can focus on what truly matters.</p>\n",
+          "text": "<p>Concierge services, an attended lobby, and thoughtful conveniences make every day seamless, so residents can focus on what truly matters.</p>\n",
           "two_col_list": true,
-          "list": "<h4>Lobby Lounge</h4>\r\n24-hour attended lobby\r\nLounge seating\r\nCustom marble clad fireplace\r\nDouble height dramatic marble feature wall\r\nMail room with self-service package lockers\r\nPackage delivery acceptance service\r\n\r\n<h4>Library</h4>\r\nIntegrated seating and book collection overlooking double-height lobby\r\nAdjacent to arched art corridor with direct access to landscaped plaza and Bellevue Downtown Park\r\n\r\n<h4>Golf Simulator Lounge</h4>\r\nGolf simulation trainer\r\nRich wood and stone beverage area with sink and fridge and lounge seating\r\n\r\n<h4>Bike Tune-Up & Storage</h4>\r\nStorage rooms equipped with bike racks\r\nTune-up and repair station\r\nBike wash\r\n\r\n<h4>Pet Spa</h4>\r\nStainless steel pet washing station equipped with dryer and utility sink\r\n\r\n<h4>Pet Retreat</h4>\r\nPartially covered pet play area with seating\r\n\r\n<h4>Car Wash</h4>\r\nFull-service cleaning with powerful stainless-steel vacuum, high-foaming shampoo and fragrance station, and a rugged, all-in-one self-service wash system\r\n<h4>Extra Touches:</h4>\r\nControlled building entry\r\nDestination elevators with restricted access control\r\nSelf-service package lockers\r\nGated resident parking\r\nElectric vehicle charging option for individual residences\r\nCommunity electric vehicle charging station\r\nHigh-speed wifi throughout building and amenity spaces\r\nOnsite resident storage",
+          "list": "<h4>Lobby Lounge</h4>\r\n24-hour attended lobby with lounge seating\r\nCustom marble clad fireplace\r\nDramatic double height dramatic marble feature wall\r\nMail room with self-service package lockers\r\nPackage delivery acceptance service\r\n\r\n<h4>Library</h4>\r\nIntegrated seating and book collection overlooking double-height lobby\r\nAdjacent to arched art corridor with direct access to landscaped plaza and Bellevue Downtown Park\r\n\r\n<h4>Golf Simulator Lounge</h4>\r\nGolf simulation trainer\r\nRich wood and stone beverage area with sink and fridge and lounge seating\r\n\r\n<h4>Bike Tune-Up & Storage</h4>\r\nStorage rooms equipped with bike racks\r\nTune-up and repair station\r\nBike wash\r\n\r\n<h4>Pet Spa</h4>\r\nStainless steel pet washing station equipped with dryer and utility sink\r\n\r\n<h4>Pet Retreat</h4>\r\nPartially covered pet play area with seating\r\n\r\n<h4>Car Wash</h4>\r\nFull-service cleaning with powerful stainless-steel vacuum, high-foaming shampoo and fragrance station, and a rugged, all-in-one self-service wash system\r\n<h4>Extra Touches:</h4>\r\nControlled building entry\r\nDestination elevators with restricted access control\r\nSelf-service package lockers\r\nGated resident parking\r\nElectric vehicle charging option for individual residences\r\nCommunity electric vehicle charging station\r\nHigh-speed wifi throughout building and amenity spaces\r\nOnsite resident storage",
           "title_chinese": "",
           "text_chinese": "",
           "list_chinese": ""
@@ -1722,7 +1722,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-06 22:22:13",
+  "_syncedAt": "2026-04-06 22:25:24",
   "seo": {
     "title": "Amenities - Park Row Bellevue",
     "description": "",
