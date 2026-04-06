@@ -3119,7 +3119,7 @@
           "image": {
             "ID": 236,
             "id": 236,
-            "title": "RECENT SPACES",
+            "title": "",
             "filename": "0194_Park_Row_residence_typ_kitchen_finish_A-SRGB-Medium.jpg",
             "filesize": 1142394,
             "url": "/img-cache/0194_park_row_residence_typ_kitchen_finish_a-srgb-medium-f3189ec0.jpg.webp",
@@ -3127,12 +3127,12 @@
             "alt": "",
             "author": "2",
             "description": "",
-            "caption": "RECENT SPACES",
+            "caption": "",
             "name": "recent-spaces-23",
             "status": "inherit",
             "uploaded_to": 35,
             "date": "2026-03-18 03:09:18",
-            "modified": "2026-03-18 03:09:18",
+            "modified": "2026-04-06 21:31:30",
             "menu_order": 0,
             "mime_type": "image/jpeg",
             "type": "image",
@@ -4233,7 +4233,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-06 21:20:19",
+  "_syncedAt": "2026-04-06 21:43:07",
   "seo": {
     "title": "Gallery - Park Row Bellevue",
     "description": "",

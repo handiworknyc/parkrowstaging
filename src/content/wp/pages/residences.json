@@ -356,7 +356,7 @@
       "align": "right",
       "title": "\"We were inspired by the natural landscape of Bellevue, the proximity to the park and the views of the lakes near by. This theme is present throughout the materiality and color palette found in the building.\"",
       "title_chinese": "",
-      "text": "<p> — OTJ</p>\n",
+      "text": "",
       "text_chinese": "",
       "list": "",
       "list_chinese": "",
@@ -551,7 +551,7 @@
           "title": "",
           "text": "",
           "two_col_list": true,
-          "list": "Two designer-selected finish palettes\r\nSolid core interior doors and 7” hardwood flooring throughout the residences\r\nExpansive windows with motorized window treatments and bedroom blackout shades in all residences\r\nWalk-in closets in most residences\r\nPrivate tiled balconies or paved decks with distinctive options for indoor/outdoor living\r\nProvisioned for high-speed fiber optics\r\nDual-port USB in kitchen and primary bedroom\r\nEnergy-efficient LED lighting throughout the residence\r\nIn-residence laundry closet with full-capacity front-loading Electrolux washer and dryer\r\nOnsite storage per residence\r\n",
+          "list": "Two designer-selected finish palettes\r\nSolid core interior doors and 7” hardwood flooring throughout the residences\r\nExpansive windows with motorized window treatments in all residences\r\nWalk-in closets in most residences\r\nPrivate tiled balconies or paved decks with distinctive options for indoor/outdoor living\r\nProvisioned for high-speed fiber optics\r\nDual-port USB in kitchen and primary bedroom\r\nEnergy-efficient LED lighting throughout the residence\r\nIn-residence laundry closet with full-capacity front-loading Electrolux washer and dryer\r\nOnsite storage per residence\r\n",
           "title_chinese": "",
           "text_chinese": "",
           "list_chinese": ""
@@ -580,7 +580,7 @@
           "image": {
             "ID": 236,
             "id": 236,
-            "title": "RECENT SPACES",
+            "title": "",
             "filename": "0194_Park_Row_residence_typ_kitchen_finish_A-SRGB-Medium.jpg",
             "filesize": 1142394,
             "url": "/img-cache/0194_park_row_residence_typ_kitchen_finish_a-srgb-medium-f3189ec0.jpg.webp",
@@ -588,12 +588,12 @@
             "alt": "",
             "author": "2",
             "description": "",
-            "caption": "RECENT SPACES",
+            "caption": "",
             "name": "recent-spaces-23",
             "status": "inherit",
             "uploaded_to": 35,
             "date": "2026-03-18 03:09:18",
-            "modified": "2026-03-18 03:09:18",
+            "modified": "2026-04-06 21:31:30",
             "menu_order": 0,
             "mime_type": "image/jpeg",
             "type": "image",
@@ -1714,7 +1714,7 @@
       "content": [
         {
           "title": "Fixtures & Fittings by Dornbracht",
-          "text": "<p>&#8211; Distinctive dark chrome finish with a sleek, contemporary appearance<br />\n&#8211; German-engineered craftsmanship known for precision and durability<br />\n&#8211; Thoughtfully designed controls for intuitive, luxurious water flow<br />\n&#8211; Timeless design that complements modern and architectural interiors</p>\n",
+          "text": "",
           "two_col_list": false,
           "wide_list_columns": false,
           "list": "",
@@ -1727,7 +1727,7 @@
           "text": "",
           "two_col_list": false,
           "wide_list_columns": false,
-          "list": "Custom designed chef-par kitchens\r\nPolished quartz countertops and backsplash \r\nCustom designed quartz curved island with a convex detail \r\nEuropean-inspired wood veneer cabinets with integrated pulls \r\nUndermount LED cabinet lighting for workspace illumination\r\nSoft-close drawers offering deep utility storage, built-in flatware and utensil organizers, and a convenient docking drawer with dual-port USB\r\nPolished dark chrome Dornbracht single lever faucet with pull-down spray and integrated soap dispenser \r\n",
+          "list": "Distinctive dark chrome finish with a sleek, contemporary appearance\r\nGerman-engineered craftsmanship known for precision and durability\r\nThoughtfully designed controls for intuitive, luxurious water flow\r\nTimeless design that complements modern and architectural interiors",
           "title_chinese": "",
           "text_chinese": "",
           "list_chinese": ""
@@ -2451,7 +2451,7 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "caption": "Secondary Bathroom Detail",
+          "caption": "Secondary Bathroom",
           "slide_content": false
         },
         {
@@ -2587,7 +2587,7 @@
               "gform-image-choice-lg-height": 480
             }
           },
-          "caption": "Primary Bathroom Detail",
+          "caption": "Primary Bathroom",
           "slide_content": [
             {
               "title": "",
@@ -2629,7 +2629,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-06 21:20:22",
+  "_syncedAt": "2026-04-06 21:43:11",
   "seo": {
     "title": "Residences - Park Row Bellevue",
     "description": "",
