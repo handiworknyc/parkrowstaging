@@ -364,6 +364,11 @@
       "placeholder": "",
       "choices": [
         {
+          "text": "United States",
+          "value": "United States",
+          "isSelected": false
+        },
+        {
           "text": "Afghanistan",
           "value": "Afghanistan",
           "isSelected": false
@@ -1539,11 +1544,6 @@
           "isSelected": false
         },
         {
-          "text": "United States",
-          "value": "United States",
-          "isSelected": false
-        },
-        {
           "text": "Uruguay",
           "value": "Uruguay",
           "isSelected": false
@@ -1614,7 +1614,7 @@
       "id": 10,
       "type": "select",
       "label": "How did you hear about us?",
-      "isRequired": false,
+      "isRequired": true,
       "placeholder": "",
       "choices": [
         {
@@ -1758,7 +1758,7 @@
       "id": 13,
       "type": "checkbox",
       "label": "Email updates",
-      "isRequired": false,
+      "isRequired": true,
       "placeholder": "",
       "choices": [
         {
