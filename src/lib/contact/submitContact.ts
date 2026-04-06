@@ -1,12 +1,27 @@
 const EDGEWISE_GRAPHQL_URL = 'https://api.edgewise.io/graphql';
 
-const EDGEWISE_CREATE_LEAD_MUTATION = `
-  mutation CreateLead($input: CreateLeadInput!) {
-    createLead(input: $input) {
+const EDGEWISE_CONTACT_PROJECT_MUTATION = `
+  mutation ContactProject($input: ContactProjectInput!) {
+    contactProject(input: $input) {
       id
+      leadId
     }
   }
 `;
+
+const EDGEWISE_PROJECT_LEAD_SOURCES_QUERY = `
+  query ProjectLeadSources($id: ID!) {
+    project(id: $id) {
+      id
+      leadSources {
+        id
+        name
+      }
+    }
+  }
+`;
+
+const EDGEWISE_LEAD_SOURCE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 type SubmissionFields = Record<string, unknown>;
 
@@ -29,12 +44,13 @@ type EdgewiseSkipReason =
 
 type EdgewiseFailureReason =
   | 'graphql_error'
-  | 'no_lead_id'
+  | 'no_contact_message_id'
   | 'non_json_response'
   | 'request_failed';
 
 type EdgewiseDebugInfo = {
   attempted: boolean;
+  contactMessageId?: string;
   enabled: boolean;
   errors?: Array<Record<string, unknown>>;
   errorMessage?: string;
@@ -49,6 +65,19 @@ type EdgewiseDebugInfo = {
   success: boolean;
   tokenConfigured: boolean;
 };
+
+type EdgewiseLeadSource = {
+  id: string;
+  name: string;
+};
+
+const edgewiseLeadSourceCache = new Map<
+  string,
+  {
+    expiresAt: number;
+    sources: EdgewiseLeadSource[];
+  }
+>();
 
 function logResponse(
   service: string,
@@ -215,7 +244,8 @@ function summarizeDebugString(value: string, path: string[]): string {
     joined === 'metadata.workingWithAgent' ||
     key === 'countryCode' ||
     key === 'projectId' ||
-    key === 'source'
+    key === 'source' ||
+    key === 'sourceId'
   ) {
     return value;
   }
@@ -327,12 +357,106 @@ function appendEdgewiseDebug(
   }
 }
 
-function buildEdgewiseInput(fields: SubmissionFields) {
+function normalizeEdgewiseSourceName(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+async function fetchEdgewiseLeadSources({
+  projectId,
+  token,
+}: {
+  projectId: string;
+  token: string;
+}): Promise<EdgewiseLeadSource[]> {
+  const cached = edgewiseLeadSourceCache.get(projectId);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.sources;
+  }
+
+  const response = await fetch(EDGEWISE_GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: EDGEWISE_PROJECT_LEAD_SOURCES_QUERY,
+      variables: { id: projectId },
+    }),
+    cache: 'no-store',
+  });
+
+  const text = await response.text();
+  let data: any = null;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('Edgewise lead sources query returned non-JSON response');
+  }
+
+  if (!response.ok || data?.errors?.length) {
+    throw new Error(
+      `Edgewise lead sources query failed: ${truncate(text, 300)}`
+    );
+  }
+
+  const sources = Array.isArray(data?.data?.project?.leadSources)
+    ? data.data.project.leadSources
+        .map((source: any) => ({
+          id: String(source?.id ?? '').trim(),
+          name: String(source?.name ?? '').trim(),
+        }))
+        .filter((source: EdgewiseLeadSource) => source.id && source.name)
+    : [];
+
+  edgewiseLeadSourceCache.set(projectId, {
+    expiresAt: Date.now() + EDGEWISE_LEAD_SOURCE_CACHE_TTL_MS,
+    sources,
+  });
+
+  return sources;
+}
+
+async function resolveEdgewiseSourceId({
+  projectId,
+  sourceLabel,
+  token,
+}: {
+  projectId: string;
+  sourceLabel: string;
+  token: string;
+}): Promise<string | undefined> {
+  const envOverride = getEnv('EDGEWISE_SOURCE');
+
+  if (envOverride) {
+    return envOverride;
+  }
+
+  if (!projectId || !sourceLabel || !token) {
+    return undefined;
+  }
+
+  const sources = await fetchEdgewiseLeadSources({ projectId, token });
+  const normalized = normalizeEdgewiseSourceName(sourceLabel);
+  const match = sources.find(
+    (source) => normalizeEdgewiseSourceName(source.name) === normalized
+  );
+
+  return match?.id || undefined;
+}
+
+function buildEdgewiseInput(
+  fields: SubmissionFields,
+  options?: {
+    sourceId?: string;
+  }
+) {
   const firstName = readField(fields, 'input_1');
   const lastName = readField(fields, 'input_3');
   const email = readField(fields, 'input_4');
   const phone = readField(fields, 'input_6');
-  const source = readField(fields, 'input_10');
   const isAgent = readYesNo(fields, 'input_11');
   const isRepresentedAnswer = readYesNo(fields, 'input_12');
   const company = readField(fields, 'input_19');
@@ -363,12 +487,12 @@ function buildEdgewiseInput(fields: SubmissionFields) {
     email,
     phone,
     address: edgewiseAddress,
-    source: source || undefined,
+    sourceId: options?.sourceId,
     company: company || undefined,
     agent,
+    follow: readCheckbox(fields, 'input_13'),
     isAgent,
     isRepresented,
-    subscribed: readCheckbox(fields, 'input_13'),
   });
 }
 
@@ -463,7 +587,25 @@ async function submitToEdgewise({
   debugEnabled?: boolean;
 }): Promise<EdgewiseDebugInfo> {
   const token = getEdgewiseToken();
-  const input = buildEdgewiseInput(fields);
+  const projectId = getEdgewiseProjectId();
+  const sourceLabel = readField(fields, 'input_10');
+  let sourceId: string | undefined;
+
+  try {
+    sourceId = await resolveEdgewiseSourceId({
+      projectId,
+      sourceLabel,
+      token,
+    });
+  } catch (error) {
+    console.warn('[contact submit] edgewise source lookup failed', {
+      error,
+      projectId,
+      sourceLabel,
+    });
+  }
+
+  const input = buildEdgewiseInput(fields, { sourceId });
   const debug = buildEdgewiseDebugInfo(fields, input, {
     enabled: !!debugEnabled,
     projectIdConfigured: !!input.projectId,
@@ -511,7 +653,7 @@ async function submitToEdgewise({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        query: EDGEWISE_CREATE_LEAD_MUTATION,
+        query: EDGEWISE_CONTACT_PROJECT_MUTATION,
         variables: { input },
       }),
       cache: 'no-store',
@@ -553,10 +695,10 @@ async function submitToEdgewise({
       return debug;
     }
 
-    if (!data?.data?.createLead?.id) {
-      debug.failureReason = 'no_lead_id';
+    if (!data?.data?.contactProject?.id) {
+      debug.failureReason = 'no_contact_message_id';
       console.error(
-        '[contact submit] edgewise GraphQL returned no lead id',
+        '[contact submit] edgewise GraphQL returned no contact message id',
         {
           data,
           debug,
@@ -565,11 +707,16 @@ async function submitToEdgewise({
       return debug;
     }
 
-    debug.leadId = data.data.createLead.id;
+    debug.contactMessageId = data.data.contactProject.id;
+    debug.leadId =
+      typeof data.data.contactProject.leadId === 'string'
+        ? data.data.contactProject.leadId
+        : undefined;
     debug.success = true;
-    console.info('[contact submit] edgewise lead created', {
+    console.info('[contact submit] edgewise contact project created', {
       debug,
-      id: data.data.createLead.id,
+      id: data.data.contactProject.id,
+      leadId: data.data.contactProject.leadId,
     });
   } catch (error) {
     debug.errorMessage =
