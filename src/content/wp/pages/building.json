@@ -284,8 +284,8 @@
               "gform-image-choice-lg-height": 600
             }
           },
-          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/2ec58dafa003ca7d261845eb62f48ac3/manifest/video.m3u8",
-          "cf_stream_mob": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/4b09203c98b2d351bb284fe6a5bb93ca/manifest/video.m3u8",
+          "cf_stream_video": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/37e2534c7441fceb49f9b0e7446d697d/manifest/video.m3u8",
+          "cf_stream_mob": "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com/37e2534c7441fceb49f9b0e7446d697d/manifest/video.m3u8",
           "mob_img_breakpoint": "",
           "natural_aspect": false,
           "show_controls": false,
@@ -316,7 +316,7 @@
       "layout_settings": {
         "section_title": "Architecture<br />\r\nshaped by place",
         "section_h2": "Each Line and Surface Expresses Permanence and Poise<br />\r\n",
-        "section_text": "<p>Envisioned by Bosa Development and designed in collaboration with Amanat Architects, Park Row’s architecture draws from the colors, textures, and contours of the Pacific Northwest with terraced forms, refined materiality, and a curtain wall of glass that frames the surrounding park and city. The result is an architecture that dissolves boundaries between indoors and out, bringing balance and nature into everyday life.</p>\n",
+        "section_text": "<p>Envisioned by Bosa Development and designed in collaboration with Amanat Architects, Park Row’s architecture draws from the colors, textures, and contours of the Pacific Northwest with terraced forms, refined materiality, and a curtain wall of glass that frames the surrounding park and city. The result is architecture that dissolves boundaries between indoors and out, bringing balance and nature into everyday life.</p>\n",
         "green_bg": false,
         "section_text_below": false,
         "chinese": null,
@@ -826,7 +826,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-06 21:07:49",
+  "_syncedAt": "2026-04-06 21:16:19",
   "seo": {
     "title": "Building - Park Row Bellevue",
     "description": "",
