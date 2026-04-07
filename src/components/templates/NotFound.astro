@@ -1,0 +1,26 @@
+---
+import BaseLayout from "@/layouts/MainLayout.astro";
+import PageTitle from "@/components/flex/page_title.astro";
+
+interface Props {
+  lang?: "en" | "zh";
+}
+
+const { lang = "en" } = Astro.props as Props;
+const homeHref = lang === "zh" ? "/zh/" : "/";
+---
+
+<BaseLayout
+  title="Page not found"
+  description="We couldn't find the page you're looking for."
+  lang={lang}
+  noIndex
+>
+  <div class="vhUnits100 jsVhUnits100 flex-wrap align-items-center w100">
+    <PageTitle
+      h1="Page not found"
+      description={`We couldn't find the page you're looking for. Please return to the <a href="${homeHref}">home page</a>.`}
+      smaller_text
+    />
+  </div>
+</BaseLayout>

@@ -6,6 +6,7 @@ import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
 import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
 import PageContent from "../components/wp/PageContent.astro";
+import NotFound from "../components/templates/NotFound.astro";
 
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../lib/wp/lcp";
@@ -74,5 +75,5 @@ if (page?.layouts) {
     )}
   </BaseLayout>
 ) : (
-  "Page Not found"
+  <NotFound lang={lang} />
 )}
