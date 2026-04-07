@@ -13,6 +13,7 @@ const vars = { ...Astro.props };
 const rawImages = Array.isArray(vars.images) ? vars.images : [];
 const isSingle = rawImages.length === 1;
 const renderImages = rawImages.slice(0, 4);
+const SINGLE_IMAGE_MOBILE_POSTER_MAX_WIDTH = 767;
 
 // 2. Calculate Split Index
 // If we have 2 items, split at 1 (Middle).
@@ -108,6 +109,15 @@ const mobileBleedClass =
     ]}>
         {renderImages.map((img, index) => {
           const video = img.video?.[0];
+          const hasMobilePoster =
+            video?.yt_img_mob && typeof video.yt_img_mob === "object";
+          const curvyVideo =
+            isSingle && hasMobilePoster
+              ? {
+                  ...video,
+                  mob_img_breakpoint: SINGLE_IMAGE_MOBILE_POSTER_MAX_WIDTH,
+                }
+              : video;
           
           // ✅ UNIVERSAL SPLIT CHECK
           const showMobileContent = useMobileSplit && index === splitIndex;
@@ -128,9 +138,10 @@ const mobileBleedClass =
                 <div class={`grid-item ${spanClass}`}>
                   <div class="hw-bg-vid img-load-par pr max-[759px]:h-[12rem]">
                     <CFVideo 
-                      video={[video]} 
+                      video={[curvyVideo]} 
                       usePosterSrcSet={false} 
                       posterForceSize={pSize} 
+                      enableResponsivePoster={isSingle && hasMobilePoster}
                     />
                   </div>
                 </div>
