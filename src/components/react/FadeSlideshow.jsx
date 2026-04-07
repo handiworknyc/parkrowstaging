@@ -5,7 +5,9 @@ import SlideNavigation from "../ui/SlideNavigation";
 const MOBILE_BLUR_MEDIA_QUERY =
   "(max-width: 768px), (hover: none) and (pointer: coarse)";
 const SLIDE_EXIT_DURATION_SECONDS = 4;
+const MOBILE_CROSSFADE_DURATION_SECONDS = 1.35;
 const SLIDE_TRANSITION_EASE = [0.19, 1, 0.32, 1];
+const MOBILE_CROSSFADE_EASE = [0.4, 0, 0.2, 1];
 const CUBIC_BEZ_EASE = [0.36, 0.01, 0.1, 1.01];
 const SECTION_COPY_FADE_IN_DURATION_SECONDS = 1.1;
 const SECTION_COPY_FADE_IN_DELAY_SECONDS = 0.2;
@@ -60,6 +62,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const slideshowTouchRef = useRef(null);
   const swipeStartRef = useRef(null);
   const swipeCurrentRef = useRef(null);
+  const swipeTransitionLockRef = useRef(false);
   const transitionCounterRef = useRef(0);
 
   useEffect(() => {
@@ -217,7 +220,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
     clearSwipeGesture();
 
-    if (!start || !end || slidesWithImageProps.length <= 1) {
+    if (!start || !end || slidesWithImageProps.length <= 1 || swipeTransitionLockRef.current || exitingSlides.length > 0) {
       return;
     }
 
@@ -231,12 +234,14 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
     }
 
     if (deltaX < 0) {
+      swipeTransitionLockRef.current = true;
       handleNext();
       return;
     }
 
+    swipeTransitionLockRef.current = true;
     handlePrev();
-  }, [clearSwipeGesture, handleNext, handlePrev, slidesWithImageProps.length]);
+  }, [clearSwipeGesture, exitingSlides.length, handleNext, handlePrev, slidesWithImageProps.length]);
 
   useEffect(() => {
     const slideshowNode = slideshowTouchRef.current;
@@ -470,8 +475,8 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         zIndex: 3,
         opacity: 0,
         transition: {
-          duration: 0.7,
-          ease: SLIDE_TRANSITION_EASE,
+          duration: MOBILE_CROSSFADE_DURATION_SECONDS,
+          ease: MOBILE_CROSSFADE_EASE,
         },
       }
     : {
@@ -556,6 +561,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
               animate={exitingSlideAnimate}
               style={disableBlur ? undefined : maskStyle}
               onAnimationComplete={() => {
+                swipeTransitionLockRef.current = false;
                 setExitingSlides((current) =>
                   current.filter((item) => item.key !== entry.key)
                 );
@@ -573,8 +579,8 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
                     animate={{
                       opacity: 0,
                       transition: {
-                        duration: 0.8,
-                        ease: SLIDE_TRANSITION_EASE,
+                        duration: disableBlur ? MOBILE_CROSSFADE_DURATION_SECONDS : 0.8,
+                        ease: disableBlur ? MOBILE_CROSSFADE_EASE : SLIDE_TRANSITION_EASE,
                       },
                     }}
                   >
