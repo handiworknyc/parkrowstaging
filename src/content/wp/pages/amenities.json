@@ -41,7 +41,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2500,
             "height": 1406,
             "sizes": {
@@ -173,7 +173,7 @@
             "mime_type": "image/png",
             "type": "image",
             "subtype": "png",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 738,
             "height": 1310,
             "sizes": {
@@ -348,7 +348,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2041,
             "height": 1080,
             "sizes": {
@@ -524,7 +524,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 1888,
             "height": 1080,
             "sizes": {
@@ -702,7 +702,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 2000,
                 "height": 1137,
                 "sizes": {
@@ -856,7 +856,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 1920,
                 "height": 1080,
                 "sizes": {
@@ -1010,7 +1010,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
                 "width": 1600,
                 "height": 2000,
                 "sizes": {
@@ -1190,7 +1190,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2560,
             "height": 1439,
             "sizes": {
@@ -1385,7 +1385,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2560,
             "height": 1476,
             "sizes": {
@@ -1571,7 +1571,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
             "width": 2000,
             "height": 798,
             "sizes": {
@@ -1722,7 +1722,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-06 23:41:36",
+  "_syncedAt": "2026-04-07 03:33:16",
   "seo": {
     "title": "Amenities - Park Row Bellevue",
     "description": "",
