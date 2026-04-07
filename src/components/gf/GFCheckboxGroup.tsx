@@ -12,6 +12,7 @@ type Option = {
 
 type Props = {
   label: string;
+  description?: string;
   options: Option[];
   value?: string[];
   onChange?: (val: string[]) => void;
@@ -24,6 +25,7 @@ type Props = {
 
 export default function GFCheckboxGroup({
   label,
+  description,
   options,
   value = [],
   onChange,
@@ -32,6 +34,7 @@ export default function GFCheckboxGroup({
   error = false,
   errorMessage,
 }: Props) {
+  const fieldDescription = description?.trim();
   const state = useCheckboxGroupState({
     value,
     onChange,
@@ -49,6 +52,7 @@ export default function GFCheckboxGroup({
 
   const isSingleOption = options.length === 1;
   const singleOption = isSingleOption ? options[0] : null;
+  const hasDescription = !!fieldDescription;
 
   if (singleOption) {
     return (
@@ -58,6 +62,7 @@ export default function GFCheckboxGroup({
           'gf-field',
           'field-checkbox',
           'field-checkbox-single',
+          hasDescription && 'field-checkbox-with-description',
           error && 'gf-error',
         ]
           .filter(Boolean)
@@ -65,10 +70,16 @@ export default function GFCheckboxGroup({
       >
         <legend className="sr-only">{label}</legend>
 
+        {hasDescription && (
+          <div className="gf-checkbox-description">
+            {fieldDescription}
+          </div>
+        )}
+
         <GFCheckboxItem
           value={singleOption.value}
           text={singleOption.text}
-          layout="split"
+          layout={hasDescription ? 'inline' : 'split'}
           isSelected={value.includes(singleOption.value)}
           isRequired={isRequired}
           onChange={(checked) => {

@@ -9,6 +9,8 @@ const SLIDE_TRANSITION_EASE = [0.19, 1, 0.32, 1];
 const CUBIC_BEZ_EASE = [0.36, 0.01, 0.1, 1.01];
 const SECTION_COPY_FADE_IN_DURATION_SECONDS = 1.1;
 const SECTION_COPY_FADE_IN_DELAY_SECONDS = 0.2;
+const SWIPE_MIN_DISTANCE_PX = 48;
+const SWIPE_AXIS_LOCK_RATIO = 1.25;
 
 // 1. Helper function
 const getSlideImageProps = (slide) => {
@@ -55,6 +57,9 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const [disableBlur, setDisableBlur] = useState(false);
   const [exitingSlides, setExitingSlides] = useState([]);
   const imageRefs = useRef([]);
+  const slideshowTouchRef = useRef(null);
+  const swipeStartRef = useRef(null);
+  const swipeCurrentRef = useRef(null);
   const transitionCounterRef = useRef(0);
 
   useEffect(() => {
@@ -176,6 +181,82 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const handlePrev = useCallback(() => {
     advanceSlide((prev) => (prev - 1 + slidesWithImageProps.length) % slidesWithImageProps.length);
   }, [advanceSlide, slidesWithImageProps.length]);
+
+  const clearSwipeGesture = useCallback(() => {
+    swipeStartRef.current = null;
+    swipeCurrentRef.current = null;
+  }, []);
+
+  const handleSwipeStart = useCallback((event) => {
+    if (event.touches.length !== 1 || slidesWithImageProps.length <= 1) {
+      clearSwipeGesture();
+      return;
+    }
+
+    const touch = event.touches[0];
+    const point = { x: touch.clientX, y: touch.clientY };
+    swipeStartRef.current = point;
+    swipeCurrentRef.current = point;
+  }, [clearSwipeGesture, slidesWithImageProps.length]);
+
+  const handleSwipeMove = useCallback((event) => {
+    if (!swipeStartRef.current || event.touches.length !== 1) {
+      return;
+    }
+
+    const touch = event.touches[0];
+    swipeCurrentRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleSwipeEnd = useCallback((event) => {
+    const start = swipeStartRef.current;
+    const endTouch = event.changedTouches[0];
+    const end = endTouch
+      ? { x: endTouch.clientX, y: endTouch.clientY }
+      : swipeCurrentRef.current;
+
+    clearSwipeGesture();
+
+    if (!start || !end || slidesWithImageProps.length <= 1) {
+      return;
+    }
+
+    const deltaX = end.x - start.x;
+    const deltaY = end.y - start.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX < SWIPE_MIN_DISTANCE_PX || absX < absY * SWIPE_AXIS_LOCK_RATIO) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      handleNext();
+      return;
+    }
+
+    handlePrev();
+  }, [clearSwipeGesture, handleNext, handlePrev, slidesWithImageProps.length]);
+
+  useEffect(() => {
+    const slideshowNode = slideshowTouchRef.current;
+
+    if (!slideshowNode) {
+      return undefined;
+    }
+
+    slideshowNode.addEventListener("touchstart", handleSwipeStart, { passive: true });
+    slideshowNode.addEventListener("touchmove", handleSwipeMove, { passive: true });
+    slideshowNode.addEventListener("touchend", handleSwipeEnd, { passive: true });
+    slideshowNode.addEventListener("touchcancel", clearSwipeGesture, { passive: true });
+
+    return () => {
+      slideshowNode.removeEventListener("touchstart", handleSwipeStart);
+      slideshowNode.removeEventListener("touchmove", handleSwipeMove);
+      slideshowNode.removeEventListener("touchend", handleSwipeEnd);
+      slideshowNode.removeEventListener("touchcancel", clearSwipeGesture);
+    };
+  }, [clearSwipeGesture, handleSwipeEnd, handleSwipeMove, handleSwipeStart]);
 
   const activeEntry = slidesWithImageProps[currentIndex] || null;
   const slide = activeEntry?.slide || slides[0];
@@ -439,7 +520,10 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const slideshowBlock = (
     <div className="full-width-slideshow-wrap relative w-full h-[calc(var(--jsVhUnits100)*.8-var(--headerHeight))]">
       <div className="relative w-full h-full">
-        <div className="relative w-full h-full overflow-hidden">
+        <div
+          ref={slideshowTouchRef}
+          className="relative w-full h-full overflow-hidden"
+        >
           {slidesWithImageProps.map((entry, index) => {
             const isCurrent = index === currentIndex;
 

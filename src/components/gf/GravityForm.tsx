@@ -43,6 +43,7 @@ type GFField = {
   id: number;
   type: GFFieldType;
   label: string;
+  description?: string;
   isRequired?: boolean;
   placeholder?: string;
   choices?: GFChoice[];
@@ -215,14 +216,17 @@ function buildInitialValues(form: GFFormSchema): Record<string, any> {
   const initialValues: Record<string, any> = {};
 
   for (const field of form.fields) {
-    if (field.type !== 'checkbox') continue;
+    const selectedChoices = field.choices?.filter((choice) => choice.isSelected) ?? [];
 
-    const selectedChoices = field.choices
-      ?.filter((choice) => choice.isSelected)
-      .map((choice) => choice.value) ?? [];
+    if (!selectedChoices.length) continue;
 
-    if (selectedChoices.length) {
-      initialValues[`input_${field.id}`] = selectedChoices;
+    if (field.type === 'checkbox') {
+      initialValues[`input_${field.id}`] = selectedChoices.map((choice) => choice.value);
+      continue;
+    }
+
+    if (field.type === 'radio' || field.type === 'select') {
+      initialValues[`input_${field.id}`] = selectedChoices[0].value;
     }
   }
 
@@ -638,6 +642,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
               field = (
                 <GFCheckboxGroup
                   label={f.label}
+                  description={f.description}
                   value={value || []}
                   options={f.choices || []}
                   isRequired={f.isRequired}
@@ -666,6 +671,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
               field = (
                 <GFSelectField
                   label={f.label}
+                  name={key}
                   value={value}
                   options={f.choices || []}
                   isRequired={f.isRequired}
@@ -683,6 +689,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
               className={[
                 'gf-field',
                 `field-${f.type}`,
+                `field-id-${f.id}`,
                 error && 'has-error',
               ]
                 .filter(Boolean)

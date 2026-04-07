@@ -593,7 +593,11 @@ ul.two-col-list h4 {
 }
 
 
-
+@media (max-width: 767px) {
+	.full-width-slideshow-wrap {
+		max-height: round(nearest, 45vh, 1rem);
+	}
+}
 
 
 .rowindex-1:not(.splash_video-module) .full-bleed-img-inner {

@@ -65,7 +65,7 @@ export function GFCheckboxItem({
           transition-colors duration-200
           ${
             isSelected
-              ? 'bg-emerald-600 border-emerald-600'
+              ? 'gf-checkbox-box--selected'
               : 'bg-transparent border-black'
           }
         `}
@@ -76,10 +76,10 @@ export function GFCheckboxItem({
               key="check"
               viewBox="0 0 20 20"
               className="
+                gf-checkbox-check
                 absolute
                 left-1/2 top-1/2
                 h-[1.1rem] w-[1.1rem]
-                text-white
               "
               fill="none"
               stroke="currentColor"

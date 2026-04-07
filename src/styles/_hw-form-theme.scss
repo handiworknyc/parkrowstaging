@@ -212,6 +212,10 @@
   color: #000;
 }
 
+.input-select[required]:valid {
+  color: #000;
+}
+
 
 
 
@@ -311,6 +315,19 @@
   user-select: none;
 }
 
+.gf-checkbox-box--selected {
+  background-color: var(--pink);
+  border-color: var(--pink);
+}
+
+.gf-checkbox-check {
+  color: var(--foreground);
+}
+
+.gf-field.field-id-13 {
+  pointer-events: none;
+}
+
 .field-checkbox-single .gf-checkbox-item {
   width: 100%;
   display: grid;
@@ -335,6 +352,42 @@
   line-height: 1.2;
   white-space: normal;
   align-self: center;
+}
+
+.field-checkbox fieldset.field-checkbox-with-description {
+  height: auto;
+  min-height: var(--gf-height);
+  display: block;
+  align-items: stretch;
+}
+
+.field-checkbox-with-description .gf-checkbox-description {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+  line-height: 1.75rem;
+  color: #000;
+}
+
+.field-checkbox-with-description .gf-checkbox-item {
+  width: 100%;
+  display: inline-flex;
+  align-items: flex-start;
+  min-height: auto;
+  white-space: normal;
+}
+
+.field-checkbox-with-description .gf-checkbox-box {
+  order: 0;
+  flex-shrink: 0;
+  align-self: flex-start;
+  justify-self: auto;
+  margin-top: 0.1rem;
+}
+
+.field-checkbox-with-description .gf-checkbox-item-text {
+  order: 0;
+  white-space: normal;
+  line-height: 1.25;
 }
 
 /* =====================================================

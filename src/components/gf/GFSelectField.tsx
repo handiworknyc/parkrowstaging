@@ -10,6 +10,7 @@ type Option = {
 
 type Props = {
   label: string;
+  name?: string;
   options: Option[];
   value?: string;
   onChange?: (val: string) => void;
@@ -22,6 +23,7 @@ type Props = {
 
 export default function GFSelectField({
   label,
+  name,
   options,
   value = '',
   onChange,
@@ -31,6 +33,7 @@ export default function GFSelectField({
   errorMessage,
 }: Props) {
   const id = useId();
+  const hasValue = value !== '';
 
   return (
     <FloatingField
@@ -43,12 +46,14 @@ export default function GFSelectField({
     >
       <select
         id={id}
+        name={name}
         value={value}
+        onInput={(e) => onChange?.(e.currentTarget.value)}
         onChange={(e) => onChange?.(e.target.value)}
         required={isRequired}
         aria-required={isRequired}
         aria-invalid={error || undefined}
-        data-has-value={value !== '' ? 'true' : 'false'}
+        data-has-value={hasValue ? 'true' : 'false'}
         className={[
           'input-select',
           error && 'gf-error',

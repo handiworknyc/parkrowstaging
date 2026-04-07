@@ -357,6 +357,33 @@
       ]
     },
     {
+      "id": 22,
+      "type": "checkbox",
+      "label": "New York disclosure",
+      "description": "Oral representations cannot be relied upon as correctly stating representations of the developer. The Developer is not incorporated in, located in, nor a resident of, New York. This is not intended to be an offer to sell, or solicitation of an offer to buy, condominium units in New York or to residents of New York, or in any other jurisdiction where prohibited by law unless the condominium is registered in such jurisdictions or exempt. Your eligibility for purchase will depend upon your state of residency. This offering is not directed to any person or entity in New York by, or on behalf of, the developer or anyone acting with the developer’s knowledge. No purchase or sale shall take place as a result of this offering, until registration and filing requirements are met, or exemptions are confirmed.",
+      "isRequired": true,
+      "placeholder": "",
+      "choices": [
+        {
+          "text": "I agree to the terms above",
+          "value": "I agree to the terms above",
+          "isSelected": false
+        }
+      ],
+      "conditionalLogic": {
+        "enabled": true,
+        "actionType": "show",
+        "logicType": "all",
+        "rules": [
+          {
+            "fieldId": 17,
+            "operator": "is",
+            "value": "New York"
+          }
+        ]
+      }
+    },
+    {
       "id": 18,
       "type": "select",
       "label": "Country",
@@ -366,7 +393,7 @@
         {
           "text": "United States",
           "value": "United States",
-          "isSelected": false
+          "isSelected": true
         },
         {
           "text": "Afghanistan",
