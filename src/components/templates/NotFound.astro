@@ -16,11 +16,37 @@ const homeHref = lang === "zh" ? "/zh/" : "/";
   lang={lang}
   noIndex
 >
-  <div class="vhUnits100 jsVhUnits100 flex-wrap align-items-center w100">
+  <div class="vhUnits100 not-found-vh-wrap w100">
     <PageTitle
       h1="Page not found"
-      description={`We couldn't find the page you're looking for. Please return to the <a href="${homeHref}">home page</a>.`}
+      description={`We couldn't find the page you're looking for. Please return to the <a class="not-found-home-link" href="${homeHref}">home page</a>.`}
+      className="not-found-title"
       smaller_text
     />
   </div>
 </BaseLayout>
+
+<style>
+  :global(.not-found-home-link) {
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.16em;
+    transition: background-color 180ms ease;
+  }
+
+  :global(.not-found-home-link:hover),
+  :global(.not-found-home-link:focus-visible) {
+    background-color: var(--pink);
+  }
+
+  .not-found-vh-wrap {
+    height: var(--jsVhUnits100, 100vh);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :global(.not-found-title) {
+    margin-top: calc(var(--headerHeight) / -2);
+  }
+</style>
