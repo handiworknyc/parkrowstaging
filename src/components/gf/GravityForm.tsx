@@ -123,6 +123,31 @@ function shouldEdgewiseDebug(): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
+function refreshLocomotiveScroll() {
+  if (typeof window === 'undefined') return;
+
+  const refresh = () => {
+    const locoScroll = (window as any).locoScroll;
+
+    if (typeof locoScroll?.resize === 'function') {
+      locoScroll.resize();
+    } else if (typeof locoScroll?.update === 'function') {
+      locoScroll.update();
+    }
+
+    if (typeof locoScroll?.lenisInstance?.resize === 'function') {
+      locoScroll.lenisInstance.resize();
+    }
+  };
+
+  requestAnimationFrame(() => {
+    refresh();
+    requestAnimationFrame(refresh);
+  });
+
+  window.setTimeout(refresh, 250);
+}
+
 function normalizeConditionalValue(value: unknown): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value.trim();
@@ -257,7 +282,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const [animationReady, setAnimationReady] = useState(false);
   const [requestReady, setRequestReady] = useState(false);
 
   const [loaderPhase, setLoaderPhase] = useState<
@@ -273,31 +297,34 @@ export default function GravityForm({ form, onSuccess }: Props) {
   }, [form]);
 
   useEffect(() => {
-	return () => {
-		document.body.classList.remove('gf-success-active');
-		delete (window as any).__GF_CONFIRMATION__;
-	};
-	}, []);
+    document.documentElement.style.setProperty('--loaderFade', '1');
+
+    return () => {
+      document.body.classList.remove('gf-success-active');
+      document.documentElement.style.setProperty('--loaderFade', '1');
+      delete (window as any).__GF_CONFIRMATION__;
+    };
+  }, []);
 
   /* =====================================================
      COORDINATION LOGIC (OPTIMIZED)
   ===================================================== */
 
-	useEffect(() => {
-	if (!animationReady || !requestReady || !pendingMessage) return;
+  useEffect(() => {
+    if (!requestReady || pendingMessage === null) return;
 
-	onSuccess?.(pendingMessage);
+    onSuccess?.(pendingMessage);
 
-	setPendingMessage(null);
-	setSubmitting(false);
-	setIsSuccess(true);
-	setLoaderPhase('readyToFade');
+    setPendingMessage(null);
+    setSubmitting(false);
+    setIsSuccess(true);
+    setLoaderPhase('readyToFade');
 
-	(window as any).__GF_CONFIRMATION__ = pendingMessage;
-	window.dispatchEvent(new Event('gf-confirmation'));
+    (window as any).__GF_CONFIRMATION__ = pendingMessage;
+    window.dispatchEvent(new Event('gf-confirmation'));
 
-	document.body.classList.add('gf-success-active');
-	}, [animationReady, requestReady, pendingMessage, onSuccess]);
+    document.body.classList.add('gf-success-active');
+  }, [requestReady, pendingMessage, onSuccess]);
 
   /* =====================================================
      SCROLL TO TOP WHEN LOADER APPEARS
@@ -317,10 +344,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
   /* =====================================================
      CALLBACKS
   ===================================================== */
-
-  const handleAlmostDone = useCallback(() => {
-    setAnimationReady(true);
-  }, []);
 
   const handleFadeComplete = useCallback(() => {
     setShowLoader(false);
@@ -346,6 +369,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
   const visibleFields = form.fields.filter((field) => isFieldVisible(field, values));
   const visibleFieldKeys = visibleFields.map((field) => `input_${field.id}`);
+  const visibleFieldSignature = visibleFieldKeys.join('|');
 
   useEffect(() => {
     const visibleKeys = new Set(visibleFieldKeys);
@@ -357,7 +381,11 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
       return Object.keys(next).length === Object.keys(errors).length ? errors : next;
     });
-  }, [visibleFieldKeys.join('|')]);
+  }, [visibleFieldSignature]);
+
+  useEffect(() => {
+    refreshLocomotiveScroll();
+  }, [visibleFieldSignature]);
 
   /* =====================================================
      AUTO-FOCUS FIRST ERROR
@@ -476,7 +504,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
     setIsSuccess(false);
     setMessage(null);
     setPendingMessage(null);
-    setAnimationReady(false);
     setRequestReady(false);
     setFieldErrors({});
 
@@ -554,12 +581,13 @@ export default function GravityForm({ form, onSuccess }: Props) {
         parsed.data?.confirmation_message ??
         'Form submitted successfully.';
 
-      setPendingMessage(
+      const confirmationMessage =
         confirmation
           .replace(/<br\s*\/?>/gi, '\n')
           .replace(/<\/?[^>]+>/g, '')
-          .trim()
-      );
+          .trim() || 'Form submitted successfully.';
+
+      setPendingMessage(confirmationMessage);
 
       setRequestReady(true);
     } catch (err: any) {
@@ -572,6 +600,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
       setSubmitting(false);
       setShowLoader(false);
       setLoaderPhase('idle');
+      document.documentElement.style.setProperty('--loaderFade', '1');
     }
   }, [submitting, form, values, validateClientSide, visibleFields]);
 
@@ -714,7 +743,6 @@ export default function GravityForm({ form, onSuccess }: Props) {
       {showLoader && (
         <LogoLoader
           fadeOut={loaderPhase === 'readyToFade'}
-          onAlmostDone={handleAlmostDone}
           onFadeComplete={handleFadeComplete}
         />
       )}

@@ -30,6 +30,10 @@ type LoaderProps = {
   onFadeComplete?: () => void;
 };
 
+const DURATION_MULTIPLIER = 1.69;
+const FILL_DURATION = 3.5 * DURATION_MULTIPLIER;
+const SCALE_DURATION = 7 * DURATION_MULTIPLIER;
+
 const LogoLoader = memo(function LogoLoader({
   fadeOut = false,
   onAlmostDone,
@@ -54,16 +58,30 @@ const LogoLoader = memo(function LogoLoader({
   const scale = useTransform(scaleProgress, [0, 1], [1, 1.06]);
 
   const firedRef = useRef(false);
+  const fadeOutRef = useRef(fadeOut);
 
   /* ----------------------------------
      GLOBAL CSS FADE SYNC
   ---------------------------------- */
 
   useEffect(() => {
+    fadeOutRef.current = fadeOut;
+
+    if (fadeOut) {
+      document.documentElement.style.setProperty('--loaderFade', '0');
+    }
+  }, [fadeOut]);
+
+  useEffect(() => {
     const root = document.documentElement;
     const MULTIPLIER = 1.15;
 
     const unsub = progress.on('change', (v) => {
+      if (fadeOutRef.current) {
+        root.style.setProperty('--loaderFade', '0');
+        return;
+      }
+
       const fade = 1 - Math.min(v * MULTIPLIER, 1);
       root.style.setProperty('--loaderFade', fade.toFixed(4));
     });
@@ -90,12 +108,12 @@ const LogoLoader = memo(function LogoLoader({
   }, []);
 
   /* ----------------------------------
-     FILL ANIMATION (3.5s)
+     FILL ANIMATION
   ---------------------------------- */
 
   useEffect(() => {
     const fill = animate(progress, 1, {
-      duration: 3.5,
+      duration: FILL_DURATION,
       ease: [0.2, 0.0, 0.0, 1],
       onUpdate(v) {
         if (!firedRef.current && v > 0.9) {
@@ -118,7 +136,7 @@ const LogoLoader = memo(function LogoLoader({
 
   useEffect(() => {
     const scaleAnim = animate(scaleProgress, 1, {
-      duration: 7, // 👈 longer than fill
+      duration: SCALE_DURATION, // Longer than fill.
       ease: [0.2, 0.0, 0.0, 1],
     });
 

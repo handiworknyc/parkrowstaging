@@ -497,14 +497,7 @@ function buildEdgewiseInput(
 }
 
 function buildGravityFields(fields: SubmissionFields): SubmissionFields {
-  const next = { ...fields };
-
-  // The live WordPress Gravity Form still validates field 10 against its old
-  // choice set. Keep the user's selection for Edgewise, but omit it from the
-  // Gravity submission until the WP form is updated to match.
-  delete next.input_10;
-
-  return next;
+  return { ...fields };
 }
 
 async function submitToGravity({

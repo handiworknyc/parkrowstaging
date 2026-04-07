@@ -14,51 +14,36 @@ const FORMS: Record<number, GFFormSchema> = {
 };
 
 const INQUIRE_FORM_ID = 1;
-const STATE_FIELD_ID = 17;
 const COUNTRY_FIELD_ID = 18;
 const NEW_YORK_DISCLOSURE_FIELD_ID = 22;
 const UNITED_STATES = 'United States';
-const NEW_YORK = 'New York';
 const NEW_YORK_DISCLOSURE_TEXT =
   'Oral representations cannot be relied upon as correctly stating representations of the developer. The Developer is not incorporated in, located in, nor a resident of, New York. This is not intended to be an offer to sell, or solicitation of an offer to buy, condominium units in New York or to residents of New York, or in any other jurisdiction where prohibited by law unless the condominium is registered in such jurisdictions or exempt. Your eligibility for purchase will depend upon your state of residency. This offering is not directed to any person or entity in New York by, or on behalf of, the developer or anyone acting with the developer’s knowledge. No purchase or sale shall take place as a result of this offering, until registration and filing requirements are met, or exemptions are confirmed.';
 
-const NEW_YORK_DISCLOSURE_FIELD: GFFormSchema['fields'][number] = {
-  id: NEW_YORK_DISCLOSURE_FIELD_ID,
-  type: 'checkbox',
-  label: 'New York disclosure',
-  description: NEW_YORK_DISCLOSURE_TEXT,
-  isRequired: true,
-  placeholder: '',
-  choices: [
-    {
-      text: 'I agree to the terms above',
-      value: 'I agree to the terms above',
-      isSelected: false,
-    },
-  ],
-  conditionalLogic: {
-    enabled: true,
-    actionType: 'show',
-    logicType: 'all',
-    rules: [
-      {
-        fieldId: STATE_FIELD_ID,
-        operator: 'is',
-        value: NEW_YORK,
-      },
-    ],
-  },
-};
+function appendNewYorkDisclosureText(
+  field: GFFormSchema['fields'][number]
+): GFFormSchema['fields'][number] {
+  const description = field.description?.trim() ?? '';
+
+  if (description.includes(NEW_YORK_DISCLOSURE_TEXT)) {
+    return field;
+  }
+
+  return {
+    ...field,
+    description: description
+      ? `${description}\n\n${NEW_YORK_DISCLOSURE_TEXT}`
+      : NEW_YORK_DISCLOSURE_TEXT,
+    isRequired: true,
+  };
+}
 
 function withInquireFormOverrides(form: GFFormSchema): GFFormSchema {
   if (Number(form.id) !== INQUIRE_FORM_ID) return form;
 
-  let hasNewYorkDisclosure = false;
-
   const fields = form.fields.map((field) => {
     if (Number(field.id) === NEW_YORK_DISCLOSURE_FIELD_ID) {
-      hasNewYorkDisclosure = true;
-      return NEW_YORK_DISCLOSURE_FIELD;
+      return appendNewYorkDisclosureText(field);
     }
 
     if (
@@ -77,24 +62,6 @@ function withInquireFormOverrides(form: GFFormSchema): GFFormSchema {
 
     return field;
   });
-
-  if (!hasNewYorkDisclosure) {
-    const stateFieldIndex = fields.findIndex(
-      (field) => Number(field.id) === STATE_FIELD_ID
-    );
-    const nextFields = [...fields];
-
-    nextFields.splice(
-      stateFieldIndex >= 0 ? stateFieldIndex + 1 : nextFields.length,
-      0,
-      NEW_YORK_DISCLOSURE_FIELD
-    );
-
-    return {
-      ...form,
-      fields: nextFields,
-    };
-  }
 
   return {
     ...form,

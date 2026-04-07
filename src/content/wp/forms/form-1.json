@@ -357,6 +357,32 @@
       ]
     },
     {
+      "id": 22,
+      "type": "checkbox",
+      "label": "New York Disclosure",
+      "isRequired": false,
+      "placeholder": "",
+      "conditionalLogic": {
+        "enabled": true,
+        "actionType": "show",
+        "logicType": "all",
+        "rules": [
+          {
+            "fieldId": 17,
+            "operator": "is",
+            "value": "New York"
+          }
+        ]
+      },
+      "choices": [
+        {
+          "text": "I agree to the terms above",
+          "value": "I agree to the terms above",
+          "isSelected": false
+        }
+      ]
+    },
+    {
       "id": 18,
       "type": "select",
       "label": "Country",
