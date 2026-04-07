@@ -359,12 +359,22 @@ function formatOrientation(value: string | null | undefined) {
   return String(value ?? "").trim() || "-";
 }
 
-function formatExterior(value: number | string | null | undefined) {
+function formatSquareFootage(value: number | string | null | undefined) {
   const normalized = String(value ?? "").trim();
   if (!normalized) return "";
 
-  const numeric = Number(normalized.replace(/,/g, ""));
-  return Number.isFinite(numeric) ? numberFormat.format(numeric) : normalized;
+  const squareFootageMatch = normalized.match(
+    /^([\d,]+(?:\.\d+)?)\s*(?:s\.?f\.?|sq\.?\s*ft\.?|square\s+feet)?\.?$/i
+  );
+
+  if (squareFootageMatch) {
+    const numeric = Number(squareFootageMatch[1].replace(/,/g, ""));
+    if (Number.isFinite(numeric)) {
+      return `${numberFormat.format(numeric)} sf approx.`;
+    }
+  }
+
+  return /\bapprox\.?$/i.test(normalized) ? normalized : `${normalized} approx.`;
 }
 
 const penthouseUnitLabels = new Set(expandSharedUnitRange("2103", "2203"));
@@ -469,7 +479,8 @@ function formatResidenceLabel(value: string | number | null | undefined) {
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
           const panoramaId = `${detailId}-panorama`;
           const unitLabel = formatResidenceLabel(unit.unitNumber);
-          const exteriorLabel = formatExterior(unit.detail?.exterior);
+          const interiorLabel = formatSquareFootage(unit.area);
+          const exteriorLabel = formatSquareFootage(unit.detail?.exterior);
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
           const panorama = unit.detail?.panoramicView;
@@ -552,8 +563,8 @@ function formatResidenceLabel(value: string | number | null | undefined) {
                       <div class="floorplans-detail-meta">
                         <p>Residence {unit.unitNumber}</p>
                         <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
-                        <p>Interior: {numberFormat.format(unit.area)} sf</p>
-                        {exteriorLabel && <p>Exterior: {exteriorLabel} sf</p>}
+                        <p>Interior: {interiorLabel}</p>
+                        {exteriorLabel && <p>Exterior: {exteriorLabel}</p>}
                         <p>Exposure: {exposureLabel}</p>
                       </div>
 
@@ -2099,6 +2110,11 @@ function formatResidenceLabel(value: string | number | null | undefined) {
       width: auto;
       min-width: 0;
       vertical-align: middle;
+    }
+
+    .floorplans-head .floorplans-cell--bathrooms,
+    .floorplans-row .floorplans-cell--bathrooms {
+      display: none;
     }
 
     .floorplans-head .floorplans-cell--action,

@@ -618,6 +618,16 @@ function normalizeFloorPlanDetailRow(row) {
   const floorPlanPdf = normalizeFloorPlanAsset(
     row.floor_plan_pdf ?? row.floorPlanPdf ?? row.pdf ?? row.pdf_url ?? row.pdfUrl
   );
+  const exterior =
+    [
+      row.exterior,
+      row.exterior_square_footage,
+      row.exteriorSquareFootage,
+      row.exterior_sq_ft,
+      row.exteriorSqFt,
+    ]
+      .map(normalizeTrimmedString)
+      .find(Boolean) || "";
 
   const normalized = {};
 
@@ -631,6 +641,10 @@ function normalizeFloorPlanDetailRow(row) {
 
   if (floorPlanPdf) {
     normalized.floor_plan_pdf = floorPlanPdf;
+  }
+
+  if (exterior) {
+    normalized.exterior = exterior;
   }
 
   return Object.keys(normalized).length ? normalized : null;

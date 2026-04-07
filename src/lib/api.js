@@ -1,4 +1,5 @@
 // src/lib/api.js
+import pageOrderManifest from "../content/wp/page-order.json";
 import { fetchAPI } from "./wp.js";
 import { getEnv, toBase64 } from "./env.ts"; // note .ts import is fine with Vite/TS
 
@@ -122,11 +123,24 @@ function slugParamFromUri(uri) {
   return (uri || "").replace(/^\/|\/$/g, ""); // "service/foo/bar"
 }
 
+const PUBLISHED_PAGE_URIS = new Set(
+  (Array.isArray(pageOrderManifest) ? pageOrderManifest : [])
+    .map((page) => page?.uri)
+    .filter(Boolean)
+    .map(normalizeUri)
+);
+
+function isPublishedPageUri(uri) {
+  return PUBLISHED_PAGE_URIS.has(normalizeUri(uri));
+}
+
 function indexByUri(mods) {
   const out = new Map();
   Object.values(mods).forEach((m) => {
     const data = m && m.default ? m.default : m;
-    if (data && data.uri) out.set(normalizeUri(data.uri), data);
+    if (data && data.uri && isPublishedPageUri(data.uri)) {
+      out.set(normalizeUri(data.uri), data);
+    }
   });
   return out;
 }

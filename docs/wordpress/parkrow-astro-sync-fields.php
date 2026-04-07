@@ -180,8 +180,13 @@ if (!function_exists('parkrow_astro_sync_get_floor_plan_detail')) {
                 continue;
             }
 
+            $exterior = isset($row['exterior']) && (is_string($row['exterior']) || is_numeric($row['exterior']))
+                ? sanitize_text_field((string) $row['exterior'])
+                : '';
+
             $items[] = array(
                 'unit' => isset($row['unit']) ? sanitize_text_field($row['unit']) : '',
+                'exterior' => $exterior,
                 'floor_plan_image' => parkrow_astro_sync_prepare_image($row['floor_plan_image'] ?? null),
                 'floor_plan_pdf' => parkrow_astro_sync_prepare_file($row['floor_plan_pdf'] ?? null),
             );
