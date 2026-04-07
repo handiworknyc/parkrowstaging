@@ -115,12 +115,29 @@ function extractSubmitError(parsed: any): string {
 
 function shouldEdgewiseDebug(): boolean {
   if (typeof window === 'undefined') return false;
-  if (import.meta.env.DEV) return true;
 
   const value =
-    new URLSearchParams(window.location.search).get('edgewiseDebug') || '';
+    new URLSearchParams(window.location.search).get('edgewiseDebug') ||
+    import.meta.env.PUBLIC_EDGEWISE_DEBUG ||
+    '';
 
   return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+}
+
+function warmSubmitApiRoutes() {
+  if (typeof window === 'undefined') return;
+  if ((window as any).__GF_SUBMIT_WARMED__) return;
+
+  (window as any).__GF_SUBMIT_WARMED__ = true;
+
+  fetch('/api/gf/warmup', {
+    cache: 'no-store',
+    keepalive: true,
+  }).catch((err) => {
+    if (shouldEdgewiseDebug()) {
+      console.warn('[GF] submit warmup failed:', err);
+    }
+  });
 }
 
 function refreshLocomotiveScroll() {
@@ -298,6 +315,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
   useEffect(() => {
     document.documentElement.style.setProperty('--loaderFade', '1');
+    warmSubmitApiRoutes();
 
     return () => {
       document.body.classList.remove('gf-success-active');
@@ -546,7 +564,9 @@ export default function GravityForm({ form, onSuccess }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...(edgewiseDebug ? { edgewise_debug: true } : {}),
+          ...(edgewiseDebug
+            ? { edgewise_debug: true }
+            : { edgewise_parallel: true }),
           form_id: form.id,
           fields: submissionValues,
         }),

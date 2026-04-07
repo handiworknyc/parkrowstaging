@@ -78,6 +78,10 @@ const edgewiseLeadSourceCache = new Map<
     sources: EdgewiseLeadSource[];
   }
 >();
+const edgewiseLeadSourceRequests = new Map<
+  string,
+  Promise<EdgewiseLeadSource[]>
+>();
 
 function logResponse(
   service: string,
@@ -101,6 +105,15 @@ function getEnv(name: string): string {
     (typeof process !== 'undefined' && (process as any).env) || {};
 
   return String(pe[name] ?? ime[name] ?? '').trim();
+}
+
+function windowlessSetTimeout(callback: () => void, delay: number) {
+  if (typeof setTimeout === 'function') {
+    setTimeout(callback, delay);
+    return;
+  }
+
+  callback();
 }
 
 function toBasicHeader(value?: string): string | null {
@@ -374,50 +387,136 @@ async function fetchEdgewiseLeadSources({
     return cached.sources;
   }
 
-  const response = await fetch(EDGEWISE_GRAPHQL_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: EDGEWISE_PROJECT_LEAD_SOURCES_QUERY,
-      variables: { id: projectId },
-    }),
-    cache: 'no-store',
-  });
+  const pending = edgewiseLeadSourceRequests.get(projectId);
 
-  const text = await response.text();
-  let data: any = null;
+  if (pending) {
+    return pending;
+  }
+
+  const request = (async () => {
+    const response = await fetch(EDGEWISE_GRAPHQL_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: EDGEWISE_PROJECT_LEAD_SOURCES_QUERY,
+        variables: { id: projectId },
+      }),
+      cache: 'no-store',
+    });
+
+    const text = await response.text();
+    let data: any = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error('Edgewise lead sources query returned non-JSON response');
+    }
+
+    if (!response.ok || data?.errors?.length) {
+      throw new Error(
+        `Edgewise lead sources query failed: ${truncate(text, 300)}`
+      );
+    }
+
+    const sources = Array.isArray(data?.data?.project?.leadSources)
+      ? data.data.project.leadSources
+          .map((source: any) => ({
+            id: String(source?.id ?? '').trim(),
+            name: String(source?.name ?? '').trim(),
+          }))
+          .filter((source: EdgewiseLeadSource) => source.id && source.name)
+      : [];
+
+    edgewiseLeadSourceCache.set(projectId, {
+      expiresAt: Date.now() + EDGEWISE_LEAD_SOURCE_CACHE_TTL_MS,
+      sources,
+    });
+
+    return sources;
+  })();
+
+  edgewiseLeadSourceRequests.set(projectId, request);
 
   try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error('Edgewise lead sources query returned non-JSON response');
+    return await request;
+  } finally {
+    edgewiseLeadSourceRequests.delete(projectId);
+  }
+}
+
+async function warmEdgewiseLeadSourceCache(reason: string) {
+  const projectId = getEdgewiseProjectId();
+  const token = getEdgewiseToken();
+
+  if (getEnv('EDGEWISE_SOURCE')) {
+    return {
+      skippedReason: 'source_override',
+      warmed: false,
+    };
   }
 
-  if (!response.ok || data?.errors?.length) {
-    throw new Error(
-      `Edgewise lead sources query failed: ${truncate(text, 300)}`
-    );
+  if (!projectId || !token) {
+    return {
+      skippedReason: !projectId ? 'missing_project_id' : 'missing_token',
+      warmed: false,
+    };
   }
 
-  const sources = Array.isArray(data?.data?.project?.leadSources)
-    ? data.data.project.leadSources
-        .map((source: any) => ({
-          id: String(source?.id ?? '').trim(),
-          name: String(source?.name ?? '').trim(),
-        }))
-        .filter((source: EdgewiseLeadSource) => source.id && source.name)
-    : [];
+  const sources = await fetchEdgewiseLeadSources({ projectId, token });
 
-  edgewiseLeadSourceCache.set(projectId, {
-    expiresAt: Date.now() + EDGEWISE_LEAD_SOURCE_CACHE_TTL_MS,
-    sources,
+  console.info('[contact submit] warmed edgewise lead source cache', {
+    reason,
+    sourceCount: sources.length,
   });
 
-  return sources;
+  return {
+    sourceCount: sources.length,
+    warmed: true,
+  };
 }
+
+function warmEdgewiseLeadSourceCacheInBackground(reason: string) {
+  windowlessSetTimeout(() => {
+    warmEdgewiseLeadSourceCache(reason).catch((error) => {
+      console.warn('[contact submit] edgewise cache warmup failed', {
+        error,
+        reason,
+      });
+    });
+  }, 0);
+}
+
+export async function warmContactSubmitCaches(): Promise<ContactSubmitResult> {
+  try {
+    const edgewiseLeadSources = await warmEdgewiseLeadSourceCache('api');
+
+    return {
+      body: JSON.stringify({
+        edgewiseLeadSources,
+        success: true,
+      }),
+      contentType: 'application/json',
+      status: 200,
+    };
+  } catch (error) {
+    console.warn('[contact submit] cache warmup API failed', error);
+
+    return {
+      body: JSON.stringify({
+        message: 'Warmup failed.',
+        success: false,
+      }),
+      contentType: 'application/json',
+      status: 200,
+    };
+  }
+}
+
+warmEdgewiseLeadSourceCacheInBackground('startup');
 
 async function resolveEdgewiseSourceId({
   projectId,
@@ -772,11 +871,13 @@ export async function submitContact(
     };
   }
 
-  const { edgewise_debug, form_id, fields } = body as {
+  const { edgewise_debug, edgewise_parallel, form_id, fields } = body as {
     edgewise_debug?: unknown;
+    edgewise_parallel?: unknown;
     fields?: unknown;
     form_id?: number | string;
   };
+  const edgewiseParallel = isTruthy(edgewise_parallel);
 
   if (
     !form_id ||
@@ -802,6 +903,21 @@ export async function submitContact(
     isTruthy(edgewise_debug) ||
     isTruthy(getEnv('EDGEWISE_DEBUG')) ||
     isTruthy(getEnv('PUBLIC_EDGEWISE_DEBUG'));
+  const shouldSubmitEdgewiseParallel =
+    edgewiseParallel && !edgewiseDebugEnabled;
+  // In normal mode, start Edgewise immediately so the user-facing response only
+  // waits on Gravity. Debug mode keeps the old blocking sequence.
+  const parallelEdgewisePromise = shouldSubmitEdgewiseParallel
+    ? submitToEdgewise({
+        debugEnabled: false,
+        formId: form_id,
+        fields: normalizedFields,
+      })
+    : null;
+
+  parallelEdgewisePromise?.catch((error) => {
+    console.error('[contact submit] parallel edgewise request failed', error);
+  });
 
   const gravityResult = await submitToGravity({
     formId: form_id,
@@ -817,7 +933,7 @@ export async function submitContact(
 
   let edgewiseDebug: EdgewiseDebugInfo | null = null;
 
-  if (gravitySucceeded) {
+  if (gravitySucceeded && !shouldSubmitEdgewiseParallel) {
     edgewiseDebug = await submitToEdgewise({
       debugEnabled: edgewiseDebugEnabled,
       formId: form_id,
