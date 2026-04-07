@@ -241,11 +241,13 @@ const videoClasses = [
   let cleanup = [];
   let splashObserver = null;
   let revealTimer = null;
+  let headerRevealTimer = null;
   let idleDismissTimer = null;
   let dismissListenersAttached = false;
   let splashUnlockTimer = null;
 
   const REVEAL_DELAY = 850;
+  const HEADER_REVEAL_DELAY = 250;
   const IDLE_DISMISS_DELAY = 6500;
   const SPLASH_UNLOCK_DELAY = 1100;
 
@@ -426,7 +428,13 @@ const videoClasses = [
     );
     const mobBottomBar = document.querySelector(".mob-bottom-bar");
 
-    if (header) header.style.visibility = "visible";
+    clearTimeout(headerRevealTimer);
+    if (header) {
+      headerRevealTimer = setTimeout(() => {
+        header.style.visibility = "visible";
+        headerRevealTimer = null;
+      }, HEADER_REVEAL_DELAY);
+    }
     if (secondModule) secondModule.style.visibility = "visible";
     if (mobBottomBar) mobBottomBar.style.visibility = "visible";
     
@@ -446,9 +454,11 @@ const videoClasses = [
     splashObserver = null;
 
     clearTimeout(revealTimer);
+    clearTimeout(headerRevealTimer);
     clearTimeout(idleDismissTimer);
     clearTimeout(splashUnlockTimer);
     revealTimer = null;
+    headerRevealTimer = null;
     idleDismissTimer = null;
     splashUnlockTimer = null;
 
