@@ -245,11 +245,55 @@ const videoClasses = [
   let idleDismissTimer = null;
   let dismissListenersAttached = false;
   let splashUnlockTimer = null;
+  let splashIntroCompleteTimer = null;
+  let splashIntroComplete = false;
+  let pendingSplashDismiss = null;
 
   const REVEAL_DELAY = 850;
   const DELAYED_REVEAL_DELAY = 250;
+  const SPLASH_INTRO_FADE_IN_DURATION = 3150;
   const IDLE_DISMISS_DELAY = 6500;
   const SPLASH_UNLOCK_DELAY = 1100;
+
+  function isSplashIntroFullyVisible() {
+    const splashContent = document.querySelector(
+      ".splash_video-module .splash-content"
+    );
+
+    if (!splashContent) return true;
+
+    const splashContentOpacity = Number.parseFloat(
+      window.getComputedStyle(splashContent).opacity || "0"
+    );
+
+    return splashIntroComplete || splashContentOpacity >= 0.99;
+  }
+
+  function flushPendingSplashDismiss() {
+    splashIntroComplete = true;
+    splashIntroCompleteTimer = null;
+
+    if (!pendingSplashDismiss) return;
+
+    const dismiss = pendingSplashDismiss;
+    pendingSplashDismiss = null;
+    dismiss();
+  }
+
+  function scheduleSplashIntroComplete() {
+    clearTimeout(splashIntroCompleteTimer);
+    splashIntroComplete = isSplashIntroFullyVisible();
+
+    if (splashIntroComplete) {
+      flushPendingSplashDismiss();
+      return;
+    }
+
+    splashIntroCompleteTimer = setTimeout(
+      flushPendingSplashDismiss,
+      SPLASH_INTRO_FADE_IN_DURATION
+    );
+  }
 
   function releaseSplashScrollLock() {
     HW.$html.classList.remove("splash-scroll-lock");
@@ -286,6 +330,7 @@ const videoClasses = [
 
       splashLoaded = true;
       document.documentElement.classList.add("splash-loaded");
+      scheduleSplashIntroComplete();
 
       clearTimeout(revealTimer);
       revealTimer = setTimeout(revealHomeUI, REVEAL_DELAY);
@@ -320,6 +365,7 @@ const videoClasses = [
       if (splashDismissed) return;
 
       splashDismissed = true;
+      pendingSplashDismiss = null;
       HW.$html.classList.add("splash-dismissed");
       
       // Mark splash as inactive
@@ -350,6 +396,12 @@ const videoClasses = [
 
     const dismiss = () => {
       if (splashDismissed) return;
+
+      if (!isSplashIntroFullyVisible()) {
+        pendingSplashDismiss = dismiss;
+        splashLog("Dismiss queued until splash intro completes");
+        return;
+      }
 
       splashLog("Dismiss triggered");
       splashDismissed = true;
@@ -456,13 +508,17 @@ const videoClasses = [
     clearTimeout(delayedRevealTimer);
     clearTimeout(idleDismissTimer);
     clearTimeout(splashUnlockTimer);
+    clearTimeout(splashIntroCompleteTimer);
     revealTimer = null;
     delayedRevealTimer = null;
     idleDismissTimer = null;
     splashUnlockTimer = null;
+    splashIntroCompleteTimer = null;
 
     splashLoaded = false;
     splashDismissed = false;
+    splashIntroComplete = false;
+    pendingSplashDismiss = null;
     dismissListenersAttached = false;
     window.hwSplashActive = false;
     HW.$html.classList.remove("splash-scroll-lock");

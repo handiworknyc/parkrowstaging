@@ -6,3 +6,9 @@
   command = "npm run dev"
   port = 8888
   targetPort = 4321
+
+[[redirects]]
+  from = "https://parkrow1.netlify.app/*"
+  to = "https://parkrowbellevue.com/:splat"
+  status = 301
+  force = true
