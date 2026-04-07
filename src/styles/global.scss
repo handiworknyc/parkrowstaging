@@ -1232,6 +1232,10 @@ ul.two-col-list.wide-list-columns {
 		max-width: none;
 		object-fit: contain;
 	}
+
+	.carousel-photo-picture {
+		width: fit-content;
+	}
 }
 
 
@@ -1245,6 +1249,11 @@ ul.two-col-list.wide-list-columns {
     backface-visibility: hidden;
     transform: translateZ(0);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+.carousel-module .carousel-photo-picture {
+	display: block;
+	width: 100%;
 }
 
 @media (min-width: 1600px) {

@@ -77,6 +77,8 @@ const TEXT_FADE_OVERLAP = 0.1;
 const TEXT_FADE_IN_DELAY = TEXT_FADE_OUT_DURATION - TEXT_FADE_OVERLAP;
 const TEXT_FADE_IN_EASE = [0.32, 0, 0.2, 1];
 const TEXT_FADE_OUT_EASE = [0.22, 1, 0.36, 1];
+const CAROUSEL_MOBILE_IMAGE_MEDIA = "(max-width: 599px)";
+const CAROUSEL_DESKTOP_IMAGE_MEDIA = "(min-width: 600px)";
 
 async function loadFsLightboxConstructor() {
   if (typeof window === "undefined") {
@@ -442,6 +444,8 @@ const Slide = React.memo(
   function Slide({ image, index, gallerySize, onOpenLightbox, lightboxReady }) {
     const isLightboxEnabled = lightboxReady && typeof onOpenLightbox === "function" && Boolean(image.lightboxSrc || image.src);
     const lightboxSource = image.lightboxSrc || image.src || "";
+    const mobileSrc = image.mobileSrc || image.src;
+    const desktopSrc = image.desktopSrc || image.src;
     const figureClassName = [
       "slide-figure",
       image.caption ? "has-caption" : "",
@@ -476,17 +480,31 @@ const Slide = React.memo(
               </span>
             </button>
           )}
-          <img
-            draggable={false}
-            className="photo"
-            src={image.src}
-            alt={image.alt}
-            decoding="async"
-            loading="eager"
-            style={{
-              aspectRatio: image.aspectRatio,
-            }}
-          />
+          <picture className="carousel-photo-picture">
+            {mobileSrc && (
+              <source
+                media={CAROUSEL_MOBILE_IMAGE_MEDIA}
+                srcSet={mobileSrc}
+              />
+            )}
+            {desktopSrc && (
+              <source
+                media={CAROUSEL_DESKTOP_IMAGE_MEDIA}
+                srcSet={desktopSrc}
+              />
+            )}
+            <img
+              draggable={false}
+              className="photo"
+              src={image.src}
+              alt={image.alt}
+              decoding="async"
+              loading="eager"
+              style={{
+                aspectRatio: image.aspectRatio,
+              }}
+            />
+          </picture>
           {image.caption && (
             <figcaption className="slide-caption">{image.caption}</figcaption>
           )}

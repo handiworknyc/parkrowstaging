@@ -80,8 +80,10 @@ const processedContent = Array.isArray(content)
 const carouselImages = Array.isArray(images)
   ? images.flatMap((item, index) => {
       const imgData = getCarouselImageData(item);
-      const mediumUrl = imgData?.sizes?.intch_med;
-      const imageUrl = mediumUrl || imgData?.url || imgData?.src;
+      const fallbackUrl = imgData?.url || imgData?.src;
+      const mediumUrl = imgData?.sizes?.intch_med || fallbackUrl;
+      const largeUrl = imgData?.sizes?.intch_lg || fallbackUrl || mediumUrl;
+      const imageUrl = largeUrl || mediumUrl || fallbackUrl;
 
       if (!imgData || !imageUrl) {
         return [];
@@ -99,6 +101,8 @@ const carouselImages = Array.isArray(images)
         {
           id: imgData.ID || imgData.id || index,
           src: imageUrl,
+          mobileSrc: mediumUrl || imageUrl,
+          desktopSrc: largeUrl || imageUrl,
           lightboxSrc: lightboxUrl,
           alt: imgData.alt || imgData.title || `Image ${index + 1}`,
           caption: item?.caption || "",
