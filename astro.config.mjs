@@ -35,6 +35,20 @@ export default defineConfig({
   },
 
   vite: {
+    optimizeDeps: {
+      include: [
+        "embla-carousel-react",
+        "gsap",
+        "gsap/Draggable",
+        "gsap/InertiaPlugin",
+        "gsap/ScrollTrigger",
+        "gsap/SplitText",
+        "lucide-react",
+        "motion/react",
+        "react-zoom-pan-pinch",
+      ],
+    },
+
     server: {
       fs: {
         allow: [root, resolve(root, "videos")],
