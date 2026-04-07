@@ -1,0 +1,39 @@
+# Park Row Bellevue robots policy
+# Keep public marketing pages available to search and AI answer crawlers,
+# while avoiding crawl traffic on internal endpoints and debug/test routes.
+
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: ClaudeBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /preview/
+Disallow: /wp-sync
+Disallow: /mp4-proxy
+Disallow: /stream-proxy
+Disallow: /avesdo-debug
+Disallow: /hello
+Disallow: /vt-a
+Disallow: /vt-b
+Disallow: /prefetch-map
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /preview/
+Disallow: /wp-sync
+Disallow: /mp4-proxy
+Disallow: /stream-proxy
+Disallow: /avesdo-debug
+Disallow: /hello
+Disallow: /vt-a
+Disallow: /vt-b
+Disallow: /prefetch-map
