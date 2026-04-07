@@ -147,34 +147,43 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
   const advanceSlide = useCallback(
     (getNextIndex) => {
-      setCurrentIndex((prevIndex) => {
-        if (slidesWithImageProps.length <= 1) {
-          return prevIndex;
+      if (disableBlur && swipeTransitionLockRef.current) {
+        return;
+      }
+
+      if (slidesWithImageProps.length <= 1) {
+        return;
+      }
+
+      const nextIndex = getNextIndex(currentIndex);
+
+      if (nextIndex === currentIndex) {
+        return;
+      }
+
+      const previousEntry = slidesWithImageProps[currentIndex];
+
+      if (previousEntry) {
+        if (disableBlur) {
+          swipeTransitionLockRef.current = true;
         }
 
-        const nextIndex = getNextIndex(prevIndex);
+        transitionCounterRef.current += 1;
+        const exitEntry = {
+          ...previousEntry,
+          key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
+        };
 
-        if (nextIndex === prevIndex) {
-          return prevIndex;
-        }
-
-        const previousEntry = slidesWithImageProps[prevIndex];
-
-        if (previousEntry) {
-          transitionCounterRef.current += 1;
-          setExitingSlides((current) => [
-            ...current,
-            {
-              ...previousEntry,
-              key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
-            },
-          ]);
-        }
-
-        return nextIndex;
-      });
+        // Call both updates at the same level so React 18 batches them into
+        // a single commit — prevents a flash frame where the old slide drops
+        // to opacity 0 before the exiting overlay figure is mounted.
+        setCurrentIndex(nextIndex);
+        setExitingSlides((current) => [...current, exitEntry]);
+      } else {
+        setCurrentIndex(nextIndex);
+      }
     },
-    [slidesWithImageProps]
+    [disableBlur, slidesWithImageProps, currentIndex]
   );
 
   const handleNext = useCallback(() => {
@@ -234,12 +243,10 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
     }
 
     if (deltaX < 0) {
-      swipeTransitionLockRef.current = true;
       handleNext();
       return;
     }
 
-    swipeTransitionLockRef.current = true;
     handlePrev();
   }, [clearSwipeGesture, exitingSlides.length, handleNext, handlePrev, slidesWithImageProps.length]);
 
@@ -490,6 +497,10 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         },
       };
 
+  const exitingSlideStyle = disableBlur
+    ? { zIndex: 3, opacity: 1, willChange: "opacity" }
+    : maskStyle;
+
   const renderSlideImage = (entry, index, options = {}) => {
     if (!entry?.imageProps?.src) {
       return null;
@@ -559,7 +570,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
               }`}
               initial={exitingSlideInitial}
               animate={exitingSlideAnimate}
-              style={disableBlur ? undefined : maskStyle}
+              style={exitingSlideStyle}
               onAnimationComplete={() => {
                 swipeTransitionLockRef.current = false;
                 setExitingSlides((current) =>
