@@ -305,6 +305,10 @@
   white-space: nowrap;
 }
 
+.gf-radio-dot--selected {
+  background-color: var(--pink);
+}
+
 .gf-checkbox-item {
   display: inline-flex;
   align-items: center;

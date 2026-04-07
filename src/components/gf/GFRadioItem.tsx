@@ -53,11 +53,11 @@ export function GFRadioItem({ text, value, state }: Props) {
             <motion.span
               key="dot"
               className="
+                gf-radio-dot--selected
                 absolute
                 left-1/2 top-1/2
                 h-2.5 w-2.5
                 rounded-full
-                bg-emerald-600
               "
               initial={{ scale: 0, x: '-50%', y: '-50%' }}
               animate={{ scale: 1, x: '-50%', y: '-50%' }}

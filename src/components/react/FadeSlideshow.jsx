@@ -90,7 +90,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   const slidesWithImageProps = useMemo(
     () =>
       slides.map((slide, index) => ({
-        key: slide.id || index,
+        key: `${slide.id ?? "slide"}-${index}`,
         index,
         slide,
         imageProps: getSlideImageProps(slide),
@@ -162,8 +162,8 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
           setExitingSlides((current) => [
             ...current,
             {
-              key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
               ...previousEntry,
+              key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
             },
           ]);
         }
