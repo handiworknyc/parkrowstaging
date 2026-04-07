@@ -2394,7 +2394,7 @@
       "content": [
         {
           "title": "Perfectly Appointed:<br />\r\nGaggenau & Dornbracht",
-          "text": "<h4>Appliances Include</h4>\n<p>36” Gaggenau integrated cabinet-front refrigerator with bottom drawer freezer, internal water dispenser, and ice maker<br />\n24” Gaggenau under counter wine refrigerator<br />\n30&#8243; Gaggenau frameless flex induction cooktop with integrated vent hood<br />\n30” Gaggenau built-in stainless steel wall and speed ovens<br />\n24” Gaggenau integrated cabinet-front dishwasher</p>\n",
+          "text": "<h4>Appliances Include</h4>\n<ul>\n<li>36” Gaggenau integrated cabinet-front refrigerator with bottom drawer freezer, internal water dispenser, and ice maker</li>\n<li>24” Gaggenau under counter wine refrigerator</li>\n<li>30&#8243; Gaggenau frameless flex induction cooktop with integrated vent hood</li>\n<li>30” Gaggenau built-in stainless steel wall and speed ovens</li>\n<li>24” Gaggenau integrated cabinet-front dishwasher</li>\n</ul>\n",
           "two_col_list": false,
           "wide_list_columns": false,
           "list": "",
@@ -3173,7 +3173,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-07 17:14:27",
+  "_syncedAt": "2026-04-07 18:33:27",
   "seo": {
     "title": "Residences - Park Row Bellevue",
     "description": "",
