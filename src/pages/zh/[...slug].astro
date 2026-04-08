@@ -11,11 +11,16 @@ import NotFound from "../../components/templates/NotFound.astro";
 import { normalizeLayouts } from "../../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
+import { areTranslatedRoutesEnabled } from "../../lib/wp/getHideLanguage";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
 // ---------------- Static paths ----------------
 // Reuse the SAME WP paths, just prefixed with /zh
 export async function getStaticPaths() {
+  if (!areTranslatedRoutesEnabled()) {
+    return [];
+  }
+
   const allPaths = getAllFlexiblePagePaths();
 
   return allPaths
@@ -42,13 +47,14 @@ const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 
 // Language is locked by folder
 const lang = 'zh';
+const translationsEnabled = areTranslatedRoutesEnabled();
 
 // ---------------- Fetch ----------------
-const page = await getFlexiblePageByUri(uri);
+const page = translationsEnabled ? await getFlexiblePageByUri(uri) : null;
 const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Park Row");
 
-if (!page) {
+if (!translationsEnabled || !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
@@ -67,7 +73,7 @@ if (page?.layouts) {
 }
 ---
 
-{page ? (
+{translationsEnabled && page ? (
   <BaseLayout
     title={pageMeta.title}
     description={pageMeta.description}

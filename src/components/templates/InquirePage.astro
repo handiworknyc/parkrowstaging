@@ -1,0 +1,145 @@
+---
+import BaseLayout from "../../layouts/MainLayout.astro";
+import GravityFormWrapper from "@/components/gf/GravityFormWrapper";
+import PageTitle from "@/components/flex/page_title.astro";
+import { getLocalizedField } from "@/lib/language";
+import { getFlexiblePageMeta } from "@/lib/wp/page";
+
+import page from "@/content/wp/pages/inquire.json";
+import contactTerms from "@/content/wp/contact-terms.json";
+
+interface Props {
+  lang?: "en" | "zh";
+}
+
+const { lang = "en" } = Astro.props as Props;
+
+const firstLayout = Array.isArray(page?.layouts)
+  ? page.layouts[0]
+  : null;
+
+const usePageTitle =
+  firstLayout?.name === "page_title" ||
+  firstLayout?.acf_fc_layout === "page_title";
+
+const titleData = firstLayout?.data || firstLayout || {};
+const localizedTitleData = lang === "zh"
+  ? {
+      ...titleData,
+      h1: getLocalizedField(titleData, "h1", lang),
+      h2: getLocalizedField(titleData, "h2", lang),
+      description: getLocalizedField(titleData, "description", lang),
+    }
+  : titleData;
+const pageMeta = getFlexiblePageMeta(page, "Contact");
+---
+
+<BaseLayout
+  title={pageMeta.title}
+  description={pageMeta.description}
+  seo={pageMeta.seo}
+  lang={lang}
+>
+  <section class="hw-contain contact-form-section-wrap relative min-h-[var(--jsVhUnits100)]">
+
+    {usePageTitle ? (
+      <PageTitle
+        {...localizedTitleData}
+        className="contact-us-title gf-title-default"
+      />
+    ) : (
+      <PageTitle
+        h1="Contact Us"
+        className="contact-us-title gf-title-default"
+        description="Fill out the form below and our team will get back to you shortly."
+      />
+    )}
+
+    <div
+      class="
+		w-full
+		inset-x-0
+        absolute
+        flex
+        items-center
+        justify-center
+        pointer-events-none
+        gf-title-success
+		top-[calc(var(--headerHeight)/2)]
+		h-[calc(var(--jsVhUnits100)-var(--headerHeight))]
+      "
+    >
+      <PageTitle
+        h1="Thank you for your inquiry"
+        className="gf-confirmation-message"
+      >
+        <div
+          id="gf-confirmation-text"
+		  class='figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto'
+        />
+      </PageTitle>
+    </div>
+
+    <GravityFormWrapper formId={1} client:load />
+
+    {contactTerms?.contact_terms && (
+      <div
+        class="gf-contact-terms mb-16 text-center text-[1.16rem] leading-[1.75rem] c-green max-w-[60em] mx-auto mt-16"
+        set:html={contactTerms.contact_terms}
+      />
+    )}
+
+  </section>
+</BaseLayout>
+
+<script>
+  const el = document.getElementById('gf-confirmation-text');
+
+  let applied = false;
+
+  function sanitizeWithLineBreaks(input) {
+    if (!input) return '';
+
+    let html = String(input)
+      .replace(/\r\n|\r|\n/g, '<br>');
+
+    html = html.replace(
+      /<(?!br\s*\/?>)[^>]+>/gi,
+      ''
+    );
+
+    return html;
+  }
+
+  function applyOnce() {
+    if (applied) return;
+    if (!el) return;
+
+    const msg = window.__GF_CONFIRMATION__;
+    if (!msg) return;
+
+    applied = true;
+
+    el.innerHTML = sanitizeWithLineBreaks(msg);
+
+    window.removeEventListener('gf-confirmation', applyOnce);
+  }
+
+  applyOnce();
+  requestAnimationFrame(applyOnce);
+
+  window.addEventListener('gf-confirmation', applyOnce);
+</script>
+
+<style is:global>
+  .gf-title-success {
+    transition: opacity .7s ease;
+    opacity: 0;
+	pointer-events: none;
+  }
+
+  body.gf-success-active .gf-title-success {
+    opacity: 1;
+    pointer-events: auto;
+  }
+</style>

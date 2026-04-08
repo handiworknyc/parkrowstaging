@@ -5,7 +5,16 @@ type HideLanguageContent = {
 };
 
 const content = hideLanguageData as HideLanguageContent;
+const hideLanguage = !!content.hide_language;
 
 export async function getHideLanguage(): Promise<boolean> {
-  return !!content.hide_language;
+  return hideLanguage;
+}
+
+export function getHideLanguageSync(): boolean {
+  return hideLanguage;
+}
+
+export function areTranslatedRoutesEnabled(): boolean {
+  return !hideLanguage;
 }

@@ -160,6 +160,7 @@ async function fetchAvesdoParkRowInventory() {
         bedrooms: Number(property?.bedrooms || 0),
         bathrooms,
         area: Number(property?.floorArea || 0),
+        outdoorArea: Number(property?.outdoorArea || property?.OutdoorArea || 0),
         floorPlanImage: formatAvesdoText(property?.floorPlanImage),
         floorPlan: formatAvesdoText(property?.floorPlan),
         status: formatAvesdoText(property?.status),

@@ -1,0 +1,16 @@
+---
+export const prerender = false;
+
+import InquirePage from "../../../components/templates/InquirePage.astro";
+import NotFound from "../../../components/templates/NotFound.astro";
+import { areTranslatedRoutesEnabled } from "../../../lib/wp/getHideLanguage";
+
+const translationsEnabled = areTranslatedRoutesEnabled();
+
+if (!translationsEnabled) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+}
+---
+
+{translationsEnabled ? <InquirePage lang="zh" /> : <NotFound />}

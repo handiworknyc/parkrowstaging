@@ -8,6 +8,8 @@ import { resolve } from "node:path";
 const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
+  site: "https://parkrowbellevue.com",
+
   output: "server",
 
   adapter: netlify(),

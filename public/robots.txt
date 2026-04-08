@@ -21,8 +21,6 @@ Disallow: /mp4-proxy
 Disallow: /stream-proxy
 Disallow: /avesdo-debug
 Disallow: /hello
-Disallow: /vt-a
-Disallow: /vt-b
 Disallow: /prefetch-map
 
 User-agent: *
@@ -34,6 +32,6 @@ Disallow: /mp4-proxy
 Disallow: /stream-proxy
 Disallow: /avesdo-debug
 Disallow: /hello
-Disallow: /vt-a
-Disallow: /vt-b
 Disallow: /prefetch-map
+
+Sitemap: https://parkrowbellevue.com/sitemap.xml

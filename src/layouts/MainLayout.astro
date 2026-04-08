@@ -4,7 +4,17 @@
 	import SiteFooter from "../components/SiteFooter.astro";
 	import SiteNav from "../components/SiteNav.astro";
 	import PromoPopup from "../components/PromoPopup.astro";
+	import schemaAddress from "../content/wp/schema-address.json";
+	import socialMediaData from "../content/wp/social-media.json";
+	import { areTranslatedRoutesEnabled } from "../lib/wp/getHideLanguage";
 	import { getSocialPhone, toTelHref } from "../lib/wp/getSocialMedia";
+	import {
+		OG_LOCALES,
+		SITE_NAME,
+		SITE_URL,
+		toChinesePathname,
+		toEnglishPathname,
+	} from "@/lib/seo";
 	import {
 		getResponsiveCriticalVideoPreloadUrls,
 		getResponsiveCriticalVideoPreloadVariants,
@@ -76,6 +86,7 @@
 	const socialPhone = await getSocialPhone();
 	const socialPhoneHref = toTelHref(socialPhone);
 
+	const GTM_CONTAINER_ID = "GTM-W6KH875C";
 	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
 	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
 
@@ -88,7 +99,7 @@
 		return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
 	}
 
-	const siteUrl = Astro.site ? new URL(Astro.site.toString()) : Astro.url;
+	const siteUrl = Astro.site ? new URL(Astro.site.toString()) : new URL(SITE_URL);
 
 	function toAbsoluteUrl(raw: string): string {
 		const normalized = normalizeMetaText(raw);
@@ -166,14 +177,15 @@
 	}
 
 	const rawPathname = Astro.url.pathname;
+	const translationsEnabled = areTranslatedRoutesEnabled();
 
 	// Normalize path for layout logic (strip /zh)
-	const normalizedPathname =
-	lang === 'zh' ? rawPathname.replace(/^\/zh/, '') || '/' : rawPathname;
-	const canonicalPath = lang === 'zh' ? `/zh${normalizedPathname}` : normalizedPathname;
+	const normalizedPathname = toEnglishPathname(rawPathname);
+	const canonicalPath = lang === 'zh' ? toChinesePathname(normalizedPathname) : normalizedPathname;
 	const canonicalHref = toAbsoluteUrl(canonicalPath);
 	const alternateEnHref = toAbsoluteUrl(normalizedPathname);
-	const alternateZhHref = toAbsoluteUrl(`/zh${normalizedPathname === '/' ? '' : normalizedPathname}`);
+	const alternateZhHref = toAbsoluteUrl(toChinesePathname(normalizedPathname));
+	const alternateDefaultHref = alternateEnHref;
 	const currentPrefetchPath = normalizePrefetchPath(normalizedPathname);
 	const isFloorplansPage =
 		currentPrefetchPath === "/floor-plans/" || currentPrefetchPath === "/floorplans/";
@@ -196,6 +208,79 @@
 		? normalizeMetaText(seo?.image?.alt) || metaTitle
 		: "";
 	const twitterCard = metaImageUrl ? "summary_large_image" : "summary";
+	const ogLocale = OG_LOCALES[lang];
+	const ogLocaleAlternate = translationsEnabled ? OG_LOCALES[lang === "zh" ? "en" : "zh"] : "";
+	const socialProfiles = Object.entries(socialMediaData.social_media || {})
+		.filter(([key, value]) => key !== "site_phone" && typeof value === "string" && /^https?:\/\//.test(value))
+		.map(([, value]) => value);
+	const schemaName = "Park Row";
+	const schemaAlternateNames = [
+		"Park Row Bellevue",
+		"215 Bellevue Way NE, Bellevue, WA 98004",
+	];
+	const schemaDescription =
+		"Introducing Park Row, the newest luxury condo development in Downtown Bellevue, Washington. Enjoy park-front views and vibrant city living. Inquire today!";
+	const schemaImageUrl = toAbsoluteUrl(
+		"/img-cache/0194_park_row_park_central_hero-srgb-medium-1500x1061-2bfc707e.jpg.webp"
+	);
+	const schemaPublisherLogoUrl = toAbsoluteUrl("/images/bosa-logo.svg");
+	const schemaEmail = "info@parkrowbellevue.com";
+	const schemaTelephone = socialPhone || "425-589-0200";
+	const schemaSameAs = Array.from(
+		new Set([
+			...socialProfiles,
+			"https://www.youtube.com/@ParkRowBellevue",
+		].filter(Boolean))
+	);
+	const structuredAddress = schemaAddress.streetAddress
+		? {
+			"@type": "PostalAddress",
+			streetAddress: schemaAddress.streetAddress,
+			addressLocality: schemaAddress.addressLocality,
+			addressRegion: schemaAddress.addressRegion,
+			postalCode: schemaAddress.postalCode,
+			addressCountry: "US",
+		}
+		: null;
+	const localBusinessJsonLd = {
+		"@context": "https://schema.org",
+		"@type": "LocalBusiness",
+		name: schemaName,
+		alternateName: schemaAlternateNames,
+		image: schemaImageUrl,
+		"@id": toAbsoluteUrl("/"),
+		url: toAbsoluteUrl("/"),
+		description: schemaDescription,
+		telephone: schemaTelephone,
+		email: schemaEmail,
+		openingHours: "Mo-Fr 09:00-18:00",
+		...(structuredAddress ? { address: structuredAddress } : {}),
+		geo: {
+			"@type": "GeoCoordinates",
+			latitude: 47.61243959999999,
+			longitude: -122.2022352,
+		},
+		...(schemaSameAs.length ? { sameAs: schemaSameAs } : {}),
+	};
+	const localBusinessJsonLdString = JSON.stringify(localBusinessJsonLd).replace(/</g, "\\u003c");
+	const websiteJsonLd = {
+		"@context": "https://schema.org",
+		"@type": "WebSite",
+		name: schemaName,
+		alternateName: schemaAlternateNames,
+		url: toAbsoluteUrl("/"),
+		description: schemaDescription,
+		publisher: {
+			"@type": "Organization",
+			name: schemaName,
+			logo: {
+				"@type": "ImageObject",
+				url: schemaPublisherLogoUrl,
+			},
+		},
+		mainEntityOfPage: toAbsoluteUrl("/"),
+	};
+	const websiteJsonLdString = JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c");
 
 	const segments = normalizedPathname.split("/").filter(Boolean);
 	const bodyClasses = segments.length ? segments.join(" ") : "home";
@@ -224,6 +309,10 @@
 
 	<head>
 	<meta charset="utf-8" />
+	<meta
+		name="google-site-verification"
+		content="sixtoTtjT_SNJD4BARh_j00OTqicQGbe2OzWZmYcgnE"
+	/>
 
 	
 	{/* 🔒 CRITICAL: Scroll lock MUST run before EVERYTHING else */}
@@ -246,76 +335,99 @@
 			window.__syncHwSplashActive();
 		</script>
 
-	<script is:inline>
-		(() => {
-			const storageKey = "parkrow-cookie-consent";
-			const consentAttr = "data-cookie-consent";
+		<script is:inline>
+			(() => {
+				const storageKey = "parkrow-cookie-consent";
+				const consentAttr = "data-cookie-consent";
 
-			const readConsent = () => {
-				try {
-					return window.localStorage.getItem(storageKey);
-				} catch {
-					return null;
-				}
-			};
+				window.dataLayer = window.dataLayer || [];
+				window.gtag =
+					window.gtag ||
+					function gtag() {
+						window.dataLayer.push(arguments);
+					};
 
-			const syncKnownTrackers = (value) => {
-				const granted = value === "accepted";
+				window.gtag("consent", "default", {
+					analytics_storage: "denied",
+					ad_storage: "denied",
+					ad_user_data: "denied",
+					ad_personalization: "denied",
+				});
 
-				if (typeof window.gtag === "function") {
-					window.gtag("consent", "update", {
-						analytics_storage: granted ? "granted" : "denied",
-						ad_storage: granted ? "granted" : "denied",
-						ad_user_data: granted ? "granted" : "denied",
-						ad_personalization: granted ? "granted" : "denied",
-					});
-				}
+				const readConsent = () => {
+					try {
+						return window.localStorage.getItem(storageKey);
+					} catch {
+						return null;
+					}
+				};
 
-				if (Array.isArray(window.dataLayer)) {
-					window.dataLayer.push({
-						event: "parkrow_cookie_consent",
-						parkrow_cookie_consent: value || "pending",
-					});
-				}
-			};
+				const syncKnownTrackers = (value) => {
+					const granted = value === "accepted";
 
-			const applyConsent = (value) => {
-				if (value) {
-					document.documentElement.setAttribute(consentAttr, value);
-				} else {
-					document.documentElement.removeAttribute(consentAttr);
-				}
+					if (typeof window.gtag === "function") {
+						window.gtag("consent", "update", {
+							analytics_storage: granted ? "granted" : "denied",
+							ad_storage: granted ? "granted" : "denied",
+							ad_user_data: granted ? "granted" : "denied",
+							ad_personalization: granted ? "granted" : "denied",
+						});
+					}
 
-				syncKnownTrackers(value);
-			};
+					if (Array.isArray(window.dataLayer)) {
+						window.dataLayer.push({
+							event: "parkrow_cookie_consent",
+							parkrow_cookie_consent: value || "pending",
+						});
+					}
+				};
 
-			const writeConsent = (value) => {
-				if (value !== "accepted" && value !== "rejected") return;
+				const applyConsent = (value) => {
+					if (value) {
+						document.documentElement.setAttribute(consentAttr, value);
+					} else {
+						document.documentElement.removeAttribute(consentAttr);
+					}
 
-				try {
-					window.localStorage.setItem(storageKey, value);
-				} catch {}
+					syncKnownTrackers(value);
+				};
 
-				applyConsent(value);
-				window.dispatchEvent(
-					new CustomEvent("parkrow:cookie-consent", {
-						detail: { value },
-					})
-				);
-			};
+				const writeConsent = (value) => {
+					if (value !== "accepted" && value !== "rejected") return;
 
-			applyConsent(readConsent());
+					try {
+						window.localStorage.setItem(storageKey, value);
+					} catch {}
 
-			window.ParkRowConsent = {
-				storageKey,
-				read: readConsent,
-				write: writeConsent,
-				allowsTracking() {
-					return readConsent() === "accepted";
-				},
-			};
-		})();
-	</script>
+					applyConsent(value);
+					window.dispatchEvent(
+						new CustomEvent("parkrow:cookie-consent", {
+							detail: { value },
+						})
+					);
+				};
+
+				applyConsent(readConsent());
+
+				window.ParkRowConsent = {
+					storageKey,
+					read: readConsent,
+					write: writeConsent,
+					allowsTracking() {
+						return readConsent() === "accepted";
+					},
+				};
+			})();
+		</script>
+
+		{/* Google Tag Manager */}
+		<script is:inline define:vars={{ gtmContainerId: GTM_CONTAINER_ID }}>
+			(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+			'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+			})(window,document,'script','dataLayer',gtmContainerId);
+		</script>
 
 	{/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
 	{shouldWarmCriticalVideo && (
@@ -377,21 +489,34 @@
 	href={canonicalHref}
 	/>
 
-	<link
-	rel="alternate"
-	hreflang="en"
-	href={alternateEnHref}
-	/>
+	{translationsEnabled && (
+		<>
+			<link
+			rel="alternate"
+			hreflang="en"
+			href={alternateEnHref}
+			/>
 
-	<link
-	rel="alternate"
-	hreflang="zh"
-	href={alternateZhHref}
-	/>
+			<link
+			rel="alternate"
+			hreflang="zh"
+			href={alternateZhHref}
+			/>
+
+			<link
+			rel="alternate"
+			hreflang="x-default"
+			href={alternateDefaultHref}
+			/>
+		</>
+	)}
 
 	{metaDescription && <meta name="description" content={metaDescription} />}
 	{metaTitle && <meta property="og:title" content={metaTitle} />}
 	{metaDescription && <meta property="og:description" content={metaDescription} />}
+	<meta property="og:site_name" content={SITE_NAME} />
+	<meta property="og:locale" content={ogLocale} />
+	{ogLocaleAlternate && <meta property="og:locale:alternate" content={ogLocaleAlternate} />}
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={canonicalHref} />
 	<meta name="twitter:card" content={twitterCard} />
@@ -403,6 +528,8 @@
 	{metaImageAlt && <meta property="og:image:alt" content={metaImageAlt} />}
 	{metaImageUrl && <meta name="twitter:image" content={metaImageUrl} />}
 	{metaImageAlt && <meta name="twitter:image:alt" content={metaImageAlt} />}
+	<script type="application/ld+json" is:inline set:html={localBusinessJsonLdString}></script>
+	<script type="application/ld+json" is:inline set:html={websiteJsonLdString}></script>
 
 	{/* LCP Image Preload */}
 	{lcpEntries.map((item) => (
@@ -999,14 +1126,23 @@
 		target.scrollIntoView({ behavior: "smooth" });
 		}
 	});
-	</script>
+		</script>
 
 
-	</head>
+		</head>
 
-	<body>
-	<main>
-		<SiteNav lang={lang} />
+		<body>
+		{/* Google Tag Manager (noscript) */}
+		<noscript>
+			<iframe
+				src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+				height="0"
+				width="0"
+				style="display:none;visibility:hidden"
+			></iframe>
+		</noscript>
+		<main>
+			<SiteNav lang={lang} />
 
 		<div class="switcher">
 		<slot />

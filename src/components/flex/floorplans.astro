@@ -480,7 +480,11 @@ function formatResidenceLabel(value: string | number | null | undefined) {
           const panoramaId = `${detailId}-panorama`;
           const unitLabel = formatResidenceLabel(unit.unitNumber);
           const interiorLabel = formatSquareFootage(unit.area);
-          const exteriorLabel = formatSquareFootage(unit.detail?.exterior);
+          const exteriorValue =
+            Number.isFinite(Number(unit.outdoorArea)) && Number(unit.outdoorArea) > 0
+              ? unit.outdoorArea
+              : unit.detail?.exterior;
+          const exteriorLabel = formatSquareFootage(exteriorValue);
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
           const panorama = unit.detail?.panoramicView;

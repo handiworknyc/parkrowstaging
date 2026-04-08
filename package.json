@@ -16,10 +16,10 @@
     "update": "npm run sync:flex"
   },
   "dependencies": {
-    "@astrojs/netlify": "^6.6.4",
-    "@astrojs/react": "^4.4.0",
+    "@astrojs/netlify": "^7.0.6",
+    "@astrojs/react": "^5.0.3",
     "@radix-ui/react-slot": "^1.2.4",
-    "astro": "^5.14.1",
+    "astro": "^6.1.5",
     "astro-vtbot": "^2.1.9",
     "blueimp-md5": "^2.19.0",
     "cheerio": "^1.1.2",
@@ -57,6 +57,6 @@
     "tailwindcss": "^3.4.17"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   }
 }

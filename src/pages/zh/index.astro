@@ -1,14 +1,17 @@
 ---
 // src/pages/zh/index.astro
-export const prerender = true;
+export const prerender = false;
 
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
 import { getFlexiblePageByUri } from "../../lib/api";
 import PageContent from "../../components/wp/PageContent.astro";
+import NotFound from "../../components/templates/NotFound.astro";
+import { areTranslatedRoutesEnabled } from "../../lib/wp/getHideLanguage";
 
 // Language is implicit via folder
 const lang = 'zh';
+const translationsEnabled = areTranslatedRoutesEnabled();
 
 // ✅ HELPERS
 import { normalizeLayouts } from "../../lib/wp/normalize";
@@ -20,9 +23,14 @@ let page = null;
 
 try {
   // IMPORTANT: still pulling the SAME WP homepage
-  page = await getFlexiblePageByUri("/");
+  page = translationsEnabled ? await getFlexiblePageByUri("/") : null;
 } catch (e) {
   page = null;
+}
+
+if (!translationsEnabled) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
 }
 
 const pageMeta = getFlexiblePageMeta(page, "Park Row");
@@ -43,19 +51,23 @@ if (layouts.length > 0) {
 }
 ---
 
-<BaseLayout
-  title={pageMeta.title}
-  description={pageMeta.description}
-  seo={pageMeta.seo}
-  lcp={lcpData}
-  lcpVideo={lcpVideo}
-  preloads={preloads}
-  hasSplashVideo={hasHomeSplash}
-  lang={lang}
->
-  {page
-    ? layouts.length
-      ? <LayoutRenderer layouts={layouts} lang={lang} />
-      : <PageContent html={contentHtml} />
-    : <p>WP unavailable right now.</p>}
-</BaseLayout>
+{translationsEnabled ? (
+  <BaseLayout
+    title={pageMeta.title}
+    description={pageMeta.description}
+    seo={pageMeta.seo}
+    lcp={lcpData}
+    lcpVideo={lcpVideo}
+    preloads={preloads}
+    hasSplashVideo={hasHomeSplash}
+    lang={lang}
+  >
+    {page
+      ? layouts.length
+        ? <LayoutRenderer layouts={layouts} lang={lang} />
+        : <PageContent html={contentHtml} />
+      : <p>WP unavailable right now.</p>}
+  </BaseLayout>
+) : (
+  <NotFound />
+)}

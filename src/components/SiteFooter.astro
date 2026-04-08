@@ -8,7 +8,7 @@ const termsHref = `${langPrefix}/terms-of-use/`;
 const privacyHref = `${langPrefix}/privacy-policy/`;
 ---
 
-<div class="site-footer bg-darkgreen pt-14 pb-14 c-white" id="footer" transition:persist>
+<div class="site-footer bg-darkgreen pt-14 pb-14 c-white" id="footer">
   <div class="hw-contain">
     <div class="footer-content">
       <div class="footer-top mb-5 items-start text-[1.1rem] flex-wrap">
@@ -363,6 +363,12 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     const footer = document.getElementById("footer");
     if (!footer) return;
 
+    const state = (window.__parkRowFooterCookieState ??= {
+      listenersBound: false,
+      lastTrigger: null,
+      splashDismissHandler: null,
+    });
+
     const overlay = footer.querySelector("#footer-cookie-overlay");
     const consentButtons = footer.querySelectorAll("[data-cookie-consent]");
     const acceptButton = footer.querySelector('[data-cookie-consent="accepted"]');
@@ -393,10 +399,10 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
     };
 
     const clearPendingAutoOpen = () => {
-      if (typeof footer._cookieSplashDismissHandler !== "function") return;
+      if (typeof state.splashDismissHandler !== "function") return;
 
-      window.removeEventListener("splash:dismiss", footer._cookieSplashDismissHandler);
-      footer._cookieSplashDismissHandler = null;
+      window.removeEventListener("splash:dismiss", state.splashDismissHandler);
+      state.splashDismissHandler = null;
     };
 
     const syncTriggerButtons = (isOpen) => {
@@ -414,12 +420,12 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       syncTriggerButtons(isOpen);
 
       if (isOpen) {
-        footer._cookieSettingsTrigger = trigger || document.activeElement;
+        state.lastTrigger = trigger || document.activeElement;
         window.requestAnimationFrame(() => acceptButton?.focus());
         return;
       }
 
-      const lastTrigger = trigger || footer._cookieSettingsTrigger;
+      const lastTrigger = trigger || state.lastTrigger;
       if (lastTrigger instanceof HTMLElement) {
         lastTrigger.focus();
       }
@@ -434,7 +440,7 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       clearPendingAutoOpen();
 
       if (trigger instanceof HTMLElement) {
-        footer._cookieSettingsTrigger = trigger;
+        state.lastTrigger = trigger;
       }
 
       setOverlayOpen(false);
@@ -448,6 +454,10 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
       openOverlay(trigger);
     };
+
+    state.overlay = overlay;
+    state.close = closeOverlay;
+    state.toggle = toggleOverlay;
 
     window.ParkRowCookieSettings = {
       open: openOverlay,
@@ -468,11 +478,11 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
 
       if (shouldWaitForSplash()) {
         const onSplashDismiss = () => {
-          footer._cookieSplashDismissHandler = null;
+          state.splashDismissHandler = null;
           setOverlayOpen(true);
         };
 
-        footer._cookieSplashDismissHandler = onSplashDismiss;
+        state.splashDismissHandler = onSplashDismiss;
         window.addEventListener("splash:dismiss", onSplashDismiss, { once: true });
         return;
       }
@@ -480,9 +490,8 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
       setOverlayOpen(true);
     };
 
-    if (footer.dataset.cookieSettingsReady !== "true") {
-      footer.dataset.cookieSettingsReady = "true";
-
+    if (!state.listenersBound) {
+      state.listenersBound = true;
       document.addEventListener("click", (event) => {
         const trigger =
           event.target instanceof Element ? event.target.closest(triggerSelector) : null;
@@ -490,8 +499,18 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
         if (!(trigger instanceof HTMLElement)) return;
 
         event.preventDefault();
-        toggleOverlay(trigger);
+        window.ParkRowCookieSettings?.toggle?.(trigger);
       });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.overlay?.classList.contains("is-active")) {
+          state.close?.();
+        }
+      });
+    }
+
+    if (footer.dataset.cookieSettingsReady !== "true") {
+      footer.dataset.cookieSettingsReady = "true";
 
       overlay.addEventListener("click", (event) => {
         if (event.target === overlay) {
@@ -508,12 +527,6 @@ const privacyHref = `${langPrefix}/privacy-policy/`;
           consentApi.write(value);
           closeOverlay();
         });
-      });
-
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && overlay.classList.contains("is-active")) {
-          closeOverlay();
-        }
       });
     }
 
