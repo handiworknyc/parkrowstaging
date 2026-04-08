@@ -622,6 +622,22 @@ document.addEventListener("astro:page-load", () => {
   // 1. Try to find the overlay in case it was preserved or generated server-side
   let overlay = document.querySelector(".grid-overlay");
 
+  function normalizeGridPathname(pathname) {
+    let normalized = String(pathname || "/").trim();
+
+    if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+
+    normalized = normalized.replace(/\/+$/, "");
+
+    if (!normalized) return "/";
+
+    return normalized.replace(/^\/zh(?=\/|$)/, "") || "/";
+  }
+
+  function isGridDisabledForCurrentPage(pathname) {
+    return normalizeGridPathname(pathname || window.location.pathname) === "/inquire";
+  }
+
   function createGridOverlay() {
     const el = document.createElement("div");
     el.className = "grid-overlay";
@@ -635,6 +651,12 @@ document.addEventListener("astro:page-load", () => {
     
     document.body.appendChild(el);
     return el;
+  }
+
+  function hideGrid() {
+    if (overlay) {
+      overlay.style.display = "none";
+    }
   }
 
   function toggleGrid() {
@@ -652,6 +674,11 @@ document.addEventListener("astro:page-load", () => {
 
   // 2. Event Handler
   const onKeydown = (e) => {
+    if (isGridDisabledForCurrentPage()) {
+      hideGrid();
+      return;
+    }
+
     if (e.key === "G" && e.shiftKey) {
       e.preventDefault();
       toggleGrid();
@@ -659,7 +686,9 @@ document.addEventListener("astro:page-load", () => {
   };
 
   // 3. Restore state from previous page view (Optional Quality of Life)
-  if (sessionStorage.getItem("grid-visible") === "grid") {
+  if (isGridDisabledForCurrentPage()) {
+    hideGrid();
+  } else if (sessionStorage.getItem("grid-visible") === "grid") {
     if (!overlay) overlay = createGridOverlay();
     overlay.style.display = "grid";
   }
