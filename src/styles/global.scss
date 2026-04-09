@@ -58,15 +58,18 @@ html {
 
 .antiga {
 	font-family: "Antiga", Georgia, serif;
+	font-synthesis: none;
 }
 
 .ua-chrome .antiga {
 	text-shadow: 0 0 .25px rgba(58, 42, 34, .05);
+	filter: blur(.15px);
 }
 
-.ua-chrome .antiga {
- 	filter: blur(.15px);
- }
+html.hw-global-resizing .antiga,
+html.hw-resizing .antiga {
+	filter: none !important;
+}
 
 .figure {
 	font-family: 'Figure Extended', 'Hanken Grotesk', system-ui, sans-serif;

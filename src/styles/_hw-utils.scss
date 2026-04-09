@@ -10,7 +10,11 @@ html {
 html.hw-global-resizing body *,
 html.hw-global-resizing *:after,
 html.hw-global-resizing *:before,
-html.hw-global-resizing * {
+html.hw-global-resizing *,
+html.hw-resizing body *,
+html.hw-resizing *:after,
+html.hw-resizing *:before,
+html.hw-resizing * {
 	-webkit-transition: none 0s ease !important;
     -moz-transition: none 0s ease !important;
     -o-transition: none 0s ease !important;
@@ -74,6 +78,11 @@ strong {
 	.lilblur {
 		filter: blur(.15px)
 	}
+}
+
+html.hw-global-resizing .lilblur,
+html.hw-resizing .lilblur {
+	filter: none !important;
 }
 
 

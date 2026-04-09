@@ -1,3 +1,5 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: ["class"],
@@ -177,6 +179,6 @@ export default {
             addUtilities(bleeds);
             addUtilities(aligns);
         },
-        require("tailwindcss-animate")
+        tailwindcssAnimate
     ]
 };

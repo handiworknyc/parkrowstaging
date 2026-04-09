@@ -940,6 +940,25 @@ loop($$(".stat-section"), function(el){
 HW.oldWidth = window.innerWidth;
 
 var resizedonce = false;
+var resizeClassTimer = null;
+
+HW.setResizeClassState = function(active) {
+	HW.$html.classList.toggle('hw-global-resizing', active);
+	HW.$html.classList.toggle('hw-resizing', active);
+};
+
+HW.markResizing = function() {
+	HW.setResizeClassState(true);
+
+	if (resizeClassTimer) {
+		window.clearTimeout(resizeClassTimer);
+	}
+
+	resizeClassTimer = window.setTimeout(function() {
+		HW.setResizeClassState(false);
+		resizeClassTimer = null;
+	}, 180);
+};
 
 HW.globalResize = function(){		
 	if ((HW.isMobile == true || HW.isIpad == true) && window.innerWidth == HW.oldWidth) {
@@ -949,8 +968,6 @@ HW.globalResize = function(){
 	if(resizedonce == false) {
 		resizedonce = true;
 	}
-
-	HW.$html.classList.add('hw-global-resizing');
 
 	//HW.mobClass(window.innerWidth, HW.oldWidth);
 	//HW.headerHeightPad();
@@ -1042,14 +1059,11 @@ HW.globalResize = function(){
 	}
 	
 	var winwidth = HW.windowWidth;
-
-	HW.requestTimeout(function(){
-		HW.$html.classList.remove('hw-global-resizing');
-	}, 2000);
 	
 	if(winwidth < 992) {
 
 	}
 };
 // Resize Event
+window.addEventListener("resize", HW.markResizing);
 window.addEventListener("resize", debounce(HW.globalResize, 500));
