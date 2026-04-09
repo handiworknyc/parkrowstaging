@@ -331,6 +331,7 @@ const headerMenu = _cachedHeaderMenu;
     const toggle = document.querySelector(".nav-toggle");
     const wrapper = document.querySelector(".nav-toggle-wrap") || toggle;
     const modal = document.querySelector("#main-nav[data-nav-modal]");
+    const logoLink = document.getElementById("header-logo-a");
     const logoSvg = document.getElementById("logo-svg");
     const html = document.documentElement;
 
@@ -355,32 +356,33 @@ const headerMenu = _cachedHeaderMenu;
       logoSvg.style.setProperty("--bofa-fill", closedLogoFill);
       logoSvg.style.setProperty("--bofa-op", isMenuOpen ? "0" : "1");
     };
+    const setOpenLogoState = (pathname = window.location.pathname) => {
+      if (!logoSvg) {
+        syncPersistentHeaderTheme(pathname);
+        return;
+      }
 
-    syncLogoState();
-    if ((toggle as any)._navBound) return;
-    (toggle as any)._navBound = true;
+      syncPersistentHeaderTheme(pathname);
+      cancelLogoAnimations();
+      const closedLogoFill = getClosedLogoFill(pathname);
+      logoSvg.style.setProperty("--logo-fill", "var(--pink)");
+      logoSvg.style.setProperty("--bofa-fill", closedLogoFill);
+      logoSvg.style.setProperty("--bofa-op", "0");
+    };
+    const setClosedLogoState = (pathname = window.location.pathname) => {
+      if (!logoSvg) {
+        syncPersistentHeaderTheme(pathname);
+        return;
+      }
 
+      syncPersistentHeaderTheme(pathname);
+      cancelLogoAnimations();
+      const closedLogoFill = getClosedLogoFill(pathname);
+      logoSvg.style.setProperty("--logo-fill", closedLogoFill);
+      logoSvg.style.setProperty("--bofa-fill", closedLogoFill);
+      logoSvg.style.setProperty("--bofa-op", "1");
+    };
     const ul = modal.querySelector("ul");
-
-    // -----------------------------------------------------------------------
-    // HOVER INTERACTIONS
-    // -----------------------------------------------------------------------
-    if (wrapper) {
-      const wrapEl = wrapper as HTMLElement;
-      const elasticEase = [0.175, 0.885, 0.32, 1.275];
-
-      wrapEl.addEventListener("mouseenter", () => {
-        animate(wrapEl, { scale: 0.95, y: "-50%" }, { duration: 0.05, easing: elasticEase });
-      });
-
-      wrapEl.addEventListener("mouseleave", () => {
-        animate(wrapEl, { scale: 1, y: "-50%" }, { duration: 0.05, easing: elasticEase });
-      });
-
-      wrapEl.addEventListener("click", () => {
-        wrapEl.style.transform = "";
-      });
-    }
 
     // -----------------------------------------------------------------------
     // MENU LOGIC
@@ -403,14 +405,19 @@ const headerMenu = _cachedHeaderMenu;
       if (ul) ul.classList.add("sal-animate");
 
       if (logoSvg) {
-        animate(logoSvg, { "--logo-fill": "var(--pink)", "--bofa-op": 0 }, { duration: 0.3 });
+        setOpenLogoState();
       }
     };
 
-    const closeMenu = (pathname = window.location.pathname) => {
+    const closeMenu = (
+      pathname = window.location.pathname,
+      { instant = false }: { instant?: boolean } = {}
+    ) => {
       clearStates();
       syncPersistentHeaderTheme(pathname);
-      html.classList.add("modal-closing");
+      if (!instant) {
+        html.classList.add("modal-closing");
+      }
       toggle.classList.remove("active");
       modal.classList.remove("open");
       html.classList.remove("modal-open");
@@ -419,11 +426,15 @@ const headerMenu = _cachedHeaderMenu;
 
       if (logoSvg) {
         cancelLogoAnimations();
-        animate(
-          logoSvg,
-          { "--logo-fill": getClosedLogoFill(pathname), "--bofa-op": 1 },
-          { duration: 0.3 }
-        );
+        if (instant) {
+          setClosedLogoState(pathname);
+        } else {
+          animate(
+            logoSvg,
+            { "--logo-fill": getClosedLogoFill(pathname), "--bofa-op": 1 },
+            { duration: 0.3 }
+          );
+        }
       }
 
       if (typeof window.locoScroll !== "undefined") {
@@ -431,16 +442,44 @@ const headerMenu = _cachedHeaderMenu;
       }
     };
 
+    closeMenu(window.location.pathname, { instant: true });
+    if ((toggle as any)._navBound) return;
+    (toggle as any)._navBound = true;
+
+    // -----------------------------------------------------------------------
+    // HOVER INTERACTIONS
+    // -----------------------------------------------------------------------
+    if (wrapper) {
+      const wrapEl = wrapper as HTMLElement;
+      const elasticEase = [0.175, 0.885, 0.32, 1.275];
+
+      wrapEl.addEventListener("mouseenter", () => {
+        animate(wrapEl, { scale: 0.95, y: "-50%" }, { duration: 0.05, easing: elasticEase });
+      });
+
+      wrapEl.addEventListener("mouseleave", () => {
+        animate(wrapEl, { scale: 1, y: "-50%" }, { duration: 0.05, easing: elasticEase });
+      });
+
+      wrapEl.addEventListener("click", () => {
+        wrapEl.style.transform = "";
+      });
+    }
+
     toggle.addEventListener("click", (e) => {
       e.stopPropagation();
       modal.classList.contains("open") ? closeMenu() : openMenu();
+    });
+
+    logoLink?.addEventListener("click", () => {
+      closeMenu(getPathnameFromHref(logoLink.getAttribute("href")), { instant: true });
     });
 
     modal.addEventListener("click", (e) => {
       const link = (e.target as HTMLElement).closest("a");
       if (!link) return;
 
-      closeMenu(getPathnameFromHref(link.getAttribute("href")));
+      closeMenu(getPathnameFromHref(link.getAttribute("href")), { instant: true });
     });
 
     modal.addEventListener("transitionend", () => {
@@ -453,13 +492,21 @@ const headerMenu = _cachedHeaderMenu;
       }
     });
 
+    document.addEventListener("astro:before-preparation", () => {
+      closeMenu(window.location.pathname, { instant: true });
+    });
+
     document.addEventListener("astro:before-swap", ((event: Event) => {
       const nextPathname = (event as Event & { newDocument?: Document }).newDocument?.location
         ?.pathname;
 
       if (!nextPathname) return;
-      syncLogoState(nextPathname);
+      closeMenu(nextPathname, { instant: true });
     }) as EventListener);
+
+    document.addEventListener("astro:after-swap", () => {
+      closeMenu(window.location.pathname, { instant: true });
+    });
   }
 
   const bootNav = () => initNav();
