@@ -348,7 +348,7 @@
     {
       "acf_fc_layout": "full_bleed_img",
       "layout_settings": {
-        "section_title": "Welcome to Park Row",
+        "section_title": "Welcome to <br />\r\nPark Row",
         "section_h2": "",
         "section_text": "",
         "green_bg": false,
@@ -1247,7 +1247,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-08 19:42:03",
+  "_syncedAt": "2026-04-09 01:46:50",
   "seo": {
     "title": "New Luxury Condominium in Downtown Bellevue | Park Row",
     "description": "Introducing Park Row, the newest luxury condo development in Downtown Bellevue, Washington. Enjoy park-front views and vibrant city living. Inquire today!",

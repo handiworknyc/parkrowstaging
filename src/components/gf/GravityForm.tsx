@@ -124,6 +124,19 @@ function shouldEdgewiseDebug(): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
+function shouldLogEdgewiseLocally(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const hostname = window.location.hostname.trim().toLowerCase();
+
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]'
+  );
+}
+
 function warmSubmitApiRoutes() {
   if (typeof window === 'undefined') return;
   if ((window as any).__GF_SUBMIT_WARMED__) return;
@@ -551,11 +564,19 @@ export default function GravityForm({ form, onSuccess }: Props) {
 
       const endpoint = '/api/gf/submit';
       const edgewiseDebug = shouldEdgewiseDebug();
+      const edgewiseLocalLog = shouldLogEdgewiseLocally();
 
       if (edgewiseDebug) {
         console.info('[GF] edgewise debug enabled', {
           fieldKeys: Object.keys(submissionValues).sort(),
           formId: form.id,
+          url: window.location.href,
+        });
+      } else if (edgewiseLocalLog) {
+        console.info('[GF] local avesdo logging enabled', {
+          fieldKeys: Object.keys(submissionValues).sort(),
+          formId: form.id,
+          mode: 'parallel',
           url: window.location.href,
         });
       }
@@ -564,6 +585,7 @@ export default function GravityForm({ form, onSuccess }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...(edgewiseLocalLog ? { edgewise_log: true } : {}),
           ...(edgewiseDebug
             ? { edgewise_debug: true }
             : { edgewise_parallel: true }),
@@ -591,6 +613,14 @@ export default function GravityForm({ form, onSuccess }: Props) {
         } else {
           console.warn('[GF] edgewise debug', parsed.data.edgewise);
         }
+      } else if (edgewiseLocalLog) {
+        console.info(
+          '[GF] local avesdo logging: final submit result is in the Astro server logs',
+          {
+            formId: form.id,
+            mode: edgewiseDebug ? 'debug' : 'parallel',
+          }
+        );
       }
 
       if (!res.ok) {

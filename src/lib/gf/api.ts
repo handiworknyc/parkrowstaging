@@ -1,4 +1,5 @@
 // src/lib/gf/api.ts
+import { getEnv as getSharedEnv } from "../env.ts";
 import { makeRoutes } from "./config";
 
 export type SubmitResponse = {
@@ -25,13 +26,7 @@ function isServer() {
  * - Browser: falls back to import.meta.env (build-time) — PUBLIC_* only
  */
 function getEnv(name: string): string {
-  // import.meta only exists in ESM; guard it carefully
-  const imeEnv =
-    typeof import.meta !== "undefined" && (import.meta as any)?.env
-      ? (import.meta as any).env
-      : {};
-  const pe = typeof process !== "undefined" && (process as any)?.env ? (process as any).env : {};
-  return String(pe[name] ?? imeEnv[name] ?? "");
+  return getSharedEnv(name);
 }
 
 // Toggle verbose logs on the server with LOG_GF=1

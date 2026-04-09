@@ -1,5 +1,6 @@
 // src/pages/api/blog-latest.json.ts
 import type { APIRoute } from "astro";
+import { getEnv } from "../../lib/env.ts";
 
 type WPPost = {
   id: number;
@@ -18,9 +19,9 @@ const MAX_PER_PAGE = 20;
 
 function getWpBase(): string | null {
   // Prefer WP_BASE_URL; fall back to WORDPRESS_API_URL with /graphql stripped
-  const gql = (import.meta.env.WORDPRESS_API_URL || "").trim();
+  const gql = getEnv("WORDPRESS_API_URL").trim();
   const fromGql = gql ? gql.replace(/\/graphql\/?$/i, "") : "";
-  const base = (import.meta.env.WP_BASE_URL || "").trim() || fromGql;
+  const base = getEnv("WP_BASE_URL").trim() || fromGql;
   return base || null;
 }
 

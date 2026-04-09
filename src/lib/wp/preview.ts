@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { getEnv } from "../env.ts";
 import { authHeaders } from "./env";
 import type { FlexiblePageSeo } from "./page";
 
@@ -15,7 +16,7 @@ export type PreviewFlexiblePage = {
   [key: string]: unknown;
 };
 
-const WP_BASE = (import.meta.env.WP_BASE_URL || "").trim();
+const WP_BASE = getEnv("WP_BASE_URL").trim();
 
 function normalizeUri(uri: string): string {
   let normalized = (uri || "/").trim();

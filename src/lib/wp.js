@@ -1,12 +1,6 @@
 // src/lib/wp.js
 // Server-only helpers for WordPress GraphQL/REST (Astro/SSR safe).
-// IMPORTANT: No dynamic access to import.meta.env — only static property reads.
-
-// ---- Env (static reads only) ----
-const IM_WP_GRAPHQL_URL    = import.meta.env.WP_GRAPHQL_URL;
-const IM_WORDPRESS_API_URL = import.meta.env.WORDPRESS_API_URL;
-const IM_WP_BASE_URL       = import.meta.env.WP_BASE_URL;
-const IM_WP_AUTH_BASIC     = import.meta.env.WP_AUTH_BASIC;
+import { getEnv } from "./env.ts";
 
 /** Pick the first non-empty string. */
 function firstNonEmpty(...vals) {
@@ -20,20 +14,18 @@ function firstNonEmpty(...vals) {
 /** Resolve the GraphQL endpoint from env; fallback to `${WP_BASE_URL}/graphql`. */
 function getGraphQLEndpoint() {
   const direct = firstNonEmpty(
-    IM_WP_GRAPHQL_URL,
-    IM_WORDPRESS_API_URL,
-    process.env.WP_GRAPHQL_URL,
-    process.env.WORDPRESS_API_URL,
+    getEnv("WP_GRAPHQL_URL"),
+    getEnv("WORDPRESS_API_URL"),
   );
   if (direct) return direct;
 
-  const base = firstNonEmpty(IM_WP_BASE_URL, process.env.WP_BASE_URL);
+  const base = getEnv("WP_BASE_URL");
   return base ? new URL("/graphql", base).toString() : null;
 }
 
 /** Basic auth header from WP_AUTH_BASIC ("user:pass"). */
 function authHeaders(extra = {}) {
-  const pair = firstNonEmpty(IM_WP_AUTH_BASIC, process.env.WP_AUTH_BASIC);
+  const pair = getEnv("WP_AUTH_BASIC");
   if (!pair) return { ...extra };
   const token = Buffer.from(pair, "utf8").toString("base64");
   return { Authorization: `Basic ${token}`, ...extra };

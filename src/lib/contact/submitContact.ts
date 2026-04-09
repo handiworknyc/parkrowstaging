@@ -1,3 +1,5 @@
+import { getEnv as getSharedEnv } from '../env.ts';
+
 const EDGEWISE_GRAPHQL_URL = 'https://api.edgewise.io/graphql';
 
 const EDGEWISE_CONTACT_PROJECT_MUTATION = `
@@ -22,7 +24,6 @@ const EDGEWISE_PROJECT_LEAD_SOURCES_QUERY = `
 `;
 
 const EDGEWISE_LEAD_SOURCE_CACHE_TTL_MS = 5 * 60 * 1000;
-
 type SubmissionFields = Record<string, unknown>;
 
 type SubmitArgs = {
@@ -99,12 +100,7 @@ function logResponse(
 }
 
 function getEnv(name: string): string {
-  const ime =
-    (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
-  const pe =
-    (typeof process !== 'undefined' && (process as any).env) || {};
-
-  return String(pe[name] ?? ime[name] ?? '').trim();
+  return getSharedEnv(name);
 }
 
 function windowlessSetTimeout(callback: () => void, delay: number) {
@@ -871,13 +867,15 @@ export async function submitContact(
     };
   }
 
-  const { edgewise_debug, edgewise_parallel, form_id, fields } = body as {
+  const { edgewise_debug, edgewise_log, edgewise_parallel, form_id, fields } = body as {
     edgewise_debug?: unknown;
+    edgewise_log?: unknown;
     edgewise_parallel?: unknown;
     fields?: unknown;
     form_id?: number | string;
   };
   const edgewiseParallel = isTruthy(edgewise_parallel);
+  const edgewiseLocalLogRequested = isTruthy(edgewise_log);
 
   if (
     !form_id ||
@@ -905,6 +903,17 @@ export async function submitContact(
     isTruthy(getEnv('PUBLIC_EDGEWISE_DEBUG'));
   const shouldSubmitEdgewiseParallel =
     edgewiseParallel && !edgewiseDebugEnabled;
+
+  if (edgewiseLocalLogRequested) {
+    console.info('[contact submit] local avesdo logging enabled', {
+      edgewiseDebugEnabled,
+      edgewiseParallelRequested: edgewiseParallel,
+      formId: form_id,
+      populatedFieldKeys: getPopulatedFieldKeys(normalizedFields),
+      shouldSubmitEdgewiseParallel,
+    });
+  }
+
   // In normal mode, start Edgewise immediately so the user-facing response only
   // waits on Gravity. Debug mode keeps the old blocking sequence.
   const parallelEdgewisePromise = shouldSubmitEdgewiseParallel
@@ -914,6 +923,12 @@ export async function submitContact(
         fields: normalizedFields,
       })
     : null;
+
+  parallelEdgewisePromise?.then((result) => {
+    if (edgewiseLocalLogRequested) {
+      console.info('[contact submit] local avesdo result', result);
+    }
+  });
 
   parallelEdgewisePromise?.catch((error) => {
     console.error('[contact submit] parallel edgewise request failed', error);
@@ -955,6 +970,10 @@ export async function submitContact(
       '[contact submit] edgewise skipped because gravity did not succeed',
       edgewiseDebug
     );
+  }
+
+  if (edgewiseLocalLogRequested && edgewiseDebug) {
+    console.info('[contact submit] local avesdo result', edgewiseDebug);
   }
 
   return appendEdgewiseDebug(gravityResult, edgewiseDebug);

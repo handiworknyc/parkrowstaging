@@ -1,5 +1,6 @@
 // /src/pages/api/news.json.ts
 import type { APIRoute } from "astro";
+import { getEnv } from "../../lib/env.ts";
 
 const DEFAULT_COUNT = 5;
 const MAX_COUNT = 20;
@@ -10,14 +11,14 @@ const TTL_MS = 60_000; // 1 minute
 
 function getWpBase(): string | null {
   // Prefer WP_BASE_URL; fall back to WORDPRESS_API_URL with /graphql stripped
-  const gql = (import.meta.env.WORDPRESS_API_URL || "").trim();
+  const gql = getEnv("WORDPRESS_API_URL").trim();
   const fromGql = gql ? gql.replace(/\/graphql\/?$/i, "") : "";
-  const base = (import.meta.env.WP_BASE_URL || "").trim() || fromGql;
+  const base = getEnv("WP_BASE_URL").trim() || fromGql;
   return base || null;
 }
 
 export function authHeaders(): Record<string, string> {
-  const pair = (import.meta.env.WP_AUTH_BASIC || "").trim(); // "user:pass"
+  const pair = getEnv("WP_AUTH_BASIC").trim(); // "user:pass"
   if (!pair) return {};
   const token = Buffer.from(pair, "utf8").toString("base64");
   return { Authorization: `Basic ${token}` };

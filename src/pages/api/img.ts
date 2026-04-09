@@ -1,15 +1,16 @@
 import type { APIRoute } from 'astro';
+import { getEnv } from '../../lib/env.ts';
 
-const ALLOW_HOSTS = (import.meta.env.WP_IMAGE_ALLOW_HOSTS || '')
+const ALLOW_HOSTS = (getEnv('WP_IMAGE_ALLOW_HOSTS') || '')
   .split(',')
   .map(s => s.trim().toLowerCase())
   .filter(Boolean);
 
 // Set STRICT_IMAGE_ALLOWLIST=0 to temporarily disable host checks (for testing)
-const STRICT = (import.meta.env.STRICT_IMAGE_ALLOWLIST ?? '1') !== '0';
+const STRICT = (getEnv('STRICT_IMAGE_ALLOWLIST') || '1') !== '0';
 
 function authHeaders(): Record<string, string> {
-  const pair = import.meta.env.WP_AUTH_BASIC as string | undefined; // "user:pass"
+  const pair = getEnv('WP_AUTH_BASIC');
   if (!pair) return {};
   const token = Buffer.from(pair).toString('base64');
   return { Authorization: `Basic ${token}` };
@@ -35,7 +36,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     // Try to look like a browser request coming from WP itself
-    const wpBase = import.meta.env.WP_BASE_URL || '';
+    const wpBase = getEnv('WP_BASE_URL');
     const fetchHeaders: Record<string, string> = {
       'User-Agent':
         'Mozilla/5.0 (compatible; ImageProxy/1.0; +https://your-site.example)',
