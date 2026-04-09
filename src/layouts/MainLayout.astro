@@ -24,6 +24,7 @@
 	import belowCssUrl from "@/styles/below.scss?url";
 	import headerCriticalUrl from "@/scripts/header-critical.js?url";
 
+	import "video.js/dist/video-js.css";
 	import "../styles/global.scss";
 
 	/* ---------------- Types ---------------- */
@@ -86,6 +87,7 @@
 	const socialPhone = await getSocialPhone();
 	const socialPhoneHref = toTelHref(socialPhone);
 
+	const GTM_CONTAINER_ID = "GTM-W6KH875C";
 	const CLOUDFLARE_STREAM_DOMAIN = "https://customer-iyfwlpktwxjf4onx.cloudflarestream.com";
 	const CLOUDFLARE_DELIVERY_DOMAIN = "https://videodelivery.net";
 
@@ -417,6 +419,15 @@
 					},
 				};
 			})();
+		</script>
+
+		{/* Google Tag Manager */}
+		<script is:inline define:vars={{ gtmContainerId: GTM_CONTAINER_ID }}>
+			(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+			'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+			})(window,document,'script','dataLayer',gtmContainerId);
 		</script>
 
 	{/* ⚡️ PRIORITY 1: Preload VideoJS immediately (Network) */}
@@ -1122,6 +1133,15 @@
 		</head>
 
 		<body>
+		{/* Google Tag Manager (noscript) */}
+		<noscript>
+			<iframe
+				src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+				height="0"
+				width="0"
+				style="display:none;visibility:hidden"
+			></iframe>
+		</noscript>
 		<main>
 			<SiteNav lang={lang} />
 

@@ -49,17 +49,6 @@ function getTargetBandwidthForViewport(viewportWidth) {
 }
 
 /* -----------------------------------------------------
-   CSS loader
------------------------------------------------------ */
-let videoJsCssLoaded = false;
-function ensureVideoJsCss() {
-  if (!videoJsCssLoaded) {
-    import("video.js/dist/video-js.css");
-    videoJsCssLoaded = true;
-  }
-}
-
-/* -----------------------------------------------------
    State
 ----------------------------------------------------- */
 const players = new Map();
@@ -172,7 +161,6 @@ export function initCFVideo(videoId, reason = "init") {
   }
 
   const hasControls = el.classList.contains("show-controls-true");
-  if (hasControls) ensureVideoJsCss();
 
   const { isFirstLoad, splashActive } = isFirstLoadSplashActive();
 
