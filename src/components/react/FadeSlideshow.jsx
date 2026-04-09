@@ -1,18 +1,28 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import SlideNavigation from "../ui/SlideNavigation"; 
+import SlideNavigation from "../ui/SlideNavigation";
 
 const MOBILE_BLUR_MEDIA_QUERY =
   "(max-width: 768px), (hover: none) and (pointer: coarse)";
-const SLIDE_EXIT_DURATION_SECONDS = 4;
+const DESKTOP_MASK_TRANSITION_DURATION_SECONDS = 1.2;
+const DESKTOP_MASK_TRANSITION_EASE = [0.42, 0, 0.58, 1];
 const MOBILE_CROSSFADE_DURATION_SECONDS = 1.35;
 const SLIDE_TRANSITION_EASE = [0.19, 1, 0.32, 1];
 const MOBILE_CROSSFADE_EASE = [0.4, 0, 0.2, 1];
 const CUBIC_BEZ_EASE = [0.36, 0.01, 0.1, 1.01];
+const CAPTION_FADE_DURATION_SECONDS = 0.6;
 const SECTION_COPY_FADE_IN_DURATION_SECONDS = 1.1;
 const SECTION_COPY_FADE_IN_DELAY_SECONDS = 0.2;
 const SWIPE_MIN_DISTANCE_PX = 48;
 const SWIPE_AXIS_LOCK_RATIO = 1.25;
+const DESKTOP_MASK_OPAQUE_STOP_PERCENT = 35;
+const DESKTOP_MASK_TRANSPARENT_STOP_PERCENT = 65;
+const DESKTOP_MASK_SIZE_PERCENT = 500;
+// Trim the fully-hidden / fully-visible dead travel from the old 100% -> 0%
+// sweep so the visible wipe keeps the same softness at a shorter duration.
+const DESKTOP_MASK_START_POSITION_PERCENT = 82;
+const DESKTOP_MASK_END_POSITION_PERCENT = 18;
 
 // 1. Helper function
 const getSlideImageProps = (slide) => {
@@ -57,13 +67,19 @@ function getSectionContentKey(...parts) {
 export default function FadeSlideshow({ slides, sectionContent = null, placeBelow = false, sectionBgColorClass = null, tallestSectionIndex = 0 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [disableBlur, setDisableBlur] = useState(false);
-  const [exitingSlides, setExitingSlides] = useState([]);
+  // enteringSlide: the slide being revealed on top; currentIndex stays on the old slide
+  // until the animation completes, then flips to the new index.
+  const [enteringSlide, setEnteringSlide] = useState(null);
   const imageRefs = useRef([]);
   const slideshowTouchRef = useRef(null);
   const swipeStartRef = useRef(null);
   const swipeCurrentRef = useRef(null);
   const swipeTransitionLockRef = useRef(false);
   const transitionCounterRef = useRef(0);
+  // When a transition completes, the incoming caption should appear instantly
+  // rather than fading in from opacity 0 — prevents a visible caption gap
+  // between the overlay caption (which disappears) and the base caption (which mounts).
+  const captionInstantRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) {
@@ -108,12 +124,35 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
   useEffect(() => {
     if (slidesWithImageProps.length === 0) {
       setCurrentIndex(0);
-      setExitingSlides([]);
+      setEnteringSlide(null);
       return;
     }
 
     setCurrentIndex((prev) => Math.min(prev, slidesWithImageProps.length - 1));
   }, [slidesWithImageProps.length]);
+
+  // Two-phase cleanup + caption instant-flag management, all in one effect to
+  // guarantee correct ordering across render cycles:
+  //
+  //   Render A (currentIndex just flipped, enteringSlide still set):
+  //     → sets captionInstantRef = true, calls setEnteringSlide(null) → Render B
+  //
+  //   Render B (enteringSlide now null):
+  //     → caption reads captionInstantRef = true → mounts at opacity 1 (no flash)
+  //     → this effect's else-branch resets captionInstantRef = false for next time
+  //
+  // Keeping both branches in the same [currentIndex, enteringSlide] effect ensures
+  // the reset happens in Render B's effect flush, not in Render A's (which would
+  // clear the flag before Render B ever reads it).
+  useEffect(() => {
+    if (enteringSlide && currentIndex === enteringSlide.targetIndex) {
+      captionInstantRef.current = true;
+      setEnteringSlide(null);
+    } else if (!enteringSlide) {
+      // Render B: caption has mounted at opacity 1 — safe to reset for next use.
+      captionInstantRef.current = false;
+    }
+  }, [currentIndex, enteringSlide]);
 
   useEffect(() => {
     const cleanups = [];
@@ -147,7 +186,12 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
   const advanceSlide = useCallback(
     (getNextIndex) => {
-      if (disableBlur && swipeTransitionLockRef.current) {
+      // Use ref-based guard so the check is never stale across React renders.
+      // A state-based check (enteringSlide !== null) would be captured in the
+      // useCallback closure and remain true until the callback is rememoized
+      // (i.e. until the *next* render), causing the buttons to feel locked
+      // even after the animation has finished.
+      if (swipeTransitionLockRef.current) {
         return;
       }
 
@@ -161,29 +205,32 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         return;
       }
 
-      const previousEntry = slidesWithImageProps[currentIndex];
+      const nextEntry = slidesWithImageProps[nextIndex];
 
-      if (previousEntry) {
-        if (disableBlur) {
-          swipeTransitionLockRef.current = true;
-        }
-
-        transitionCounterRef.current += 1;
-        const exitEntry = {
-          ...previousEntry,
-          key: `exit-${previousEntry.key}-${transitionCounterRef.current}`,
-        };
-
-        // Call both updates at the same level so React 18 batches them into
-        // a single commit — prevents a flash frame where the old slide drops
-        // to opacity 0 before the exiting overlay figure is mounted.
-        setCurrentIndex(nextIndex);
-        setExitingSlides((current) => [...current, exitEntry]);
-      } else {
-        setCurrentIndex(nextIndex);
+      if (!nextEntry) {
+        return;
       }
+
+      // Lock for both mobile and desktop — cleared inside flushSync in
+      // onAnimationComplete, so it's always released before React queues effects.
+      swipeTransitionLockRef.current = true;
+
+      transitionCounterRef.current += 1;
+      const enterEntry = {
+        ...nextEntry,
+        // Unique key so React always mounts a fresh motion element
+        key: `enter-${nextEntry.key}-${transitionCounterRef.current}`,
+        // Store the target index so onAnimationComplete can flip currentIndex
+        targetIndex: nextIndex,
+      };
+
+      // Only set enteringSlide — do NOT touch currentIndex yet.
+      // currentIndex flips in onAnimationComplete, after the overlay has
+      // fully animated in. This guarantees the new slide is never visible
+      // for even a single frame before the animation begins.
+      setEnteringSlide(enterEntry);
     },
-    [disableBlur, slidesWithImageProps, currentIndex]
+    [slidesWithImageProps, currentIndex]
   );
 
   const handleNext = useCallback(() => {
@@ -229,7 +276,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
     clearSwipeGesture();
 
-    if (!start || !end || slidesWithImageProps.length <= 1 || swipeTransitionLockRef.current || exitingSlides.length > 0) {
+    if (!start || !end || slidesWithImageProps.length <= 1 || swipeTransitionLockRef.current) {
       return;
     }
 
@@ -248,7 +295,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
     }
 
     handlePrev();
-  }, [clearSwipeGesture, exitingSlides.length, handleNext, handlePrev, slidesWithImageProps.length]);
+  }, [clearSwipeGesture, handleNext, handlePrev, slidesWithImageProps.length]);
 
   useEffect(() => {
     const slideshowNode = slideshowTouchRef.current;
@@ -272,25 +319,28 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
 
   const activeEntry = slidesWithImageProps[currentIndex] || null;
   const slide = activeEntry?.slide || slides[0];
-  const captionOverlayBlur = disableBlur ? "0px" : "11px";
-  const captionFadeDuration = disableBlur ? 0.8 : 2.25;
-  const captionFadeDelay = disableBlur ? 0.15 : 0.65;
+  const captionFadeDuration = CAPTION_FADE_DURATION_SECONDS;
+  const captionFadeDelay = disableBlur ? 0.15 : 0;
+
+  // During a transition the "display index" is the entering slide's index so that
+  // captions and section content switch at the start of the transition, not the end.
+  const displayIndex = enteringSlide?.targetIndex ?? currentIndex;
+  const displaySlide = slidesWithImageProps[displayIndex]?.slide || slides[0];
 
   // Resolve section content for the current slide
   const currentSectionContent = useMemo(
-    () => resolveSectionContent(slide, sectionContent),
-    [slide, sectionContent]
+    () => resolveSectionContent(displaySlide, sectionContent),
+    [displaySlide, sectionContent]
   );
 
   // UPDATED: Extremely wide gradient for feathering
   const maskStyle = {
-    WebkitMaskImage: "linear-gradient(135deg, black 35%, transparent 65%)",
-    maskImage: "linear-gradient(135deg, black 35%, transparent 65%)",
-    WebkitMaskSize: "500% 500%", // Huge size allows for a very long fade
-    maskSize: "500% 500%",
+    WebkitMaskImage: `linear-gradient(135deg, black ${DESKTOP_MASK_OPAQUE_STOP_PERCENT}%, transparent ${DESKTOP_MASK_TRANSPARENT_STOP_PERCENT}%)`,
+    maskImage: `linear-gradient(135deg, black ${DESKTOP_MASK_OPAQUE_STOP_PERCENT}%, transparent ${DESKTOP_MASK_TRANSPARENT_STOP_PERCENT}%)`,
+    WebkitMaskSize: `${DESKTOP_MASK_SIZE_PERCENT}% ${DESKTOP_MASK_SIZE_PERCENT}%`,
+    maskSize: `${DESKTOP_MASK_SIZE_PERCENT}% ${DESKTOP_MASK_SIZE_PERCENT}%`,
     WebkitMaskRepeat: "no-repeat",
     maskRepeat: "no-repeat",
-    "--slide-caption-overlay-blur": captionOverlayBlur,
   };
 
   // Pre-resolve all slide section contents for the ghost height-setter
@@ -432,12 +482,12 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
         <AnimatePresence mode="wait">
           {currentSectionContent && (
             <motion.div
-              key={`section-${currentIndex}`}
+              key={`section-${displayIndex}`}
               className={`flex-section-content hw-contain slideshow-section-inner slideshow-section-active ${
                 !(currentSectionContent.h3 || currentSectionContent.text) ? "title-only" : ""
               }`}
               initial={{ opacity: 0 }}
-              animate={{ 
+              animate={{
                 opacity: 1,
                 transition: {
                   duration: SECTION_COPY_FADE_IN_DURATION_SECONDS,
@@ -445,7 +495,7 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
                   delay: SECTION_COPY_FADE_IN_DELAY_SECONDS,
                 }
               }}
-              exit={{ 
+              exit={{
                 opacity: 0,
                 transition: { duration: 0.5, ease: [0.4, 0, 1, 1] }
               }}
@@ -465,41 +515,53 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
       : sectionContentBlock
     : null;
 
-  const exitingSlideInitial = disableBlur
-    ? {
-        zIndex: 3,
-        opacity: 1,
-      }
+  // Entering slide animation config.
+  //
+  // Desktop (mask wipe): the overlay starts fully hidden and animates only
+  // across the portion of the mask path where the wipe is actually visible.
+  // That keeps the same soft reveal while avoiding the dead travel that made
+  // the old 4s timing feel sluggish.
+  //
+  // Mobile (crossfade): overlay starts at opacity 0 and fades to opacity 1.
+  // In both cases currentIndex only flips in onAnimationComplete, after the
+  // overlay is already fully visible, so there is no flash at either end.
+  const enteringSlideInitial = disableBlur
+    ? { opacity: 0 }
     : {
-        zIndex: 3,
         opacity: 1,
-        WebkitMaskPosition: "0% 0%",
-        maskPosition: "0% 0%",
+        WebkitMaskPosition: `${DESKTOP_MASK_START_POSITION_PERCENT}% ${DESKTOP_MASK_START_POSITION_PERCENT}%`,
+        maskPosition: `${DESKTOP_MASK_START_POSITION_PERCENT}% ${DESKTOP_MASK_START_POSITION_PERCENT}%`,
       };
 
-  const exitingSlideAnimate = disableBlur
+  const enteringSlideAnimate = disableBlur
     ? {
-        zIndex: 3,
-        opacity: 0,
+        opacity: 1,
         transition: {
           duration: MOBILE_CROSSFADE_DURATION_SECONDS,
           ease: MOBILE_CROSSFADE_EASE,
         },
       }
     : {
-        zIndex: 3,
         opacity: 1,
-        WebkitMaskPosition: "100% 100%",
-        maskPosition: "100% 100%",
+        WebkitMaskPosition: `${DESKTOP_MASK_END_POSITION_PERCENT}% ${DESKTOP_MASK_END_POSITION_PERCENT}%`,
+        maskPosition: `${DESKTOP_MASK_END_POSITION_PERCENT}% ${DESKTOP_MASK_END_POSITION_PERCENT}%`,
         transition: {
-          duration: SLIDE_EXIT_DURATION_SECONDS,
-          ease: SLIDE_TRANSITION_EASE,
+          duration: DESKTOP_MASK_TRANSITION_DURATION_SECONDS,
+          ease: DESKTOP_MASK_TRANSITION_EASE,
         },
       };
 
-  const exitingSlideStyle = disableBlur
-    ? { zIndex: 3, opacity: 1, willChange: "opacity" }
-    : maskStyle;
+  // The style prop is applied by React synchronously on mount — before any
+  // Framer Motion useLayoutEffect — so it guarantees the overlay starts in
+  // the correct hidden state on the very first paint.
+  const enteringSlideStyle = disableBlur
+    ? { zIndex: 3, opacity: 0, willChange: "opacity" }
+    : {
+        ...maskStyle,
+        zIndex: 3,
+        WebkitMaskPosition: `${DESKTOP_MASK_START_POSITION_PERCENT}% ${DESKTOP_MASK_START_POSITION_PERCENT}%`,
+        maskPosition: `${DESKTOP_MASK_START_POSITION_PERCENT}% ${DESKTOP_MASK_START_POSITION_PERCENT}%`,
+      };
 
   const renderSlideImage = (entry, index, options = {}) => {
     if (!entry?.imageProps?.src) {
@@ -562,65 +624,75 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
             );
           })}
 
-          {exitingSlides.map((entry) => (
+          {/* Entering overlay: new slide animates in from fully hidden to fully visible.
+              currentIndex does not change until onAnimationComplete, so the old slide
+              remains the "base" throughout — no flash is possible. */}
+          {enteringSlide && (
             <motion.figure
-              key={entry.key}
+              key={enteringSlide.key}
               className={`slide-figure absolute inset-0 w-full h-full pointer-events-none ${
-                entry.slide.caption ? "has-caption" : ""
+                enteringSlide.slide.caption ? "has-caption" : ""
               }`}
-              initial={exitingSlideInitial}
-              animate={exitingSlideAnimate}
-              style={exitingSlideStyle}
+              initial={enteringSlideInitial}
+              animate={enteringSlideAnimate}
+              style={enteringSlideStyle}
               onAnimationComplete={() => {
-                swipeTransitionLockRef.current = false;
-                setExitingSlides((current) =>
-                  current.filter((item) => item.key !== entry.key)
-                );
+                // flushSync forces React to commit the base-layer update
+                // synchronously, before Framer Motion can do any post-animation
+                // style cleanup (e.g. resetting WebkitMaskPosition). After this
+                // returns the new base slide is already painted, so whatever
+                // happens to the overlay afterward cannot cause a visible flash.
+                // The useEffect above then clears enteringSlide on the next render.
+                flushSync(() => {
+                  swipeTransitionLockRef.current = false;
+                  setCurrentIndex(enteringSlide.targetIndex);
+                });
               }}
             >
               <div className="image-wrapper w-full h-full">
-                {renderSlideImage(entry, entry.index, {
+                {renderSlideImage(enteringSlide, enteringSlide.index, {
                   fetchPriority: "low",
                   refIndex: null,
                 })}
-                {entry.slide.caption && (
+                {enteringSlide.slide.caption && (
                   <motion.figcaption
                     className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
-                    initial={{ opacity: 1 }}
+                    initial={{ opacity: 0 }}
                     animate={{
-                      opacity: 0,
+                      opacity: 1,
                       transition: {
-                        duration: disableBlur ? MOBILE_CROSSFADE_DURATION_SECONDS : 0.8,
-                        ease: disableBlur ? MOBILE_CROSSFADE_EASE : SLIDE_TRANSITION_EASE,
+                        duration: captionFadeDuration,
+                        ease: CUBIC_BEZ_EASE,
+                        delay: captionFadeDelay,
                       },
                     }}
                   >
-                    {entry.slide.caption}
+                    {enteringSlide.slide.caption}
                   </motion.figcaption>
                 )}
               </div>
             </motion.figure>
-          ))}
+          )}
 
           <AnimatePresence initial={false} mode="wait">
-            {slide?.caption && (
+            {slide?.caption && !enteringSlide && (
               <motion.figcaption
                 key={`caption-${currentIndex}`}
                 className="slide-caption text-[1.25rem] absolute bottom-10 left-[var(--containerPadding)] text-white z-10"
-                initial={{ opacity: 0 }}
+                initial={{ opacity: captionInstantRef.current ? 1 : 0 }}
                 animate={{
                   opacity: 1,
                   transition: {
                     duration: captionFadeDuration,
-                    ease: [0.2, 1, 0.4, 1],
+                    ease: CUBIC_BEZ_EASE,
                     delay: captionFadeDelay,
                   },
                 }}
                 exit={{
                   opacity: 0,
                   transition: {
-                    duration: 0.8,
-                    ease: SLIDE_TRANSITION_EASE,
+                    duration: CAPTION_FADE_DURATION_SECONDS,
+                    ease: CUBIC_BEZ_EASE,
                   },
                 }}
               >
@@ -630,8 +702,8 @@ export default function FadeSlideshow({ slides, sectionContent = null, placeBelo
           </AnimatePresence>
         </div>
 
-        <SlideNavigation 
-            onNext={handleNext} 
+        <SlideNavigation
+            onNext={handleNext}
             onPrev={handlePrev}
             canNext={slides.length > 1}
             canPrev={slides.length > 1}

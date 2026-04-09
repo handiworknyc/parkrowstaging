@@ -166,6 +166,7 @@ function buildSectionClasses(
   placeHeaderBelow: boolean,
   nextHasSectionContent: boolean,
   firstIsSplash: boolean,
+  isLastLayout: boolean,
   width?: string,
   panorama?: boolean
 ): string {
@@ -194,6 +195,7 @@ function buildSectionClasses(
       ? "next-has-section-content"
       : "next-no-section-content",
     isFullBleedImage && rawContent.length === 0 ? "image-only" : "",
+    isLastLayout ? "last-layout" : "",
     `rowindex-${isSecondRowAlsoRowOne ? 1 : rowindex}`,
   ];
 
@@ -299,6 +301,7 @@ const commonCtxBase = {
     placeHeaderBelow,
     nextHasSectionContent,
     firstIsSplash,
+    idx === rows.length - 1,
     row.data?.width,
     row.data?.panorama
   );
