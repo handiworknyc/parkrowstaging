@@ -15,6 +15,11 @@ const CLOUDFLARE_FALLBACK_POSTER_VARIANTS = [
   { key: "intch_med", width: 1000 },
   { key: "intch_sm", width: 600 },
 ];
+const HERO_RESPONSIVE_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1440px) 80vw, 1400px";
+const FULL_WIDTH_RESPONSIVE_SIZES = "100vw";
+const CAROUSEL_MOBILE_BREAKPOINT = 599;
+const CAROUSEL_DESKTOP_BREAKPOINT = CAROUSEL_MOBILE_BREAKPOINT + 1;
+const CRITICAL_CAROUSEL_IMAGE_COUNT = 3;
 
 function hashJSON(data) {
   return crypto.createHash("sha1").update(JSON.stringify(data)).digest("hex").slice(0, 12);
@@ -1294,51 +1299,187 @@ async function fetchSpecials() {
 /* -------------------------------------------
    LCP Helper: Extracts Candidates
 ------------------------------------------- */
-function getRawLcpImage(row) {
-  if (!row) return null;
+function getLayoutName(row) {
+  return row?.name || row?.acf_fc_layout || "";
+}
 
-  // --- Helper: Extract LCP data from a Video Array ---
-  const extractFromVideoArr = (vidArr) => {
-    if (Array.isArray(vidArr) && vidArr[0]?.yt_img) {
-      const raw = vidArr[0].yt_img;
-      const s = raw.sizes || {};
-      
-      const candidates = [
-        { url: s.intch_xl, w: s["intch_xl-width"] },
-        { url: s.intch_lg, w: s["intch_lg-width"] },
-        { url: s.intch_med, w: s["intch_med-width"] },
-        { url: s.intch_sm, w: s["intch_sm-width"] },
-      ]
-      .filter((c) => c.url && c.w) 
-      .map((c) => ({ url: c.url, w: `${c.w}w` }));
+function isFullWidthFullBleedRow(row) {
+  return (
+    getLayoutName(row) === "full_bleed_img" &&
+    normalizeTrimmedString(row?.width).toLowerCase() === "full"
+  );
+}
 
-      if (candidates.length > 0) {
-        return {
-          candidates,
-          sizesAttr: "(max-width: 1200px) 60vw, 100vw",
-        };
-      }
-    }
-    return null;
+function normalizeResponsiveBreakpointValue(value) {
+  const numeric = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function inferImageMimeType(url) {
+  const normalized = normalizeTrimmedString(url).split("?")[0].toLowerCase();
+  if (!normalized) return undefined;
+  if (normalized.endsWith(".webp")) return "image/webp";
+  if (normalized.endsWith(".jpg") || normalized.endsWith(".jpeg")) return "image/jpeg";
+  if (normalized.endsWith(".png")) return "image/png";
+  return undefined;
+}
+
+function parseSrcSetCandidates(rawSrcSet) {
+  return String(rawSrcSet || "")
+    .split(",")
+    .map((part) => {
+      const pieces = part.trim().split(/\s+/);
+      return {
+        url: pieces[0] || null,
+        w: pieces[1] || null,
+      };
+    })
+    .filter((candidate) => candidate.url);
+}
+
+function buildWpImageLcpEntry(image, { sizesAttr = FULL_WIDTH_RESPONSIVE_SIZES, media } = {}) {
+  if (!image || typeof image !== "object") return null;
+
+  const sizes = image.sizes || {};
+  const fallbackUrl = image.url || image.sourceUrl || image.src || null;
+  const candidates = [
+    { url: sizes.intch_xl || fallbackUrl, w: sizes["intch_xl-width"] },
+    { url: sizes.intch_lg || fallbackUrl, w: sizes["intch_lg-width"] },
+    { url: sizes.intch_med || fallbackUrl, w: sizes["intch_med-width"] },
+    { url: sizes.intch_sm || fallbackUrl, w: sizes["intch_sm-width"] },
+  ]
+    .filter((candidate) => candidate.url)
+    .map((candidate) => ({
+      url: candidate.url,
+      w: candidate.w ? `${candidate.w}w` : null,
+    }));
+
+  if (candidates.length === 0 && fallbackUrl) {
+    candidates.push({ url: fallbackUrl, w: null });
+  }
+
+  if (candidates.length === 0) return null;
+
+  return {
+    href: candidates[0].url,
+    imagesrcset: candidates.filter((candidate) => candidate.w).map((candidate) => `${candidate.url} ${candidate.w}`).join(", ") || undefined,
+    imagesizes: sizesAttr,
+    media,
+    type: inferImageMimeType(candidates[0].url),
   };
+}
 
-  // 1. DIRECT VIDEO FIELD
-  const directVideo = row.video || (row.data && row.data.video);
-  const directResult = extractFromVideoArr(directVideo);
-  if (directResult) return directResult;
+function getCarouselImageData(item) {
+  if (typeof item === "string") {
+    return { url: item };
+  }
 
-  // 2. IMAGES ARRAY (for Grid/Gallery layouts)
-  if (Array.isArray(row.images) && row.images.length > 0) {
-    const firstImg = row.images[0];
+  if (typeof item?.image === "string") {
+    return { url: item.image };
+  }
+
+  if (item?.image && typeof item.image === "object") {
+    return item.image;
+  }
+
+  if (item && typeof item === "object" && (item.url || item.src || item.sizes)) {
+    return item;
+  }
+
+  return null;
+}
+
+function getRawLcpImage(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const firstRow = rows[0] || null;
+  const secondRow = rows[1] || null;
+
+  if (getLayoutName(firstRow) === "page_title" && getLayoutName(secondRow) === "carousel") {
+    const carouselItems = Array.isArray(secondRow.images)
+      ? secondRow.images.slice(0, CRITICAL_CAROUSEL_IMAGE_COUNT)
+      : [];
+
+    const carouselEntries = carouselItems.flatMap((item) => {
+      const image = getCarouselImageData(item);
+      if (!image) return [];
+
+      const mediumHref = normalizeTrimmedString(image?.sizes?.intch_med);
+      const largeHref = normalizeTrimmedString(image?.sizes?.intch_lg);
+      const fallbackHref = normalizeTrimmedString(image?.url || image?.src);
+
+      if (mediumHref && largeHref) {
+        return [
+          {
+            href: mediumHref,
+            media: `(max-width: ${CAROUSEL_MOBILE_BREAKPOINT}px)`,
+            type: inferImageMimeType(mediumHref),
+          },
+          {
+            href: largeHref,
+            media: `(min-width: ${CAROUSEL_DESKTOP_BREAKPOINT}px)`,
+            type: inferImageMimeType(largeHref),
+          },
+        ];
+      }
+
+      const href = largeHref || mediumHref || fallbackHref;
+      return href
+        ? [{ href, type: inferImageMimeType(href) }]
+        : [];
+    });
+
+    return carouselEntries.length > 0 ? carouselEntries : null;
+  }
+
+  const targetRow =
+    isFullWidthFullBleedRow(firstRow)
+      ? firstRow
+      : getLayoutName(firstRow) === "splash_video" && isFullWidthFullBleedRow(secondRow)
+        ? secondRow
+        : firstRow;
+  const isFullWidthTarget = isFullWidthFullBleedRow(targetRow);
+  const directVideo = targetRow?.video || targetRow?.data?.video;
+
+  if (Array.isArray(directVideo) && directVideo[0]?.yt_img) {
+    const videoObj = directVideo[0];
+    const sizesAttr = isFullWidthTarget ? FULL_WIDTH_RESPONSIVE_SIZES : HERO_RESPONSIVE_SIZES;
+    const desktopEntry = buildWpImageLcpEntry(videoObj.yt_img, { sizesAttr });
+    const mobileEntry =
+      isFullWidthTarget && videoObj.yt_img_mob
+        ? buildWpImageLcpEntry(videoObj.yt_img_mob, {
+            sizesAttr,
+            media: (() => {
+              const breakpoint = normalizeResponsiveBreakpointValue(videoObj.mob_img_breakpoint);
+              return breakpoint ? `(max-width: ${breakpoint}px)` : undefined;
+            })(),
+          })
+        : null;
+    const mobileBreakpoint = normalizeResponsiveBreakpointValue(videoObj.mob_img_breakpoint);
+
+    if (mobileEntry && desktopEntry && mobileBreakpoint) {
+      desktopEntry.media = `(min-width: ${mobileBreakpoint + 1}px)`;
+      return [mobileEntry, desktopEntry];
+    }
+
+    if (desktopEntry) return desktopEntry;
+    if (mobileEntry) return mobileEntry;
+  }
+
+  if (Array.isArray(targetRow?.images) && targetRow.images.length > 0) {
+    const firstImg = targetRow.images[0];
     if (firstImg && firstImg.video) {
-        const nestedResult = extractFromVideoArr(firstImg.video);
-        if (nestedResult) return nestedResult;
+      const nestedResult = getRawLcpImage([
+        {
+          video: firstImg.video,
+        },
+      ]);
+      if (nestedResult) return nestedResult;
     }
   }
 
-  // 3. STANDARD IMAGE FIELDS
   const imageKeys = ["image", "hero_image", "background_image", "bg_image", "mobile_image", "desktop_image"];
-  const dataSource = row.data || row;
+  const dataSource = targetRow?.data || targetRow || {};
 
   for (const key of imageKeys) {
     if (dataSource[key] && typeof dataSource[key] === "object") {
@@ -1348,22 +1489,50 @@ function getRawLcpImage(row) {
 
       const rawSrcSet = img.srcset || img.srcSet;
       if (rawSrcSet) {
-        const candidates = rawSrcSet.split(",").map(p => {
-            const parts = p.trim().split(/\s+/); 
-            return { url: parts[0], w: parts[1] || null };
-        }).filter(c => c.url);
-        
-        return { candidates, sizesAttr: "100vw" };
+        const candidates = parseSrcSetCandidates(rawSrcSet);
+        return {
+          href: candidates[0]?.url || src,
+          imagesrcset: candidates.map((candidate) => `${candidate.url}${candidate.w ? ` ${candidate.w}` : ""}`).join(", "),
+          imagesizes: FULL_WIDTH_RESPONSIVE_SIZES,
+          type: inferImageMimeType(candidates[0]?.url || src),
+        };
       }
 
       return {
-        candidates: [{ url: src, w: null }],
-        sizesAttr: "100vw",
+        href: src,
+        imagesizes: FULL_WIDTH_RESPONSIVE_SIZES,
+        type: inferImageMimeType(src),
       };
     }
   }
 
   return null;
+}
+
+function localizeLcpEntry(entry, urlMap) {
+  if (!entry || typeof entry !== "object") return null;
+
+  const localizedHref = normalizeTrimmedString(urlMap.get(entry.href) || entry.href);
+  const localizedCandidates = parseSrcSetCandidates(entry.imagesrcset)
+    .map((candidate) => ({
+      url: urlMap.get(candidate.url) || candidate.url,
+      w: candidate.w,
+    }))
+    .filter((candidate) => candidate.url);
+  const localizedSrcSet = localizedCandidates
+    .map((candidate) => `${candidate.url}${candidate.w ? ` ${candidate.w}` : ""}`)
+    .join(", ");
+
+  const href = localizedHref || localizedCandidates[0]?.url || "";
+  if (!href) return null;
+
+  return {
+    href,
+    imagesrcset: localizedSrcSet || undefined,
+    imagesizes: entry.imagesizes,
+    media: entry.media,
+    type: entry.type || inferImageMimeType(href),
+  };
 }
 
 /* -------------------------------------------
@@ -1631,29 +1800,17 @@ async function run() {
         }
 
         // LCP IMAGE
-        const lcpData = getRawLcpImage(firstRow);
-        if (lcpData && lcpData.candidates.length) {
-          const processed = [];
-          for (const c of lcpData.candidates) {
-            // Use the already-downloaded local URL from urlMap
-            const localUrl = urlMap.get(c.url);
-            if (localUrl) {
-              processed.push({ url: localUrl, w: c.w });
-            }
-          }
+        const lcpData = getRawLcpImage(layouts);
+        if (lcpData) {
+          const localizedLcpEntries = (Array.isArray(lcpData) ? lcpData : [lcpData])
+            .map((item) => localizeLcpEntry(item, urlMap))
+            .filter(Boolean);
 
-          if (processed.length > 0) {
-            const srcSet = processed
-              .filter(p => p.w)
-              .map(p => `${p.url} ${p.w}`)
-              .join(", ");
-            
-            entry.lcp = {
-              href: processed[0].url,
-              imagesrcset: srcSet || undefined,
-              imagesizes: lcpData.sizesAttr,
-              type: "image/webp" 
-            };
+          if (localizedLcpEntries.length === 1) {
+            entry.lcp = localizedLcpEntries[0];
+            hasEntry = true;
+          } else if (localizedLcpEntries.length > 1) {
+            entry.lcp = localizedLcpEntries;
             hasEntry = true;
           }
         }

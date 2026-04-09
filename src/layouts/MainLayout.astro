@@ -727,7 +727,7 @@
 			await waitForIdle();
 		}
 
-		function getBestImage(srcset) {
+		function getBestImage(srcset, imagesizes) {
 			if (!srcset) return null;
 
 			const candidates = srcset.split(",").map((candidate) => {
@@ -739,9 +739,68 @@
 			});
 
 			candidates.sort((a, b) => a.width - b.width);
-			const targetWidth = window.innerWidth * (window.devicePixelRatio || 1);
+			const targetWidth =
+				getTargetImageWidthFromSizes(imagesizes) * (window.devicePixelRatio || 1);
 			const best = candidates.find((candidate) => candidate.width >= targetWidth);
 			return best ? best.url : candidates[candidates.length - 1]?.url || null;
+		}
+
+		function parseSizeValue(sizeValue) {
+			const normalized = String(sizeValue || "").trim().toLowerCase();
+			if (!normalized) return null;
+
+			if (normalized.endsWith("vw")) {
+				const value = Number.parseFloat(normalized.slice(0, -2));
+				return Number.isFinite(value) ? (window.innerWidth * value) / 100 : null;
+			}
+
+			if (normalized.endsWith("px")) {
+				const value = Number.parseFloat(normalized.slice(0, -2));
+				return Number.isFinite(value) ? value : null;
+			}
+
+			return null;
+		}
+
+		function getTargetImageWidthFromSizes(imagesizes) {
+			if (!imagesizes) {
+				return window.innerWidth;
+			}
+
+			const sizeCandidates = String(imagesizes)
+				.split(",")
+				.map((candidate) => candidate.trim())
+				.filter(Boolean);
+
+			for (const candidate of sizeCandidates) {
+				const mediaMatch = candidate.match(/^(\([^)]+\))\s+(.+)$/);
+
+				if (mediaMatch) {
+					const [, media, sizeValue] = mediaMatch;
+					if (!window.matchMedia(media).matches) {
+						continue;
+					}
+
+					return parseSizeValue(sizeValue) || window.innerWidth;
+				}
+
+				return parseSizeValue(candidate) || window.innerWidth;
+			}
+
+			return window.innerWidth;
+		}
+
+		function getPrefetchLcpImageUrls(lcp) {
+			const lcpEntries = Array.isArray(lcp) ? lcp : lcp ? [lcp] : [];
+
+			return lcpEntries
+				.filter((item) => item && (!item.media || window.matchMedia(item.media).matches))
+				.map((item) =>
+					item.imagesrcset
+						? getBestImage(item.imagesrcset, item.imagesizes)
+						: item.href || null
+				)
+				.filter(Boolean);
 		}
 
 		function normalizePrefetchPath(pathname) {
@@ -778,13 +837,11 @@
 					if (!entry?.lcp && !entry?.video) return;
 					if (normalizePrefetchPath(entry.path) === currentPath) return;
 
-					const imageUrl = entry.lcp?.imagesrcset
-						? getBestImage(entry.lcp.imagesrcset)
-						: entry.lcp?.href;
-
-					if (imageUrl && !skipAssets.has(imageUrl)) {
-						assets.add(imageUrl);
-					}
+					getPrefetchLcpImageUrls(entry.lcp).forEach((imageUrl) => {
+						if (imageUrl && !skipAssets.has(imageUrl)) {
+							assets.add(imageUrl);
+						}
+					});
 
 					if (entry.video) {
 						const hintedVideoUrl = buildStreamUrl(

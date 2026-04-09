@@ -4,6 +4,8 @@
  * Generate carousel and slideshow preloads
  * Returns array matching your existing MainLayout format
  */
+const CRITICAL_CAROUSEL_ROW_INDEX = 1;
+
 function inferImageMimeType(url) {
   if (!url) return undefined;
 
@@ -24,7 +26,19 @@ export function getPreloads(rows) {
      Return as simple string URLs (your existing format)
   ─────────────────────────────────────────── */
   const carouselPreloads = rows
-    .filter((r) => r.name === "carousel")
+    .filter((r, index) => {
+      if (r.name !== "carousel") {
+        return false;
+      }
+
+      // When page_title is first and carousel is second, that carousel is now
+      // promoted into the head LCP preload path instead of the later idle queue.
+      if (index === CRITICAL_CAROUSEL_ROW_INDEX && rows[0]?.name === "page_title") {
+        return false;
+      }
+
+      return true;
+    })
     .flatMap((r) => (r.data.images || []).slice(0, 3)) // 🔑 Only first 3 visible
     .map((item) => {
       const imgData = item.image || item || {};

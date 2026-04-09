@@ -7,6 +7,10 @@ import {
   normalizeResponsiveBreakpoint,
 } from "../images/responsive";
 
+const CAROUSEL_MOBILE_BREAKPOINT = 599;
+const CAROUSEL_DESKTOP_BREAKPOINT = CAROUSEL_MOBILE_BREAKPOINT + 1;
+const CRITICAL_CAROUSEL_IMAGE_COUNT = 3;
+
 function isFullWidthFullBleedRow(row: NormRow | null | undefined): boolean {
   if (!row || row.name !== "full_bleed_img") return false;
 
@@ -35,6 +39,88 @@ function inferImageMimeType(url: string | null | undefined): string | undefined 
   if (normalized.endsWith(".jpg") || normalized.endsWith(".jpeg")) return "image/jpeg";
   if (normalized.endsWith(".png")) return "image/png";
   return undefined;
+}
+
+function getCarouselImageData(item: any) {
+  if (typeof item === "string") {
+    return { url: item };
+  }
+
+  if (typeof item?.image === "string") {
+    return { url: item.image };
+  }
+
+  if (item?.image && typeof item.image === "object") {
+    return item.image;
+  }
+
+  if (item && typeof item === "object" && (item.url || item.src || item.sizes)) {
+    return item;
+  }
+
+  return null;
+}
+
+function getCriticalCarouselPreloads(rows: NormRow[]) {
+  const firstRow = rows[0];
+  const secondRow = rows[1];
+
+  if (firstRow?.name !== "page_title" || secondRow?.name !== "carousel") {
+    return [];
+  }
+
+  const carouselItems = Array.isArray(secondRow.data?.images)
+    ? secondRow.data.images.slice(0, CRITICAL_CAROUSEL_IMAGE_COUNT)
+    : [];
+
+  const preloads = carouselItems.flatMap((item) => {
+    const imgData = getCarouselImageData(item);
+    if (!imgData) return [];
+
+    const mediumHref =
+      typeof imgData.sizes?.intch_med === "string" ? imgData.sizes.intch_med : "";
+    const largeHref =
+      typeof imgData.sizes?.intch_lg === "string" ? imgData.sizes.intch_lg : "";
+    const fallbackHref =
+      typeof imgData.url === "string"
+        ? imgData.url
+        : typeof imgData.src === "string"
+          ? imgData.src
+          : "";
+
+    if (mediumHref && largeHref) {
+      return [
+        {
+          href: mediumHref,
+          media: `(max-width: ${CAROUSEL_MOBILE_BREAKPOINT}px)`,
+          type: inferImageMimeType(mediumHref),
+        },
+        {
+          href: largeHref,
+          media: `(min-width: ${CAROUSEL_DESKTOP_BREAKPOINT}px)`,
+          type: inferImageMimeType(largeHref),
+        },
+      ];
+    }
+
+    const href = largeHref || mediumHref || fallbackHref;
+    if (!href) return [];
+
+    return [
+      {
+        href,
+        type: inferImageMimeType(href),
+      },
+    ];
+  });
+
+  return preloads.filter((item, index, items) => {
+    const key = [item.href, item.media || ""].join("|");
+    return items.findIndex((candidate) => {
+      const candidateKey = [candidate.href, candidate.media || ""].join("|");
+      return candidateKey === key;
+    }) === index;
+  });
 }
 
 function buildLcpPreloadItem({
@@ -67,6 +153,11 @@ function buildLcpPreloadItem({
  */
 export function getLcpImage(rows: NormRow[]) {
   if (!rows || !rows.length) return null;
+
+  const criticalCarouselPreloads = getCriticalCarouselPreloads(rows);
+  if (criticalCarouselPreloads.length > 0) {
+    return criticalCarouselPreloads;
+  }
 
   const targetRow = getHeroFullBleedRow(rows) || rows[0];
   const targetData = targetRow?.data || {};

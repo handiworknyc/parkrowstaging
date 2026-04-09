@@ -1726,7 +1726,7 @@ html.home.splash-scroll-lock {
      makes alpha transitions clamp and feel like they "snap" at the end. */
   --hw-video-fade-duration: 650ms;
   --hw-video-fade-ease: linear;
-  --splash-dismiss-duration: 1000ms;
+  --splash-dismiss-duration: 820ms;
   --splash-dismiss-opacity-ease: linear;
   --splash-dismiss-transform-ease: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
