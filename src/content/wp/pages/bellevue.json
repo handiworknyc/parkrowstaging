@@ -207,20 +207,15 @@
                 "mime_type": "image/webp",
                 "sizes": {
                   "intch_full": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-2400w-09e285e2.webp",
-                  "intch_full-width": 1920,
-                  "intch_full-height": 1080,
+                  "intch_full-width": 2400,
                   "intch_xl": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1700w-9de91456.webp",
                   "intch_xl-width": 1700,
-                  "intch_xl-height": 956,
                   "intch_lg": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1400w-f3a9864c.webp",
                   "intch_lg-width": 1400,
-                  "intch_lg-height": 788,
                   "intch_med": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-1000w-f0d10662.webp",
                   "intch_med-width": 1000,
-                  "intch_med-height": 562,
                   "intch_sm": "/img-cache/cf-video-4e9116ca683a70213c57f136c07bfec0-poster-600w-4813acde.webp",
-                  "intch_sm-width": 600,
-                  "intch_sm-height": 338
+                  "intch_sm-width": 600
                 }
               },
               "yt_img_mob": false,
@@ -2187,7 +2182,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-09 02:25:53",
+  "_syncedAt": "2026-04-09 03:30:10",
   "seo": {
     "title": "Living in Downtown Bellevue | Park Row Condominiums",
     "description": "Explore Bellevue’s vibrant lifestyle, parks, and dining surrounding Park Row Luxury Condos - where urban convenience meets serene Pacific Northwest living.",
