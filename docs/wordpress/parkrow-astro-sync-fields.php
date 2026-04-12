@@ -59,6 +59,7 @@ if (!function_exists('parkrow_astro_sync_get_page_payload')) {
             'id' => (int) $post->ID,
             'uri' => parkrow_astro_sync_normalize_uri(get_permalink($post)),
             'title' => html_entity_decode((string) get_the_title($post), ENT_QUOTES, get_bloginfo('charset')),
+            'status' => (string) $status,
         );
     }
 }

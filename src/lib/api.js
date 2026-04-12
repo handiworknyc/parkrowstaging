@@ -130,15 +130,27 @@ const PUBLISHED_PAGE_URIS = new Set(
     .map(normalizeUri)
 );
 
+const LOCAL_DEV_PAGE_URIS = new Set([
+  "/floor-plans/",
+]);
+
 function isPublishedPageUri(uri) {
   return PUBLISHED_PAGE_URIS.has(normalizeUri(uri));
+}
+
+function isLocalDevPageUri(uri) {
+  return import.meta.env.DEV && LOCAL_DEV_PAGE_URIS.has(normalizeUri(uri));
+}
+
+function isVisiblePageUri(uri) {
+  return isPublishedPageUri(uri) || isLocalDevPageUri(uri);
 }
 
 function indexByUri(mods) {
   const out = new Map();
   Object.values(mods).forEach((m) => {
     const data = m && m.default ? m.default : m;
-    if (data && data.uri && isPublishedPageUri(data.uri)) {
+    if (data && data.uri && isVisiblePageUri(data.uri)) {
       out.set(normalizeUri(data.uri), data);
     }
   });

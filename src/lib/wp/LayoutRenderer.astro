@@ -43,6 +43,12 @@ interface CommonContext {
   lang: 'en' | 'zh'; // Add language to context
 }
 
+interface OrderedPageLink {
+  uri: string;
+  title: string;
+  title_chinese?: string;
+}
+
 /* ---------------- Props ---------------- */
 const {
   layouts = [],
@@ -58,12 +64,23 @@ const {
 const modules = import.meta.glob("/src/components/flex/*.astro", {
   eager: true,
 });
+const pageModules = import.meta.glob("/src/content/wp/pages/*.json", {
+  eager: true,
+});
 
 const COMPONENT_MAP: Record<string, any> = {};
+const PAGE_DATA_BY_URI = new Map<string, Record<string, any>>();
 
 for (const [path, mod] of Object.entries(modules)) {
   const filename = path.split("/").pop()?.replace(/\.astro$/i, "") || "";
   COMPONENT_MAP[filename] = (mod as any).default;
+}
+
+for (const mod of Object.values(pageModules)) {
+  const data = ((mod as any)?.default ?? mod) as Record<string, any> | null;
+  if (data?.uri) {
+    PAGE_DATA_BY_URI.set(stripSlashes(String(data.uri)), data);
+  }
 }
 
 function getComponent(name: string) {
@@ -92,6 +109,52 @@ function stripSlashes(str: string): string {
 function toKebab(s: string): string {
   return s.replace(/_/g, "-");
 }
+
+function getPageStatus(page: Record<string, any> | null | undefined): string {
+  return typeof page?.status === "string" ? page.status.toLowerCase() : "";
+}
+
+function isPublishedPage(page: Record<string, any> | null | undefined): boolean {
+  const status = getPageStatus(page);
+  return status ? status === "publish" : true;
+}
+
+function buildOrderedPublishedPages(): OrderedPageLink[] {
+  const orderedPages = Array.isArray(pageOrder) ? pageOrder : [];
+
+  return orderedPages.flatMap((entry) => {
+    if (!entry?.uri || !entry?.title) {
+      return [];
+    }
+
+    const syncedPage = PAGE_DATA_BY_URI.get(stripSlashes(String(entry.uri)));
+    if (!syncedPage || !isPublishedPage(syncedPage)) {
+      return [];
+    }
+
+    const title =
+      typeof syncedPage.title === "string" && syncedPage.title.trim()
+        ? syncedPage.title.trim()
+        : String(entry.title).trim();
+
+    if (!title) {
+      return [];
+    }
+
+    return [
+      {
+        uri: typeof syncedPage.uri === "string" ? syncedPage.uri : String(entry.uri),
+        title,
+        title_chinese:
+          typeof syncedPage.title_chinese === "string" && syncedPage.title_chinese.trim()
+            ? syncedPage.title_chinese.trim()
+            : undefined,
+      },
+    ];
+  });
+}
+
+const orderedPublishedPages = buildOrderedPublishedPages();
 
 
 function localizeValue(value: any, lang: 'en' | 'zh') {
@@ -214,7 +277,14 @@ function getNextPage(currentPath: string) {
   if (taxContext) return null;
 
   const currentPathClean = stripSlashes(decodeURIComponent(currentPath));
-  const reversedPageOrder = [...pageOrder].reverse();
+  const currentPage = PAGE_DATA_BY_URI.get(currentPathClean);
+  if (currentPage && !isPublishedPage(currentPage)) {
+    return null;
+  }
+
+  if (orderedPublishedPages.length < 2) return null;
+
+  const reversedPageOrder = [...orderedPublishedPages].reverse();
 
   const currentIndex = reversedPageOrder.findIndex(
     (p) => stripSlashes(p.uri) === currentPathClean
@@ -226,6 +296,10 @@ function getNextPage(currentPath: string) {
     currentIndex < reversedPageOrder.length - 1
       ? reversedPageOrder[currentIndex + 1]
       : reversedPageOrder[0];
+
+  if (!nextPage || stripSlashes(nextPage.uri) === currentPathClean) {
+    return null;
+  }
 
   return {
     page: nextPage,
