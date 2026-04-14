@@ -246,6 +246,10 @@ function derivePdfUrl(sourceUrl: string | null | undefined) {
   return `${pathname.replace(/\.[^.]+$/i, ".pdf")}${suffix}`;
 }
 
+function hasPenthouseMarker(...values: unknown[]) {
+  return values.some((value) => /\bPH\b/i.test(String(value ?? "").trim()));
+}
+
 const panoramicViews = Array.isArray(panoramicViewsPage?.views) ? panoramicViewsPage.views : [];
 
 function getPanoramicView(unitNumber: string) {
@@ -308,11 +312,23 @@ const details = rawDetails.flatMap((detail: any) => {
     detail?.floor_plan_pdf,
     detail?.floorPlanPdf
   );
+  const isPenthouse = hasPenthouseMarker(
+    detail?.unit,
+    detail?.unitNumber,
+    detail?.floor_plan_pdf?.filename,
+    detail?.floor_plan_pdf?.title,
+    detail?.floorPlanPdf?.filename,
+    detail?.floorPlanPdf?.title,
+    detail?.pdf?.filename,
+    detail?.pdf?.title,
+    extractFilenameStem(pdfUrl)
+  );
   const unitKeys = getDetailUnitKeys(detail);
 
   return imageUrl
     ? unitKeys.map((unit) => ({
         unit,
+        isPenthouse,
         exterior: String(detail?.exterior ?? "").trim(),
         exposure: String(detail?.exposure ?? "").trim(),
         keyplanUrl,
@@ -397,11 +413,9 @@ function formatSquareFootage(value: number | string | null | undefined) {
   return /\bapprox\.?$/i.test(normalized) ? normalized : `${normalized} approx.`;
 }
 
-const penthouseUnitLabels = new Set(expandSharedUnitRange("2103", "2203"));
-
-function formatResidenceLabel(value: string | number | null | undefined) {
+function formatResidenceLabel(value: string | number | null | undefined, isPenthouse = false) {
   const unitNumber = String(value ?? "").trim();
-  return penthouseUnitLabels.has(normalizeUnitNumber(unitNumber)) ? `PH ${unitNumber}` : unitNumber;
+  return isPenthouse ? `PH ${unitNumber}` : unitNumber;
 }
 ---
 
@@ -424,8 +438,7 @@ function formatResidenceLabel(value: string | number | null | undefined) {
               aria-pressed="false"
             >
               <span class="floorplans-sort-label">
-                <span class="floorplans-sort-text floorplans-sort-text--full">Residence</span>
-                <span class="floorplans-sort-text floorplans-sort-text--short">Unit</span>
+                <span class="floorplans-sort-text">Residence</span>
               </span>
               <span class="floorplans-sort-indicator" aria-hidden="true"></span>
             </button>
@@ -498,8 +511,8 @@ function formatResidenceLabel(value: string | number | null | undefined) {
           const hasDetail = Boolean(unit.detail?.imageUrl);
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
           const panoramaId = `${detailId}-panorama`;
-          const isPenthouse = penthouseUnitLabels.has(normalizeUnitNumber(unit.unitNumber));
-          const unitLabel = formatResidenceLabel(unit.unitNumber);
+          const isPenthouse = Boolean(unit.detail?.isPenthouse);
+          const unitLabel = formatResidenceLabel(unit.unitNumber, isPenthouse);
           const interiorLabel = formatSquareFootage(unit.area);
           const exteriorValue =
             Number.isFinite(Number(unit.outdoorArea)) && Number(unit.outdoorArea) > 0

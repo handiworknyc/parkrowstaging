@@ -272,8 +272,13 @@ export default function FloorplanZoomViewer({
     queueResetToInitialView();
   };
 
-  const handleTransform = (_ref, state) => {
+  const handleZoom = (_ref, state) => {
     syncKeyplanDimmedState(rootRef.current, state?.scale ?? INITIAL_SCALE);
+  };
+
+  const handleResetZoom = () => {
+    resetToInitialView(transformRef, imageRef);
+    syncKeyplanDimmedState(rootRef.current, INITIAL_SCALE);
   };
 
   const handleZoomButton = (direction) => {
@@ -324,7 +329,7 @@ export default function FloorplanZoomViewer({
         initialScale={INITIAL_SCALE}
         maxScale={MAX_SCALE}
         minScale={INITIAL_SCALE}
-        onTransformed={handleTransform}
+        onZoom={handleZoom}
         panning={{
           velocityDisabled: true,
           wheelPanning: false,
@@ -363,7 +368,7 @@ export default function FloorplanZoomViewer({
                 type="button"
                 className="floorplans-zoom-button floorplans-zoom-button--reset"
                 style={CONTROL_BUTTON_STYLE}
-                onClick={() => resetToInitialView(transformRef, imageRef)}
+                onClick={handleResetZoom}
                 aria-label={`Reset zoom for ${alt}`}
               >
                 Reset zoom
