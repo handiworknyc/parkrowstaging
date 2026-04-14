@@ -133,6 +133,25 @@ async function fetchJson(url: URL): Promise<any> {
   return res.json();
 }
 
+function normalizePreviewId(value: unknown): number | null {
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+}
+
+function applyFallbackUri(
+  payload: PreviewFlexiblePage | null,
+  fallbackUri?: string
+): PreviewFlexiblePage | null {
+  if (!payload || !fallbackUri) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    uri: normalizeUri(fallbackUri),
+  };
+}
+
 export async function fetchPreviewFlexiblePageByUri(
   uri: string
 ): Promise<PreviewFlexiblePage | null> {
@@ -147,4 +166,48 @@ export async function fetchPreviewFlexiblePageByUri(
   if (!payload) return null;
 
   return rewritePreviewMedia(payload) as PreviewFlexiblePage;
+}
+
+export async function fetchPreviewFlexiblePageById(
+  id: number,
+  fallbackUri?: string
+): Promise<PreviewFlexiblePage | null> {
+  const normalizedId = normalizePreviewId(id);
+
+  if (!normalizedId) {
+    return null;
+  }
+
+  if (!WP_BASE) {
+    throw new Error("Missing WP_BASE_URL");
+  }
+
+  const url = new URL("/wp-json/astro/v1/flexible", WP_BASE);
+  url.searchParams.set("id", String(normalizedId));
+
+  const payload = await fetchJson(url);
+  if (!payload) return null;
+
+  return applyFallbackUri(
+    rewritePreviewMedia(payload) as PreviewFlexiblePage,
+    fallbackUri
+  );
+}
+
+export async function fetchPreviewFlexiblePageByUriOrId(
+  uri: string,
+  fallbackId?: number | string | null
+): Promise<PreviewFlexiblePage | null> {
+  const byUri = await fetchPreviewFlexiblePageByUri(uri);
+
+  if (byUri) {
+    return byUri;
+  }
+
+  const normalizedId = normalizePreviewId(fallbackId);
+  if (!normalizedId) {
+    return null;
+  }
+
+  return fetchPreviewFlexiblePageById(normalizedId, uri);
 }

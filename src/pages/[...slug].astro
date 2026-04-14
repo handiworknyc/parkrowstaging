@@ -11,7 +11,7 @@ import NotFound from "../components/templates/NotFound.astro";
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads";
-import { fetchPreviewFlexiblePageByUri } from "../lib/wp/preview";
+import { fetchPreviewFlexiblePageByUriOrId } from "../lib/wp/preview";
 import {
   PREVIEW_CACHE_CONTROL,
   resolvePreviewAccess,
@@ -25,11 +25,12 @@ const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 // English is default
 const lang = 'en';
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const publishedPage = getFlexiblePageByUri(uri);
 
 // ---------------- Fetch ----------------
 const page = previewAccess.shouldUsePreview
-  ? await fetchPreviewFlexiblePageByUri(uri)
-  : getFlexiblePageByUri(uri);
+  ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+  : publishedPage;
 const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Park Row");
 

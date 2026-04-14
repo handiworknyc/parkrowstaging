@@ -3,7 +3,8 @@ export const prerender = false;
 
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
-import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+import { getFlexiblePageByUri } from "../../lib/api";
+import { fetchPreviewFlexiblePageByUriOrId } from "../../lib/wp/preview";
 import PageContent from "../../components/wp/PageContent.astro";
 import {
   PREVIEW_CACHE_CONTROL,
@@ -19,11 +20,12 @@ const slug = Array.isArray(slugValue)
   ? slugValue.join("/")
   : slugValue || "";
 const uri = slug ? `/${slug}/` : "/";
+const publishedPage = getFlexiblePageByUri(uri);
 
 let page = null;
 
 if (canRenderPreview) {
-  page = await fetchPreviewFlexiblePageByUri(uri);
+  page = await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id);
 } else {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";

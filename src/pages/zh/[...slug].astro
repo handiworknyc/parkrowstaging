@@ -12,7 +12,7 @@ import { normalizeLayouts } from "../../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
 import { areTranslatedRoutesEnabled } from "../../lib/wp/getHideLanguage";
-import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+import { fetchPreviewFlexiblePageByUriOrId } from "../../lib/wp/preview";
 import {
   PREVIEW_CACHE_CONTROL,
   resolvePreviewAccess,
@@ -30,12 +30,13 @@ const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 const lang = 'zh';
 const translationsEnabled = areTranslatedRoutesEnabled();
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const publishedPage = translationsEnabled ? getFlexiblePageByUri(uri) : null;
 
 // ---------------- Fetch ----------------
 const page = translationsEnabled
   ? previewAccess.shouldUsePreview
-    ? await fetchPreviewFlexiblePageByUri(uri)
-    : getFlexiblePageByUri(uri)
+    ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+    : publishedPage
   : null;
 const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Park Row");

@@ -4,14 +4,15 @@ export const prerender = false;
 import InquirePage from "../../components/templates/InquirePage.astro";
 import NotFound from "../../components/templates/NotFound.astro";
 import { getFlexiblePageByUri } from "../../lib/api";
-import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+import { fetchPreviewFlexiblePageByUriOrId } from "../../lib/wp/preview";
 import { resolvePreviewAccess } from "../../lib/wp/previewAccess";
 
 const uri = "/inquire/";
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const publishedPage = getFlexiblePageByUri(uri);
 const page = previewAccess.shouldUsePreview
-  ? await fetchPreviewFlexiblePageByUri(uri)
-  : getFlexiblePageByUri(uri);
+  ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+  : publishedPage;
 
 if (!page) {
   Astro.response.status = 404;
