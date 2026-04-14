@@ -11,6 +11,8 @@ import {
 } from "../../lib/wp/previewAccess";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies, "/");
+const canRenderPreview =
+  previewAccess.shouldUsePreview || previewAccess.hasPreviewSession;
 
 const slugValue = Astro.params.slug;
 const slug = Array.isArray(slugValue)
@@ -20,14 +22,14 @@ const uri = slug ? `/${slug}/` : "/";
 
 let page = null;
 
-if (previewAccess.hasPreviewSession) {
+if (canRenderPreview) {
   page = await fetchPreviewFlexiblePageByUri(uri);
 } else {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
 
-if (previewAccess.hasPreviewSession && !page) {
+if (canRenderPreview && !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
@@ -36,7 +38,7 @@ const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Preview");
 ---
 
-{previewAccess.hasPreviewSession && page ? (
+{canRenderPreview && page ? (
   <BaseLayout
     title={pageMeta.title}
     description={pageMeta.description}

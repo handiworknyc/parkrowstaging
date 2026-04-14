@@ -44,7 +44,7 @@ export function resolvePreviewAccess(
     !previewSecret || secretMatched || previewCookie === previewSecret;
   const previewRequested = previewParam.toLowerCase() === "true";
   const shouldUsePreview =
-    secretMatched || (previewRequested && hasPreviewSession);
+    previewRequested || secretMatched;
 
   return {
     previewRequested,
