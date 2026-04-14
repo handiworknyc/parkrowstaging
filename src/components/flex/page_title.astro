@@ -25,6 +25,15 @@ const {
 const pageTitle   = h1 || section_title || "";
 const pageSubhead = h2 || section_h2 || "";
 const pageText    = description || section_text || "";
+const showFloorplansApproximationNote =
+  smaller_text &&
+  pageTitle === "Choose your Perspective" &&
+  /Explore floor plans to discover the layout that fits your rhythm of life\.?$/i.test(
+    String(pageText).replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim()
+  );
+const pageTextHtml = showFloorplansApproximationNote
+  ? `${pageText}<span class="page-title-floorplans-approx-note"><br /><br />* approximate square feet</span>`
+  : pageText;
 
 // ------------------
 // STATE
@@ -75,7 +84,7 @@ const sectionClass = [
               ? "text-[1.25rem] max-w-[36em] leading-[1.75rem] mx-auto"
               : "figure text-[1.75rem] max-w-[25em] leading-[2.75rem] mx-auto"
         }
-        set:html={pageText}
+        set:html={pageTextHtml}
       />
     )}
 
@@ -88,3 +97,15 @@ const sectionClass = [
 
   </div>
 </section>
+
+<style>
+  :global(.page-title-floorplans-approx-note) {
+    display: none;
+  }
+
+  @media (max-width: 1099px) {
+    :global(.page-title-floorplans-approx-note) {
+      display: inline;
+    }
+  }
+</style>

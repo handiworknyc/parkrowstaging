@@ -509,8 +509,9 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
       <div class="floorplans-body" data-floorplans-body>
         {units.map((unit) => {
           const hasDetail = Boolean(unit.detail?.imageUrl);
-          const detailId = `${tableId}-detail-${unit.unitNumber}`;
-          const panoramaId = `${detailId}-panorama`;
+          const detailId = tableId + "-detail-" + unit.unitNumber;
+          const panoramaId = detailId + "-panorama";
+          const unitFloor = parseUnitFloor(unit.unitNumber);
           const isPenthouse = Boolean(unit.detail?.isPenthouse);
           const unitLabel = formatResidenceLabel(unit.unitNumber, isPenthouse);
           const interiorLabel = formatSquareFootage(unit.area);
@@ -523,15 +524,17 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
           const exposureLabel = formatOrientation(exposureSortValue);
           const panorama = unit.detail?.panoramicView;
           const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
+          const showPanoramaAction =
+            hasPanorama && !(unitFloor !== null && unitFloor >= 2 && unitFloor <= 4);
           const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
-          const pdfFilename = pdfUrl ? `park-row-residence-${unit.unitNumber}.pdf` : undefined;
+          const pdfFilename = pdfUrl ? "park-row-residence-" + unit.unitNumber + ".pdf" : undefined;
           const keyplanUrl = String(unit.detail?.keyplanUrl ?? "").trim();
           const usePenthouseLayout = isPenthouse;
           const hasKeyplan = Boolean(keyplanUrl);
 
           return (
             <div
-              class={`floorplans-item${hasDetail ? " floorplans-item--interactive" : ""}`}
+              class={"floorplans-item" + (hasDetail ? " floorplans-item--interactive" : "")}
               data-unit-item
               data-unit-number={unit.unitNumber}
               data-bedrooms={unit.bedrooms}
@@ -540,7 +543,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
               data-exposure={exposureSortValue}
             >
               <div
-                class={`floorplans-row hw-contain${hasDetail ? " floorplans-row--interactive" : ""}`}
+                class={"floorplans-row hw-contain" + (hasDetail ? " floorplans-row--interactive" : "")}
                 data-floorplans-row
                 role={hasDetail ? "button" : undefined}
                 tabindex={hasDetail ? "0" : undefined}
@@ -555,6 +558,8 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                 </div>
                 <div class="floorplans-cell floorplans-cell--metric">
                   {numberFormat.format(unit.area)} sf
+                  <span class="floorplans-area-asterisk"> *</span>
+                  <span class="floorplans-area-approx">&nbsp;approx.</span>
                 </div>
                 {hasOrientation && (
                   <div class="floorplans-cell floorplans-cell--orientation">
@@ -580,7 +585,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                     type="button"
                     class="floorplans-modal-backdrop"
                     data-floorplans-close
-                    aria-label={`Close floor plan for unit ${unit.unitNumber}`}
+                    aria-label={"Close floor plan for unit " + unit.unitNumber}
                   ></button>
 
                   <div
@@ -588,14 +593,14 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                     data-floorplans-modal-card
                     role="dialog"
                     aria-modal="true"
-                    aria-label={`Floor plan for unit ${unit.unitNumber}`}
+                    aria-label={"Floor plan for unit " + unit.unitNumber}
                   >
                     <button
                       type="button"
                       class="floorplans-modal-close"
                       data-floorplans-close
                       data-floorplans-close-button
-                      aria-label={`Close floor plan for unit ${unit.unitNumber}`}
+                      aria-label={"Close floor plan for unit " + unit.unitNumber}
                     >
                       Close
                     </button>
@@ -609,9 +614,9 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                         <p>Exposure: {exposureLabel}</p>
                       </div>
 
-                      {(hasPanorama || pdfUrl) && (
+                      {(showPanoramaAction || pdfUrl) && (
                         <div class="floorplans-detail-actions">
-                          {hasPanorama && (
+                          {showPanoramaAction && (
                             <button
                               type="button"
                               class="floorplans-detail-action floorplans-detail-action--view"
@@ -644,7 +649,10 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                         <div class="floorplans-detail-inner">
                           <div class="floorplans-detail-visual">
                             <div
-                              class={`floorplans-detail-viewer${usePenthouseLayout ? " floorplans-detail-viewer--with-keyplan" : ""}`}
+                              class={
+                                "floorplans-detail-viewer" +
+                                (usePenthouseLayout ? " floorplans-detail-viewer--with-keyplan" : "")
+                              }
                             >
                               <FloorplanZoomViewer
                                 client:load
@@ -652,7 +660,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                                 width={unit.detail.imageWidth}
                                 height={unit.detail.imageHeight}
                                 imageAspectRatio={unit.detail.imageAspectRatio}
-                                alt={`Floor plan for unit ${unit.unitNumber}`}
+                                alt={"Floor plan for unit " + unit.unitNumber}
                               />
                             </div>
 
@@ -662,7 +670,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                                   src={keyplanUrl}
                                   width={unit.detail.keyplanWidth}
                                   height={unit.detail.keyplanHeight}
-                                  alt={`Key plan for unit ${unit.unitNumber}`}
+                                  alt={"Key plan for unit " + unit.unitNumber}
                                   loading="eager"
                                   decoding="async"
                                 />
@@ -679,7 +687,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                       </div>
                     </div>
 
-                    {hasPanorama && (
+                    {showPanoramaAction && (
                       <div
                         id={panoramaId}
                         class="floorplans-panorama-modal"
@@ -689,14 +697,14 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                         <div
                           class="floorplans-panorama-card"
                           role="dialog"
-                          aria-label={`Panoramic view for unit ${unit.unitNumber}`}
+                          aria-label={"Panoramic view for unit " + unit.unitNumber}
                         >
                           <button
                             type="button"
                             class="floorplans-modal-close floorplans-panorama-close"
                             data-floorplans-panorama-close
                             data-floorplans-panorama-close-button
-                            aria-label={`Close panoramic view for unit ${unit.unitNumber}`}
+                            aria-label={"Close panoramic view for unit " + unit.unitNumber}
                           >
                             Close
                           </button>
@@ -719,7 +727,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                                     nightSrc={panorama.nightUrl}
                                     nightWidth={panorama.nightWidth}
                                     nightHeight={panorama.nightHeight}
-                                    alt={`Panoramic view for unit ${unit.unitNumber}`}
+                                    alt={"Panoramic view for unit " + unit.unitNumber}
                                   />
                                 </div>
                               </div>
@@ -841,11 +849,11 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
           );
           document.documentElement.style.setProperty(
             "--floorplans-scrollbar-compensation",
-            `${lockedScrollbarWidth}px`
+            lockedScrollbarWidth + "px"
           );
 
           document.body.style.position = "fixed";
-          document.body.style.top = `-${lockedScrollY}px`;
+          document.body.style.top = "-" + lockedScrollY + "px";
           document.body.style.width = "100%";
           document.body.classList.add("floorplans-modal-open");
         };
@@ -1056,7 +1064,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
           if (detailCopyHeight > 0) {
             modalCard.style.setProperty(
               "--floorplans-detail-copy-height",
-              `${detailCopyHeight}px`
+              detailCopyHeight + "px"
             );
           }
         };
@@ -1203,7 +1211,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
           );
 
           if (unitColumnWidth > 0) {
-            root.style.setProperty("--floorplans-mobile-unit-column", `${unitColumnWidth}px`);
+            root.style.setProperty("--floorplans-mobile-unit-column", unitColumnWidth + "px");
           }
         };
         const scheduleMobileColumnSync = () => {
@@ -1505,6 +1513,14 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
   }
 
   .floorplans-action-placeholder {
+    display: none;
+  }
+
+  .floorplans-area-approx {
+    display: inline;
+  }
+
+  .floorplans-area-asterisk {
     display: none;
   }
 
@@ -2029,6 +2045,17 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
     pointer-events: none;
   }
 
+  @media (max-width: 1299px) {
+    .floorplans-detail-keyplan {
+      display: none;
+    }
+
+    .floorplans-detail-viewer--with-keyplan {
+      padding-left: 0;
+      padding-bottom: 0;
+    }
+  }
+
   @media (min-width: 815px) and (max-width: 1149px) {
     .floorplans-detail-viewer :global(.floorplans-zoom-image--svg) {
       width: min(100%, 80vw) !important;
@@ -2056,7 +2083,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
 
     .floorplans-detail-viewer--with-keyplan {
       padding-left: 0;
-      padding-bottom: 8.5rem;
+      padding-bottom: 0;
     }
 
     .floorplans-detail-viewer :global(.floorplans-zoom-content--svg) {
@@ -2162,6 +2189,16 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
       height: 0.9375rem;
       margin-left: 0.75rem;
       flex: 0 0 auto;
+    }
+  }
+
+  @media (max-width: 1099px) {
+    .floorplans-area-asterisk {
+      display: inline;
+    }
+
+    .floorplans-area-approx {
+      display: none;
     }
   }
 
