@@ -1,20 +1,11 @@
 {
   "kind": "page",
   "id": 42,
-  "uri": "/",
+  "uri": "/floor-plans/",
   "title": "Floor Plans",
-  "status": "draft",
   "floor_plan_detail": [
     {
       "unit": "201",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-201-53270be7.svg",
-        "id": 513,
-        "title": "Key Plan - 201",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/201-5fe498dc.svg",
         "id": 377,
@@ -35,14 +26,6 @@
     },
     {
       "unit": "301",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-301-9d21c135.svg",
-        "id": 514,
-        "title": "Key Plan - 301",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/301-930eeb9d.svg",
         "id": 378,
@@ -63,14 +46,6 @@
     },
     {
       "unit": "302",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-302-5a373455.svg",
-        "id": 515,
-        "title": "Key Plan - 302",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/302-a9f383ff.svg",
         "id": 379,
@@ -91,14 +66,6 @@
     },
     {
       "unit": "303",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-303-27da2d2e.svg",
-        "id": 516,
-        "title": "Key Plan - 303",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/303-3aa0833b.svg",
         "id": 380,
@@ -119,14 +86,6 @@
     },
     {
       "unit": "304",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-304-802d33c6.svg",
-        "id": 517,
-        "title": "Key Plan - 304",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/304-4fd2e861.svg",
         "id": 381,
@@ -147,14 +106,6 @@
     },
     {
       "unit": "305",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-305-63d10694.svg",
-        "id": 518,
-        "title": "Key Plan - 305",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/305-f53f27ee.svg",
         "id": 382,
@@ -175,14 +126,6 @@
     },
     {
       "unit": "306",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-306-bd51c418.svg",
-        "id": 519,
-        "title": "Key Plan - 306",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/306-47915a79.svg",
         "id": 383,
@@ -203,14 +146,6 @@
     },
     {
       "unit": "307",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-307-91a73fa6.svg",
-        "id": 520,
-        "title": "Key Plan - 307",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/307-91edfb43.svg",
         "id": 384,
@@ -231,14 +166,6 @@
     },
     {
       "unit": "308",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-308-ff938355.svg",
-        "id": 521,
-        "title": "Key Plan - 308",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/308-13ae0342.svg",
         "id": 385,
@@ -259,14 +186,6 @@
     },
     {
       "unit": "309",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-309-08761f08.svg",
-        "id": 522,
-        "title": "Key Plan - 309",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/309-3a382c94.svg",
         "id": 386,
@@ -287,14 +206,6 @@
     },
     {
       "unit": "401-1201",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-401-1201-4ff02c3e.svg",
-        "id": 523,
-        "title": "Key Plan - 401-1201",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/401-1201-9aed6f4a.svg",
         "id": 387,
@@ -315,14 +226,6 @@
     },
     {
       "unit": "402-1202",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-402-1202-4eb21c5e.svg",
-        "id": 524,
-        "title": "Key Plan - 402-1202",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/402-1202-c07f7365.svg",
         "id": 388,
@@ -343,14 +246,6 @@
     },
     {
       "unit": "403-503",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-403-503-15868068.svg",
-        "id": 525,
-        "title": "Key Plan - 403*-503",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/403-503-467d0298.svg",
         "id": 389,
@@ -371,14 +266,6 @@
     },
     {
       "unit": "404-1204",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-404-1204-db4a3b8f.svg",
-        "id": 526,
-        "title": "Key Plan - 404-1204",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/404-1204-0b665886.svg",
         "id": 390,
@@ -399,14 +286,6 @@
     },
     {
       "unit": "405",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-405-18aa461a.svg",
-        "id": 527,
-        "title": "Key Plan - 405",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/405-0ddb4111.svg",
         "id": 391,
@@ -427,14 +306,6 @@
     },
     {
       "unit": "406-1206",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-406-1206-b6f77ff1.svg",
-        "id": 528,
-        "title": "Key Plan - 406-1206",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/406-1206-27c950f9.svg",
         "id": 392,
@@ -455,14 +326,6 @@
     },
     {
       "unit": "407-1207",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-407-1207-c637e424.svg",
-        "id": 529,
-        "title": "Key Plan - 407-1207",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/407-1207-4166fef9.svg",
         "id": 393,
@@ -483,14 +346,6 @@
     },
     {
       "unit": "408",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-408-363bd719.svg",
-        "id": 530,
-        "title": "Key Plan - 408",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/408-c88077cf.svg",
         "id": 394,
@@ -511,14 +366,6 @@
     },
     {
       "unit": "409-1209",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-409-1209-3f666577.svg",
-        "id": 531,
-        "title": "Key Plan - 409-1209",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/409-1209-76a0d685.svg",
         "id": 395,
@@ -539,14 +386,6 @@
     },
     {
       "unit": "505-1205",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-505-1205-bc96bec1.svg",
-        "id": 532,
-        "title": "Key Plan - 505-1205",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/505-1205-780312fa.svg",
         "id": 396,
@@ -567,14 +406,6 @@
     },
     {
       "unit": "508-1208",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-508-1208-5f385101.svg",
-        "id": 533,
-        "title": "Key Plan - 508-1208",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/508-1208-a09c0aea.svg",
         "id": 397,
@@ -595,14 +426,6 @@
     },
     {
       "unit": "603-1203",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-603-1203-c0a75442.svg",
-        "id": 534,
-        "title": "Key Plan - 603-1203",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/603-1203-2d167850.svg",
         "id": 398,
@@ -623,14 +446,6 @@
     },
     {
       "unit": "1301",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1301-3b845efa.svg",
-        "id": 535,
-        "title": "Key Plan - 1301",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1301-63dacd6e.svg",
         "id": 399,
@@ -651,14 +466,6 @@
     },
     {
       "unit": "1302-1802",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1302-1802-7dc88104.svg",
-        "id": 536,
-        "title": "Key Plan - 1302-1802",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1302-1802-12fadaa3.svg",
         "id": 400,
@@ -679,14 +486,6 @@
     },
     {
       "unit": "1303",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1303-f3f3f80f.svg",
-        "id": 537,
-        "title": "Key Plan - 1303",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1303-68ad2c0c.svg",
         "id": 401,
@@ -707,14 +506,6 @@
     },
     {
       "unit": "1304",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1304-10ff09b2.svg",
-        "id": 538,
-        "title": "Key Plan - 1304",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1304-d0ba5bb9.svg",
         "id": 402,
@@ -735,14 +526,6 @@
     },
     {
       "unit": "1305-1805",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1305-1805-af36df2f.svg",
-        "id": 539,
-        "title": "Key Plan - 1305-1805",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1305-1805-1cc0c336.svg",
         "id": 403,
@@ -763,14 +546,6 @@
     },
     {
       "unit": "1306",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1306-41f58f8a.svg",
-        "id": 540,
-        "title": "Key Plan - 1306",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1306-cc218b88.svg",
         "id": 404,
@@ -791,14 +566,6 @@
     },
     {
       "unit": "1401-1801",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1401-1801-55348f53.svg",
-        "id": 541,
-        "title": "Key Plan - 1401-1801",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1401-1801-297e9203.svg",
         "id": 405,
@@ -819,14 +586,6 @@
     },
     {
       "unit": "1403-1803",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1403-1803-5f2efa1c.svg",
-        "id": 542,
-        "title": "Key Plan - 1403-1803",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1403-1803-324f5c50.svg",
         "id": 406,
@@ -847,14 +606,6 @@
     },
     {
       "unit": "1404-1804",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1404-1804-e474f3b8.svg",
-        "id": 543,
-        "title": "Key Plan - 1404-1804",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1404-1804-14652c35.svg",
         "id": 407,
@@ -875,14 +626,6 @@
     },
     {
       "unit": "1406-1806",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1406-1806-8f26b521.svg",
-        "id": 544,
-        "title": "Key Plan - 1406-1806",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1406-1806-1cfd834b.svg",
         "id": 408,
@@ -903,14 +646,6 @@
     },
     {
       "unit": "1901-2001",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1901-2001-531621f8.svg",
-        "id": 545,
-        "title": "Key Plan - 1901-2001",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1901-2001-ff97b92a.svg",
         "id": 409,
@@ -931,14 +666,6 @@
     },
     {
       "unit": "1902-2002",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1902-2002-2901e038.svg",
-        "id": 546,
-        "title": "Key Plan - 1902-2002",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1902-2002-6242824d.svg",
         "id": 410,
@@ -959,14 +686,6 @@
     },
     {
       "unit": "1903-2003",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1903-2003-da9c365d.svg",
-        "id": 547,
-        "title": "Key Plan - 1903-2003",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1903-2003-21e7dc1b.svg",
         "id": 411,
@@ -987,14 +706,6 @@
     },
     {
       "unit": "1904-2004",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1904-2004-23a5a92c.svg",
-        "id": 548,
-        "title": "Key Plan - 1904-2004",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1904-2004-3ee1a8cd.svg",
         "id": 412,
@@ -1015,14 +726,6 @@
     },
     {
       "unit": "1905-2005",
-      "floor_plan_keyplan": {
-        "url": "/img-cache/key-plan-1905-2005-5ce61be0.svg",
-        "id": 549,
-        "title": "Key Plan - 1905-2005",
-        "mime_type": "image/svg+xml",
-        "width": 207,
-        "height": 185
-      },
       "floor_plan_image": {
         "url": "/img-cache/1905-2005-aa691058.svg",
         "id": 413,
@@ -1102,5 +805,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-14 22:42:27"
+  "_syncedAt": "2026-04-12 19:09:55"
 }
