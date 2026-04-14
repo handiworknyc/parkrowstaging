@@ -4,18 +4,25 @@ import GravityFormWrapper from "@/components/gf/GravityFormWrapper";
 import PageTitle from "@/components/flex/page_title.astro";
 import { getLocalizedField } from "@/lib/language";
 import { getFlexiblePageMeta } from "@/lib/wp/page";
+import { PREVIEW_CACHE_CONTROL } from "@/lib/wp/previewAccess";
 
-import page from "@/content/wp/pages/inquire.json";
+import defaultPage from "@/content/wp/pages/inquire.json";
 import contactTerms from "@/content/wp/contact-terms.json";
 
 interface Props {
   lang?: "en" | "zh";
+  page?: Record<string, any> | null;
+  isPreview?: boolean;
 }
 
-const { lang = "en" } = Astro.props as Props;
+const {
+  lang = "en",
+  page: pageData = defaultPage,
+  isPreview = false,
+} = Astro.props as Props;
 
-const firstLayout = Array.isArray(page?.layouts)
-  ? page.layouts[0]
+const firstLayout = Array.isArray(pageData?.layouts)
+  ? pageData.layouts[0]
   : null;
 
 const usePageTitle =
@@ -31,13 +38,16 @@ const localizedTitleData = lang === "zh"
       description: getLocalizedField(titleData, "description", lang),
     }
   : titleData;
-const pageMeta = getFlexiblePageMeta(page, "Contact");
+const pageMeta = getFlexiblePageMeta(pageData, "Contact");
 ---
 
 <BaseLayout
   title={pageMeta.title}
   description={pageMeta.description}
   seo={pageMeta.seo}
+  cacheControl={isPreview ? PREVIEW_CACHE_CONTROL : undefined}
+  noIndex={isPreview}
+  isPreview={isPreview}
   lang={lang}
 >
   <section class="hw-contain contact-form-section-wrap relative min-h-[var(--jsVhUnits100)]">

@@ -5,6 +5,7 @@ export const prerender = false;
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
 import { getFlexiblePageByUri } from "../../lib/api";
+import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
 import PageContent from "../../components/wp/PageContent.astro";
 import NotFound from "../../components/templates/NotFound.astro";
 import { areTranslatedRoutesEnabled } from "../../lib/wp/getHideLanguage";
@@ -17,18 +18,20 @@ const translationsEnabled = areTranslatedRoutesEnabled();
 import { normalizeLayouts } from "../../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../../lib/wp/lcp";
 import { getPreloads } from "../../lib/wp/preloads";
+import {
+  PREVIEW_CACHE_CONTROL,
+  resolvePreviewAccess,
+} from "../../lib/wp/previewAccess";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
 
-let page = null;
+const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const page = translationsEnabled
+  ? previewAccess.shouldUsePreview
+    ? await fetchPreviewFlexiblePageByUri("/")
+    : getFlexiblePageByUri("/")
+  : null;
 
-try {
-  // IMPORTANT: still pulling the SAME WP homepage
-  page = translationsEnabled ? await getFlexiblePageByUri("/") : null;
-} catch (e) {
-  page = null;
-}
-
-if (!translationsEnabled) {
+if (!translationsEnabled || !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
@@ -56,6 +59,9 @@ if (layouts.length > 0) {
     title={pageMeta.title}
     description={pageMeta.description}
     seo={pageMeta.seo}
+    cacheControl={previewAccess.shouldUsePreview ? PREVIEW_CACHE_CONTROL : undefined}
+    noIndex={previewAccess.shouldUsePreview}
+    isPreview={previewAccess.shouldUsePreview}
     lcp={lcpData}
     lcpVideo={lcpVideo}
     preloads={preloads}
@@ -64,9 +70,9 @@ if (layouts.length > 0) {
   >
     {page
       ? layouts.length
-        ? <LayoutRenderer layouts={layouts} lang={lang} />
+        ? <LayoutRenderer layouts={layouts} lang={lang} skipSplash={previewAccess.shouldUsePreview} />
         : <PageContent html={contentHtml} />
-      : <p>WP unavailable right now.</p>}
+      : <NotFound lang={lang} />}
   </BaseLayout>
 ) : (
   <NotFound />

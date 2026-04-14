@@ -3,14 +3,32 @@ export const prerender = false;
 
 import InquirePage from "../../../components/templates/InquirePage.astro";
 import NotFound from "../../../components/templates/NotFound.astro";
+import { getFlexiblePageByUri } from "../../../lib/api";
 import { areTranslatedRoutesEnabled } from "../../../lib/wp/getHideLanguage";
+import { fetchPreviewFlexiblePageByUri } from "../../../lib/wp/preview";
+import { resolvePreviewAccess } from "../../../lib/wp/previewAccess";
 
 const translationsEnabled = areTranslatedRoutesEnabled();
+const uri = "/inquire/";
+const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const page = translationsEnabled
+  ? previewAccess.shouldUsePreview
+    ? await fetchPreviewFlexiblePageByUri(uri)
+    : getFlexiblePageByUri(uri)
+  : null;
 
-if (!translationsEnabled) {
+if (!translationsEnabled || !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
 ---
 
-{translationsEnabled ? <InquirePage lang="zh" /> : <NotFound />}
+{translationsEnabled && page ? (
+  <InquirePage
+    lang="zh"
+    page={page}
+    isPreview={previewAccess.shouldUsePreview}
+  />
+) : (
+  <NotFound />
+)}

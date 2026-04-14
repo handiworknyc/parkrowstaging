@@ -5,46 +5,23 @@ import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
 import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
 import PageContent from "../../components/wp/PageContent.astro";
+import {
+  PREVIEW_CACHE_CONTROL,
+  resolvePreviewAccess,
+} from "../../lib/wp/previewAccess";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/page";
-
-const PREVIEW_SECRET = (
-  process.env.PREVIEW_SECRET ||
-  ""
-).trim();
-const PREVIEW_COOKIE = "hw_preview";
-
-const previewToken = (Astro.url.searchParams.get("preview") || "").trim();
-const previewCookie = (Astro.cookies.get(PREVIEW_COOKIE)?.value || "").trim();
-
-if (
-  PREVIEW_SECRET &&
-  previewToken === PREVIEW_SECRET &&
-  previewCookie !== PREVIEW_SECRET
-) {
-  Astro.cookies.set(PREVIEW_COOKIE, PREVIEW_SECRET, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: Astro.url.protocol === "https:",
-    path: "/preview",
-    maxAge: 60 * 60 * 12,
-  });
-}
-
-const hasPreviewAccess =
-  !PREVIEW_SECRET ||
-  previewToken === PREVIEW_SECRET ||
-  previewCookie === PREVIEW_SECRET;
+const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies, "/");
 
 let page = null;
 
-if (hasPreviewAccess) {
+if (previewAccess.hasPreviewSession) {
   page = await fetchPreviewFlexiblePageByUri("/");
 } else {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
 
-if (hasPreviewAccess && !page) {
+if (previewAccess.hasPreviewSession && !page) {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";
 }
@@ -53,12 +30,12 @@ const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Preview");
 ---
 
-{hasPreviewAccess && page ? (
+{previewAccess.hasPreviewSession && page ? (
   <BaseLayout
     title={pageMeta.title}
     description={pageMeta.description}
     seo={pageMeta.seo}
-    cacheControl="private, no-store, max-age=0, must-revalidate"
+    cacheControl={PREVIEW_CACHE_CONTROL}
     noIndex={true}
     isPreview={true}
   >

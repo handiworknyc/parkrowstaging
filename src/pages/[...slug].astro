@@ -1,30 +1,22 @@
 ---
 // src/pages/[...slug].astro
-export const prerender = true;
+export const prerender = false;
 
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
-import { getAllFlexiblePagePaths, getFlexiblePageByUri } from "../lib/api";
+import { getFlexiblePageByUri } from "../lib/api";
 import PageContent from "../components/wp/PageContent.astro";
 import NotFound from "../components/templates/NotFound.astro";
 
 import { normalizeLayouts } from "../lib/wp/normalize";
 import { getLcpImage, getLcpVideo, hasSplashVideo } from "../lib/wp/lcp";
 import { getPreloads } from "../lib/wp/preloads";
+import { fetchPreviewFlexiblePageByUri } from "../lib/wp/preview";
+import {
+  PREVIEW_CACHE_CONTROL,
+  resolvePreviewAccess,
+} from "../lib/wp/previewAccess";
 import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../lib/wp/page";
-
-// ---------------- Static paths ----------------
-export async function getStaticPaths() {
-  const allPaths = getAllFlexiblePagePaths();
-
-  return allPaths.filter(path => {
-    const slug = Array.isArray(path.params.slug)
-      ? path.params.slug.join('/')
-      : path.params.slug;
-
-    return slug !== 'inquire';
-  });
-}
 
 // ---------------- Params ----------------
 const { slug = [] } = Astro.params;
@@ -32,9 +24,12 @@ const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 
 // English is default
 const lang = 'en';
+const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
 
 // ---------------- Fetch ----------------
-const page = await getFlexiblePageByUri(uri);
+const page = previewAccess.shouldUsePreview
+  ? await fetchPreviewFlexiblePageByUri(uri)
+  : getFlexiblePageByUri(uri);
 const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Park Row");
 
@@ -62,6 +57,9 @@ if (page?.layouts) {
     title={pageMeta.title}
     description={pageMeta.description}
     seo={pageMeta.seo}
+    cacheControl={previewAccess.shouldUsePreview ? PREVIEW_CACHE_CONTROL : undefined}
+    noIndex={previewAccess.shouldUsePreview}
+    isPreview={previewAccess.shouldUsePreview}
     lcp={lcpData}
     lcpVideo={lcpVideoData}
     preloads={preloads}

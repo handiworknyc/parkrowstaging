@@ -1,7 +1,26 @@
 ---
-export const prerender = true;
+export const prerender = false;
 
 import InquirePage from "../../components/templates/InquirePage.astro";
+import NotFound from "../../components/templates/NotFound.astro";
+import { getFlexiblePageByUri } from "../../lib/api";
+import { fetchPreviewFlexiblePageByUri } from "../../lib/wp/preview";
+import { resolvePreviewAccess } from "../../lib/wp/previewAccess";
+
+const uri = "/inquire/";
+const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
+const page = previewAccess.shouldUsePreview
+  ? await fetchPreviewFlexiblePageByUri(uri)
+  : getFlexiblePageByUri(uri);
+
+if (!page) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+}
 ---
 
-<InquirePage />
+{page ? (
+  <InquirePage page={page} isPreview={previewAccess.shouldUsePreview} />
+) : (
+  <NotFound />
+)}
