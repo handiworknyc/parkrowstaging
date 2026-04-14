@@ -4,7 +4,7 @@ export const prerender = false;
 
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
-import { getFlexiblePageByUri } from "../../lib/api";
+import { getFlexiblePageByUri, getKnownFlexiblePageByUri } from "../../lib/api";
 import PageContent from "../../components/wp/PageContent.astro";
 import NotFound from "../../components/templates/NotFound.astro";
 
@@ -31,11 +31,12 @@ const lang = 'zh';
 const translationsEnabled = areTranslatedRoutesEnabled();
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
 const publishedPage = translationsEnabled ? getFlexiblePageByUri(uri) : null;
+const knownPage = translationsEnabled ? getKnownFlexiblePageByUri(uri) : null;
 
 // ---------------- Fetch ----------------
 const page = translationsEnabled
   ? previewAccess.shouldUsePreview
-    ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+    ? await fetchPreviewFlexiblePageByUriOrId(uri, knownPage?.id)
     : publishedPage
   : null;
 const contentHtml = getFlexiblePageContentHtml(page);

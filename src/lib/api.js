@@ -157,6 +157,17 @@ function indexByUri(mods) {
   return out;
 }
 
+function indexAllByUri(mods) {
+  const out = new Map();
+  Object.values(mods).forEach((m) => {
+    const data = m && m.default ? m.default : m;
+    if (data && data.uri) {
+      out.set(normalizeUri(data.uri), data);
+    }
+  });
+  return out;
+}
+
 function listFromMods(mods) {
   const out = [];
   Object.values(mods).forEach((m) => {
@@ -168,10 +179,15 @@ function listFromMods(mods) {
 
 // Precomputed collections
 const PAGES_BY_URI = indexByUri(pageMods);
+const ALL_PAGES_BY_URI = indexAllByUri(pageMods);
 
 // ---- Pages
 export function getFlexiblePageByUri(uri) {
   return PAGES_BY_URI.get(normalizeUri(uri)) || null;
+}
+
+export function getKnownFlexiblePageByUri(uri) {
+  return ALL_PAGES_BY_URI.get(normalizeUri(uri)) || null;
 }
 
 export function getAllFlexiblePagePaths() {

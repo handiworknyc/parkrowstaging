@@ -4,7 +4,7 @@ export const prerender = false;
 
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
-import { getFlexiblePageByUri } from "../lib/api";
+import { getFlexiblePageByUri, getKnownFlexiblePageByUri } from "../lib/api";
 import PageContent from "../components/wp/PageContent.astro";
 import NotFound from "../components/templates/NotFound.astro";
 
@@ -26,10 +26,11 @@ const uri = "/" + (Array.isArray(slug) ? slug.join("/") : slug) + "/";
 const lang = 'en';
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
 const publishedPage = getFlexiblePageByUri(uri);
+const knownPage = getKnownFlexiblePageByUri(uri);
 
 // ---------------- Fetch ----------------
 const page = previewAccess.shouldUsePreview
-  ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+  ? await fetchPreviewFlexiblePageByUriOrId(uri, knownPage?.id)
   : publishedPage;
 const contentHtml = getFlexiblePageContentHtml(page);
 const pageMeta = getFlexiblePageMeta(page, "Park Row");

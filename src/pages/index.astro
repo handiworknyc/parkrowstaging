@@ -3,7 +3,7 @@
 export const prerender = false;
 import BaseLayout from "../layouts/MainLayout.astro";
 import LayoutRenderer from "../lib/wp/LayoutRenderer.astro";
-import { getFlexiblePageByUri } from "../lib/api";
+import { getFlexiblePageByUri, getKnownFlexiblePageByUri } from "../lib/api";
 import { fetchPreviewFlexiblePageByUriOrId } from "../lib/wp/preview";
 import PageContent from "../components/wp/PageContent.astro";
 import NotFound from "../components/templates/NotFound.astro";
@@ -20,8 +20,9 @@ import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../lib/wp/page"
 
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
 const publishedPage = getFlexiblePageByUri("/");
+const knownPage = getKnownFlexiblePageByUri("/");
 const page = previewAccess.shouldUsePreview
-  ? await fetchPreviewFlexiblePageByUriOrId("/", publishedPage?.id)
+  ? await fetchPreviewFlexiblePageByUriOrId("/", knownPage?.id)
   : publishedPage;
 
 if (!page) {

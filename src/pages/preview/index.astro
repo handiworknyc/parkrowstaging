@@ -3,7 +3,7 @@ export const prerender = false;
 
 import BaseLayout from "../../layouts/MainLayout.astro";
 import LayoutRenderer from "../../lib/wp/LayoutRenderer.astro";
-import { getFlexiblePageByUri } from "../../lib/api";
+import { getKnownFlexiblePageByUri } from "../../lib/api";
 import { fetchPreviewFlexiblePageByUriOrId } from "../../lib/wp/preview";
 import PageContent from "../../components/wp/PageContent.astro";
 import {
@@ -14,12 +14,12 @@ import { getFlexiblePageContentHtml, getFlexiblePageMeta } from "../../lib/wp/pa
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies, "/");
 const canRenderPreview =
   previewAccess.shouldUsePreview || previewAccess.hasPreviewSession;
-const publishedPage = getFlexiblePageByUri("/");
+const knownPage = getKnownFlexiblePageByUri("/");
 
 let page = null;
 
 if (canRenderPreview) {
-  page = await fetchPreviewFlexiblePageByUriOrId("/", publishedPage?.id);
+  page = await fetchPreviewFlexiblePageByUriOrId("/", knownPage?.id);
 } else {
   Astro.response.status = 404;
   Astro.response.statusText = "Not found";

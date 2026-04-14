@@ -3,7 +3,7 @@ export const prerender = false;
 
 import InquirePage from "../../../components/templates/InquirePage.astro";
 import NotFound from "../../../components/templates/NotFound.astro";
-import { getFlexiblePageByUri } from "../../../lib/api";
+import { getFlexiblePageByUri, getKnownFlexiblePageByUri } from "../../../lib/api";
 import { areTranslatedRoutesEnabled } from "../../../lib/wp/getHideLanguage";
 import { fetchPreviewFlexiblePageByUriOrId } from "../../../lib/wp/preview";
 import { resolvePreviewAccess } from "../../../lib/wp/previewAccess";
@@ -12,9 +12,10 @@ const translationsEnabled = areTranslatedRoutesEnabled();
 const uri = "/inquire/";
 const previewAccess = resolvePreviewAccess(Astro.url, Astro.cookies);
 const publishedPage = translationsEnabled ? getFlexiblePageByUri(uri) : null;
+const knownPage = translationsEnabled ? getKnownFlexiblePageByUri(uri) : null;
 const page = translationsEnabled
   ? previewAccess.shouldUsePreview
-    ? await fetchPreviewFlexiblePageByUriOrId(uri, publishedPage?.id)
+    ? await fetchPreviewFlexiblePageByUriOrId(uri, knownPage?.id)
     : publishedPage
   : null;
 
