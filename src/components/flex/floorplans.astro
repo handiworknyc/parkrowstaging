@@ -267,10 +267,25 @@ function getPanoramicView(unitNumber: string) {
   };
 }
 
-const rawDetails = Array.isArray(floorPlanDetailPage?.floor_plan_detail)
-  ? floorPlanDetailPage.floor_plan_detail
-  : [];
-const details = rawDetails.flatMap((detail) => {
+const rawDetails = (
+  Array.isArray(floorPlanDetailPage?.floor_plan_detail) ? floorPlanDetailPage.floor_plan_detail : []
+) as any[];
+const details = rawDetails.flatMap((detail: any) => {
+  const keyplan = extractAsset(detail?.floor_plan_keyplan ?? detail?.floorPlanKeyplan);
+  const keyplanUrl = String(keyplan?.url ?? "").trim();
+  const keyplanSvgSize = keyplanUrl ? getSvgIntrinsicSize(keyplanUrl) : null;
+  const fallbackKeyplanWidth = Number(keyplan?.width);
+  const fallbackKeyplanHeight = Number(keyplan?.height);
+  const keyplanWidth =
+    keyplanSvgSize?.width ??
+    (Number.isFinite(fallbackKeyplanWidth) && fallbackKeyplanWidth > 0
+      ? fallbackKeyplanWidth
+      : undefined);
+  const keyplanHeight =
+    keyplanSvgSize?.height ??
+    (Number.isFinite(fallbackKeyplanHeight) && fallbackKeyplanHeight > 0
+      ? fallbackKeyplanHeight
+      : undefined);
   const image = detail?.floor_plan_image;
   const imageUrl = String(image?.url ?? "").trim();
   const svgSize = imageUrl ? getSvgIntrinsicSize(imageUrl) : null;
@@ -300,6 +315,11 @@ const details = rawDetails.flatMap((detail) => {
         unit,
         exterior: String(detail?.exterior ?? "").trim(),
         exposure: String(detail?.exposure ?? "").trim(),
+        keyplanUrl,
+        keyplanWidth,
+        keyplanHeight,
+        keyplanAspectRatio:
+          keyplanWidth && keyplanHeight ? String(keyplanWidth / keyplanHeight) : undefined,
         imageUrl,
         pdfUrl,
         imageWidth,
@@ -478,6 +498,7 @@ function formatResidenceLabel(value: string | number | null | undefined) {
           const hasDetail = Boolean(unit.detail?.imageUrl);
           const detailId = `${tableId}-detail-${unit.unitNumber}`;
           const panoramaId = `${detailId}-panorama`;
+          const isPenthouse = penthouseUnitLabels.has(normalizeUnitNumber(unit.unitNumber));
           const unitLabel = formatResidenceLabel(unit.unitNumber);
           const interiorLabel = formatSquareFootage(unit.area);
           const exteriorValue =
@@ -491,6 +512,9 @@ function formatResidenceLabel(value: string | number | null | undefined) {
           const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
           const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
           const pdfFilename = pdfUrl ? `park-row-residence-${unit.unitNumber}.pdf` : undefined;
+          const keyplanUrl = String(unit.detail?.keyplanUrl ?? "").trim();
+          const usePenthouseLayout = isPenthouse;
+          const hasKeyplan = Boolean(keyplanUrl);
 
           return (
             <div
@@ -606,7 +630,9 @@ function formatResidenceLabel(value: string | number | null | undefined) {
                       <div class="floorplans-detail-shell">
                         <div class="floorplans-detail-inner">
                           <div class="floorplans-detail-visual">
-                            <div class="floorplans-detail-viewer">
+                            <div
+                              class={`floorplans-detail-viewer${usePenthouseLayout ? " floorplans-detail-viewer--with-keyplan" : ""}`}
+                            >
                               <FloorplanZoomViewer
                                 client:load
                                 src={unit.detail.imageUrl}
@@ -616,6 +642,19 @@ function formatResidenceLabel(value: string | number | null | undefined) {
                                 alt={`Floor plan for unit ${unit.unitNumber}`}
                               />
                             </div>
+
+                            {hasKeyplan && (
+                              <div class="floorplans-detail-keyplan">
+                                <img
+                                  src={keyplanUrl}
+                                  width={unit.detail.keyplanWidth}
+                                  height={unit.detail.keyplanHeight}
+                                  alt={`Key plan for unit ${unit.unitNumber}`}
+                                  loading="eager"
+                                  decoding="async"
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1765,6 +1804,9 @@ function formatResidenceLabel(value: string | number | null | undefined) {
   .floorplans-detail-viewer {
     --floorplans-reset-top: 2rem;
     --floorplans-reset-right: 5.75rem;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
     width: 100%;
     height: min(70vh, calc(100% - 4rem));
     max-height: calc(100% - 4rem);
@@ -1772,10 +1814,40 @@ function formatResidenceLabel(value: string | number | null | undefined) {
     min-height: 0;
   }
 
+  .floorplans-detail-viewer--with-keyplan {
+    padding-left: 150px;
+  }
+
   .floorplans-detail-viewer :global(astro-island) {
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  .floorplans-detail-keyplan {
+    position: absolute;
+    left: 2rem;
+    bottom: 2rem;
+    z-index: 0;
+    width: 400px;
+    height: 300px;
+    max-width: calc(100% - 4rem);
+    max-height: calc(100% - 4rem);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 220ms ease;
+  }
+
+  .floorplans-detail-keyplan img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: left bottom;
+  }
+
+  .floorplans-detail-visual[data-keyplan-dimmed="true"] .floorplans-detail-keyplan {
+    opacity: 0;
   }
 
   .floorplans-detail-viewer :global(.floorplans-zoom-button:hover),
@@ -1969,6 +2041,11 @@ function formatResidenceLabel(value: string | number | null | undefined) {
       );
     }
 
+    .floorplans-detail-viewer--with-keyplan {
+      padding-left: 0;
+      padding-bottom: 8.5rem;
+    }
+
     .floorplans-detail-viewer :global(.floorplans-zoom-content--svg) {
       align-items: flex-start !important;
     }
@@ -1979,6 +2056,13 @@ function formatResidenceLabel(value: string | number | null | undefined) {
       max-width: min(100%, 80vw) !important;
       max-height: 100% !important;
       object-position: center center !important;
+    }
+
+    .floorplans-detail-keyplan {
+      left: 1rem;
+      bottom: 1rem;
+      width: min(400px, calc(100% - 2rem));
+      height: min(300px, calc(100% - 2rem));
     }
   }
 

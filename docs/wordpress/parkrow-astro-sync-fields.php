@@ -8,6 +8,14 @@ if (!defined('PARKROW_ASTRO_SYNC_PAGE_ID')) {
     define('PARKROW_ASTRO_SYNC_PAGE_ID', 42);
 }
 
+if (!defined('PARKROW_ASTRO_SYNC_DRAFT_SECRET')) {
+    $parkrow_astro_sync_draft_secret = getenv('WP_DRAFT_ACCESS_SECRET');
+    define(
+        'PARKROW_ASTRO_SYNC_DRAFT_SECRET',
+        is_string($parkrow_astro_sync_draft_secret) ? trim($parkrow_astro_sync_draft_secret) : ''
+    );
+}
+
 if (!function_exists('parkrow_astro_sync_normalize_uri')) {
     function parkrow_astro_sync_normalize_uri($url) {
         $path = wp_parse_url((string) $url, PHP_URL_PATH);
@@ -33,8 +41,20 @@ if (!function_exists('parkrow_astro_sync_resolve_page_id')) {
     }
 }
 
+if (!function_exists('parkrow_astro_sync_has_draft_access')) {
+    function parkrow_astro_sync_has_draft_access($request) {
+        if (!$request instanceof WP_REST_Request || '' === PARKROW_ASTRO_SYNC_DRAFT_SECRET) {
+            return false;
+        }
+
+        $provided = trim((string) $request->get_header('x-wp-draft-access-secret'));
+
+        return '' !== $provided && hash_equals(PARKROW_ASTRO_SYNC_DRAFT_SECRET, $provided);
+    }
+}
+
 if (!function_exists('parkrow_astro_sync_get_page_payload')) {
-    function parkrow_astro_sync_get_page_payload($page_id) {
+    function parkrow_astro_sync_get_page_payload($page_id, $request = null) {
         $post = get_post($page_id);
 
         if (!$post instanceof WP_Post || 'page' !== $post->post_type) {
@@ -46,7 +66,11 @@ if (!function_exists('parkrow_astro_sync_get_page_payload')) {
         }
 
         $status = get_post_status($post);
-        if ('publish' !== $status && !current_user_can('edit_post', $page_id)) {
+        if (
+            'publish' !== $status &&
+            !current_user_can('edit_post', $page_id) &&
+            !parkrow_astro_sync_has_draft_access($request)
+        ) {
             return new WP_Error(
                 'parkrow_astro_sync_forbidden',
                 'The requested page is not publicly available.',
@@ -188,6 +212,7 @@ if (!function_exists('parkrow_astro_sync_get_floor_plan_detail')) {
             $items[] = array(
                 'unit' => isset($row['unit']) ? sanitize_text_field($row['unit']) : '',
                 'exterior' => $exterior,
+                'floor_plan_keyplan' => parkrow_astro_sync_prepare_image($row['floor_plan_keyplan'] ?? null),
                 'floor_plan_image' => parkrow_astro_sync_prepare_image($row['floor_plan_image'] ?? null),
                 'floor_plan_pdf' => parkrow_astro_sync_prepare_file($row['floor_plan_pdf'] ?? null),
             );
@@ -235,8 +260,8 @@ if (!function_exists('parkrow_astro_sync_get_floorplan_disclaimer')) {
 }
 
 if (!function_exists('parkrow_astro_sync_build_response')) {
-    function parkrow_astro_sync_build_response($page_id, $field_name, $value) {
-        $payload = parkrow_astro_sync_get_page_payload($page_id);
+    function parkrow_astro_sync_build_response($page_id, $field_name, $value, $request = null) {
+        $payload = parkrow_astro_sync_get_page_payload($page_id, $request);
         if (is_wp_error($payload)) {
             return $payload;
         }
@@ -282,7 +307,8 @@ add_action('rest_api_init', function () {
                 return parkrow_astro_sync_build_response(
                     $page_id,
                     'floor_plan_detail',
-                    parkrow_astro_sync_get_floor_plan_detail($page_id)
+                    parkrow_astro_sync_get_floor_plan_detail($page_id),
+                    $request
                 );
             },
         )
@@ -314,7 +340,8 @@ add_action('rest_api_init', function () {
                 return parkrow_astro_sync_build_response(
                     $page_id,
                     'views',
-                    parkrow_astro_sync_get_panoramic_views($page_id)
+                    parkrow_astro_sync_get_panoramic_views($page_id),
+                    $request
                 );
             },
         )
@@ -346,7 +373,8 @@ add_action('rest_api_init', function () {
                 return parkrow_astro_sync_build_response(
                     $page_id,
                     'floorplan_disclaimer',
-                    parkrow_astro_sync_get_floorplan_disclaimer($page_id)
+                    parkrow_astro_sync_get_floorplan_disclaimer($page_id),
+                    $request
                 );
             },
         )

@@ -29,6 +29,8 @@ Set these in GitHub Actions repository secrets:
 - `GF_CONSUMER_KEY`
 - `GF_CONSUMER_SECRET`
 
+`WP_DRAFT_ACCESS_SECRET` is optional and intended for local-only draft syncing. The sync script ignores it when running on Netlify.
+
 Netlify must already be connected to this GitHub repo with automatic deploys enabled on the branch this workflow pushes to.
 
 The workflow also runs on a 6-hour schedule so Avesdo inventory changes are synced even when WordPress content has not changed.

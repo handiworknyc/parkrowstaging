@@ -57,6 +57,9 @@ const WP_BASE = (process.env.WP_BASE_URL || "").trim();
 const GRAPHQL = (process.env.WORDPRESS_API_URL || process.env.WP_GRAPHQL_URL || "").trim();
 const PAGE_URIS_ENV = (process.env.PAGE_URIS || "").trim();
 const AVESDO_TOKEN = (process.env.AVESDO || "").trim();
+const DRAFT_ACCESS_SECRET = process.env.NETLIFY
+  ? ""
+  : (process.env.WP_DRAFT_ACCESS_SECRET || "").trim();
 const AUTH = process.env.WP_AUTH_BASIC
   ? "Basic " + Buffer.from(process.env.WP_AUTH_BASIC, "utf8").toString("base64")
   : null;
@@ -74,7 +77,10 @@ if (!WP_BASE) {
 }
 
 function authHeaders() {
-  return AUTH ? { Authorization: AUTH } : {};
+  return {
+    ...(AUTH ? { Authorization: AUTH } : {}),
+    ...(DRAFT_ACCESS_SECRET ? { "X-WP-Draft-Access-Secret": DRAFT_ACCESS_SECRET } : {}),
+  };
 }
 
 async function fetchJSON(url, opts = {}) {
@@ -617,6 +623,10 @@ function normalizeFloorPlanDetailRow(row) {
   }
 
   const unit = normalizeTrimmedString(row.unit ?? row.unitNumber);
+  const floorPlanKeyplan = normalizeFloorPlanAsset(
+    row.floor_plan_keyplan ?? row.floorPlanKeyplan,
+    { includeDimensions: true }
+  );
   const floorPlanImage = normalizeFloorPlanAsset(
     row.floor_plan_image ?? row.floorPlanImage,
     { includeDimensions: true }
@@ -639,6 +649,10 @@ function normalizeFloorPlanDetailRow(row) {
 
   if (unit) {
     normalized.unit = unit;
+  }
+
+  if (floorPlanKeyplan) {
+    normalized.floor_plan_keyplan = floorPlanKeyplan;
   }
 
   if (floorPlanImage) {
