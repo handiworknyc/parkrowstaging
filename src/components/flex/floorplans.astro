@@ -2,7 +2,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import FloorplanZoomViewer from "@/components/react/FloorplanZoomViewer.jsx";
-import PanoramicViewViewer from "@/components/react/PanoramicViewViewer.jsx";
+import PanoramicViewViewer from "../react/PanoramicViewViewer.jsx";
 import inventory from "@/content/wp/avesdo-floorplans.json";
 import floorPlanDetailPage from "@/content/wp/floor-plan-detail.json";
 import floorplanDisclaimerPage from "@/content/wp/floorplan-disclaimer.json";
@@ -376,6 +376,10 @@ const units = Array.isArray(inventory?.units)
       })
   : [];
 const floorplanDisclaimer = String(floorplanDisclaimerPage?.floorplan_disclaimer ?? "").trim();
+const panoramaDisclaimer =
+  String(
+    floorplanDisclaimerPage?.panorama_disclaimer ?? floorplanDisclaimerPage?.panoramaDisclaimer ?? ""
+  ).trim() || "panorama disclaimer here";
 const hasOrientation = units.some((unit) => String(unit?.orientation ?? "").trim());
 const columnTemplate = hasOrientation
   ? "minmax(8rem, 1.4fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(7rem, 0.9fr) minmax(9rem, 1fr)"
@@ -390,6 +394,37 @@ const numberFormat = new Intl.NumberFormat("en-US");
 function formatBathrooms(value: number | string | null | undefined) {
   const numeric = Number(value || 0);
   return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+}
+
+function formatBedrooms(
+  bedrooms: number | string | null | undefined,
+  flex: number | string | null | undefined
+) {
+  const normalized = String(bedrooms ?? "").trim();
+  if (!normalized) return "";
+
+  return Number(flex ?? 0) === 1 ? `${normalized} + flex` : normalized;
+}
+
+function formatBedroomSummary(
+  bedrooms: number | string | null | undefined,
+  flex: number | string | null | undefined
+) {
+  const normalized = String(bedrooms ?? "").trim();
+  if (!normalized) return "";
+
+  return Number(flex ?? 0) === 1 ? `${normalized} Bedroom + Flex` : `${normalized} Bedroom`;
+}
+
+function isAccessibleResidence(value: unknown) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return false;
+
+  return ["1", "true", "yes", "accessible", "ada", "type-a", "type a"].includes(normalized);
+}
+
+function formatOutdoorSpace(value: string | null | undefined) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
 }
 
 function formatOrientation(value: string | null | undefined) {
@@ -407,16 +442,21 @@ function formatSquareFootage(value: number | string | null | undefined) {
   if (squareFootageMatch) {
     const numeric = Number(squareFootageMatch[1].replace(/,/g, ""));
     if (Number.isFinite(numeric)) {
-      return `${numberFormat.format(numeric)} sf approx.`;
+      return `${numberFormat.format(numeric)} SF`;
     }
   }
 
-  return /\bapprox\.?$/i.test(normalized) ? normalized : `${normalized} approx.`;
+  return normalized.replace(/\s+approx\.?$/i, "");
 }
 
-function formatResidenceLabel(value: string | number | null | undefined, isPenthouse = false) {
+function formatResidenceLabel(
+  value: string | number | null | undefined,
+  isPenthouse = false,
+  isAccessible = false
+) {
   const unitNumber = String(value ?? "").trim();
-  return isPenthouse ? `PH ${unitNumber}` : unitNumber;
+  const label = isPenthouse ? `PH ${unitNumber}` : unitNumber;
+  return isAccessible ? `${label}*` : label;
 }
 ---
 
@@ -514,13 +554,22 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
           const panoramaId = detailId + "-panorama";
           const unitFloor = parseUnitFloor(unit.unitNumber);
           const isPenthouse = Boolean(unit.detail?.isPenthouse);
-          const unitLabel = formatResidenceLabel(unit.unitNumber, isPenthouse);
+          const isAccessible = isAccessibleResidence(unit.accessibility);
+          const unitLabel = formatResidenceLabel(unit.unitNumber, isPenthouse, isAccessible);
+          const bedroomLabel = formatBedrooms(unit.bedrooms, unit.flex);
+          const bedroomSummaryLabel = formatBedroomSummary(unit.bedrooms, unit.flex);
           const interiorLabel = formatSquareFootage(unit.area);
           const exteriorValue =
             Number.isFinite(Number(unit.outdoorArea)) && Number(unit.outdoorArea) > 0
               ? unit.outdoorArea
               : unit.detail?.exterior;
           const exteriorLabel = formatSquareFootage(exteriorValue);
+          const outdoorSpaceLabel = formatOutdoorSpace(unit.outdoorSpace);
+          const bedBathOutdoorParts = [
+            bedroomSummaryLabel,
+            `${formatBathrooms(unit.bathrooms)} Bath`,
+            outdoorSpaceLabel,
+          ].filter(Boolean);
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
           const panorama = unit.detail?.panoramicView;
@@ -553,14 +602,14 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                 aria-controls={hasDetail ? detailId : undefined}
               >
                 <div class="floorplans-cell floorplans-cell--unit">{unitLabel}</div>
-                <div class="floorplans-cell floorplans-cell--metric">{unit.bedrooms}</div>
+                <div class="floorplans-cell floorplans-cell--metric">{bedroomLabel}</div>
                 <div class="floorplans-cell floorplans-cell--metric floorplans-cell--bathrooms">
                   {formatBathrooms(unit.bathrooms)}
                 </div>
                 <div class="floorplans-cell floorplans-cell--metric">
-                  {numberFormat.format(unit.area)} sf
+                  <span class="floorplans-area-approx">Approx.&nbsp;</span>
+                  {numberFormat.format(unit.area)} SF
                   <span class="floorplans-area-asterisk"> *</span>
-                  <span class="floorplans-area-approx">&nbsp;approx.</span>
                 </div>
                 {hasOrientation && (
                   <div class="floorplans-cell floorplans-cell--orientation">
@@ -608,10 +657,12 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
 
                     <div class="floorplans-detail-copy">
                       <div class="floorplans-detail-meta">
-                        <p>Residence {unit.unitNumber}</p>
-                        <p>{unit.bedrooms} Bedroom, {formatBathrooms(unit.bathrooms)} Bath</p>
-                        <p>Interior: {interiorLabel}</p>
-                        {exteriorLabel && <p>Exterior: {exteriorLabel}</p>}
+                        <p>Residence {unitLabel}</p>
+                        <p class="floorplans-detail-summary">
+                          {bedBathOutdoorParts.map((part) => <span>{part}</span>)}
+                        </p>
+                        <p>Approx. Interior: {interiorLabel}</p>
+                        {exteriorLabel && <p>Approx. Exterior: {exteriorLabel}</p>}
                         <p>Exposure: {exposureLabel}</p>
                       </div>
 
@@ -712,7 +763,7 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
 
                           <div class="floorplans-detail-copy floorplans-panorama-copy">
                             <div class="floorplans-detail-meta">
-                              <p>Residence {unit.unitNumber}</p>
+                              <p>Residence {unitLabel}</p>
                             </div>
                           </div>
 
@@ -733,9 +784,9 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
                                 </div>
                               </div>
 
-                              {floorplanDisclaimer && (
+                              {panoramaDisclaimer && (
                                 <div class="floorplans-detail-disclaimer floorplans-panorama-disclaimer">
-                                  <p>{floorplanDisclaimer}</p>
+                                  <p>{panoramaDisclaimer}</p>
                                 </div>
                               )}
                             </div>
@@ -1750,7 +1801,6 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
   .floorplans-detail-meta {
     font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
     font-weight: 400;
-    text-transform: uppercase;
     font-size: 1.5rem;
     line-height: 2.25rem;
   }
@@ -1758,6 +1808,36 @@ function formatResidenceLabel(value: string | number | null | undefined, isPenth
   .floorplans-detail-meta p {
     margin: 0;
     white-space: nowrap;
+  }
+
+  .floorplans-detail-meta p:first-child {
+    text-transform: uppercase;
+  }
+
+  .floorplans-detail-summary {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .floorplans-detail-summary > span {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .floorplans-detail-summary > span + span {
+    margin-left: 0.75rem;
+  }
+
+  .floorplans-detail-summary > span + span::before {
+    content: "";
+    display: block;
+    width: 1px;
+    height: 0.8em;
+    margin-right: 0.75rem;
+    background: currentColor;
   }
 
   .floorplans-detail-actions {
