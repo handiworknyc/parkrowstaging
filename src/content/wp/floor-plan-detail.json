@@ -1,9 +1,9 @@
 {
   "kind": "page",
   "id": 42,
-  "uri": "/",
+  "uri": "/45678uytgfdcvgy789/",
   "title": "Floor Plans",
-  "status": "draft",
+  "status": "publish",
   "floor_plan_detail": [
     {
       "unit": "201",
@@ -25,12 +25,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/201.pdf",
-        "id": 434,
+        "id": 564,
         "title": "201",
         "filename": "201.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77381
+        "filesize": 54018
       }
     },
     {
@@ -53,12 +53,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/301.pdf",
-        "id": 435,
+        "id": 565,
         "title": "301",
         "filename": "301.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 74819
+        "filesize": 51576
       }
     },
     {
@@ -81,12 +81,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/302.pdf",
-        "id": 436,
+        "id": 566,
         "title": "302",
         "filename": "302.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75969
+        "filesize": 52308
       }
     },
     {
@@ -109,12 +109,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/303.pdf",
-        "id": 437,
+        "id": 567,
         "title": "303",
         "filename": "303.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77410
+        "filesize": 52233
       }
     },
     {
@@ -137,12 +137,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/304.pdf",
-        "id": 438,
+        "id": 568,
         "title": "304",
         "filename": "304.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75245
+        "filesize": 50189
       }
     },
     {
@@ -165,12 +165,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/305.pdf",
-        "id": 439,
+        "id": 569,
         "title": "305",
         "filename": "305.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76136
+        "filesize": 50898
       }
     },
     {
@@ -193,12 +193,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/306.pdf",
-        "id": 440,
+        "id": 570,
         "title": "306",
         "filename": "306.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75723
+        "filesize": 50784
       }
     },
     {
@@ -221,12 +221,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/307.pdf",
-        "id": 441,
+        "id": 571,
         "title": "307",
         "filename": "307.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76072
+        "filesize": 50983
       }
     },
     {
@@ -249,12 +249,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/308.pdf",
-        "id": 442,
+        "id": 572,
         "title": "308",
         "filename": "308.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75874
+        "filesize": 52128
       }
     },
     {
@@ -277,12 +277,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/309.pdf",
-        "id": 443,
+        "id": 573,
         "title": "309",
         "filename": "309.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75487
+        "filesize": 52196
       }
     },
     {
@@ -305,12 +305,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/401-1201.pdf",
-        "id": 444,
+        "id": 574,
         "title": "401-1201",
         "filename": "401-1201.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76543
+        "filesize": 51989
       }
     },
     {
@@ -333,12 +333,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/402-1202.pdf",
-        "id": 445,
+        "id": 575,
         "title": "402-1202",
         "filename": "402-1202.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75618
+        "filesize": 51572
       }
     },
     {
@@ -361,12 +361,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/403-503.pdf",
-        "id": 446,
+        "id": 576,
         "title": "403-503",
         "filename": "403-503.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77082
+        "filesize": 51478
       }
     },
     {
@@ -389,12 +389,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/404-1204.pdf",
-        "id": 447,
+        "id": 577,
         "title": "404-1204",
         "filename": "404-1204.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75736
+        "filesize": 49816
       }
     },
     {
@@ -417,12 +417,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/405.pdf",
-        "id": 448,
+        "id": 578,
         "title": "405",
         "filename": "405.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 74466
+        "filesize": 49329
       }
     },
     {
@@ -445,12 +445,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/406-1206.pdf",
-        "id": 449,
+        "id": 579,
         "title": "406-1206",
         "filename": "406-1206.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77620
+        "filesize": 51294
       }
     },
     {
@@ -473,12 +473,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/407-1207.pdf",
-        "id": 450,
+        "id": 580,
         "title": "407-1207",
         "filename": "407-1207.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 81207
+        "filesize": 69692
       }
     },
     {
@@ -501,12 +501,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/408.pdf",
-        "id": 451,
+        "id": 581,
         "title": "408",
         "filename": "408.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 74417
+        "filesize": 50813
       }
     },
     {
@@ -529,12 +529,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/409-1209.pdf",
-        "id": 452,
+        "id": 582,
         "title": "409-1209",
         "filename": "409-1209.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77673
+        "filesize": 53016
       }
     },
     {
@@ -557,12 +557,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/505-1205.pdf",
-        "id": 453,
+        "id": 583,
         "title": "505-1205",
         "filename": "505-1205.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76351
+        "filesize": 50623
       }
     },
     {
@@ -585,12 +585,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/508-1208.pdf",
-        "id": 454,
+        "id": 584,
         "title": "508-1208",
         "filename": "508-1208.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75704
+        "filesize": 51310
       }
     },
     {
@@ -613,12 +613,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/603-1203.pdf",
-        "id": 455,
+        "id": 585,
         "title": "603-1203",
         "filename": "603-1203.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 78637
+        "filesize": 52458
       }
     },
     {
@@ -641,12 +641,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1301.pdf",
-        "id": 456,
+        "id": 586,
         "title": "1301",
         "filename": "1301.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76572
+        "filesize": 52994
       }
     },
     {
@@ -669,12 +669,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1302-1802.pdf",
-        "id": 457,
+        "id": 587,
         "title": "1302-1802",
         "filename": "1302-1802.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 78801
+        "filesize": 52683
       }
     },
     {
@@ -697,12 +697,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1303.pdf",
-        "id": 458,
+        "id": 588,
         "title": "1303",
         "filename": "1303.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75574
+        "filesize": 50601
       }
     },
     {
@@ -725,12 +725,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1304.pdf",
-        "id": 459,
+        "id": 589,
         "title": "1304",
         "filename": "1304.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77017
+        "filesize": 52012
       }
     },
     {
@@ -753,12 +753,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1305-1805.pdf",
-        "id": 460,
+        "id": 590,
         "title": "1305-1805",
         "filename": "1305-1805.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76290
+        "filesize": 52342
       }
     },
     {
@@ -781,12 +781,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1306.pdf",
-        "id": 461,
+        "id": 591,
         "title": "1306",
         "filename": "1306.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 74479
+        "filesize": 51056
       }
     },
     {
@@ -809,12 +809,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1401-1801.pdf",
-        "id": 462,
+        "id": 592,
         "title": "1401-1801",
         "filename": "1401-1801.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77864
+        "filesize": 53735
       }
     },
     {
@@ -837,12 +837,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1403-1803.pdf",
-        "id": 463,
+        "id": 593,
         "title": "1403-1803",
         "filename": "1403-1803.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 76158
+        "filesize": 50882
       }
     },
     {
@@ -865,12 +865,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1404-1804.pdf",
-        "id": 464,
+        "id": 594,
         "title": "1404-1804",
         "filename": "1404-1804.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 80571
+        "filesize": 54049
       }
     },
     {
@@ -893,12 +893,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1406-1806.pdf",
-        "id": 465,
+        "id": 595,
         "title": "1406-1806",
         "filename": "1406-1806.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 77933
+        "filesize": 52969
       }
     },
     {
@@ -921,12 +921,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1901-2001.pdf",
-        "id": 466,
+        "id": 596,
         "title": "1901-2001",
         "filename": "1901-2001.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 78933
+        "filesize": 54581
       }
     },
     {
@@ -949,12 +949,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1902-2002.pdf",
-        "id": 467,
+        "id": 597,
         "title": "1902-2002",
         "filename": "1902-2002.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 79575
+        "filesize": 53714
       }
     },
     {
@@ -977,12 +977,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1903-2003.pdf",
-        "id": 468,
+        "id": 598,
         "title": "1903-2003",
         "filename": "1903-2003.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 75499
+        "filesize": 50349
       }
     },
     {
@@ -1005,12 +1005,12 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1904-2004.pdf",
-        "id": 469,
+        "id": 599,
         "title": "1904-2004",
         "filename": "1904-2004.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 78427
+        "filesize": 52507
       }
     },
     {
@@ -1033,16 +1033,24 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/1905-2005.pdf",
-        "id": 470,
+        "id": 600,
         "title": "1905-2005",
         "filename": "1905-2005.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 78025
+        "filesize": 54102
       }
     },
     {
       "unit": "PH 2101-2201",
+      "floor_plan_keyplan": {
+        "url": "/img-cache/key-plan-ph-2101-2201-1-7da5afd2.svg",
+        "id": 561,
+        "title": "Key Plan - PH 2101-2201",
+        "mime_type": "image/svg+xml",
+        "width": 207,
+        "height": 185
+      },
       "floor_plan_image": {
         "url": "/img-cache/2101-2201-b8c7db23.svg",
         "id": 414,
@@ -1053,16 +1061,24 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/PH-2101-2201.pdf",
-        "id": 471,
+        "id": 601,
         "title": "PH 2101-2201",
         "filename": "PH-2101-2201.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 84888
+        "filesize": 60229
       }
     },
     {
       "unit": "PH 2102-2202",
+      "floor_plan_keyplan": {
+        "url": "/img-cache/key-plan-ph-2102-2202-1-7d9a5003.svg",
+        "id": 562,
+        "title": "Key Plan - PH 2102-2202",
+        "mime_type": "image/svg+xml",
+        "width": 207,
+        "height": 185
+      },
       "floor_plan_image": {
         "url": "/img-cache/2102-2202-25497277.svg",
         "id": 415,
@@ -1073,16 +1089,24 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/PH-2102-2202.pdf",
-        "id": 472,
+        "id": 602,
         "title": "PH 2102-2202",
         "filename": "PH-2102-2202.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 83904
+        "filesize": 57063
       }
     },
     {
       "unit": "PH 2103-2203",
+      "floor_plan_keyplan": {
+        "url": "/img-cache/key-plan-ph-2103-2203-1-60bd0ca5.svg",
+        "id": 563,
+        "title": "Key Plan - PH 2103-2203",
+        "mime_type": "image/svg+xml",
+        "width": 207,
+        "height": 185
+      },
       "floor_plan_image": {
         "url": "/img-cache/2103-2203-7c9e8d99.svg",
         "id": 416,
@@ -1093,14 +1117,14 @@
       },
       "floor_plan_pdf": {
         "url": "https://parkrow1.wpenginepowered.com/wp-content/uploads/2026/04/PH-2103-2203.pdf",
-        "id": 473,
+        "id": 603,
         "title": "PH 2103-2203",
         "filename": "PH-2103-2203.pdf",
         "mime_type": "application/pdf",
         "subtype": "pdf",
-        "filesize": 80312
+        "filesize": 56093
       }
     }
   ],
-  "_syncedAt": "2026-04-14 22:42:27"
+  "_syncedAt": "2026-04-15 00:52:19"
 }

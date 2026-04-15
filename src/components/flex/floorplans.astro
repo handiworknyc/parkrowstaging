@@ -254,8 +254,9 @@ const panoramicViews = Array.isArray(panoramicViewsPage?.views) ? panoramicViews
 
 function getPanoramicView(unitNumber: string) {
   const floor = parseUnitFloor(unitNumber);
-  const matchedView =
-    panoramicViews.find((view) => floorSpecMatches(view?.floors, floor)) ?? panoramicViews[0];
+  const matchedView = panoramicViews.find((view) => floorSpecMatches(view?.floors, floor));
+  if (!matchedView) return null;
+
   const dayView = extractAsset(matchedView?.day_view);
   const nightView = extractAsset(matchedView?.night_view);
 

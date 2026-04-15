@@ -1,0 +1,52 @@
+{
+  "kind": "page",
+  "id": 42,
+  "uri": "/45678uytgfdcvgy789/",
+  "title": "Floor Plans",
+  "layouts": [
+    {
+      "acf_fc_layout": "page_title",
+      "layout_settings": {
+        "section_title": "",
+        "section_h2": "",
+        "section_text": "",
+        "green_bg": false,
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
+      },
+      "h1": "Choose your Perspective",
+      "h2": "",
+      "description": "Every home at Park Row is unique in orientation and outlook—framing either the serene greens of the park or the luminous expanse of Lake Washington.<br />\r\n<br />\r\nExplore floor plans to discover the layout that fits your rhythm of life.",
+      "smaller_text": true,
+      "h1_chinese": "",
+      "h2_chinese": "",
+      "description_chinese": ""
+    },
+    {
+      "acf_fc_layout": "floorplans",
+      "layout_settings": {
+        "section_title": "",
+        "section_h2": "",
+        "section_text": "",
+        "green_bg": false,
+        "section_text_below": false,
+        "chinese": null,
+        "section_title_chinese": "",
+        "section_h2_chinese": "",
+        "section_text_chinese": "",
+        "section_text_below_copy": false
+      }
+    }
+  ],
+  "contentHtml": "",
+  "_syncedAt": "2026-04-15 00:52:21",
+  "seo": {
+    "title": "Floor Plans - Park Row Bellevue",
+    "description": "",
+    "image": null
+  }
+}

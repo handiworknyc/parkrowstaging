@@ -1,11 +1,74 @@
 {
   "kind": "page",
   "id": 42,
-  "uri": "/floor-plans/",
+  "uri": "/45678uytgfdcvgy789/",
   "title": "Floor Plans",
+  "status": "publish",
   "views": [
     {
-      "floors": "",
+      "floors": "5-9",
+      "day_view": {
+        "id": 555,
+        "url": "/img-cache/5-daytime-scaled-f96fbb5d.jpg.webp",
+        "title": "5-daytime",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      },
+      "night_view": null
+    },
+    {
+      "floors": "10-14",
+      "day_view": {
+        "id": 556,
+        "url": "/img-cache/10-daytime-scaled-81e13a82.jpg.webp",
+        "title": "10-daytime",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      },
+      "night_view": null
+    },
+    {
+      "floors": "15-19",
+      "day_view": {
+        "id": 557,
+        "url": "/img-cache/15-daytime-scaled-13afe0d3.jpg.webp",
+        "title": "15-daytime",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      },
+      "night_view": {
+        "id": 558,
+        "url": "/img-cache/15-evening-scaled-4504a460.jpg.webp",
+        "title": "15-evening",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      }
+    },
+    {
+      "floors": "20",
+      "day_view": {
+        "id": 559,
+        "url": "/img-cache/20-daytime-scaled-e724f8ff.jpg.webp",
+        "title": "20-daytime",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      },
+      "night_view": {
+        "id": 560,
+        "url": "/img-cache/20-evening-scaled-1dd16fde.jpg.webp",
+        "title": "20-evening",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 802
+      }
+    },
+    {
+      "floors": "21-22",
       "day_view": {
         "id": 370,
         "url": "/img-cache/21-daytime-scaled-09262cf4.jpg.webp",
@@ -24,5 +87,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-12 19:09:55"
+  "_syncedAt": "2026-04-15 00:52:19"
 }
