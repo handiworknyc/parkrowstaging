@@ -1,5 +1,5 @@
 ---
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import FloorplanZoomViewer from "@/components/react/FloorplanZoomViewer.jsx";
 import PanoramicViewViewer from "../react/PanoramicViewViewer.jsx";
@@ -189,6 +189,37 @@ function extractUnitKeysFromSpec(value: string | null | undefined) {
   return [...new Set(matches.map((match) => normalizeUnitNumber(match)).filter(Boolean))];
 }
 
+function getFallbackKeyplanMap() {
+  const keyplanDir = resolve(process.cwd(), "public", "img-cache");
+  if (!existsSync(keyplanDir)) {
+    return new Map<
+      string,
+      { url: string; width?: number; height?: number; aspectRatio?: string }
+    >();
+  }
+
+  const map = new Map<string, { url: string; width?: number; height?: number; aspectRatio?: string }>();
+
+  for (const filename of readdirSync(keyplanDir)) {
+    if (!/^key-plan-.*\.svg$/i.test(filename)) continue;
+
+    const url = `/img-cache/${filename}`;
+    const size = getSvgIntrinsicSize(url);
+    const width = size?.width;
+    const height = size?.height;
+    const aspectRatio = width && height ? String(width / height) : undefined;
+    const unitKeys = extractUnitKeysFromSpec(extractFilenameStem(filename));
+
+    for (const unit of unitKeys) {
+      if (!map.has(unit)) {
+        map.set(unit, { url, width, height, aspectRatio });
+      }
+    }
+  }
+
+  return map;
+}
+
 function getDetailUnitKeys(detail: any) {
   const image = detail?.floor_plan_image;
   const imageFilenameKeys = extractUnitKeysFromSpec(image?.filename);
@@ -275,19 +306,24 @@ function getPanoramicView(unitNumber: string) {
 const rawDetails = (
   Array.isArray(floorPlanDetailPage?.floor_plan_detail) ? floorPlanDetailPage.floor_plan_detail : []
 ) as any[];
+const fallbackKeyplanMap = getFallbackKeyplanMap();
 const details = rawDetails.flatMap((detail: any) => {
+  const unitKeys = getDetailUnitKeys(detail);
   const keyplan = extractAsset(detail?.floor_plan_keyplan ?? detail?.floorPlanKeyplan);
-  const keyplanUrl = String(keyplan?.url ?? "").trim();
+  const fallbackKeyplan = unitKeys.map((unit) => fallbackKeyplanMap.get(unit)).find(Boolean) ?? null;
+  const keyplanUrl = String(keyplan?.url ?? fallbackKeyplan?.url ?? "").trim();
   const keyplanSvgSize = keyplanUrl ? getSvgIntrinsicSize(keyplanUrl) : null;
   const fallbackKeyplanWidth = Number(keyplan?.width);
   const fallbackKeyplanHeight = Number(keyplan?.height);
   const keyplanWidth =
     keyplanSvgSize?.width ??
+    fallbackKeyplan?.width ??
     (Number.isFinite(fallbackKeyplanWidth) && fallbackKeyplanWidth > 0
       ? fallbackKeyplanWidth
       : undefined);
   const keyplanHeight =
     keyplanSvgSize?.height ??
+    fallbackKeyplan?.height ??
     (Number.isFinite(fallbackKeyplanHeight) && fallbackKeyplanHeight > 0
       ? fallbackKeyplanHeight
       : undefined);
@@ -324,8 +360,6 @@ const details = rawDetails.flatMap((detail: any) => {
     detail?.pdf?.title,
     extractFilenameStem(pdfUrl)
   );
-  const unitKeys = getDetailUnitKeys(detail);
-
   return imageUrl
     ? unitKeys.map((unit) => ({
         unit,
