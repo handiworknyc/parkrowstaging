@@ -1259,6 +1259,287 @@ function replaceImageUrls(obj, urlMap) {
   return obj;
 }
 
+const IMG_CACHE_URL_PATTERN = /\/img-cache\/[A-Za-z0-9._-]+/g;
+const IMG_CACHE_REFERENCE_FILE_EXTENSIONS = new Set([
+  ".astro",
+  ".html",
+  ".js",
+  ".json",
+  ".jsx",
+  ".md",
+  ".ts",
+  ".tsx",
+]);
+
+function collectImgCacheUrlsFromText(text, keepUrls = new Set()) {
+  if (typeof text !== "string" || !text) {
+    return keepUrls;
+  }
+
+  const matches = text.match(IMG_CACHE_URL_PATTERN);
+  if (!matches?.length) {
+    return keepUrls;
+  }
+
+  for (const match of matches) {
+    keepUrls.add(match);
+  }
+
+  return keepUrls;
+}
+
+function walkFiles(dir, files = []) {
+  if (!dir || !fs.existsSync(dir)) {
+    return files;
+  }
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      walkFiles(fullPath, files);
+      continue;
+    }
+
+    if (entry.isFile()) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+function collectImgCacheUrlsFromFile(filePath, keepUrls = new Set()) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return keepUrls;
+  }
+
+  try {
+    const text = fs.readFileSync(filePath, "utf8");
+    return collectImgCacheUrlsFromText(text, keepUrls);
+  } catch (error) {
+    console.warn(`⚠️ Failed to scan ${filePath} for img-cache references: ${error?.message || error}`);
+    return keepUrls;
+  }
+}
+
+function parseUnitFloor(value) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+
+  const floorDigits = digits.length > 2 ? digits.slice(0, -2) : digits;
+  const floor = Number.parseInt(floorDigits, 10);
+  return Number.isFinite(floor) ? floor : null;
+}
+
+function normalizeUnitNumber(value) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.length >= 3 ? digits : "";
+}
+
+function extractFilenameStem(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+
+  const pathname = normalized.split(/[?#]/, 1)[0] ?? "";
+  const filename = pathname.split("/").pop() ?? "";
+  if (!filename) return "";
+
+  const stem = filename.replace(/\.[^.]+$/i, "");
+  return stem.replace(/-[0-9a-f]{8,}$/i, "");
+}
+
+function expandSharedUnitRange(startValue, endValue) {
+  const start = normalizeUnitNumber(startValue);
+  const end = normalizeUnitNumber(endValue);
+  if (!start || !end) return [];
+
+  const startFloor = parseUnitFloor(start);
+  const endFloor = parseUnitFloor(end);
+  const startSuffix = start.slice(-2);
+  const endSuffix = end.slice(-2);
+
+  if (startFloor === null || endFloor === null || startSuffix !== endSuffix) {
+    return [];
+  }
+
+  const minFloor = Math.min(startFloor, endFloor);
+  const maxFloor = Math.max(startFloor, endFloor);
+
+  return Array.from({ length: maxFloor - minFloor + 1 }, (_, index) => {
+    return `${minFloor + index}${startSuffix}`;
+  });
+}
+
+function extractUnitKeysFromSpec(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return [];
+
+  const matches = normalized.match(/\d{3,4}/g) ?? [];
+  if (!matches.length) return [];
+
+  if (matches.length === 2) {
+    const expanded = expandSharedUnitRange(matches[0], matches[1]);
+    if (expanded.length) {
+      return expanded;
+    }
+  }
+
+  return [...new Set(matches.map((match) => normalizeUnitNumber(match)).filter(Boolean))];
+}
+
+function getFloorPlanDetailUnitKeys(detail) {
+  const candidates = [
+    detail?.floor_plan_image?.filename,
+    detail?.floor_plan_image?.title,
+    detail?.floor_plan_image?.url,
+    detail?.unit,
+    detail?.unitNumber,
+  ];
+
+  for (const candidate of candidates) {
+    const keys = extractUnitKeysFromSpec(candidate);
+    if (keys.length) {
+      return keys;
+    }
+  }
+
+  return [];
+}
+
+function collectFallbackKeyplanUrls(detailFilePath, imgCacheDir, keepUrls = new Set()) {
+  if (!detailFilePath || !imgCacheDir || !fs.existsSync(detailFilePath) || !fs.existsSync(imgCacheDir)) {
+    return keepUrls;
+  }
+
+  let detailJson;
+  try {
+    detailJson = JSON.parse(fs.readFileSync(detailFilePath, "utf8"));
+  } catch (error) {
+    console.warn(`⚠️ Failed to parse ${detailFilePath} for key plan cleanup: ${error?.message || error}`);
+    return keepUrls;
+  }
+
+  const detailRows = Array.isArray(detailJson?.floor_plan_detail) ? detailJson.floor_plan_detail : [];
+  const activeUnits = new Set();
+
+  for (const detail of detailRows) {
+    for (const unit of getFloorPlanDetailUnitKeys(detail)) {
+      activeUnits.add(unit);
+    }
+  }
+
+  if (!activeUnits.size) {
+    return keepUrls;
+  }
+
+  const fallbackKeyplanByUnit = new Map();
+
+  for (const entry of fs.readdirSync(imgCacheDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !/^key-plan-.*\.svg$/i.test(entry.name)) {
+      continue;
+    }
+
+    const unitKeys = extractUnitKeysFromSpec(extractFilenameStem(entry.name));
+    if (!unitKeys.length) {
+      continue;
+    }
+
+    const url = `/img-cache/${entry.name}`;
+
+    for (const unit of unitKeys) {
+      if (!activeUnits.has(unit) || fallbackKeyplanByUnit.has(unit)) {
+        continue;
+      }
+
+      fallbackKeyplanByUnit.set(unit, url);
+    }
+  }
+
+  for (const url of fallbackKeyplanByUnit.values()) {
+    keepUrls.add(url);
+  }
+
+  return keepUrls;
+}
+
+function buildReferencedImgCacheUrls({
+  wpContentDir,
+  sourceDir,
+  prefetchMapFile,
+  floorPlanDetailFile,
+  imgCacheDir,
+}) {
+  const keepUrls = new Set();
+
+  for (const filePath of walkFiles(wpContentDir)) {
+    if (!IMG_CACHE_REFERENCE_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+      continue;
+    }
+
+    collectImgCacheUrlsFromFile(filePath, keepUrls);
+  }
+
+  for (const filePath of walkFiles(sourceDir)) {
+    if (!IMG_CACHE_REFERENCE_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+      continue;
+    }
+
+    collectImgCacheUrlsFromFile(filePath, keepUrls);
+  }
+
+  collectImgCacheUrlsFromFile(prefetchMapFile, keepUrls);
+  collectFallbackKeyplanUrls(floorPlanDetailFile, imgCacheDir, keepUrls);
+
+  return keepUrls;
+}
+
+function cleanupImgCacheDirectory(imgCacheDir, keepUrls) {
+  if (!imgCacheDir || !fs.existsSync(imgCacheDir)) {
+    return { scanned: 0, kept: 0, deleted: 0, referenced: 0, skipped: false };
+  }
+
+  const keepFilenames = new Set(
+    Array.from(keepUrls)
+      .map((url) => path.basename(url))
+      .filter(Boolean)
+  );
+
+  if (!keepFilenames.size) {
+    console.warn("⚠️ Img cache cleanup skipped because no live references were detected.");
+    return { scanned: 0, kept: 0, deleted: 0, referenced: 0, skipped: true };
+  }
+
+  let scanned = 0;
+  let kept = 0;
+  let deleted = 0;
+
+  for (const entry of fs.readdirSync(imgCacheDir, { withFileTypes: true })) {
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    scanned++;
+
+    if (keepFilenames.has(entry.name)) {
+      kept++;
+      continue;
+    }
+
+    fs.unlinkSync(path.join(imgCacheDir, entry.name));
+    deleted++;
+    console.log(`🧹 Removed stale img-cache asset: ${entry.name}`);
+  }
+
+  return {
+    scanned,
+    kept,
+    deleted,
+    referenced: keepFilenames.size,
+    skipped: false,
+  };
+}
+
 /* -------------------------------------------
    Discovery
 ------------------------------------------- */
@@ -1558,7 +1839,9 @@ function localizeLcpEntry(entry, urlMap) {
 async function run() {
   console.log("ENV:", { WP_BASE_URL: maskBasicAuthUrl(WP_BASE) });
 
+  const srcDir = path.join(process.cwd(), "src");
   const outPages = path.join(process.cwd(), "src", "content", "wp", "pages");
+  const wpContentDir = path.join(process.cwd(), "src", "content", "wp");
   const outFloorPlanDetail = path.join(process.cwd(), "src", "content", "wp", "floor-plan-detail.json");
   const outPanoramicViews = path.join(process.cwd(), "src", "content", "wp", "panoramic-views.json");
   const outFloorplanDisclaimer = path.join(process.cwd(), "src", "content", "wp", "floorplan-disclaimer.json");
@@ -1961,6 +2244,19 @@ async function run() {
     console.log("---------------------------------------------------");
     console.log("🎥 Prefetch map unchanged — no pages discovered");
   }
+
+  const referencedImgCacheUrls = buildReferencedImgCacheUrls({
+    wpContentDir,
+    sourceDir: srcDir,
+    prefetchMapFile: mapFile,
+    floorPlanDetailFile: outFloorPlanDetail,
+    imgCacheDir,
+  });
+  const cleanupSummary = cleanupImgCacheDirectory(imgCacheDir, referencedImgCacheUrls);
+  console.log(
+    `🧹 Img cache cleanup complete: scanned=${cleanupSummary.scanned}, kept=${cleanupSummary.kept}, deleted=${cleanupSummary.deleted}, referenced=${cleanupSummary.referenced}, skipped=${cleanupSummary.skipped}`
+  );
+
   console.log(`Sync complete: wrote=${wrote}, skipped=${skipped}, failed=${failed}`);
   console.log("---------------------------------------------------");
 }

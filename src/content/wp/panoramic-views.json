@@ -7,84 +7,105 @@
     {
       "floors": "5-9",
       "day_view": {
-        "id": 555,
-        "url": "/img-cache/5-daytime-scaled-f96fbb5d.jpg.webp",
-        "title": "5-daytime",
+        "id": 608,
+        "url": "/img-cache/level-5-daytime-horizon-scaled-2201ba62.jpg.webp",
+        "title": "Level 5 daytime horizon",
+        "caption": "Kolor stitching | 12 pictures | Size: 24892 x 3930 | Lens: Standard | RMS: 2.93 | FOV: 360.00 x 52.77 ~ -0.07 | Projection: Cylindrical | Color: None |",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 790
       },
-      "night_view": null
+      "night_view": {
+        "id": 609,
+        "url": "/img-cache/level-5-twilight-horizon-scaled-d9544762.jpg.webp",
+        "title": "Level 5 twilight horizon",
+        "caption": "Kolor stitching | 12 pictures | Size: 24837 x 3921 | Lens: Standard | RMS: 2.76 | FOV: 360.00 x 52.77 ~ -0.07 | Projection: Cylindrical | Color: None |",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 790
+      }
     },
     {
       "floors": "10-14",
       "day_view": {
-        "id": 604,
-        "url": "/img-cache/10-daytime-1-scaled-0188f0af.jpg.webp",
-        "title": "10-daytime",
+        "id": 607,
+        "url": "/img-cache/level-10-daytime-horizon-scaled-2d579dba.jpg.webp",
+        "title": "Level 10 daytime horizon",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 808
       },
-      "night_view": null
+      "night_view": {
+        "id": 610,
+        "url": "/img-cache/level-10-twilight-horizon-scaled-5e6a2149.jpg.webp",
+        "title": "Level 10 twilight horizon",
+        "mime_type": "image/jpeg",
+        "width": 5000,
+        "height": 790
+      }
     },
     {
       "floors": "15-19",
       "day_view": {
-        "id": 557,
-        "url": "/img-cache/15-daytime-scaled-13afe0d3.jpg.webp",
-        "title": "15-daytime",
+        "id": 611,
+        "url": "/img-cache/level-15-daytime-horizon-scaled-4a34d6a6.jpg.webp",
+        "title": "Level 15 daytime horizon",
+        "caption": "Kolor stitching | 14 pictures | Size: 24809 x 4010 | Lens: Standard | RMS: 2.32 | FOV: 360.00 x 53.84 ~ 0.11 | Projection: Cylindrical | Color: None |",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 808
       },
       "night_view": {
-        "id": 558,
-        "url": "/img-cache/15-evening-scaled-4504a460.jpg.webp",
-        "title": "15-evening",
+        "id": 612,
+        "url": "/img-cache/level-15-twilight-horizon-scaled-e8d5ee20.jpg.webp",
+        "title": "Level 15 twilight horizon",
+        "caption": "Kolor stitching | 11 pictures | Size: 24824 x 3950 | Lens: Standard | RMS: 2.41 | FOV: 360.00 x 53.13 ~ -0.25 | Projection: Cylindrical | Color: None |",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 796
       }
     },
     {
       "floors": "20",
       "day_view": {
-        "id": 559,
-        "url": "/img-cache/20-daytime-scaled-e724f8ff.jpg.webp",
-        "title": "20-daytime",
+        "id": 613,
+        "url": "/img-cache/level-20-daytime-horizon-scaled-5638ac12.jpg.webp",
+        "title": "Level 20 daytime horizon",
+        "caption": "Kolor stitching | 12 pictures | Size: 24814 x 4011 | Lens: Standard | RMS: 2.21 | FOV: 360.00 x 53.84 ~ 0.11 | Projection: Cylindrical | Color: None |",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 808
       },
       "night_view": {
-        "id": 560,
-        "url": "/img-cache/20-evening-scaled-1dd16fde.jpg.webp",
-        "title": "20-evening",
+        "id": 614,
+        "url": "/img-cache/level-20-twilight-horizon-scaled-64bf39ca.jpg.webp",
+        "title": "Level 20 twilight horizon",
+        "caption": "Kolor stitching | 10 pictures | Size: 24818 x 3887 | Lens: Standard | RMS: 2.34 | FOV: 360.00 x 52.40 ~ -0.25 | Projection: Cylindrical | Color: None |",
         "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 783
       }
     },
     {
       "floors": "21-22",
       "day_view": {
-        "id": 370,
-        "url": "/img-cache/21-daytime-scaled-09262cf4.jpg.webp",
-        "title": "21-daytime",
-        "mime_type": "image/heic",
+        "id": 615,
+        "url": "/img-cache/level-21-daytime-horizon-scaled-4c2a1261.jpg.webp",
+        "title": "Level 21 daytime horizon",
+        "caption": "Kolor stitching | 14 pictures | Size: 24820 x 4074 | Lens: Standard | RMS: 2.24 | FOV: 360.00 x 54.56 ~ 0.11 | Projection: Cylindrical | Color: None |",
+        "mime_type": "image/jpeg",
         "width": 5000,
-        "height": 802
+        "height": 821
       },
       "night_view": {
-        "id": 371,
-        "url": "/img-cache/21-evening-scaled-2b82376b.jpg.webp",
-        "title": "21-evening",
-        "mime_type": "image/heic",
+        "id": 616,
+        "url": "/img-cache/level-21-twilight-horizon-scaled-860dd583.jpg.webp",
+        "title": "Level 21 twilight horizon",
+        "mime_type": "image/jpeg",
         "width": 5000,
         "height": 802
       }
     }
   ],
-  "_syncedAt": "2026-04-15 20:55:27"
+  "_syncedAt": "2026-04-15 21:47:37"
 }

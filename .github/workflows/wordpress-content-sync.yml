@@ -72,7 +72,7 @@ jobs:
       - name: Commit synced JSON
         id: commit
         run: |
-          git add -A src/content/wp public/prefetch-map.json
+          git add -A src/content/wp public/prefetch-map.json public/img-cache
 
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"

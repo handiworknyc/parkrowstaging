@@ -58,28 +58,27 @@ const TOGGLE_GROUP_STYLE = {
   marginTop: "1.5rem",
   display: "inline-flex",
   alignItems: "center",
-  gap: "0.75rem",
-  color: "#fff",
+  gap: "0.25rem",
+  padding: "0.25rem",
+  borderRadius: "999px",
+  background: "#fff",
+  color: "#3a2a22",
+  boxShadow: "0 10px 28px rgba(58, 42, 34, 0.12)",
 };
 
 const TOGGLE_BUTTON_STYLE = {
   appearance: "none",
   border: 0,
   background: "transparent",
-  padding: 0,
+  padding: "0.75rem 1.25rem",
+  borderRadius: "999px",
   color: "inherit",
   cursor: "pointer",
   fontFamily: "\"Hanken Grotesk\", system-ui, sans-serif",
-  fontSize: "1.35rem",
+  fontSize: "1rem",
+  fontWeight: 600,
   lineHeight: 1,
-};
-
-const TOGGLE_SEPARATOR_STYLE = {
-  fontFamily: "\"Hanken Grotesk\", system-ui, sans-serif",
-  fontSize: "1.35rem",
-  lineHeight: 1,
-  marginInline: "1rem",
-  opacity: 0.7,
+  transition: "background-color 220ms ease, color 220ms ease",
 };
 
 function queueLayout(callback) {
@@ -524,9 +523,8 @@ export default function PanoramicViewViewer({
               type="button"
               style={{
                 ...TOGGLE_BUTTON_STYLE,
-                opacity: showDay ? 1 : 0.45,
-                textDecoration: showDay ? "underline" : "none",
-                textUnderlineOffset: "0.25em",
+                background: showDay ? "var(--pink)" : "transparent",
+                color: showDay ? "#fff" : "#3a2a22",
               }}
               onClick={() => handleViewChange("day")}
               aria-pressed={showDay ? "true" : "false"}
@@ -534,15 +532,13 @@ export default function PanoramicViewViewer({
               Day Time
             </button>
           )}
-          {daySrc && nightSrc && <span style={TOGGLE_SEPARATOR_STYLE}>|</span>}
           {nightSrc && (
             <button
               type="button"
               style={{
                 ...TOGGLE_BUTTON_STYLE,
-                opacity: showNight ? 1 : 0.45,
-                textDecoration: showNight ? "underline" : "none",
-                textUnderlineOffset: "0.25em",
+                background: showNight ? "var(--pink)" : "transparent",
+                color: showNight ? "#fff" : "#3a2a22",
               }}
               onClick={() => handleViewChange("night")}
               aria-pressed={showNight ? "true" : "false"}

@@ -117,10 +117,16 @@ function resetToInitialView(transformRef, imageRef, topAligned = false) {
 function syncKeyplanDimmedState(root, scale) {
   if (!(root instanceof HTMLElement)) return;
 
+  const isZoomed = scale > INITIAL_SCALE + 0.01;
   const detailVisual = root.closest(".floorplans-detail-visual");
-  if (!(detailVisual instanceof HTMLElement)) return;
+  if (detailVisual instanceof HTMLElement) {
+    detailVisual.dataset.keyplanDimmed = isZoomed ? "true" : "false";
+  }
 
-  detailVisual.dataset.keyplanDimmed = scale > INITIAL_SCALE + 0.01 ? "true" : "false";
+  const modalCard = root.closest("[data-floorplans-modal-card]");
+  if (modalCard instanceof HTMLElement) {
+    modalCard.dataset.floorplanZoomed = isZoomed ? "true" : "false";
+  }
 }
 
 export default function FloorplanZoomViewer({
@@ -272,7 +278,7 @@ export default function FloorplanZoomViewer({
     queueResetToInitialView();
   };
 
-  const handleZoom = (_ref, state) => {
+  const handleTransformed = (_ref, state) => {
     syncKeyplanDimmedState(rootRef.current, state?.scale ?? INITIAL_SCALE);
   };
 
@@ -329,7 +335,7 @@ export default function FloorplanZoomViewer({
         initialScale={INITIAL_SCALE}
         maxScale={MAX_SCALE}
         minScale={INITIAL_SCALE}
-        onZoom={handleZoom}
+        onTransformed={handleTransformed}
         panning={{
           velocityDisabled: true,
           wheelPanning: false,

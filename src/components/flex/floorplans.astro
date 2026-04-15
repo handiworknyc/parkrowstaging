@@ -675,6 +675,7 @@ function formatResidenceLabel(
                   <div
                     class="floorplans-modal-card"
                     data-floorplans-modal-card
+                    data-floorplan-zoomed="false"
                     role="dialog"
                     aria-modal="true"
                     aria-label={"Floor plan for unit " + unit.unitNumber}
@@ -1518,13 +1519,13 @@ function formatResidenceLabel(
     transition: background-color 160ms ease;
   }
 
-  .floorplans-row--interactive {
-    cursor: pointer;
-    transition: background-color 160ms ease;
+  .floorplans-item--interactive:hover,
+  .floorplans-item--interactive:focus-within {
+    background: rgba(58, 42, 34, 0.05);
   }
 
-  .floorplans-row--interactive:hover {
-    background: rgba(58, 42, 34, 0.05);
+  .floorplans-row--interactive {
+    cursor: pointer;
   }
 
   .floorplans-row--interactive:focus-visible {
@@ -1830,6 +1831,8 @@ function formatResidenceLabel(
     max-width: 100%;
     padding: 2rem;
     color: #3a2a22;
+    opacity: 1;
+    transition: opacity 220ms ease;
   }
 
   .floorplans-detail-meta {
@@ -1992,6 +1995,11 @@ function formatResidenceLabel(
 
   .floorplans-detail-visual[data-keyplan-dimmed="true"] .floorplans-detail-keyplan {
     opacity: 0;
+  }
+
+  .floorplans-modal-card[data-floorplan-zoomed="true"] > .floorplans-detail-copy {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .floorplans-detail-viewer :global(.floorplans-zoom-button:hover),
@@ -2314,12 +2322,6 @@ function formatResidenceLabel(
 
     .floorplans-area-approx {
       display: none;
-    }
-  }
-
-  @media (min-width: 840px) {
-    .floorplans-item--interactive:hover {
-      background: rgba(58, 42, 34, 0.05);
     }
   }
 
