@@ -20,8 +20,8 @@
     {
       "floors": "10-14",
       "day_view": {
-        "id": 556,
-        "url": "/img-cache/10-daytime-scaled-81e13a82.jpg.webp",
+        "id": 604,
+        "url": "/img-cache/10-daytime-1-scaled-0188f0af.jpg.webp",
         "title": "10-daytime",
         "mime_type": "image/jpeg",
         "width": 5000,
@@ -87,5 +87,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-15 00:52:19"
+  "_syncedAt": "2026-04-15 03:43:33"
 }
