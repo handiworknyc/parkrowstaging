@@ -1,4 +1,36 @@
 ---
+import PanoramicFloorSelector from "../react/PanoramicFloorSelector.jsx";
+import panoramicViewsPage from "@/content/wp/panoramic-views.json";
+import floorplanDisclaimerPage from "@/content/wp/floorplan-disclaimer.json";
+
+function extractPanoramaAsset(value) {
+  if (!value || typeof value !== "object") {
+    return {
+      url: "",
+      width: undefined,
+      height: undefined,
+    };
+  }
+
+  const url = typeof value.url === "string" ? value.url.trim() : "";
+  const width = Number.isFinite(Number(value.width)) && Number(value.width) > 0
+    ? Number(value.width)
+    : undefined;
+  const height = Number.isFinite(Number(value.height)) && Number(value.height) > 0
+    ? Number(value.height)
+    : undefined;
+
+  return { url, width, height };
+}
+
+const FLOOR_VIEW_SPECS = [
+  { key: "ph", label: "Floor PH", floors: "21-22" },
+  { key: "20", label: "Floor 20", floors: "20" },
+  { key: "15", label: "Floor 15", floors: "15-19" },
+  { key: "10", label: "Floor 10", floors: "10-14" },
+  { key: "5", label: "Floor 5", floors: "5-9" },
+];
+
 // Props
 const {
   layout_settings = {},
@@ -6,7 +38,8 @@ const {
   h2 = "",
   description = "",
   smaller_text = false,
-  className = ""
+  className = "",
+  rowIndex = 0,
 } = Astro.props;
 
 // Destructure layout settings
@@ -34,6 +67,42 @@ const showFloorplansApproximationNote =
 const pageTextHtml = showFloorplansApproximationNote
   ? `${pageText}<span class="page-title-floorplans-approx-note"><br /><br />* approximate square feet</span>`
   : pageText;
+const normalizedPathname = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isFloorPlansPage =
+  normalizedPathname === "/floor-plans" ||
+  normalizedPathname === "/zh/floor-plans" ||
+  normalizedPathname.endsWith("/floor-plans");
+const panoramicViews = Array.isArray(panoramicViewsPage?.views) ? panoramicViewsPage.views : [];
+const viewsByFloorOptions = isFloorPlansPage
+  ? FLOOR_VIEW_SPECS.flatMap((spec) => {
+      const matchedView = panoramicViews.find(
+        (view) => String(view?.floors ?? "").trim() === spec.floors
+      );
+      if (!matchedView) return [];
+
+      const dayView = extractPanoramaAsset(matchedView?.day_view);
+      const nightView = extractPanoramaAsset(matchedView?.night_view);
+      if (!dayView.url && !nightView.url) return [];
+
+      return [
+        {
+          key: spec.key,
+          label: spec.label,
+          daySrc: dayView.url || nightView.url || "",
+          dayWidth: dayView.width ?? nightView.width,
+          dayHeight: dayView.height ?? nightView.height,
+          nightSrc: nightView.url || "",
+          nightWidth: nightView.width ?? dayView.width,
+          nightHeight: nightView.height ?? dayView.height,
+        },
+      ];
+    })
+  : [];
+const showViewsByFloor = viewsByFloorOptions.length > 0;
+const panoramaDisclaimer = String(
+  floorplanDisclaimerPage?.panorama_disclaimer ?? floorplanDisclaimerPage?.panoramaDisclaimer ?? ""
+).trim();
+const viewsByFloorModalId = `page-title-floor-views-${rowIndex}`;
 
 // ------------------
 // STATE
@@ -95,8 +164,261 @@ const sectionClass = [
       </div>
     )}
 
+    {showViewsByFloor && (
+      <div class="page-title-floor-views-root" data-page-title-floor-views-root>
+        <button
+          type="button"
+          class="page-title-floor-views-trigger"
+          data-page-title-floor-views-open
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls={viewsByFloorModalId}
+        >
+          Views by Floor
+        </button>
+
+        <div
+          id={viewsByFloorModalId}
+          class="page-title-floor-views-modal"
+          data-page-title-floor-views-modal
+          data-floorplans-panorama-modal
+          hidden
+        >
+          <div
+            class="page-title-floor-views-card floorplans-panorama-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Views by Floor"
+          >
+            <button
+              type="button"
+              class="floorplans-modal-close floorplans-panorama-close page-title-floor-views-close"
+              data-page-title-floor-views-close
+              data-page-title-floor-views-close-button
+              aria-label="Close Views by Floor"
+            >
+              Close
+            </button>
+
+            <PanoramicFloorSelector
+              client:load
+              options={viewsByFloorOptions}
+              disclaimer={panoramaDisclaimer}
+            />
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 </section>
+
+{showViewsByFloor && (
+  <script define:vars={{ floorViewsFadeMs: 320 }}>
+    (() => {
+      const init = () => {
+        const roots = Array.from(document.querySelectorAll("[data-page-title-floor-views-root]"));
+        if (!roots.length) return;
+
+        roots.forEach((root) => {
+          if (!(root instanceof HTMLElement)) return;
+          if (root.dataset.pageTitleFloorViewsInitialized === "true") return;
+          root.dataset.pageTitleFloorViewsInitialized = "true";
+
+          const openButton = root.querySelector("[data-page-title-floor-views-open]");
+          const modal = root.querySelector("[data-page-title-floor-views-modal]");
+          const closeButton = root.querySelector("[data-page-title-floor-views-close-button]");
+          if (!(openButton instanceof HTMLElement) || !(modal instanceof HTMLElement)) {
+            return;
+          }
+
+          const abortController = new AbortController();
+          let closeTimer = 0;
+          let lockedScrollY = 0;
+          let activeScrollLockMode = "none";
+
+          const getLocoScroll = () => {
+            const locoScroll = window.locoScroll;
+            if (
+              locoScroll &&
+              typeof locoScroll.stop === "function" &&
+              typeof locoScroll.start === "function"
+            ) {
+              return locoScroll;
+            }
+
+            return null;
+          };
+
+          const getCurrentScrollY = () => {
+            const locoScroll = getLocoScroll();
+            const locoY = locoScroll?.lenisInstance?.scroll;
+            if (typeof locoY === "number" && Number.isFinite(locoY)) {
+              return locoY;
+            }
+
+            return (
+              window.scrollY ||
+              document.scrollingElement?.scrollTop ||
+              document.documentElement.scrollTop ||
+              0
+            );
+          };
+
+          const clearCloseTimer = () => {
+            if (!closeTimer) return;
+            window.clearTimeout(closeTimer);
+            closeTimer = 0;
+          };
+
+          const lockPageScroll = () => {
+            const locoScroll = getLocoScroll();
+            lockedScrollY = getCurrentScrollY();
+
+            if (locoScroll) {
+              activeScrollLockMode = "loco";
+              locoScroll.stop();
+              return;
+            }
+
+            activeScrollLockMode = "native";
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${lockedScrollY}px`;
+            document.body.style.width = "100%";
+            document.body.classList.add("page-title-floor-views-open");
+          };
+
+          const unlockPageScroll = () => {
+            const savedY = lockedScrollY;
+
+            if (activeScrollLockMode === "loco") {
+              const locoScroll = getLocoScroll();
+              if (locoScroll?.scrollTo) {
+                locoScroll.scrollTo(savedY, {
+                  immediate: true,
+                  force: true,
+                });
+              } else {
+                window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
+              }
+
+              locoScroll?.start();
+              activeScrollLockMode = "none";
+              return;
+            }
+
+            if (activeScrollLockMode === "native") {
+              document.body.style.position = "";
+              document.body.style.top = "";
+              document.body.style.width = "";
+              document.body.classList.remove("page-title-floor-views-open");
+              window.scrollTo({ top: savedY, left: 0, behavior: "auto" });
+            }
+
+            activeScrollLockMode = "none";
+          };
+
+          const finalizeClose = (restoreFocus = false) => {
+            clearCloseTimer();
+            modal.hidden = true;
+            modal.classList.remove("is-visible", "is-closing");
+            openButton.setAttribute("aria-expanded", "false");
+            unlockPageScroll();
+
+            if (restoreFocus) {
+              openButton.focus({ preventScroll: true });
+            }
+          };
+
+          const openModal = () => {
+            clearCloseTimer();
+            modal.hidden = false;
+            modal.classList.remove("is-closing", "is-visible");
+            openButton.setAttribute("aria-expanded", "true");
+            lockPageScroll();
+
+            const scrollRegion = modal.querySelector("[data-floorplans-panorama-scroll]");
+            if (scrollRegion instanceof HTMLElement) {
+              scrollRegion.scrollTop = 0;
+            }
+
+            requestAnimationFrame(() => {
+              if (!modal.hidden) {
+                modal.classList.add("is-visible");
+              }
+            });
+
+            if (closeButton instanceof HTMLElement) {
+              closeButton.focus({ preventScroll: true });
+            }
+          };
+
+          const closeModal = (restoreFocus = false, immediate = false) => {
+            if (modal.hidden) return false;
+
+            clearCloseTimer();
+
+            if (immediate) {
+              finalizeClose(restoreFocus);
+              return true;
+            }
+
+            modal.classList.remove("is-visible");
+            modal.classList.add("is-closing");
+            closeTimer = window.setTimeout(() => {
+              finalizeClose(restoreFocus);
+            }, floorViewsFadeMs);
+            return true;
+          };
+
+          openButton.addEventListener(
+            "click",
+            (event) => {
+              event.preventDefault();
+              if (!modal.hidden) return;
+              openModal();
+            },
+            { signal: abortController.signal }
+          );
+
+          modal.addEventListener(
+            "click",
+            (event) => {
+              if (!(event.target instanceof HTMLElement)) return;
+              if (event.target.closest("[data-page-title-floor-views-close]")) {
+                event.preventDefault();
+                closeModal(true);
+              }
+            },
+            { signal: abortController.signal }
+          );
+
+          document.addEventListener(
+            "keydown",
+            (event) => {
+              if (event.key === "Escape") {
+                closeModal(true);
+              }
+            },
+            { signal: abortController.signal }
+          );
+
+          document.addEventListener(
+            "astro:before-swap",
+            () => {
+              closeModal(false, true);
+              abortController.abort();
+            },
+            { once: true }
+          );
+        });
+      };
+
+      init();
+      document.addEventListener("astro:page-load", init);
+      document.addEventListener("astro:after-swap", init);
+    })();
+  </script>
+)}
 
 <style>
   :global(.page-title-floorplans-approx-note) {
@@ -106,6 +428,370 @@ const sectionClass = [
   @media (max-width: 1099px) {
     :global(.page-title-floorplans-approx-note) {
       display: inline;
+    }
+  }
+</style>
+
+<style is:global>
+  .page-title-floor-views-trigger {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.25rem 1rem 0.125rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background-color 160ms ease, color 160ms ease;
+  }
+
+  .page-title-floor-views-trigger:is(:hover, :focus-visible) {
+    background: var(--pink);
+    color: #fff;
+  }
+
+  .page-title-floor-views-modal[hidden] {
+    display: none;
+  }
+
+  .page-title-floor-views-modal {
+    position: fixed;
+    top: var(--headerHeight);
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - var(--headerHeight));
+    height: calc(100dvh - var(--headerHeight));
+    z-index: 9997;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s var(--cubicBez);
+  }
+
+  .page-title-floor-views-modal.is-visible,
+  .page-title-floor-views-modal.is-closing {
+    pointer-events: auto;
+  }
+
+  .page-title-floor-views-modal.is-visible {
+    opacity: 1;
+  }
+
+  .page-title-floor-views-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #efeeec;
+  }
+
+  .page-title-floor-views-root .floorplans-modal-close {
+    appearance: none;
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    z-index: 4;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #3a2a22;
+    cursor: pointer;
+    font-size: 0;
+    line-height: 0;
+    padding: 0;
+    transition: background-color 160ms ease;
+  }
+
+  .page-title-floor-views-root .floorplans-modal-close::before,
+  .page-title-floor-views-root .floorplans-modal-close::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.75rem;
+    height: 1px;
+    background: currentColor;
+    transform-origin: center;
+  }
+
+  .page-title-floor-views-root .floorplans-modal-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .page-title-floor-views-root .floorplans-modal-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  .page-title-floor-views-root
+    .floorplans-modal-close:is(:hover, :focus-visible) {
+    background: var(--pink);
+  }
+
+  .page-title-floor-views-root .floorplans-detail-copy {
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    width: min(48rem, calc(100% - 6rem));
+    max-width: 100%;
+    padding: 2rem;
+    padding-right: 5.5rem;
+    color: #fff;
+    text-align: left;
+  }
+
+  .page-title-floor-views-root .floorplans-detail-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    font-family: "Figure Extended", "Hanken Grotesk", system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 2.25rem;
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: max-content;
+    max-width: 100%;
+    padding: 0.25rem;
+    padding-top: calc(0.25rem + 0.25px);
+    padding-bottom: calc(0.25rem - 0.25px);
+    border-radius: 999px;
+    background: #fff;
+    color: #3a2a22;
+    box-shadow: 0 10px 28px rgba(58, 42, 34, 0.12);
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-toggle--mobile {
+    display: none;
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-toggle--desktop {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    z-index: 4;
+    transform: translateX(-50%);
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-toggle-button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0.75rem 1.25rem;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    transition:
+      background-color 360ms var(--cubicBez),
+      color 360ms var(--cubicBez);
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-toggle-button[data-active="true"] {
+    background: var(--pink);
+    color: #fff;
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-scroll {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-shell {
+    min-height: 0;
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-stage {
+    box-sizing: border-box;
+    position: relative;
+    height: calc(100vh - var(--headerHeight));
+    height: calc(100dvh - var(--headerHeight));
+    min-height: calc(100vh - var(--headerHeight));
+    min-height: calc(100dvh - var(--headerHeight));
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-viewer {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-viewer astro-island {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .page-title-floor-views-root .floorplans-panorama-viewer .floorplans-panorama-viewport {
+    position: relative;
+  }
+
+  .page-title-floor-views-root
+    .floorplans-panorama-viewer
+    .floorplans-panorama-viewport--day-underlay[data-panorama-daytime-underlay="true"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: linear-gradient(
+      140deg,
+      rgba(0, 0, 0, 0.28) 0px,
+      rgba(0, 0, 0, 0.08) 142px,
+      rgba(0, 0, 0, 0) 308px
+    );
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-nav {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-nav-button {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.25rem 1rem;
+    border: 1px solid #fff;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--darkgreen);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: center;
+    transition:
+      background-color 220ms var(--cubicBez),
+      color 220ms var(--cubicBez),
+      border-color 220ms var(--cubicBez);
+  }
+
+  .page-title-floor-views-root .page-title-floor-views-nav-button[data-active="true"] {
+    background: var(--pink);
+    border-color: var(--pink);
+    color: #fff;
+  }
+
+  .page-title-floor-views-root
+    .page-title-floor-views-nav-button:is(:hover, :focus-visible) {
+    background: var(--pink);
+    border-color: var(--pink);
+    color: #fff;
+  }
+
+  .page-title-floor-views-root .floorplans-detail-disclaimer {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+    padding: 4.5rem 2rem 4.25rem;
+    border-top: 1px solid rgba(58, 42, 34, 0.12);
+    background: #efeeec;
+    color: #3a2a22;
+  }
+
+  .page-title-floor-views-root .floorplans-detail-disclaimer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3rem;
+    background: linear-gradient(180deg, rgba(239, 238, 236, 0) 0%, #efeeec 100%);
+    pointer-events: none;
+  }
+
+  .page-title-floor-views-root .floorplans-detail-disclaimer p {
+    margin: 0 auto;
+    max-width: 58rem;
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 814px) {
+    .page-title-floor-views-root .floorplans-detail-copy {
+      width: 100%;
+      padding-right: 6rem;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .page-title-floor-views-root .floorplans-detail-copy {
+      padding: 1.25rem 1rem;
+      padding-right: 4.75rem;
+    }
+
+    .page-title-floor-views-root .floorplans-modal-close {
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .page-title-floor-views-root .floorplans-detail-meta {
+      gap: 1rem;
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+
+    .page-title-floor-views-root .page-title-floor-views-toggle-button {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .page-title-floor-views-root .page-title-floor-views-nav {
+      gap: 0.5rem;
+    }
+
+    .page-title-floor-views-root .page-title-floor-views-nav-button {
+      min-height: 2.5rem;
+      padding-left: 0.85rem;
+      padding-right: 0.85rem;
+    }
+  }
+
+  @media (max-width: 474px) {
+    .page-title-floor-views-root .page-title-floor-views-toggle--desktop {
+      display: none;
+    }
+
+    .page-title-floor-views-root .page-title-floor-views-toggle--mobile {
+      display: inline-flex;
     }
   }
 </style>

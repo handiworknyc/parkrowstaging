@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 const DEFAULT_VIEW_PHASE = 0.5;
 const MOMENTUM_FRICTION = 0.92;
 const MOMENTUM_MIN_VELOCITY = 0.01;
+const VIEW_SWITCH_FADE_MS = 360;
 
 const ROOT_STYLE = {
   position: "relative",
@@ -31,7 +32,7 @@ const LAYER_STYLE = {
   inset: 0,
   width: "100%",
   height: "100%",
-  transition: "opacity 360ms ease",
+  transition: `opacity ${VIEW_SWITCH_FADE_MS}ms var(--cubicBez, ease)`,
   pointerEvents: "none",
   userSelect: "none",
   backgroundRepeat: "repeat-x",
@@ -82,7 +83,7 @@ const TOGGLE_BUTTON_STYLE = {
   fontSize: "1rem",
   fontWeight: 600,
   lineHeight: 1,
-  transition: "background-color 220ms ease, color 220ms ease",
+  transition: `background-color ${VIEW_SWITCH_FADE_MS}ms var(--cubicBez, ease), color ${VIEW_SWITCH_FADE_MS}ms var(--cubicBez, ease)`,
 };
 
 const scheduledWarmups = new Set();
@@ -264,11 +265,20 @@ export default function PanoramicViewViewer({
   nightSrc,
   nightWidth,
   nightHeight,
+  preferredView,
+  showToggle = true,
 }) {
+  const resolveAvailableView = (requestedView) => {
+    if (requestedView === "night" && nightSrc) return "night";
+    if (requestedView === "day" && daySrc) return "day";
+    return daySrc ? "day" : "night";
+  };
+
+  const initialView = resolveAvailableView(preferredView);
   const rootRef = useRef(null);
   const dayLayerRef = useRef(null);
   const nightLayerRef = useRef(null);
-  const activeViewRef = useRef(daySrc ? "day" : "night");
+  const activeViewRef = useRef(initialView);
   const viewPhasesRef = useRef({
     day: DEFAULT_VIEW_PHASE,
     night: DEFAULT_VIEW_PHASE,
@@ -277,11 +287,28 @@ export default function PanoramicViewViewer({
   const dragStateRef = useRef(null);
   const momentumFrameRef = useRef(0);
   const momentumVelocityRef = useRef(0);
-  const [activeView, setActiveView] = useState(daySrc ? "day" : "night");
+  const [activeView, setActiveView] = useState(initialView);
   const [isPanning, setIsPanning] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(false);
   const [mobileToggleHost, setMobileToggleHost] = useState(null);
   const [shouldRenderImages, setShouldRenderImages] = useState(false);
+
+  const getVisibleModal = () => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return null;
+
+    const panoramaModal = root.closest("[data-floorplans-panorama-modal]");
+    if (panoramaModal instanceof HTMLElement) {
+      return panoramaModal;
+    }
+
+    const detailModal = root.closest("[data-floorplans-modal]");
+    if (detailModal instanceof HTMLElement) {
+      return detailModal;
+    }
+
+    return null;
+  };
 
   const getViewDimensions = (view) => {
     const width = Number(view === "night" ? nightWidth : dayWidth);
@@ -439,7 +466,8 @@ export default function PanoramicViewViewer({
   };
 
   useEffect(() => {
-    const nextActiveView = daySrc ? "day" : "night";
+    const nextActiveView = resolveAvailableView(preferredView);
+    const currentModal = getVisibleModal();
 
     activeViewRef.current = nextActiveView;
     viewPhasesRef.current = {
@@ -450,7 +478,7 @@ export default function PanoramicViewViewer({
     stopMomentum();
     setIsPanning(false);
     setActiveView(nextActiveView);
-    setShouldRenderImages(false);
+    setShouldRenderImages(isModalVisible(currentModal));
     queueLayout(syncPanoramaLayers);
   }, [daySrc, dayWidth, dayHeight, nightSrc, nightWidth, nightHeight]);
 
@@ -534,10 +562,26 @@ export default function PanoramicViewViewer({
       attributeFilter: ["class", "hidden"],
     });
 
+    syncVisibility();
+
     return () => {
       observer.disconnect();
     };
   }, [daySrc, nightSrc]);
+
+  useEffect(() => {
+    if (preferredView !== "day" && preferredView !== "night") return;
+
+    const nextActiveView = resolveAvailableView(preferredView);
+    if (nextActiveView === activeViewRef.current) return;
+
+    viewPhasesRef.current[activeViewRef.current] = normalizePhase(renderPhaseRef.current);
+    renderPhaseRef.current =
+      viewPhasesRef.current[nextActiveView] ?? DEFAULT_VIEW_PHASE;
+    activeViewRef.current = nextActiveView;
+    syncPanoramaLayers();
+    setActiveView(nextActiveView);
+  }, [preferredView, daySrc, nightSrc]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -669,14 +713,15 @@ export default function PanoramicViewViewer({
   };
 
   const handleViewChange = (nextView) => {
-    if (nextView === activeView) return;
+    const resolvedView = resolveAvailableView(nextView);
+    if (resolvedView === activeViewRef.current) return;
 
-    viewPhasesRef.current[activeView] = normalizePhase(renderPhaseRef.current);
+    viewPhasesRef.current[activeViewRef.current] = normalizePhase(renderPhaseRef.current);
     renderPhaseRef.current =
-      viewPhasesRef.current[nextView] ?? DEFAULT_VIEW_PHASE;
-    activeViewRef.current = nextView;
+      viewPhasesRef.current[resolvedView] ?? DEFAULT_VIEW_PHASE;
+    activeViewRef.current = resolvedView;
     syncPanoramaLayers();
-    setActiveView(nextView);
+    setActiveView(resolvedView);
   };
 
   const handlePointerDown = (event) => {
@@ -713,7 +758,7 @@ export default function PanoramicViewViewer({
   };
 
   const toggleControls =
-    daySrc || nightSrc ? (
+    showToggle && (daySrc || nightSrc) ? (
       <div style={isMobileLayout ? MOBILE_TOGGLE_WRAP_STYLE : TOGGLE_WRAP_STYLE}>
         <div style={TOGGLE_GROUP_STYLE}>
           {daySrc && (
