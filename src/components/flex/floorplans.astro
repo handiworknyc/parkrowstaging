@@ -483,6 +483,16 @@ function formatSquareFootage(value: number | string | null | undefined) {
   return normalized.replace(/\s+approx\.?$/i, "");
 }
 
+function getPanoramaIndicativeFloorLabel(floor: number | null) {
+  if (floor === null) return "";
+  if (floor >= 5 && floor <= 9) return "5";
+  if (floor >= 10 && floor <= 14) return "10";
+  if (floor >= 15 && floor <= 19) return "15";
+  if (floor === 20) return "20";
+  if (floor >= 21) return "21";
+  return "";
+}
+
 function formatResidenceLabel(
   value: string | number | null | undefined,
   isPenthouse = false,
@@ -607,7 +617,7 @@ function formatResidenceLabel(
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
           const panoramaExposureValue = exposureSortValue;
-          const panoramaFloorLabel = unitFloor !== null ? String(unitFloor) : "";
+          const panoramaFloorLabel = getPanoramaIndicativeFloorLabel(unitFloor);
           const panorama = unit.detail?.panoramicView;
           const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
           const showPanoramaAction =
