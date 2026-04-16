@@ -1240,12 +1240,14 @@ async function fetchSchemaAddress() {
 
 async function fetchFloorPlanDetail() {
   const url = new URL("/wp-json/astro/v1/floor-plan-detail", WP_BASE);
+  url.searchParams.set("_sync", String(Date.now()));
   const { json } = await fetchJSON(url);
   return json;
 }
 
 async function fetchPanoramicViews() {
   const url = new URL("/wp-json/astro/v1/panoramic-views", WP_BASE);
+  url.searchParams.set("_sync", String(Date.now()));
   const { json } = await fetchJSON(url);
   return json && typeof json === "object"
     ? { ...json, uri: canonicalizeLocalPageUri(json.uri, json.id) }
@@ -1254,6 +1256,7 @@ async function fetchPanoramicViews() {
 
 async function fetchFloorplanDisclaimer() {
   const url = new URL("/wp-json/astro/v1/floorplan-disclaimer", WP_BASE);
+  url.searchParams.set("_sync", String(Date.now()));
   const { json } = await fetchJSON(url);
   return json && typeof json === "object"
     ? { ...json, uri: canonicalizeLocalPageUri(json.uri, json.id) }

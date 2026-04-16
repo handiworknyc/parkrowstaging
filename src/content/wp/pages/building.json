@@ -41,7 +41,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 3840,
             "height": 2160,
             "sizes": {
@@ -173,7 +173,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 1053,
             "height": 1873,
             "sizes": {
@@ -348,7 +348,7 @@
             "mime_type": "image/jpeg",
             "type": "image",
             "subtype": "jpeg",
-            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+            "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
             "width": 2500,
             "height": 1724,
             "sizes": {
@@ -527,7 +527,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
                 "width": 1021,
                 "height": 540,
                 "sizes": {
@@ -681,7 +681,7 @@
                 "mime_type": "image/jpeg",
                 "type": "image",
                 "subtype": "jpeg",
-                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.png",
+                "icon": "https://parkrow1.wpenginepowered.com/wp-includes/images/media/default.svg",
                 "width": 3840,
                 "height": 2160,
                 "sizes": {
@@ -826,7 +826,7 @@
     }
   ],
   "contentHtml": "",
-  "_syncedAt": "2026-04-16 23:05:02",
+  "_syncedAt": "2026-04-16 23:18:14",
   "seo": {
     "title": "Luxury Condos for Sale in Bellevue with Park View | Park Row",
     "description": "Discovery Park Row luxury condo architecture by Bosa Development, with terraced forms, light-filled glass, and timeless materials in Bellevue, WA.",

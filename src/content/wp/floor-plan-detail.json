@@ -240,21 +240,21 @@
         "height": 185
       },
       "floor_plan_image": {
-        "url": "/img-cache/308-c64d1480.svg",
-        "id": 385,
-        "title": "308",
-        "mime_type": "image/svg+xml",
-        "width": 631,
-        "height": 649
-      },
-      "floor_plan_pdf": {
         "url": "/img-cache/308-62c7fd7c.svg",
         "id": 626,
         "title": "308",
-        "filename": "308.svg",
         "mime_type": "image/svg+xml",
-        "subtype": "svgxml",
-        "filesize": 62982
+        "width": 506,
+        "height": 534
+      },
+      "floor_plan_pdf": {
+        "url": "/pdf/floorplan-308-58493ca8.pdf",
+        "id": 572,
+        "title": "308",
+        "filename": "308.pdf",
+        "mime_type": "application/pdf",
+        "subtype": "pdf",
+        "filesize": 52128
       }
     },
     {
@@ -408,12 +408,12 @@
         "height": 185
       },
       "floor_plan_image": {
-        "url": "/img-cache/405-ec9e56f3.svg",
-        "id": 391,
+        "url": "/img-cache/405-62db99ff.svg",
+        "id": 627,
         "title": "405",
         "mime_type": "image/svg+xml",
-        "width": 364,
-        "height": 535
+        "width": 380,
+        "height": 420
       },
       "floor_plan_pdf": {
         "url": "/pdf/floorplan-405-a6f44fc0.pdf",
@@ -492,12 +492,12 @@
         "height": 185
       },
       "floor_plan_image": {
-        "url": "/img-cache/408-c880ec03.svg",
-        "id": 394,
+        "url": "/img-cache/408-3b324b2b.svg",
+        "id": 628,
         "title": "408",
         "mime_type": "image/svg+xml",
-        "width": 630,
-        "height": 643
+        "width": 496,
+        "height": 528
       },
       "floor_plan_pdf": {
         "url": "/pdf/floorplan-408-6ef0fc5d.pdf",
@@ -1126,5 +1126,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-16 23:04:53"
+  "_syncedAt": "2026-04-16 23:18:06"
 }
