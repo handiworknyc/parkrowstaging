@@ -1,7 +1,7 @@
 {
   "kind": "page",
   "id": 42,
-  "uri": "/45678uytgfdcvgy789/",
+  "uri": "/floor-plans/",
   "title": "Floor Plans",
   "status": "publish",
   "views": [
@@ -108,5 +108,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-16 21:38:06"
+  "_syncedAt": "2026-04-16 21:51:42"
 }

@@ -219,6 +219,38 @@ function normalizeTrimmedString(value) {
   return typeof value === "string" ? value.trim() : String(value ?? "").trim();
 }
 
+const LOCAL_PAGE_URI_OVERRIDES_BY_ID = new Map([
+  [42, "/floor-plans/"],
+]);
+
+const LOCAL_PAGE_URI_OVERRIDES_BY_PATH = new Map([
+  ["/45678uytgfdcvgy789/", "/floor-plans/"],
+]);
+
+function normalizeLocalPagePath(value) {
+  let pathname = normalizeTrimmedString(value || "/") || "/";
+
+  try {
+    if (/^https?:\/\//i.test(pathname)) {
+      pathname = new URL(pathname).pathname || "/";
+    }
+  } catch {}
+
+  if (!pathname.startsWith("/")) pathname = `/${pathname}`;
+  if (!pathname.endsWith("/")) pathname += "/";
+
+  return LOCAL_PAGE_URI_OVERRIDES_BY_PATH.get(pathname) || pathname;
+}
+
+function canonicalizeLocalPageUri(uri, pageId) {
+  const normalizedPageId = normalizePositiveNumber(pageId);
+  if (normalizedPageId && LOCAL_PAGE_URI_OVERRIDES_BY_ID.has(normalizedPageId)) {
+    return LOCAL_PAGE_URI_OVERRIDES_BY_ID.get(normalizedPageId);
+  }
+
+  return normalizeLocalPagePath(uri);
+}
+
 function normalizePositiveNumber(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
@@ -288,6 +320,7 @@ function normalizeFlexiblePagePayload(value) {
 
   return {
     ...value,
+    uri: canonicalizeLocalPageUri(value.uri, value.id),
     seo: normalizePageSeo(value.seo),
   };
 }
@@ -711,6 +744,7 @@ function normalizeFloorPlanDetailPayload(payload) {
 
   return {
     ...source,
+    uri: canonicalizeLocalPageUri(source.uri, source.id),
     floor_plan_detail: rows.map(normalizeFloorPlanDetailRow).filter(Boolean),
   };
 }
@@ -926,11 +960,18 @@ function rewriteMenuUrls(html) {
     try {
       if (/^(mailto:|tel:|sms:|javascript:|#)/i.test(href)) return full;
 
+      if (/^\//.test(href) && !/^\/\//.test(href)) {
+        const target = new URL(href, "https://parkrow.local");
+        const localPath = canonicalizeLocalPageUri(target.pathname || "/");
+        return `href=${quote}${localPath}${target.search || ""}${target.hash || ""}${quote}`;
+      }
+
       if (/^\/\//.test(href)) {
         if (!wpBase) return `href=${quote}/${href.replace(/^\/+/, "")}${quote}`;
         const sameProtocolUrl = new URL(`${wpBase.protocol}${href}`);
         if (normalizeHost(sameProtocolUrl.hostname) === normalizeHost(wpBase.hostname)) {
-          return `href=${quote}${sameProtocolUrl.pathname || "/"}${sameProtocolUrl.search || ""}${sameProtocolUrl.hash || ""}${quote}`;
+          const localPath = canonicalizeLocalPageUri(sameProtocolUrl.pathname || "/");
+          return `href=${quote}${localPath}${sameProtocolUrl.search || ""}${sameProtocolUrl.hash || ""}${quote}`;
         }
         return full;
       }
@@ -942,7 +983,8 @@ function rewriteMenuUrls(html) {
         return full;
       }
 
-      return `href=${quote}${target.pathname || "/"}${target.search || ""}${target.hash || ""}${quote}`;
+      const localPath = canonicalizeLocalPageUri(target.pathname || "/");
+      return `href=${quote}${localPath}${target.search || ""}${target.hash || ""}${quote}`;
     } catch {
       return full;
     }
@@ -1205,13 +1247,17 @@ async function fetchFloorPlanDetail() {
 async function fetchPanoramicViews() {
   const url = new URL("/wp-json/astro/v1/panoramic-views", WP_BASE);
   const { json } = await fetchJSON(url);
-  return json;
+  return json && typeof json === "object"
+    ? { ...json, uri: canonicalizeLocalPageUri(json.uri, json.id) }
+    : json;
 }
 
 async function fetchFloorplanDisclaimer() {
   const url = new URL("/wp-json/astro/v1/floorplan-disclaimer", WP_BASE);
   const { json } = await fetchJSON(url);
-  return json;
+  return json && typeof json === "object"
+    ? { ...json, uri: canonicalizeLocalPageUri(json.uri, json.id) }
+    : json;
 }
 
 async function fetchHideLanguage() {
@@ -2691,11 +2737,15 @@ async function run() {
         const layouts = Array.isArray(normalizedData?.layouts) ? normalizedData.layouts : [];
 
         const cleanPath = toPathname(uri);
+        const outputUri = canonicalizeLocalPageUri(
+          normalizedData?.uri || cleanPath,
+          normalizedData?.id
+        );
         const pageTitle =
           normalizedData?.title?.rendered ||
           normalizedData?.title ||
           "Untitled Page";
-        pageManifest.push({ uri: cleanPath, title: pageTitle });
+        pageManifest.push({ uri: outputUri, title: pageTitle });
 
         // 1. Collect ALL image URLs from this page (with isPanorama context)
         const imageUrlStrings = new Set();
@@ -2737,7 +2787,7 @@ async function run() {
 
         // 4. Build Prefetch Map
         const firstRow = layouts[0] || null;
-        const entry = { path: cleanPath };
+        const entry = { path: outputUri };
         let hasEntry = false;
 
         // VIDEO
@@ -2769,7 +2819,7 @@ async function run() {
         if (hasEntry) prefetchMap.push(entry);
 
         // 5. Write the TRANSFORMED data
-        const file = path.join(outPages, `${fileSlugFromUri(uri)}.json`);
+        const file = path.join(outPages, `${fileSlugFromUri(outputUri)}.json`);
         fs.writeFileSync(file, JSON.stringify(transformedData, null, 2));
         console.log(`✅ Wrote ${file} (${urlMap.size} images transformed)`);
         wrote++;
