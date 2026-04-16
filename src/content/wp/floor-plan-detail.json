@@ -248,13 +248,13 @@
         "height": 649
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-308-58493ca8.pdf",
-        "id": 572,
+        "url": "/img-cache/308-fd4f9403.svg",
+        "id": 626,
         "title": "308",
-        "filename": "308.pdf",
-        "mime_type": "application/pdf",
-        "subtype": "pdf",
-        "filesize": 52128
+        "filename": "308.svg",
+        "mime_type": "image/svg+xml",
+        "subtype": "svgxml",
+        "filesize": 62982
       }
     },
     {
@@ -1126,5 +1126,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-16 21:51:40"
+  "_syncedAt": "2026-04-16 22:56:29"
 }

@@ -1316,6 +1316,7 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     const urlObj = new URL(processUrl);
     const basename = path.basename(urlObj.pathname);
     const ext = path.extname(basename);
+    const normalizedExt = ext.toLowerCase();
     const nameWithoutExt = path.basename(basename, ext);
     
     // 4. Sanitize name
@@ -1323,7 +1324,8 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     
     // 5. Determine Final Extension (we force .webp for compatible types)
     let finalExt = ext;
-    const isConvertible = ['.jpg', '.jpeg', '.png', '.tiff', '.webp'].includes(ext.toLowerCase());
+    const isConvertible = ['.jpg', '.jpeg', '.png', '.tiff', '.webp'].includes(normalizedExt);
+    const shouldRefreshExistingRawAsset = normalizedExt === ".svg";
     
     if (isConvertible) {
       finalExt = `${ext}.webp`;
@@ -1333,9 +1335,11 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     const filename = `${cleanName}-${hash}${finalExt}`;
     const localPath = path.join(outputDir, filename);
     const publicUrl = `/img-cache/${filename}`;
+    const hadLocalFile = fs.existsSync(localPath);
 
-    // If exists, skip download
-    if (fs.existsSync(localPath)) {
+    // Most cached assets are immutable enough to skip. SVG floorplans are an exception:
+    // WordPress can replace the file in place while keeping the same URL.
+    if (hadLocalFile && !shouldRefreshExistingRawAsset) {
       return publicUrl;
     }
 
@@ -1345,9 +1349,18 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     });
     if (!res.ok) {
       console.warn(`⚠️ Failed to download ${processUrl} (${res.status})`);
-      return null;
+      return hadLocalFile ? publicUrl : null;
     }
     const buffer = Buffer.from(await res.arrayBuffer());
+
+    if (hadLocalFile && shouldRefreshExistingRawAsset) {
+      try {
+        const existingBuffer = fs.readFileSync(localPath);
+        if (Buffer.compare(existingBuffer, buffer) === 0) {
+          return publicUrl;
+        }
+      } catch {}
+    }
 
     // 8. Process Image
     if (isConvertible) {
@@ -1380,7 +1393,11 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
       }
     } else {
       fs.writeFileSync(localPath, buffer);
-      console.log(`📥 Cached (Raw): ${filename}`);
+      if (shouldRefreshExistingRawAsset && hadLocalFile) {
+        console.log(`♻️ Refreshed (Raw): ${filename}`);
+      } else {
+        console.log(`📥 Cached (Raw): ${filename}`);
+      }
     }
 
     return publicUrl;
