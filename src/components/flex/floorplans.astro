@@ -622,7 +622,6 @@ function formatResidenceLabel(
           const showPanoramaAction =
             hasPanorama && !(unitFloor !== null && unitFloor >= 2 && unitFloor <= 4);
           const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
-          const pdfFilename = pdfUrl ? "park-row-residence-" + unit.unitNumber + ".pdf" : undefined;
           const keyplanUrl = String(unit.detail?.keyplanUrl ?? "").trim();
           const usePenthouseLayout = isPenthouse;
           const hasKeyplan = Boolean(keyplanUrl);
@@ -744,9 +743,8 @@ function formatResidenceLabel(
                               class="floorplans-detail-action floorplans-detail-action--download"
                               target="_blank"
                               rel="noopener noreferrer"
-                              download={pdfFilename}
                             >
-                              Download PDF
+                              Open PDF
                             </a>
                           )}
                         </div>
