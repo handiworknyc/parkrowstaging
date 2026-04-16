@@ -13,7 +13,8 @@
       "height": null,
       "source_filename": "",
       "filename": "ParkRow-CPP-Form.pdf",
-      "public_url": "/images/ParkRow-CPP-Form.pdf"
+      "public_dir": "pdf",
+      "public_url": "/pdf/ParkRow-CPP-Form.pdf"
     },
     {
       "id": 621,
@@ -27,7 +28,8 @@
       "height": null,
       "source_filename": "",
       "filename": "ParkRow-CIP-Form.pdf",
-      "public_url": "/images/ParkRow-CIP-Form.pdf"
+      "public_dir": "pdf",
+      "public_url": "/pdf/ParkRow-CIP-Form.pdf"
     },
     {
       "id": 620,
@@ -41,7 +43,8 @@
       "height": null,
       "source_filename": "",
       "filename": "ParkRow-PriorityPreviewPricing.pdf",
-      "public_url": "/images/ParkRow-PriorityPreviewPricing.pdf"
+      "public_dir": "pdf",
+      "public_url": "/pdf/ParkRow-PriorityPreviewPricing.pdf"
     },
     {
       "id": 619,
@@ -55,6 +58,7 @@
       "height": 22,
       "source_filename": "",
       "filename": "6w9_digital_sig.png",
+      "public_dir": "images",
       "public_url": "/images/6w9_digital_sig.png"
     }
   ]

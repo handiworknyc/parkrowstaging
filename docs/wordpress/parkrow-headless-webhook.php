@@ -5,11 +5,11 @@
  */
 
 if (!defined('PARKROW_HEADLESS_WEBHOOK_URL')) {
-    define('PARKROW_HEADLESS_WEBHOOK_URL', 'https://your-site.netlify.app/wp-sync');
+    define('PARKROW_HEADLESS_WEBHOOK_URL', 'https://parkrow1.netlify.app/wp-sync');
 }
 
 if (!defined('PARKROW_HEADLESS_WEBHOOK_SECRET')) {
-    define('PARKROW_HEADLESS_WEBHOOK_SECRET', 'replace-with-the-same-secret-used-in-netlify');
+    define('PARKROW_HEADLESS_WEBHOOK_SECRET', '1460713ce979158b5c43a754c16bcd24e77c38db5e65394987f508ef61f6c538');
 }
 
 if (!function_exists('parkrow_headless_dispatch_rebuild')) {
@@ -79,6 +79,59 @@ if (!function_exists('parkrow_headless_should_skip_post')) {
     }
 }
 
+if (!function_exists('parkrow_headless_meta_is_truthy')) {
+    function parkrow_headless_meta_is_truthy($value) {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return 1 === (int) $value;
+        }
+
+        if (!is_string($value)) {
+            return false;
+        }
+
+        return in_array(strtolower(trim($value)), array('1', 'true', 'yes', 'on'), true);
+    }
+}
+
+if (!function_exists('parkrow_headless_get_attachment_payload')) {
+    function parkrow_headless_get_attachment_payload($attachment_id) {
+        $attachment_id = absint($attachment_id);
+        $attachment = get_post($attachment_id);
+
+        if (!$attachment instanceof WP_Post || 'attachment' !== $attachment->post_type) {
+            return null;
+        }
+
+        return array(
+            'postId' => $attachment_id,
+            'postType' => 'attachment',
+            'status' => (string) $attachment->post_status,
+            'uri' => (string) wp_get_attachment_url($attachment_id),
+            'netlifyImport' => parkrow_headless_meta_is_truthy(get_post_meta($attachment_id, 'netlify_import', true)),
+        );
+    }
+}
+
+if (!function_exists('parkrow_headless_dispatch_attachment_rebuild')) {
+    function parkrow_headless_dispatch_attachment_rebuild($reason, $attachment_id, $force = false) {
+        $payload = parkrow_headless_get_attachment_payload($attachment_id);
+
+        if (!is_array($payload)) {
+            return;
+        }
+
+        if (!$force && empty($payload['netlifyImport'])) {
+            return;
+        }
+
+        parkrow_headless_dispatch_rebuild($reason, $payload);
+    }
+}
+
 if (!function_exists('parkrow_headless_on_save_post')) {
     function parkrow_headless_on_save_post($post_id, $post, $update) {
         if (parkrow_headless_should_skip_post($post_id, $post)) {
@@ -97,6 +150,36 @@ if (!function_exists('parkrow_headless_on_save_post')) {
     }
 }
 add_action('save_post', 'parkrow_headless_on_save_post', 20, 3);
+
+if (!function_exists('parkrow_headless_on_edit_attachment')) {
+    function parkrow_headless_on_edit_attachment($attachment_id) {
+        parkrow_headless_dispatch_attachment_rebuild('attachment_updated', $attachment_id);
+    }
+}
+add_action('edit_attachment', 'parkrow_headless_on_edit_attachment', 20, 1);
+
+if (!function_exists('parkrow_headless_on_netlify_import_meta_change')) {
+    function parkrow_headless_on_netlify_import_meta_change($meta_id, $object_id, $meta_key, $_meta_value) {
+        if ('netlify_import' !== (string) $meta_key) {
+            return;
+        }
+
+        parkrow_headless_dispatch_attachment_rebuild('attachment_netlify_import_changed', $object_id, true);
+    }
+}
+add_action('added_post_meta', 'parkrow_headless_on_netlify_import_meta_change', 20, 4);
+add_action('updated_post_meta', 'parkrow_headless_on_netlify_import_meta_change', 20, 4);
+
+if (!function_exists('parkrow_headless_on_netlify_import_meta_delete')) {
+    function parkrow_headless_on_netlify_import_meta_delete($meta_ids, $object_id, $meta_key, $_meta_value) {
+        if ('netlify_import' !== (string) $meta_key) {
+            return;
+        }
+
+        parkrow_headless_dispatch_attachment_rebuild('attachment_netlify_import_removed', $object_id, true);
+    }
+}
+add_action('deleted_post_meta', 'parkrow_headless_on_netlify_import_meta_delete', 20, 4);
 
 if (!function_exists('parkrow_headless_on_deleted_post')) {
     function parkrow_headless_on_deleted_post($post_id) {

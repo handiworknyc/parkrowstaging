@@ -1868,11 +1868,61 @@ function normalizeNetlifyImportMediaPayload(value) {
   };
 }
 
+function buildNetlifyImportMediaManagedKey(publicDir, filename) {
+  const normalizedDir = normalizeTrimmedString(publicDir).replace(/^\/+|\/+$/g, "") || "images";
+  const normalizedFilename = normalizeTrimmedString(filename);
+  return normalizedFilename ? `${normalizedDir}/${normalizedFilename}` : "";
+}
+
+function getNetlifyImportMediaPublicDir(value) {
+  const explicitDir = normalizeTrimmedString(value?.public_dir ?? value?.publicDir)
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase();
+
+  if (explicitDir === "images" || explicitDir === "pdf") {
+    return explicitDir;
+  }
+
+  const publicUrl = normalizeTrimmedString(value?.public_url ?? value?.publicUrl);
+  if (publicUrl) {
+    const publicPath = publicUrl.split(/[?#]/, 1)[0] ?? "";
+    const firstSegment = publicPath.split("/").filter(Boolean)[0] ?? "";
+    if (firstSegment === "images" || firstSegment === "pdf") {
+      return firstSegment;
+    }
+  }
+
+  const mimeType = normalizeTrimmedString(value?.mime_type ?? value?.mimeType).toLowerCase();
+  if (mimeType === "application/pdf") {
+    return "pdf";
+  }
+
+  let rawFilename = normalizeTrimmedString(value?.source_filename || value?.filename);
+
+  if (!rawFilename) {
+    try {
+      rawFilename = decodeUrlPathSegment(path.basename(new URL(value?.url || "").pathname));
+    } catch {
+      rawFilename = "";
+    }
+  }
+
+  const extension =
+    sanitizeImportedMediaExtension(path.extname(rawFilename)).toLowerCase() ||
+    sanitizeImportedMediaExtension(inferFileExtensionFromMimeType(mimeType)).toLowerCase();
+
+  return extension === ".pdf" ? "pdf" : "images";
+}
+
+function getNetlifyImportMediaOutputDir(outputDirs, publicDir) {
+  return publicDir === "pdf" ? outputDirs.pdf : outputDirs.images;
+}
+
 function buildManagedNetlifyImportMediaMaps(manifest) {
   const items = Array.isArray(manifest?.items) ? manifest.items : [];
   const byId = new Map();
   const byUrl = new Map();
-  const managedFilenames = new Set();
+  const managedKeys = new Set();
 
   for (const item of items) {
     const id = Number(item?.id || 0);
@@ -1888,23 +1938,31 @@ function buildManagedNetlifyImportMediaMaps(manifest) {
     }
 
     if (filename) {
-      managedFilenames.add(filename);
+      managedKeys.add(buildNetlifyImportMediaManagedKey(getNetlifyImportMediaPublicDir(item), filename));
     }
   }
 
-  return { byId, byUrl, managedFilenames };
+  return { byId, byUrl, managedKeys };
 }
 
 function buildNetlifyImportMediaFilename(
   item,
   outputDir,
-  usedFilenames,
+  publicDir,
+  usedKeys,
   previousMaps,
   previousItem
 ) {
   const previousFilename = normalizeTrimmedString(previousItem?.filename);
-  if (previousFilename && !usedFilenames.has(previousFilename)) {
-    return previousFilename;
+  if (previousFilename) {
+    const previousKey = buildNetlifyImportMediaManagedKey(publicDir, previousFilename);
+    const previousDestinationFile = path.join(outputDir, previousFilename);
+    const collidesWithUnmanagedFile =
+      fs.existsSync(previousDestinationFile) && !previousMaps.managedKeys.has(previousKey);
+
+    if (!usedKeys.has(previousKey) && !collidesWithUnmanagedFile) {
+      return previousFilename;
+    }
   }
 
   let rawFilename = normalizeTrimmedString(item?.source_filename);
@@ -1937,11 +1995,12 @@ function buildNetlifyImportMediaFilename(
       attempt === 0
         ? `${basename}${extension}`
         : `${basename}-${uniqueSuffix}${attempt > 1 ? `-${attempt}` : ""}${extension}`;
+    const candidateKey = buildNetlifyImportMediaManagedKey(publicDir, candidate);
     const destinationFile = path.join(outputDir, candidate);
     const collidesWithUnmanagedFile =
-      fs.existsSync(destinationFile) && !previousMaps.managedFilenames.has(candidate);
+      fs.existsSync(destinationFile) && !previousMaps.managedKeys.has(candidateKey);
 
-    if (!usedFilenames.has(candidate) && !collidesWithUnmanagedFile) {
+    if (!usedKeys.has(candidateKey) && !collidesWithUnmanagedFile) {
       return candidate;
     }
 
@@ -1966,16 +2025,20 @@ async function downloadNetlifyImportMediaFile(url, destinationFile) {
   return buffer.length;
 }
 
-function cleanupManagedNetlifyImportMediaFiles(outputDir, keepFilenames, previousManifest) {
+function cleanupManagedNetlifyImportMediaFiles(outputDirs, keepKeys, previousManifest) {
   const previousItems = Array.isArray(previousManifest?.items) ? previousManifest.items : [];
   let deleted = 0;
 
   for (const item of previousItems) {
     const filename = normalizeTrimmedString(item?.filename);
-    if (!filename || keepFilenames.has(filename)) {
+    const publicDir = getNetlifyImportMediaPublicDir(item);
+    const managedKey = buildNetlifyImportMediaManagedKey(publicDir, filename);
+
+    if (!filename || keepKeys.has(managedKey)) {
       continue;
     }
 
+    const outputDir = getNetlifyImportMediaOutputDir(outputDirs, publicDir);
     const filePath = path.join(outputDir, filename);
     if (!fs.existsSync(filePath)) {
       continue;
@@ -1988,14 +2051,14 @@ function cleanupManagedNetlifyImportMediaFiles(outputDir, keepFilenames, previou
 
   return {
     deleted,
-    referenced: keepFilenames.size,
+    referenced: keepKeys.size,
   };
 }
 
-async function syncNetlifyImportMediaAssets(payload, outputDir, previousManifest) {
+async function syncNetlifyImportMediaAssets(payload, outputDirs, previousManifest) {
   const normalized = normalizeNetlifyImportMediaPayload(payload);
   const previousMaps = buildManagedNetlifyImportMediaMaps(previousManifest);
-  const usedFilenames = new Set();
+  const usedKeys = new Set();
   const items = [];
 
   for (const item of normalized.items) {
@@ -2003,10 +2066,13 @@ async function syncNetlifyImportMediaAssets(payload, outputDir, previousManifest
       (item.id ? previousMaps.byId.get(item.id) : null) ||
       previousMaps.byUrl.get(item.url) ||
       null;
+    const publicDir = getNetlifyImportMediaPublicDir(item);
+    const outputDir = getNetlifyImportMediaOutputDir(outputDirs, publicDir);
     const filename = buildNetlifyImportMediaFilename(
       item,
       outputDir,
-      usedFilenames,
+      publicDir,
+      usedKeys,
       previousMaps,
       previousItem
     );
@@ -2014,17 +2080,18 @@ async function syncNetlifyImportMediaAssets(payload, outputDir, previousManifest
 
     await downloadNetlifyImportMediaFile(item.url, destinationFile);
 
-    usedFilenames.add(filename);
+    usedKeys.add(buildNetlifyImportMediaManagedKey(publicDir, filename));
     items.push({
       ...item,
       filename,
-      public_url: `/images/${filename}`,
+      public_dir: publicDir,
+      public_url: `/${publicDir}/${filename}`,
     });
   }
 
   const cleanup = cleanupManagedNetlifyImportMediaFiles(
-    outputDir,
-    usedFilenames,
+    outputDirs,
+    usedKeys,
     previousManifest
   );
 
@@ -2463,7 +2530,10 @@ async function run() {
     const previousNetlifyImportMedia = readJSONIfExists(outNetlifyImportMedia);
     const syncedNetlifyImportMedia = await syncNetlifyImportMediaAssets(
       netlifyImportMedia,
-      publicImagesDir,
+      {
+        images: publicImagesDir,
+        pdf: pdfDir,
+      },
       previousNetlifyImportMedia
     );
 

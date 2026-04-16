@@ -9,7 +9,7 @@ This repo now supports a webhook-driven content-sync flow:
 5. GitHub Actions commits the updated JSON snapshot back to the repo.
 6. Netlify deploys from that Git push.
 
-The workflow currently commits [src/content/wp](/Users/jesserosenfield/Documents/park row astro/parkrow/src/content/wp), [public/prefetch-map.json](/Users/jesserosenfield/Documents/park row astro/parkrow/public/prefetch-map.json), [public/img-cache](/Users/jesserosenfield/Documents/park row astro/parkrow/public/img-cache), and [public/images](/Users/jesserosenfield/Documents/park row astro/parkrow/public/images).
+The workflow currently commits [src/content/wp](/Users/jesserosenfield/Documents/park row astro/parkrow/src/content/wp), [public/prefetch-map.json](/Users/jesserosenfield/Documents/park row astro/parkrow/public/prefetch-map.json), [public/img-cache](/Users/jesserosenfield/Documents/park row astro/parkrow/public/img-cache), [public/images](/Users/jesserosenfield/Documents/park row astro/parkrow/public/images), and [public/pdf](/Users/jesserosenfield/Documents/park row astro/parkrow/public/pdf).
 
 ## Required Secrets
 
@@ -39,14 +39,17 @@ The workflow also runs on a 6-hour schedule so Avesdo inventory changes are sync
 
 Install the PHP snippet from [docs/wordpress/parkrow-headless-webhook.php](/Users/jesserosenfield/Documents/park row astro/parkrow/docs/wordpress/parkrow-headless-webhook.php) as a small plugin or `mu-plugin`.
 
-Set these constants in that file:
+The tracked file already includes the current Park Row values for:
 
-- `PARKROW_HEADLESS_WEBHOOK_URL`: `https://your-site.netlify.app/wp-sync`
-- `PARKROW_HEADLESS_WEBHOOK_SECRET`: the same value as `WP_WEBHOOK_SECRET`
+- `PARKROW_HEADLESS_WEBHOOK_URL`
+- `PARKROW_HEADLESS_WEBHOOK_SECRET`
+
+Update those constants only if the Netlify endpoint or shared secret changes.
 
 The snippet adds:
 
 - automatic triggers for post create/update/delete/trash/untrash
+- automatic triggers for imported attachment edits and `netlify_import` checkbox changes
 - automatic triggers for nav menu updates
 - automatic triggers for taxonomy changes
 - automatic triggers for ACF options saves
