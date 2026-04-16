@@ -37,14 +37,11 @@ The workflow also runs on a 6-hour schedule so Avesdo inventory changes are sync
 
 ## WordPress Configuration
 
-Install the PHP snippet from [docs/wordpress/parkrow-headless-webhook.php](/Users/jesserosenfield/Documents/park row astro/parkrow/docs/wordpress/parkrow-headless-webhook.php) as a small plugin or `mu-plugin`.
+Install the PHP snippet from [parkrow-headless-webhook.php.example](/Users/jesserosenfield/Documents/park row astro/parkrow/docs/wordpress/parkrow-headless-webhook.php.example) as a small plugin or `mu-plugin`, then copy it locally to `docs/wordpress/parkrow-headless-webhook.php` if you want a gitignored live version.
 
-The tracked file already includes the current Park Row values for:
+The tracked example includes the current Park Row webhook URL, but uses a placeholder `PARKROW_HEADLESS_WEBHOOK_SECRET`.
 
-- `PARKROW_HEADLESS_WEBHOOK_URL`
-- `PARKROW_HEADLESS_WEBHOOK_SECRET`
-
-Update those constants only if the Netlify endpoint or shared secret changes.
+Set the real shared secret only in your local gitignored `docs/wordpress/parkrow-headless-webhook.php` copy.
 
 The snippet adds:
 

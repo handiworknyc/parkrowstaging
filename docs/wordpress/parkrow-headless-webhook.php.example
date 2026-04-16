@@ -9,7 +9,7 @@ if (!defined('PARKROW_HEADLESS_WEBHOOK_URL')) {
 }
 
 if (!defined('PARKROW_HEADLESS_WEBHOOK_SECRET')) {
-    define('PARKROW_HEADLESS_WEBHOOK_SECRET', '1460713ce979158b5c43a754c16bcd24e77c38db5e65394987f508ef61f6c538');
+    define('PARKROW_HEADLESS_WEBHOOK_SECRET', 'replace-with-the-same-secret-used-in-netlify');
 }
 
 if (!function_exists('parkrow_headless_dispatch_rebuild')) {

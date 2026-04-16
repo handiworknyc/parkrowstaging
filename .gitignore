@@ -10,3 +10,6 @@ clbr.local-key.pem
 .env
 .env.*
 !.env.example
+
+# Local WordPress snippets can contain live secrets and should stay untracked.
+docs/wordpress/*.php
