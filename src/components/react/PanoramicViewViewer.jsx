@@ -62,6 +62,8 @@ const TOGGLE_GROUP_STYLE = {
   alignItems: "center",
   gap: "0.25rem",
   padding: "0.25rem",
+  paddingTop: "calc(0.25rem + 0.25px)",
+  paddingBottom: "calc(0.25rem - 0.25px)",
   borderRadius: "999px",
   background: "#fff",
   color: "#3a2a22",

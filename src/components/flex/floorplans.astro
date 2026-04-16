@@ -606,6 +606,8 @@ function formatResidenceLabel(
           ].filter(Boolean);
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
+          const panoramaExposureValue = exposureSortValue;
+          const panoramaFloorLabel = unitFloor !== null ? String(unitFloor) : "";
           const panorama = unit.detail?.panoramicView;
           const hasPanorama = Boolean(panorama?.dayUrl || panorama?.nightUrl);
           const showPanoramaAction =
@@ -799,6 +801,16 @@ function formatResidenceLabel(
                           <div class="floorplans-detail-copy floorplans-panorama-copy">
                             <div class="floorplans-detail-meta">
                               <p>Residence {unitLabel}</p>
+                              {panoramaExposureValue && (
+                                <p class="floorplans-panorama-copyline">
+                                  Views from this residence: {panoramaExposureValue}
+                                </p>
+                              )}
+                              {panoramaFloorLabel && (
+                                <p class="floorplans-panorama-copyline">
+                                  Indicative views from floor {panoramaFloorLabel}
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -2108,6 +2120,19 @@ function formatResidenceLabel(
   .floorplans-panorama-copy {
     z-index: 3;
     color: #fff;
+  }
+
+  .floorplans-panorama-copy .floorplans-detail-meta {
+    gap: 0.2rem;
+  }
+
+  .floorplans-panorama-copy .floorplans-detail-meta p:not(:first-child) {
+    white-space: nowrap;
+  }
+
+  .floorplans-panorama-copyline {
+    font-size: inherit;
+    line-height: inherit;
   }
 
   .floorplans-panorama-scroll {
