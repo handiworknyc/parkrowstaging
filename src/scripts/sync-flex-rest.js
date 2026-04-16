@@ -1325,35 +1325,52 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
     // 5. Determine Final Extension (we force .webp for compatible types)
     let finalExt = ext;
     const isConvertible = ['.jpg', '.jpeg', '.png', '.tiff', '.webp'].includes(normalizedExt);
-    const shouldRefreshExistingRawAsset = normalizedExt === ".svg";
+    const shouldFingerprintRawAssetByContent = normalizedExt === ".svg";
     
     if (isConvertible) {
       finalExt = `${ext}.webp`;
     }
 
-    // 6. Define Paths
-    const filename = `${cleanName}-${hash}${finalExt}`;
-    const localPath = path.join(outputDir, filename);
-    const publicUrl = `/img-cache/${filename}`;
-    const hadLocalFile = fs.existsSync(localPath);
+    // 6. Define the URL-hash fallback path first. For SVGs we may replace this
+    // with a content-hash path after fetching the latest bytes.
+    const fallbackFilename = `${cleanName}-${hash}${finalExt}`;
+    const fallbackLocalPath = path.join(outputDir, fallbackFilename);
+    const fallbackPublicUrl = `/img-cache/${fallbackFilename}`;
+    const hadFallbackFile = fs.existsSync(fallbackLocalPath);
 
-    // Most cached assets are immutable enough to skip. SVG floorplans are an exception:
-    // WordPress can replace the file in place while keeping the same URL.
-    if (hadLocalFile && !shouldRefreshExistingRawAsset) {
-      return publicUrl;
+    // Most cached assets are immutable enough to skip. SVG floorplans are an
+    // exception because WordPress can replace the file in place while keeping
+    // the same source URL.
+    if (hadFallbackFile && !shouldFingerprintRawAssetByContent) {
+      return fallbackPublicUrl;
     }
 
     // 7. Download to Buffer
     const res = await fetch(processUrl, {
-      headers: { ...getAssetFetchHeaders(processUrl) },
+      cache: "no-store",
+      headers: {
+        ...getAssetFetchHeaders(processUrl),
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
     });
     if (!res.ok) {
       console.warn(`⚠️ Failed to download ${processUrl} (${res.status})`);
-      return hadLocalFile ? publicUrl : null;
+      return hadFallbackFile ? fallbackPublicUrl : null;
     }
     const buffer = Buffer.from(await res.arrayBuffer());
 
-    if (hadLocalFile && shouldRefreshExistingRawAsset) {
+    // SVGs need a filename that changes when the bytes change so the deployed
+    // immutable CDN path changes too.
+    const finalHash = shouldFingerprintRawAssetByContent
+      ? crypto.createHash("md5").update(buffer).digest("hex").slice(0, 8)
+      : hash;
+    const filename = `${cleanName}-${finalHash}${finalExt}`;
+    const localPath = path.join(outputDir, filename);
+    const publicUrl = `/img-cache/${filename}`;
+    const hadLocalFile = fs.existsSync(localPath);
+
+    if (hadLocalFile) {
       try {
         const existingBuffer = fs.readFileSync(localPath);
         if (Buffer.compare(existingBuffer, buffer) === 0) {
@@ -1393,7 +1410,7 @@ async function downloadAndCache(url, outputDir, isPanorama = false) {
       }
     } else {
       fs.writeFileSync(localPath, buffer);
-      if (shouldRefreshExistingRawAsset && hadLocalFile) {
+      if (shouldFingerprintRawAssetByContent && hadLocalFile) {
         console.log(`♻️ Refreshed (Raw): ${filename}`);
       } else {
         console.log(`📥 Cached (Raw): ${filename}`);
