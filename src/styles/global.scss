@@ -362,8 +362,12 @@ body.vt-lock {
 }
 
 @media (max-width: 959px) {
-	.section-title {
+	.section-title:not(.antiga) {
 		display: none;
+	}
+
+	.section-title.antiga {
+		display: block;
 	}
 }
 
