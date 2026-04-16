@@ -127,6 +127,15 @@ function pickUrl(...values: unknown[]) {
   return "";
 }
 
+function buildVersionedUrl(url: string, version: string | number | null | undefined) {
+  const normalizedUrl = String(url ?? "").trim();
+  const normalizedVersion = String(version ?? "").trim();
+  if (!normalizedUrl || !normalizedVersion) return normalizedUrl;
+
+  const separator = normalizedUrl.includes("?") ? "&" : "?";
+  return normalizedUrl + separator + "v=" + encodeURIComponent(normalizedVersion);
+}
+
 function parseUnitFloor(unitNumber: string | number | null | undefined) {
   const digits = String(unitNumber ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -349,6 +358,19 @@ const details = rawDetails.flatMap((detail: any) => {
     detail?.floor_plan_pdf,
     detail?.floorPlanPdf
   );
+  const pdfVersion =
+    String(
+      detail?.floor_plan_pdf?.modified_gmt ??
+        detail?.floorPlanPdf?.modified_gmt ??
+        detail?.pdf?.modified_gmt ??
+        detail?.floor_plan_pdf?.filesize ??
+        detail?.floorPlanPdf?.filesize ??
+        detail?.pdf?.filesize ??
+        detail?.floor_plan_pdf?.id ??
+        detail?.floorPlanPdf?.id ??
+        detail?.pdf?.id ??
+        ""
+    ).trim();
   const isPenthouse = hasPenthouseMarker(
     detail?.unit,
     detail?.unitNumber,
@@ -373,6 +395,7 @@ const details = rawDetails.flatMap((detail: any) => {
           keyplanWidth && keyplanHeight ? String(keyplanWidth / keyplanHeight) : undefined,
         imageUrl,
         pdfUrl,
+        pdfHref: buildVersionedUrl(pdfUrl, pdfVersion),
         imageWidth,
         imageHeight,
         imageAspectRatio: imageWidth && imageHeight ? String(imageWidth / imageHeight) : undefined,
@@ -622,6 +645,7 @@ function formatResidenceLabel(
           const showPanoramaAction =
             hasPanorama && !(unitFloor !== null && unitFloor >= 2 && unitFloor <= 4);
           const pdfUrl = String(unit.detail?.pdfUrl ?? "").trim();
+          const pdfHref = String(unit.detail?.pdfHref ?? pdfUrl).trim();
           const keyplanUrl = String(unit.detail?.keyplanUrl ?? "").trim();
           const usePenthouseLayout = isPenthouse;
           const hasKeyplan = Boolean(keyplanUrl);
@@ -739,7 +763,7 @@ function formatResidenceLabel(
 
                           {pdfUrl && (
                             <a
-                              href={pdfUrl}
+                              href={pdfHref || pdfUrl}
                               class="floorplans-detail-action floorplans-detail-action--download"
                               target="_blank"
                               rel="noopener noreferrer"

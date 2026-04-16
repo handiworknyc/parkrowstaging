@@ -324,6 +324,29 @@ function getAssetFetchHeaders(url) {
   return {};
 }
 
+function buildVersionedAssetFetchUrl(url, asset) {
+  const normalizedUrl = normalizeTrimmedString(url);
+  if (!normalizedUrl || !isHttpUrl(normalizedUrl)) {
+    return normalizedUrl;
+  }
+
+  const version = normalizeTrimmedString(asset?.modified_gmt ?? asset?.modifiedGmt)
+    || String(normalizePositiveNumber(asset?.filesize) || "")
+    || String(normalizePositiveNumber(asset?.id ?? asset?.ID) || "");
+
+  if (!version) {
+    return normalizedUrl;
+  }
+
+  try {
+    const target = new URL(normalizedUrl);
+    target.searchParams.set("v", version);
+    return target.toString();
+  } catch {
+    return normalizedUrl;
+  }
+}
+
 function parseCloudflarePosterInfo(streamUrl) {
   if (!isHttpUrl(streamUrl)) return null;
 
@@ -607,6 +630,11 @@ function normalizeFloorPlanAsset(value, { includeDimensions = false } = {}) {
       normalized.filesize = filesize;
     }
 
+    const modifiedGmt = normalizeTrimmedString(value.modified_gmt ?? value.modifiedGmt);
+    if (modifiedGmt) {
+      normalized.modified_gmt = modifiedGmt;
+    }
+
     if (includeDimensions) {
       const width = normalizePositiveNumber(value.width);
       const height = normalizePositiveNumber(value.height);
@@ -707,9 +735,19 @@ function buildFloorPlanPdfFilename(asset) {
   const rawExt = path.extname(rawFilename);
   const rawStem = rawExt ? path.basename(rawFilename, rawExt) : rawFilename;
   const cleanStem = sanitizeImportedMediaBasename(rawStem).toLowerCase() || "floor-plan";
+  const attachmentId = normalizePositiveNumber(asset?.id ?? asset?.ID);
+  const attachmentFilesize = normalizePositiveNumber(asset?.filesize);
+  const attachmentFingerprint = JSON.stringify({
+    url: sourceUrl || "",
+    id: attachmentId || 0,
+    filename: normalizeTrimmedString(asset?.filename) || "",
+    title: normalizeTrimmedString(asset?.title) || "",
+    filesize: attachmentFilesize || 0,
+    modified_gmt: normalizeTrimmedString(asset?.modified_gmt ?? asset?.modifiedGmt) || "",
+  });
   const hash = crypto
     .createHash("md5")
-    .update(sourceUrl || JSON.stringify(asset))
+    .update(attachmentFingerprint)
     .digest("hex")
     .slice(0, 8);
 
@@ -734,28 +772,47 @@ async function downloadFloorPlanPdf(asset, outputDir) {
       return null;
     }
 
+    const fetchUrl = buildVersionedAssetFetchUrl(processUrl, asset);
+
     const filename = buildFloorPlanPdfFilename({
       ...(asset && typeof asset === "object" ? asset : {}),
       url: processUrl,
     });
     const localPath = path.join(outputDir, filename);
     const publicUrl = `/pdf/${filename}`;
+    const hadLocalFile = fs.existsSync(localPath);
 
-    if (fs.existsSync(localPath)) {
-      return publicUrl;
-    }
-
-    const res = await fetch(processUrl, {
-      headers: { ...getAssetFetchHeaders(processUrl) },
+    const res = await fetch(fetchUrl, {
+      cache: "no-store",
+      headers: {
+        ...getAssetFetchHeaders(processUrl),
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
     });
     if (!res.ok) {
-      console.warn(`⚠️ Failed to download floor plan PDF ${processUrl} (${res.status})`);
-      return null;
+      console.warn(`⚠️ Failed to download floor plan PDF ${fetchUrl} (${res.status})`);
+      return hadLocalFile ? publicUrl : null;
     }
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync(localPath, buffer);
-    console.log(`📄 Cached floor plan PDF: ${filename}`);
+    let shouldWrite = true;
+
+    if (hadLocalFile) {
+      try {
+        const existingBuffer = fs.readFileSync(localPath);
+        if (Buffer.isBuffer(existingBuffer) && existingBuffer.equals(buffer)) {
+          shouldWrite = false;
+        }
+      } catch {
+        shouldWrite = true;
+      }
+    }
+
+    if (shouldWrite) {
+      fs.writeFileSync(localPath, buffer);
+      console.log(`${hadLocalFile ? "♻️ Refreshed" : "📄 Cached"} floor plan PDF: ${filename}`);
+    }
 
     return publicUrl;
   } catch (error) {

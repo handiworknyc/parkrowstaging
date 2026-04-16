@@ -3,6 +3,7 @@
   "id": 42,
   "uri": "/45678uytgfdcvgy789/",
   "title": "Floor Plans",
+  "status": "publish",
   "views": [
     {
       "floors": "5-9",
@@ -107,5 +108,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-16 19:39:00"
+  "_syncedAt": "2026-04-16 20:50:47"
 }

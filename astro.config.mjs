@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+const isBuildCommand = process.argv.includes("build");
 
 export default defineConfig({
   site: "https://parkrowbellevue.com",
@@ -37,6 +38,8 @@ export default defineConfig({
   },
 
   vite: {
+    cacheDir: isBuildCommand ? "node_modules/.vite-build" : "node_modules/.vite-dev",
+
     optimizeDeps: {
       include: [
         "embla-carousel-react",

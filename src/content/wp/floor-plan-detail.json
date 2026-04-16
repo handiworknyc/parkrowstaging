@@ -3,6 +3,7 @@
   "id": 42,
   "uri": "/45678uytgfdcvgy789/",
   "title": "Floor Plans",
+  "status": "publish",
   "floor_plan_detail": [
     {
       "unit": "201",
@@ -23,7 +24,7 @@
         "height": 759
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-201-37eb6863.pdf",
+        "url": "/pdf/floorplan-201-0c7e4109.pdf",
         "id": 564,
         "title": "201",
         "filename": "201.pdf",
@@ -51,7 +52,7 @@
         "height": 601
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-301-f89608e9.pdf",
+        "url": "/pdf/floorplan-301-dacc2195.pdf",
         "id": 565,
         "title": "301",
         "filename": "301.pdf",
@@ -79,7 +80,7 @@
         "height": 651
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-302-fe71ff44.pdf",
+        "url": "/pdf/floorplan-302-76b3e3ee.pdf",
         "id": 566,
         "title": "302",
         "filename": "302.pdf",
@@ -107,7 +108,7 @@
         "height": 778
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-303-11d53c34.pdf",
+        "url": "/pdf/floorplan-303-8f8864bf.pdf",
         "id": 567,
         "title": "303",
         "filename": "303.pdf",
@@ -135,7 +136,7 @@
         "height": 528
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-304-89841630.pdf",
+        "url": "/pdf/floorplan-304-d6ed9ff6.pdf",
         "id": 568,
         "title": "304",
         "filename": "304.pdf",
@@ -163,7 +164,7 @@
         "height": 568
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-305-ce6755cd.pdf",
+        "url": "/pdf/floorplan-305-0c89507d.pdf",
         "id": 569,
         "title": "305",
         "filename": "305.pdf",
@@ -191,7 +192,7 @@
         "height": 566
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-306-331a9c69.pdf",
+        "url": "/pdf/floorplan-306-a251438f.pdf",
         "id": 570,
         "title": "306",
         "filename": "306.pdf",
@@ -219,7 +220,7 @@
         "height": 529
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-307-524b0260.pdf",
+        "url": "/pdf/floorplan-307-9c643513.pdf",
         "id": 571,
         "title": "307",
         "filename": "307.pdf",
@@ -247,7 +248,7 @@
         "height": 649
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-308-9dc86eba.pdf",
+        "url": "/pdf/floorplan-308-58493ca8.pdf",
         "id": 572,
         "title": "308",
         "filename": "308.pdf",
@@ -275,7 +276,7 @@
         "height": 557
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-309-a9fcfe50.pdf",
+        "url": "/pdf/floorplan-309-b772267d.pdf",
         "id": 573,
         "title": "309",
         "filename": "309.pdf",
@@ -303,7 +304,7 @@
         "height": 648
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-401-1201-76c41a82.pdf",
+        "url": "/pdf/floorplan-401-1201-c7ebc8c1.pdf",
         "id": 574,
         "title": "401-1201",
         "filename": "401-1201.pdf",
@@ -331,7 +332,7 @@
         "height": 683
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-402-1202-127e3987.pdf",
+        "url": "/pdf/floorplan-402-1202-11fbf422.pdf",
         "id": 575,
         "title": "402-1202",
         "filename": "402-1202.pdf",
@@ -359,7 +360,7 @@
         "height": 772
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-403-503-aa7aeafd.pdf",
+        "url": "/pdf/floorplan-403-503-cf125b1c.pdf",
         "id": 576,
         "title": "403-503",
         "filename": "403-503.pdf",
@@ -387,7 +388,7 @@
         "height": 574
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-404-1204-5389c338.pdf",
+        "url": "/pdf/floorplan-404-1204-74349c0c.pdf",
         "id": 577,
         "title": "404-1204",
         "filename": "404-1204.pdf",
@@ -415,7 +416,7 @@
         "height": 535
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-405-ec5995fb.pdf",
+        "url": "/pdf/floorplan-405-a6f44fc0.pdf",
         "id": 578,
         "title": "405",
         "filename": "405.pdf",
@@ -443,7 +444,7 @@
         "height": 673
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-406-1206-72dd7737.pdf",
+        "url": "/pdf/floorplan-406-1206-203fcbc3.pdf",
         "id": 579,
         "title": "406-1206",
         "filename": "406-1206.pdf",
@@ -471,7 +472,7 @@
         "height": 793
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-407-1207-6ed6bd5e.pdf",
+        "url": "/pdf/floorplan-407-1207-f68d9b14.pdf",
         "id": 580,
         "title": "407-1207",
         "filename": "407-1207.pdf",
@@ -499,7 +500,7 @@
         "height": 643
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-408-b2692089.pdf",
+        "url": "/pdf/floorplan-408-6ef0fc5d.pdf",
         "id": 581,
         "title": "408",
         "filename": "408.pdf",
@@ -527,7 +528,7 @@
         "height": 655
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-409-1209-2980c959.pdf",
+        "url": "/pdf/floorplan-409-1209-5de17b3c.pdf",
         "id": 582,
         "title": "409-1209",
         "filename": "409-1209.pdf",
@@ -555,7 +556,7 @@
         "height": 644
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-505-1205-f2cddf13.pdf",
+        "url": "/pdf/floorplan-505-1205-568dff18.pdf",
         "id": 583,
         "title": "505-1205",
         "filename": "505-1205.pdf",
@@ -583,7 +584,7 @@
         "height": 650
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-508-1208-142e87f0.pdf",
+        "url": "/pdf/floorplan-508-1208-6decb7cb.pdf",
         "id": 584,
         "title": "508-1208",
         "filename": "508-1208.pdf",
@@ -611,7 +612,7 @@
         "height": 776
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-603-1203-a46e0a06.pdf",
+        "url": "/pdf/floorplan-603-1203-229ca4b9.pdf",
         "id": 585,
         "title": "603-1203",
         "filename": "603-1203.pdf",
@@ -639,7 +640,7 @@
         "height": 827
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1301-b2f42735.pdf",
+        "url": "/pdf/floorplan-1301-8e3a65bc.pdf",
         "id": 586,
         "title": "1301",
         "filename": "1301.pdf",
@@ -667,7 +668,7 @@
         "height": 703
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1302-1802-472ed40a.pdf",
+        "url": "/pdf/floorplan-1302-1802-64af8130.pdf",
         "id": 587,
         "title": "1302-1802",
         "filename": "1302-1802.pdf",
@@ -695,7 +696,7 @@
         "height": 558
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1303-fca8a591.pdf",
+        "url": "/pdf/floorplan-1303-6c750dcd.pdf",
         "id": 588,
         "title": "1303",
         "filename": "1303.pdf",
@@ -723,7 +724,7 @@
         "height": 702
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1304-5af4f211.pdf",
+        "url": "/pdf/floorplan-1304-1811ad8c.pdf",
         "id": 589,
         "title": "1304",
         "filename": "1304.pdf",
@@ -751,7 +752,7 @@
         "height": 671
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1305-1805-b018a78e.pdf",
+        "url": "/pdf/floorplan-1305-1805-a4018de1.pdf",
         "id": 590,
         "title": "1305-1805",
         "filename": "1305-1805.pdf",
@@ -779,7 +780,7 @@
         "height": 570
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1306-95d3e2c2.pdf",
+        "url": "/pdf/floorplan-1306-3d20d1c4.pdf",
         "id": 591,
         "title": "1306",
         "filename": "1306.pdf",
@@ -807,7 +808,7 @@
         "height": 775
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1401-1801-b3783784.pdf",
+        "url": "/pdf/floorplan-1401-1801-fd913ec8.pdf",
         "id": 592,
         "title": "1401-1801",
         "filename": "1401-1801.pdf",
@@ -835,7 +836,7 @@
         "height": 597
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1403-1803-c79def9b.pdf",
+        "url": "/pdf/floorplan-1403-1803-1745fbad.pdf",
         "id": 593,
         "title": "1403-1803",
         "filename": "1403-1803.pdf",
@@ -863,7 +864,7 @@
         "height": 762
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1404-1804-70a80009.pdf",
+        "url": "/pdf/floorplan-1404-1804-1e6fe62c.pdf",
         "id": 594,
         "title": "1404-1804",
         "filename": "1404-1804.pdf",
@@ -891,7 +892,7 @@
         "height": 592
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1406-1806-e9c653ca.pdf",
+        "url": "/pdf/floorplan-1406-1806-052a415b.pdf",
         "id": 595,
         "title": "1406-1806",
         "filename": "1406-1806.pdf",
@@ -919,7 +920,7 @@
         "height": 693
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1901-2001-12bd152f.pdf",
+        "url": "/pdf/floorplan-1901-2001-0d473655.pdf",
         "id": 596,
         "title": "1901-2001",
         "filename": "1901-2001.pdf",
@@ -947,7 +948,7 @@
         "height": 807
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1902-2002-0860d84c.pdf",
+        "url": "/pdf/floorplan-1902-2002-40359a3d.pdf",
         "id": 597,
         "title": "1902-2002",
         "filename": "1902-2002.pdf",
@@ -975,7 +976,7 @@
         "height": 561
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1903-2003-a32d0803.pdf",
+        "url": "/pdf/floorplan-1903-2003-9e5097f4.pdf",
         "id": 598,
         "title": "1903-2003",
         "filename": "1903-2003.pdf",
@@ -1003,7 +1004,7 @@
         "height": 834
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1904-2004-8a65862f.pdf",
+        "url": "/pdf/floorplan-1904-2004-f12fd28f.pdf",
         "id": 599,
         "title": "1904-2004",
         "filename": "1904-2004.pdf",
@@ -1031,7 +1032,7 @@
         "height": 718
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-1905-2005-26217c7c.pdf",
+        "url": "/pdf/floorplan-1905-2005-270366ac.pdf",
         "id": 600,
         "title": "1905-2005",
         "filename": "1905-2005.pdf",
@@ -1059,7 +1060,7 @@
         "height": 1162
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-ph-2101-2201-d5e11ca7.pdf",
+        "url": "/pdf/floorplan-ph-2101-2201-c7e9916e.pdf",
         "id": 601,
         "title": "PH 2101-2201",
         "filename": "PH-2101-2201.pdf",
@@ -1087,7 +1088,7 @@
         "height": 708
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-ph-2102-2202-1469f2c5.pdf",
+        "url": "/pdf/floorplan-ph-2102-2202-2e7564c0.pdf",
         "id": 602,
         "title": "PH 2102-2202",
         "filename": "PH-2102-2202.pdf",
@@ -1115,7 +1116,7 @@
         "height": 603
       },
       "floor_plan_pdf": {
-        "url": "/pdf/floorplan-ph-2103-2203-c49de4d5.pdf",
+        "url": "/pdf/floorplan-ph-2103-2203-63484159.pdf",
         "id": 603,
         "title": "PH 2103-2203",
         "filename": "PH-2103-2203.pdf",
@@ -1125,5 +1126,5 @@
       }
     }
   ],
-  "_syncedAt": "2026-04-16 19:39:00"
+  "_syncedAt": "2026-04-16 20:50:44"
 }
