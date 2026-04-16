@@ -300,6 +300,10 @@ function isLocalImgCacheUrl(value) {
   return typeof value === "string" && value.startsWith("/img-cache/");
 }
 
+function isLocalPdfUrl(value) {
+  return typeof value === "string" && value.startsWith("/pdf/");
+}
+
 function hasUsableImageUrl(value) {
   const url = pickStructuredUrl(value);
   return isHttpUrl(url) || isLocalImgCacheUrl(url);
@@ -683,6 +687,134 @@ function normalizeFloorPlanDetailPayload(payload) {
   };
 }
 
+function buildFloorPlanPdfFilename(asset) {
+  const sourceUrl = pickStructuredUrl(asset);
+  let sourceFilename = "";
+
+  if (sourceUrl) {
+    try {
+      sourceFilename = decodeUrlPathSegment(path.basename(new URL(sourceUrl).pathname));
+    } catch {
+      sourceFilename = "";
+    }
+  }
+
+  const rawFilename =
+    normalizeTrimmedString(asset?.filename) ||
+    sourceFilename ||
+    normalizeTrimmedString(asset?.title) ||
+    "floor-plan";
+  const rawExt = path.extname(rawFilename);
+  const rawStem = rawExt ? path.basename(rawFilename, rawExt) : rawFilename;
+  const cleanStem = sanitizeImportedMediaBasename(rawStem).toLowerCase() || "floor-plan";
+  const hash = crypto
+    .createHash("md5")
+    .update(sourceUrl || JSON.stringify(asset))
+    .digest("hex")
+    .slice(0, 8);
+
+  return `floorplan-${cleanStem}-${hash}.pdf`;
+}
+
+async function downloadFloorPlanPdf(asset, outputDir) {
+  const rawUrl = pickStructuredUrl(asset);
+  if (!rawUrl) return null;
+
+  try {
+    if (isLocalPdfUrl(rawUrl)) {
+      return rawUrl;
+    }
+
+    let processUrl = rawUrl;
+    if (!isHttpUrl(processUrl) && processUrl.startsWith("/")) {
+      processUrl = new URL(processUrl, WP_BASE).toString();
+    }
+
+    if (!isHttpUrl(processUrl)) {
+      return null;
+    }
+
+    const filename = buildFloorPlanPdfFilename({
+      ...(asset && typeof asset === "object" ? asset : {}),
+      url: processUrl,
+    });
+    const localPath = path.join(outputDir, filename);
+    const publicUrl = `/pdf/${filename}`;
+
+    if (fs.existsSync(localPath)) {
+      return publicUrl;
+    }
+
+    const res = await fetch(processUrl, {
+      headers: { ...getAssetFetchHeaders(processUrl) },
+    });
+    if (!res.ok) {
+      console.warn(`⚠️ Failed to download floor plan PDF ${processUrl} (${res.status})`);
+      return null;
+    }
+
+    const buffer = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(localPath, buffer);
+    console.log(`📄 Cached floor plan PDF: ${filename}`);
+
+    return publicUrl;
+  } catch (error) {
+    console.warn(`⚠️ Error processing floor plan PDF ${rawUrl}:`, error?.message || error);
+    return null;
+  }
+}
+
+async function cacheFloorPlanDetailPdfs(data, pdfDir) {
+  const source = data && typeof data === "object" ? data : {};
+  const rows = Array.isArray(source.floor_plan_detail) ? source.floor_plan_detail : [];
+  const pdfUrlCache = new Map();
+  const localizedPdfUrls = new Set();
+
+  const localizedRows = [];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") {
+      localizedRows.push(row);
+      continue;
+    }
+
+    const floorPlanPdf = normalizeFloorPlanAsset(
+      row.floor_plan_pdf ?? row.floorPlanPdf ?? row.pdf ?? row.pdf_url ?? row.pdfUrl
+    );
+
+    if (!floorPlanPdf?.url) {
+      localizedRows.push(row);
+      continue;
+    }
+
+    let localizedUrl = pdfUrlCache.get(floorPlanPdf.url);
+    if (localizedUrl === undefined) {
+      localizedUrl = await downloadFloorPlanPdf(floorPlanPdf, pdfDir);
+      pdfUrlCache.set(floorPlanPdf.url, localizedUrl ?? null);
+    }
+
+    const nextUrl = localizedUrl || floorPlanPdf.url;
+    if (localizedUrl && localizedUrl !== floorPlanPdf.url) {
+      localizedPdfUrls.add(localizedUrl);
+    }
+
+    localizedRows.push({
+      ...row,
+      floor_plan_pdf: {
+        ...floorPlanPdf,
+        url: nextUrl,
+      },
+    });
+  }
+
+  return {
+    data: {
+      ...source,
+      floor_plan_detail: localizedRows,
+    },
+    transformedPdfCount: localizedPdfUrls.size,
+  };
+}
+
 function normalizeHost(host) {
   return String(host || "")
     .replace(/^www\./i, "")
@@ -1040,6 +1172,12 @@ async function fetchSocialMedia() {
   return json;
 }
 
+async function fetchNetlifyImportMedia() {
+  const url = new URL("/wp-json/astro/v1/netlify-import-media", WP_BASE);
+  const { json } = await fetchJSON(url);
+  return json;
+}
+
 /* -------------------------------------------
    SEO-Friendly Download & Cache
    Format: "my-image-hash.jpg.webp"
@@ -1260,6 +1398,7 @@ function replaceImageUrls(obj, urlMap) {
 }
 
 const IMG_CACHE_URL_PATTERN = /\/img-cache\/[A-Za-z0-9._-]+/g;
+const PDF_URL_PATTERN = /\/pdf\/[A-Za-z0-9._-]+/g;
 const IMG_CACHE_REFERENCE_FILE_EXTENSIONS = new Set([
   ".astro",
   ".html",
@@ -1270,13 +1409,14 @@ const IMG_CACHE_REFERENCE_FILE_EXTENSIONS = new Set([
   ".ts",
   ".tsx",
 ]);
+const GENERATED_FLOORPLAN_PDF_FILENAME_PATTERN = /^floorplan-.*-[0-9a-f]{8}\.pdf$/i;
 
-function collectImgCacheUrlsFromText(text, keepUrls = new Set()) {
+function collectMatchingAssetUrlsFromText(text, pattern, keepUrls = new Set()) {
   if (typeof text !== "string" || !text) {
     return keepUrls;
   }
 
-  const matches = text.match(IMG_CACHE_URL_PATTERN);
+  const matches = text.match(pattern);
   if (!matches?.length) {
     return keepUrls;
   }
@@ -1286,6 +1426,14 @@ function collectImgCacheUrlsFromText(text, keepUrls = new Set()) {
   }
 
   return keepUrls;
+}
+
+function collectImgCacheUrlsFromText(text, keepUrls = new Set()) {
+  return collectMatchingAssetUrlsFromText(text, IMG_CACHE_URL_PATTERN, keepUrls);
+}
+
+function collectPdfUrlsFromText(text, keepUrls = new Set()) {
+  return collectMatchingAssetUrlsFromText(text, PDF_URL_PATTERN, keepUrls);
 }
 
 function walkFiles(dir, files = []) {
@@ -1319,6 +1467,20 @@ function collectImgCacheUrlsFromFile(filePath, keepUrls = new Set()) {
     return collectImgCacheUrlsFromText(text, keepUrls);
   } catch (error) {
     console.warn(`⚠️ Failed to scan ${filePath} for img-cache references: ${error?.message || error}`);
+    return keepUrls;
+  }
+}
+
+function collectPdfUrlsFromFile(filePath, keepUrls = new Set()) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return keepUrls;
+  }
+
+  try {
+    const text = fs.readFileSync(filePath, "utf8");
+    return collectPdfUrlsFromText(text, keepUrls);
+  } catch (error) {
+    console.warn(`⚠️ Failed to scan ${filePath} for PDF references: ${error?.message || error}`);
     return keepUrls;
   }
 }
@@ -1494,6 +1656,28 @@ function buildReferencedImgCacheUrls({
   return keepUrls;
 }
 
+function buildReferencedPdfUrls({ wpContentDir, sourceDir }) {
+  const keepUrls = new Set();
+
+  for (const filePath of walkFiles(wpContentDir)) {
+    if (!IMG_CACHE_REFERENCE_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+      continue;
+    }
+
+    collectPdfUrlsFromFile(filePath, keepUrls);
+  }
+
+  for (const filePath of walkFiles(sourceDir)) {
+    if (!IMG_CACHE_REFERENCE_FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+      continue;
+    }
+
+    collectPdfUrlsFromFile(filePath, keepUrls);
+  }
+
+  return keepUrls;
+}
+
 function cleanupImgCacheDirectory(imgCacheDir, keepUrls) {
   if (!imgCacheDir || !fs.existsSync(imgCacheDir)) {
     return { scanned: 0, kept: 0, deleted: 0, referenced: 0, skipped: false };
@@ -1537,6 +1721,319 @@ function cleanupImgCacheDirectory(imgCacheDir, keepUrls) {
     deleted,
     referenced: keepFilenames.size,
     skipped: false,
+  };
+}
+
+function cleanupGeneratedFloorPlanPdfDirectory(pdfDir, keepUrls) {
+  if (!pdfDir || !fs.existsSync(pdfDir)) {
+    return { scanned: 0, kept: 0, deleted: 0, referenced: 0, skipped: false };
+  }
+
+  const keepFilenames = new Set(
+    Array.from(keepUrls)
+      .map((url) => path.basename(url))
+      .filter(Boolean)
+  );
+
+  if (!keepFilenames.size) {
+    console.warn("⚠️ Floor plan PDF cleanup skipped because no live references were detected.");
+    return { scanned: 0, kept: 0, deleted: 0, referenced: 0, skipped: true };
+  }
+
+  let scanned = 0;
+  let kept = 0;
+  let deleted = 0;
+
+  for (const entry of fs.readdirSync(pdfDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !GENERATED_FLOORPLAN_PDF_FILENAME_PATTERN.test(entry.name)) {
+      continue;
+    }
+
+    scanned++;
+
+    if (keepFilenames.has(entry.name)) {
+      kept++;
+      continue;
+    }
+
+    fs.unlinkSync(path.join(pdfDir, entry.name));
+    deleted++;
+    console.log(`🧹 Removed stale floor plan PDF: ${entry.name}`);
+  }
+
+  return {
+    scanned,
+    kept,
+    deleted,
+    referenced: keepFilenames.size,
+    skipped: false,
+  };
+}
+
+function inferFileExtensionFromMimeType(mimeType) {
+  const normalized = normalizeTrimmedString(mimeType).toLowerCase();
+  if (!normalized) return "";
+  if (normalized === "application/pdf") return ".pdf";
+  if (normalized === "image/png") return ".png";
+  if (normalized === "image/jpeg") return ".jpg";
+  if (normalized === "image/svg+xml") return ".svg";
+  if (normalized === "image/webp") return ".webp";
+  if (normalized === "image/gif") return ".gif";
+  return "";
+}
+
+function decodeUrlPathSegment(value) {
+  try {
+    return decodeURIComponent(String(value ?? ""));
+  } catch {
+    return String(value ?? "");
+  }
+}
+
+function sanitizeImportedMediaBasename(value) {
+  const sanitized = String(value ?? "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-_.]+|[-_.]+$/g, "");
+
+  return sanitized || "media";
+}
+
+function sanitizeImportedMediaExtension(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+
+  const sanitized = normalized.replace(/[^A-Za-z0-9.]+/g, "");
+  if (!sanitized) return "";
+
+  return sanitized.startsWith(".") ? sanitized : `.${sanitized}`;
+}
+
+function normalizeNetlifyImportMediaItem(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const rawUrl = pickStructuredUrl(value);
+  let url = rawUrl;
+
+  if (url && !isHttpUrl(url) && url.startsWith("/")) {
+    try {
+      url = new URL(url, WP_BASE).toString();
+    } catch {
+      url = "";
+    }
+  }
+
+  if (!isHttpUrl(url)) {
+    return null;
+  }
+
+  const id = normalizePositiveNumber(value?.id ?? value?.ID);
+  const width = normalizePositiveNumber(value?.width);
+  const height = normalizePositiveNumber(value?.height);
+  const mimeType =
+    normalizeTrimmedString(value?.mime_type ?? value?.mimeType ?? value?.type) ||
+    inferImageMimeType(url) ||
+    "";
+
+  return {
+    id: id ? Math.round(id) : null,
+    title: normalizeTrimmedString(value?.title || value?.name || ""),
+    url,
+    alt: normalizeTrimmedString(value?.alt || ""),
+    caption: normalizeTrimmedString(value?.caption || ""),
+    description: normalizeTrimmedString(value?.description || ""),
+    mime_type: mimeType,
+    width: width ? Math.round(width) : null,
+    height: height ? Math.round(height) : null,
+    source_filename: normalizeTrimmedString(value?.filename || ""),
+  };
+}
+
+function normalizeNetlifyImportMediaPayload(value) {
+  const itemsSource = Array.isArray(value)
+    ? value
+    : Array.isArray(value?.items)
+      ? value.items
+      : [];
+
+  const items = itemsSource
+    .map(normalizeNetlifyImportMediaItem)
+    .filter(Boolean);
+
+  return {
+    count: items.length,
+    items,
+  };
+}
+
+function buildManagedNetlifyImportMediaMaps(manifest) {
+  const items = Array.isArray(manifest?.items) ? manifest.items : [];
+  const byId = new Map();
+  const byUrl = new Map();
+  const managedFilenames = new Set();
+
+  for (const item of items) {
+    const id = Number(item?.id || 0);
+    const url = normalizeTrimmedString(item?.url);
+    const filename = normalizeTrimmedString(item?.filename);
+
+    if (id > 0) {
+      byId.set(id, item);
+    }
+
+    if (url) {
+      byUrl.set(url, item);
+    }
+
+    if (filename) {
+      managedFilenames.add(filename);
+    }
+  }
+
+  return { byId, byUrl, managedFilenames };
+}
+
+function buildNetlifyImportMediaFilename(
+  item,
+  outputDir,
+  usedFilenames,
+  previousMaps,
+  previousItem
+) {
+  const previousFilename = normalizeTrimmedString(previousItem?.filename);
+  if (previousFilename && !usedFilenames.has(previousFilename)) {
+    return previousFilename;
+  }
+
+  let rawFilename = normalizeTrimmedString(item?.source_filename);
+
+  if (!rawFilename) {
+    try {
+      rawFilename = decodeUrlPathSegment(path.basename(new URL(item.url).pathname));
+    } catch {
+      rawFilename = "";
+    }
+  }
+
+  let extension = sanitizeImportedMediaExtension(path.extname(rawFilename));
+  if (!extension) {
+    extension = sanitizeImportedMediaExtension(inferFileExtensionFromMimeType(item?.mime_type));
+  }
+
+  const rawBasename = rawFilename
+    ? path.basename(rawFilename, path.extname(rawFilename))
+    : normalizeTrimmedString(item?.title) || `media-${item?.id || "file"}`;
+  const basename = sanitizeImportedMediaBasename(rawBasename);
+  const uniqueSuffix =
+    item?.id ||
+    crypto.createHash("md5").update(item.url).digest("hex").slice(0, 8);
+
+  let attempt = 0;
+
+  while (true) {
+    const candidate =
+      attempt === 0
+        ? `${basename}${extension}`
+        : `${basename}-${uniqueSuffix}${attempt > 1 ? `-${attempt}` : ""}${extension}`;
+    const destinationFile = path.join(outputDir, candidate);
+    const collidesWithUnmanagedFile =
+      fs.existsSync(destinationFile) && !previousMaps.managedFilenames.has(candidate);
+
+    if (!usedFilenames.has(candidate) && !collidesWithUnmanagedFile) {
+      return candidate;
+    }
+
+    attempt += 1;
+  }
+}
+
+async function downloadNetlifyImportMediaFile(url, destinationFile) {
+  const res = await fetch(url, {
+    headers: { ...getAssetFetchHeaders(url) },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${url}\n${text.slice(0, 400)}`);
+  }
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+  fs.mkdirSync(path.dirname(destinationFile), { recursive: true });
+  fs.writeFileSync(destinationFile, buffer);
+
+  return buffer.length;
+}
+
+function cleanupManagedNetlifyImportMediaFiles(outputDir, keepFilenames, previousManifest) {
+  const previousItems = Array.isArray(previousManifest?.items) ? previousManifest.items : [];
+  let deleted = 0;
+
+  for (const item of previousItems) {
+    const filename = normalizeTrimmedString(item?.filename);
+    if (!filename || keepFilenames.has(filename)) {
+      continue;
+    }
+
+    const filePath = path.join(outputDir, filename);
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    fs.unlinkSync(filePath);
+    deleted += 1;
+    console.log(`🧹 Removed stale imported media: ${filename}`);
+  }
+
+  return {
+    deleted,
+    referenced: keepFilenames.size,
+  };
+}
+
+async function syncNetlifyImportMediaAssets(payload, outputDir, previousManifest) {
+  const normalized = normalizeNetlifyImportMediaPayload(payload);
+  const previousMaps = buildManagedNetlifyImportMediaMaps(previousManifest);
+  const usedFilenames = new Set();
+  const items = [];
+
+  for (const item of normalized.items) {
+    const previousItem =
+      (item.id ? previousMaps.byId.get(item.id) : null) ||
+      previousMaps.byUrl.get(item.url) ||
+      null;
+    const filename = buildNetlifyImportMediaFilename(
+      item,
+      outputDir,
+      usedFilenames,
+      previousMaps,
+      previousItem
+    );
+    const destinationFile = path.join(outputDir, filename);
+
+    await downloadNetlifyImportMediaFile(item.url, destinationFile);
+
+    usedFilenames.add(filename);
+    items.push({
+      ...item,
+      filename,
+      public_url: `/images/${filename}`,
+    });
+  }
+
+  const cleanup = cleanupManagedNetlifyImportMediaFiles(
+    outputDir,
+    usedFilenames,
+    previousManifest
+  );
+
+  return {
+    manifest: {
+      count: items.length,
+      items,
+    },
+    cleanup,
   };
 }
 
@@ -1847,17 +2344,22 @@ async function run() {
   const outFloorplanDisclaimer = path.join(process.cwd(), "src", "content", "wp", "floorplan-disclaimer.json");
   const outHideLanguage = path.join(process.cwd(), "src", "content", "wp", "hide-language.json");
   const outSocialMedia = path.join(process.cwd(), "src", "content", "wp", "social-media.json");
+  const outNetlifyImportMedia = path.join(process.cwd(), "src", "content", "wp", "netlify-import-media.json");
   const outSpecials = path.join(process.cwd(), "src", "content", "wp", "specials.json");
   const outOrder = path.join(process.cwd(), "src", "content", "wp", "page-order.json"); 
   const outHeaderMenu = path.join(process.cwd(), "src", "content", "wp", "header-menu.json");
   const outHeaderMenuCN = path.join(process.cwd(), "src", "content", "wp", "header-menu-cn.json");
   const outAvesdoFloorplans = path.join(process.cwd(), "src", "content", "wp", "avesdo-floorplans.json");
   const publicDir = path.join(process.cwd(), "public");
+  const publicImagesDir = path.join(publicDir, "images");
+  const pdfDir = path.join(publicDir, "pdf");
   const outSchemaAddress = path.join(process.cwd(), "src", "content", "wp", "schema-address.json");
   const imgCacheDir = path.join(publicDir, "img-cache");
 
   fs.mkdirSync(outPages, { recursive: true });
   fs.mkdirSync(publicDir, { recursive: true });
+  fs.mkdirSync(publicImagesDir, { recursive: true });
+  fs.mkdirSync(pdfDir, { recursive: true });
   fs.mkdirSync(imgCacheDir, { recursive: true });
 
   /* -------- AVESDO FLOORPLANS -------- */
@@ -1880,11 +2382,12 @@ async function run() {
     const floorPlanDetail = await fetchFloorPlanDetail();
     const normalizedFloorPlanDetail = normalizeFloorPlanDetailPayload(floorPlanDetail);
     const transformed = await cacheStructuredDataImages(normalizedFloorPlanDetail, imgCacheDir);
+    const localizedPdfs = await cacheFloorPlanDetailPdfs(transformed.data, pdfDir);
 
     writeJSONIfChanged(
       outFloorPlanDetail,
-      transformed.data,
-      `✨ Floor plan detail updated (${transformed.transformedImageCount} images transformed)`,
+      localizedPdfs.data,
+      `✨ Floor plan detail updated (${transformed.transformedImageCount} images transformed, ${localizedPdfs.transformedPdfCount} PDFs localized)`,
       "⏩ Floor plan detail unchanged — skip write"
     );
   } catch (error) {
@@ -1951,6 +2454,27 @@ async function run() {
     );
   } catch (error) {
     console.error(`❌ Failed to sync Social Media: ${error?.message || error}`);
+  }
+
+  /* -------- NETLIFY IMPORT MEDIA -------- */
+  try {
+    console.log("📎 Fetching Netlify Import Media…");
+    const netlifyImportMedia = await fetchNetlifyImportMedia();
+    const previousNetlifyImportMedia = readJSONIfExists(outNetlifyImportMedia);
+    const syncedNetlifyImportMedia = await syncNetlifyImportMediaAssets(
+      netlifyImportMedia,
+      publicImagesDir,
+      previousNetlifyImportMedia
+    );
+
+    writeJSONIfChanged(
+      outNetlifyImportMedia,
+      syncedNetlifyImportMedia.manifest,
+      `✨ Netlify import media updated (${syncedNetlifyImportMedia.manifest.count} files, stale removed=${syncedNetlifyImportMedia.cleanup.deleted})`,
+      `⏩ Netlify import media unchanged (${syncedNetlifyImportMedia.manifest.count} files)`
+    );
+  } catch (error) {
+    console.error(`❌ Failed to sync Netlify import media: ${error?.message || error}`);
   }
 
   /* -------- PAGES -------- */
@@ -2252,6 +2776,14 @@ async function run() {
     floorPlanDetailFile: outFloorPlanDetail,
     imgCacheDir,
   });
+  const referencedPdfUrls = buildReferencedPdfUrls({
+    wpContentDir,
+    sourceDir: srcDir,
+  });
+  const pdfCleanupSummary = cleanupGeneratedFloorPlanPdfDirectory(pdfDir, referencedPdfUrls);
+  console.log(
+    `🧹 Floor plan PDF cleanup complete: scanned=${pdfCleanupSummary.scanned}, kept=${pdfCleanupSummary.kept}, deleted=${pdfCleanupSummary.deleted}, referenced=${pdfCleanupSummary.referenced}, skipped=${pdfCleanupSummary.skipped}`
+  );
   const cleanupSummary = cleanupImgCacheDirectory(imgCacheDir, referencedImgCacheUrls);
   console.log(
     `🧹 Img cache cleanup complete: scanned=${cleanupSummary.scanned}, kept=${cleanupSummary.kept}, deleted=${cleanupSummary.deleted}, referenced=${cleanupSummary.referenced}, skipped=${cleanupSummary.skipped}`

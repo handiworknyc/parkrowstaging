@@ -53,6 +53,8 @@ const MOBILE_TOGGLE_WRAP_STYLE = {
 };
 
 const MOBILE_TOGGLE_MEDIA_QUERY = "(max-width: 474px)";
+const PAGE_SETTLE_TIMEOUT_MS = 1500;
+const PAGE_SETTLE_FALLBACK_MS = 600;
 
 const TOGGLE_GROUP_STYLE = {
   marginTop: "1.5rem",
@@ -81,10 +83,159 @@ const TOGGLE_BUTTON_STYLE = {
   transition: "background-color 220ms ease, color 220ms ease",
 };
 
+const scheduledWarmups = new Set();
+const prefetchedPanoramaUrls = new Set();
+const preloadedPanoramaPromises = new Map();
+const pageSettleCallbacks = [];
+let pageSettleQueued = false;
+let pageHasSettled = false;
+
 function queueLayout(callback) {
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(callback);
   });
+}
+
+function normalizeSrc(src) {
+  return typeof src === "string" ? src.trim() : "";
+}
+
+function flushPageSettleCallbacks() {
+  if (pageHasSettled) return;
+
+  pageHasSettled = true;
+  const callbacks = pageSettleCallbacks.splice(0, pageSettleCallbacks.length);
+  callbacks.forEach((callback) => {
+    try {
+      callback();
+    } catch {
+      // Ignore warmup callback failures so the viewer remains interactive.
+    }
+  });
+}
+
+function runAfterPageSettles(callback) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  if (pageHasSettled) {
+    callback();
+    return;
+  }
+
+  pageSettleCallbacks.push(callback);
+
+  if (pageSettleQueued) return;
+  pageSettleQueued = true;
+
+  const scheduleFlush = () => {
+    const runFlush = () => {
+      flushPageSettleCallbacks();
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(runFlush, {
+        timeout: PAGE_SETTLE_TIMEOUT_MS,
+      });
+      return;
+    }
+
+    window.setTimeout(runFlush, PAGE_SETTLE_FALLBACK_MS);
+  };
+
+  if (document.readyState === "complete") {
+    queueLayout(scheduleFlush);
+    return;
+  }
+
+  window.addEventListener(
+    "load",
+    () => {
+      queueLayout(scheduleFlush);
+    },
+    { once: true }
+  );
+}
+
+function prefetchPanoramaImage(src) {
+  if (typeof document === "undefined") return;
+
+  const href = normalizeSrc(src);
+  if (!href || prefetchedPanoramaUrls.has(href) || preloadedPanoramaPromises.has(href)) {
+    return;
+  }
+
+  prefetchedPanoramaUrls.add(href);
+
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.as = "image";
+  link.href = href;
+  document.head.appendChild(link);
+}
+
+function schedulePanoramaWarmup(src) {
+  const href = normalizeSrc(src);
+  if (!href || scheduledWarmups.has(href) || preloadedPanoramaPromises.has(href)) {
+    return;
+  }
+
+  scheduledWarmups.add(href);
+  runAfterPageSettles(() => {
+    prefetchPanoramaImage(href);
+  });
+}
+
+function preloadPanoramaImage(src) {
+  if (typeof window === "undefined") {
+    return Promise.resolve(false);
+  }
+
+  const href = normalizeSrc(src);
+  if (!href) {
+    return Promise.resolve(false);
+  }
+
+  const existingPromise = preloadedPanoramaPromises.get(href);
+  if (existingPromise) {
+    return existingPromise;
+  }
+
+  const promise = new Promise((resolve) => {
+    const image = new window.Image();
+    let settled = false;
+
+    const finish = (loaded) => {
+      if (settled) return;
+      settled = true;
+      image.onload = null;
+      image.onerror = null;
+      if (!loaded) {
+        preloadedPanoramaPromises.delete(href);
+      }
+      resolve(loaded);
+    };
+
+    image.decoding = "async";
+
+    if ("fetchPriority" in image) {
+      image.fetchPriority = "high";
+    }
+
+    image.onload = () => finish(true);
+    image.onerror = () => finish(false);
+    image.src = href;
+
+    if (image.complete) {
+      finish(image.naturalWidth > 0);
+    }
+  });
+
+  preloadedPanoramaPromises.set(href, promise);
+  return promise;
+}
+
+function preloadPanoramaAssets(...sources) {
+  return Promise.all(sources.map((src) => preloadPanoramaImage(src)));
 }
 
 function isModalVisible(modal) {
@@ -128,6 +279,7 @@ export default function PanoramicViewViewer({
   const [isPanning, setIsPanning] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(false);
   const [mobileToggleHost, setMobileToggleHost] = useState(null);
+  const [shouldRenderImages, setShouldRenderImages] = useState(false);
 
   const getViewDimensions = (view) => {
     const width = Number(view === "night" ? nightWidth : dayWidth);
@@ -296,8 +448,50 @@ export default function PanoramicViewViewer({
     stopMomentum();
     setIsPanning(false);
     setActiveView(nextActiveView);
+    setShouldRenderImages(false);
     queueLayout(syncPanoramaLayers);
   }, [daySrc, dayWidth, dayHeight, nightSrc, nightWidth, nightHeight]);
+
+  useEffect(() => {
+    schedulePanoramaWarmup(daySrc);
+    schedulePanoramaWarmup(nightSrc);
+  }, [daySrc, nightSrc]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!(root instanceof HTMLElement)) return;
+
+    const detailModal = root.closest("[data-floorplans-modal]");
+    if (!(detailModal instanceof HTMLElement)) return;
+
+    let wasVisible = false;
+
+    const syncVisibility = () => {
+      const visible = isModalVisible(detailModal);
+      if (visible === wasVisible) return;
+
+      wasVisible = visible;
+
+      if (visible) {
+        setShouldRenderImages(true);
+        void preloadPanoramaAssets(daySrc, nightSrc);
+      } else {
+        setShouldRenderImages(false);
+      }
+    };
+
+    syncVisibility();
+
+    const observer = new MutationObserver(syncVisibility);
+    observer.observe(detailModal, {
+      attributes: true,
+      attributeFilter: ["class", "hidden"],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [daySrc, nightSrc]);
 
   useEffect(() => {
     activeViewRef.current = activeView;
@@ -313,7 +507,7 @@ export default function PanoramicViewViewer({
     const modal = root.closest("[data-floorplans-panorama-modal]");
     if (!(modal instanceof HTMLElement)) return;
 
-    let wasVisible = isModalVisible(modal);
+    let wasVisible = false;
 
     const syncVisibility = () => {
       const visible = isModalVisible(modal);
@@ -322,6 +516,8 @@ export default function PanoramicViewViewer({
       wasVisible = visible;
 
       if (visible) {
+        setShouldRenderImages(true);
+        void preloadPanoramaAssets(daySrc, nightSrc);
         resetPanoramaPosition();
       } else {
         stopMomentum();
@@ -573,7 +769,7 @@ export default function PanoramicViewViewer({
             aria-hidden="true"
             style={{
               ...LAYER_STYLE,
-              backgroundImage: toCssUrl(daySrc),
+              backgroundImage: shouldRenderImages ? toCssUrl(daySrc) : "none",
               opacity: showDay ? 1 : 0,
             }}
           />
@@ -584,7 +780,7 @@ export default function PanoramicViewViewer({
             aria-hidden="true"
             style={{
               ...LAYER_STYLE,
-              backgroundImage: toCssUrl(nightSrc),
+              backgroundImage: shouldRenderImages ? toCssUrl(nightSrc) : "none",
               opacity: showNight ? 1 : 0,
             }}
           />

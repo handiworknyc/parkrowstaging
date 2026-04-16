@@ -9,7 +9,7 @@ This repo now supports a webhook-driven content-sync flow:
 5. GitHub Actions commits the updated JSON snapshot back to the repo.
 6. Netlify deploys from that Git push.
 
-The workflow currently commits [src/content/wp](/Users/jesserosenfield/Documents/park row astro/parkrow/src/content/wp), [public/prefetch-map.json](/Users/jesserosenfield/Documents/park row astro/parkrow/public/prefetch-map.json), and [public/img-cache](/Users/jesserosenfield/Documents/park row astro/parkrow/public/img-cache).
+The workflow currently commits [src/content/wp](/Users/jesserosenfield/Documents/park row astro/parkrow/src/content/wp), [public/prefetch-map.json](/Users/jesserosenfield/Documents/park row astro/parkrow/public/prefetch-map.json), [public/img-cache](/Users/jesserosenfield/Documents/park row astro/parkrow/public/img-cache), and [public/images](/Users/jesserosenfield/Documents/park row astro/parkrow/public/images).
 
 ## Required Secrets
 
