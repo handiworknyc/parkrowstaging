@@ -442,12 +442,14 @@ function formatBedrooms(
 
 function formatBedroomSummary(
   bedrooms: number | string | null | undefined,
-  flex: number | string | null | undefined
+  flex: number | string | null | undefined,
+  shortLabel = false
 ) {
   const normalized = String(bedrooms ?? "").trim();
   if (!normalized) return "";
 
-  return Number(flex ?? 0) === 1 ? `${normalized} Bedroom + Flex` : `${normalized} Bedroom`;
+  const label = shortLabel ? "Bed" : "Bedroom";
+  return Number(flex ?? 0) === 1 ? `${normalized} ${label} + Flex` : `${normalized} ${label}`;
 }
 
 function isAccessibleResidence(value: unknown) {
@@ -602,6 +604,7 @@ function formatResidenceLabel(
           const unitLabel = formatResidenceLabel(unit.unitNumber, isPenthouse, isAccessible);
           const bedroomLabel = formatBedrooms(unit.bedrooms, unit.flex);
           const bedroomSummaryLabel = formatBedroomSummary(unit.bedrooms, unit.flex);
+          const bedroomSummaryShortLabel = formatBedroomSummary(unit.bedrooms, unit.flex, true);
           const interiorLabel = formatSquareFootage(unit.area);
           const exteriorValue =
             Number.isFinite(Number(unit.outdoorArea)) && Number(unit.outdoorArea) > 0
@@ -609,11 +612,7 @@ function formatResidenceLabel(
               : unit.detail?.exterior;
           const exteriorLabel = formatSquareFootage(exteriorValue);
           const outdoorSpaceLabel = formatOutdoorSpace(unit.outdoorSpace);
-          const bedBathOutdoorParts = [
-            bedroomSummaryLabel,
-            `${formatBathrooms(unit.bathrooms)} Bath`,
-            outdoorSpaceLabel,
-          ].filter(Boolean);
+          const bathSummaryLabel = `${formatBathrooms(unit.bathrooms)} Bath`;
           const exposureSortValue = String(unit.orientation ?? "").trim();
           const exposureLabel = formatOrientation(exposureSortValue);
           const panoramaExposureValue = exposureSortValue;
@@ -706,7 +705,18 @@ function formatResidenceLabel(
                       <div class="floorplans-detail-meta">
                         <p>Residence {unitLabel}</p>
                         <p class="floorplans-detail-summary">
-                          {bedBathOutdoorParts.map((part) => <span>{part}</span>)}
+                          {bedroomSummaryLabel && (
+                            <span class="floorplans-detail-summary-item floorplans-detail-summary-item--bedrooms">
+                              <span class="floorplans-detail-summary-text floorplans-detail-summary-text--full">
+                                {bedroomSummaryLabel}
+                              </span>
+                              <span class="floorplans-detail-summary-text floorplans-detail-summary-text--short">
+                                {bedroomSummaryShortLabel}
+                              </span>
+                            </span>
+                          )}
+                          <span>{bathSummaryLabel}</span>
+                          {outdoorSpaceLabel && <span>{outdoorSpaceLabel}</span>}
                         </p>
                         <p>Approx. Interior: {interiorLabel}</p>
                         {exteriorLabel && <p>Approx. Exterior: {exteriorLabel}</p>}
@@ -1899,6 +1909,10 @@ function formatResidenceLabel(
     background: currentColor;
   }
 
+  .floorplans-detail-summary-text--short {
+    display: none;
+  }
+
   .floorplans-detail-actions {
     display: flex;
     flex-wrap: wrap;
@@ -2434,6 +2448,20 @@ function formatResidenceLabel(
     .floorplans-head .floorplans-cell--orientation,
     .floorplans-row .floorplans-cell--orientation {
       display: none;
+    }
+  }
+
+  @media (max-width: 539px) {
+    .floorplans-detail-viewer :global(.floorplans-zoom-button--reset) {
+      display: none !important;
+    }
+
+    .floorplans-detail-summary-text--full {
+      display: none;
+    }
+
+    .floorplans-detail-summary-text--short {
+      display: inline;
     }
   }
 
