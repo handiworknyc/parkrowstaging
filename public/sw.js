@@ -2,7 +2,7 @@
    CONFIGURATION
 ========================================================== */
 const CONFIG = {
-  CACHE_VERSION: "prefetch-v2",
+  CACHE_VERSION: "prefetch-v3",
   DEBUG: false,
   PREFETCH_CONCURRENCY: 3, // Parallel requests to avoid bandwidth saturation
   FETCH_TIMEOUT: 10000, // 10s timeout for prefetch requests
@@ -32,8 +32,35 @@ function isStreamingManifest(url) {
   );
 }
 
+function isDocumentRequest(request) {
+  if (request.mode === "navigate" || request.destination === "document") {
+    return true;
+  }
+
+  const accept = request.headers.get("accept") || "";
+  return accept.includes("text/html");
+}
+
+function isStaticAssetRequest(url) {
+  return (
+    url.pathname.startsWith("/_astro/") ||
+    url.pathname.startsWith("/img-cache/") ||
+    url.pathname.startsWith("/images/") ||
+    url.pathname.startsWith("/fonts/") ||
+    url.pathname.startsWith("/videos/") ||
+    url.pathname.startsWith("/pdf/") ||
+    /\.(?:avif|css|gif|ico|jpe?g|js|json|mjs|mp4|otf|pdf|png|svg|ttf|txt|webm|webp|woff2?)$/i.test(
+      url.pathname
+    )
+  );
+}
+
 function shouldBypassRequest(request, url) {
   if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+    return true;
+  }
+
+  if (request.cache === "no-store" || request.cache === "reload") {
     return true;
   }
 
@@ -42,6 +69,14 @@ function shouldBypassRequest(request, url) {
   }
 
   if (isViteDevAsset(url)) {
+    return true;
+  }
+
+  if (isDocumentRequest(request)) {
+    return true;
+  }
+
+  if (!isStaticAssetRequest(url)) {
     return true;
   }
 

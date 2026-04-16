@@ -419,11 +419,77 @@
 					},
 				};
 			})();
-		</script>
+			</script>
 
-		{/* Google Tag Manager */}
-		<script is:inline define:vars={{ gtmContainerId: GTM_CONTAINER_ID }}>
-			(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+			<script is:inline>
+				(() => {
+					if (typeof window === "undefined") return;
+
+					const sessionKey = "parkrow-chunk-reload-attempted";
+					const queryKey = "__astro_chunk_reload__";
+					const routeKey = `${window.location.pathname}${window.location.hash}`;
+					const shouldRecover = (value) =>
+						/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+							String(value || "")
+						);
+
+					const currentUrl = new URL(window.location.href);
+					const arrivedFromRecovery = currentUrl.searchParams.has(queryKey);
+
+					if (arrivedFromRecovery) {
+						window.addEventListener(
+							"load",
+							() => {
+								try {
+									window.sessionStorage.removeItem(sessionKey);
+								} catch {}
+
+								currentUrl.searchParams.delete(queryKey);
+								window.history.replaceState(
+									window.history.state,
+									"",
+									`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+								);
+							},
+							{ once: true }
+						);
+					}
+
+					const recoverFromChunkError = () => {
+						try {
+							if (window.sessionStorage.getItem(sessionKey) === routeKey) {
+								return;
+							}
+
+							window.sessionStorage.setItem(sessionKey, routeKey);
+						} catch {}
+
+						const reloadUrl = new URL(window.location.href);
+						reloadUrl.searchParams.set(queryKey, Date.now().toString());
+						window.location.replace(reloadUrl.toString());
+					};
+
+					window.addEventListener("error", (event) => {
+						const message = event?.error?.message || event?.message || "";
+						if (shouldRecover(message)) {
+							recoverFromChunkError();
+						}
+					});
+
+					window.addEventListener("unhandledrejection", (event) => {
+						const reason = event?.reason;
+						const message =
+							(typeof reason === "object" && reason?.message) || reason || "";
+						if (shouldRecover(message)) {
+							recoverFromChunkError();
+						}
+					});
+				})();
+			</script>
+
+			{/* Google Tag Manager */}
+			<script is:inline define:vars={{ gtmContainerId: GTM_CONTAINER_ID }}>
+				(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 			new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 			j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 			'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
