@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-const DEFAULT_VIEW_PHASE = 0.5;
+const DEFAULT_VIEW_PHASE = 0.78;
 const MOMENTUM_FRICTION = 0.92;
 const MOMENTUM_MIN_VELOCITY = 0.01;
 const VIEW_SWITCH_FADE_MS = 360;

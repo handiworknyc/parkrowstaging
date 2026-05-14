@@ -2151,6 +2151,17 @@ function formatResidenceLabel(
     opacity: 1;
   }
 
+  @media (min-width: 1420px) {
+    .floorplans-panorama-modal {
+      inset: 0 0 0 auto;
+      width: calc(100vw - 350px);
+    }
+
+    .floorplans-panorama-copy .floorplans-detail-meta p:first-child {
+      display: none;
+    }
+  }
+
   .floorplans-panorama-card {
     position: relative;
     width: 100%;
@@ -2170,6 +2181,8 @@ function formatResidenceLabel(
 
   .floorplans-panorama-copy .floorplans-detail-meta {
     gap: 0.2rem;
+    font-size: 1.35rem;
+    line-height: 2rem;
   }
 
   .floorplans-panorama-copy .floorplans-detail-meta p:not(:first-child) {
