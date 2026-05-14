@@ -1044,13 +1044,21 @@ function formatResidenceLabel(
             panoramaCloseTimers.delete(modal);
           }
         };
+        const getPanoramaModalCard = (modal) => {
+          if (!(modal instanceof HTMLElement)) return null;
+
+          const modalCard = modal.closest("[data-floorplans-modal-card]");
+          return modalCard instanceof HTMLElement ? modalCard : null;
+        };
         const finalizePanoramaClose = (item, modal, restoreFocus = false) => {
           const trigger = getPanoramaTrigger(item);
+          const modalCard = getPanoramaModalCard(modal);
 
           clearPanoramaCloseTimer(modal);
           modal.hidden = true;
           modal.classList.remove("is-visible", "is-closing");
           item.classList.remove("is-panorama-open");
+          modalCard?.classList.remove("is-panorama-open");
 
           if (trigger instanceof HTMLElement) {
             trigger.setAttribute("aria-expanded", "false");
@@ -1066,9 +1074,12 @@ function formatResidenceLabel(
 
           if (!(modal instanceof HTMLElement) || !(trigger instanceof HTMLElement)) return false;
 
+          const modalCard = getPanoramaModalCard(modal);
+
           if (open) {
             clearPanoramaCloseTimer(modal);
             item.classList.add("is-panorama-open");
+            modalCard?.classList.add("is-panorama-open");
             modal.hidden = false;
             modal.classList.remove("is-closing", "is-visible");
             trigger.setAttribute("aria-expanded", "true");
@@ -1093,6 +1104,7 @@ function formatResidenceLabel(
           }
 
           clearPanoramaCloseTimer(modal);
+          modalCard?.classList.remove("is-panorama-open");
           modal.classList.remove("is-visible");
           modal.classList.add("is-closing");
 
@@ -2017,6 +2029,12 @@ function formatResidenceLabel(
     max-height: calc(100% - 4rem);
     min-width: 0;
     min-height: 0;
+    opacity: 1;
+    transition: opacity 0.4s var(--cubicBez);
+  }
+
+  .floorplans-modal-card.is-panorama-open .floorplans-detail-viewer {
+    opacity: 0;
   }
 
   .floorplans-detail-viewer--with-keyplan {

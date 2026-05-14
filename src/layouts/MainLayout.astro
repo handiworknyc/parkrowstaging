@@ -16,6 +16,10 @@
 		toEnglishPathname,
 	} from "@/lib/seo";
 	import {
+		STAGING_ROBOTS_TAG,
+		isStagingSiteEnv,
+	} from "@/lib/deploy-env.js";
+	import {
 		getResponsiveCriticalVideoPreloadUrls,
 		getResponsiveCriticalVideoPreloadVariants,
 	} from "@/lib/video/stream";
@@ -84,6 +88,8 @@
 
 
 	const WP_BASE_URL = import.meta.env.WP_BASE_URL;
+	const stagingNoIndex = isStagingSiteEnv(import.meta.env);
+	const effectiveNoIndex = noIndex || stagingNoIndex;
 	const socialPhone = await getSocialPhone();
 	const socialPhoneHref = toTelHref(socialPhone);
 
@@ -297,8 +303,8 @@
 	const cacheControl = cacheControlProp || "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
 	Astro.response.headers.set("Cache-Control", cacheControl);
 	Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
-	if (noIndex) {
-		Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+	if (effectiveNoIndex) {
+		Astro.response.headers.set("X-Robots-Tag", STAGING_ROBOTS_TAG);
 	}
 	---
 
@@ -552,7 +558,7 @@
 	/>
 	<meta name="viewport" content="width=device-width" />
 	<meta name="generator" content={Astro.generator} />
-	{noIndex && <meta name="robots" content="noindex, nofollow" />}
+	{effectiveNoIndex && <meta name="robots" content={STAGING_ROBOTS_TAG} />}
 	<title>{metaTitle}</title>
 
 	<link
