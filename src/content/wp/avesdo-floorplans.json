@@ -82,8 +82,8 @@
       "outdoorSpace": "Deck",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A1a_-_304.jpg?v=639062647730794631",
       "floorPlan": "A1a - 304",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "E"
     },
     {
@@ -738,8 +738,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B3_-_409_-_1209.jpg?v=639062650763649011",
       "floorPlan": "B3 - 409 - 1209",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "W"
     },
     {
@@ -1106,8 +1106,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "E"
     },
     {
@@ -1250,8 +1250,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_A2_-_505_-_1205.jpg?v=639062648243735636",
       "floorPlan": "A2 - 505 - 1205",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "E"
     },
     {
@@ -1330,8 +1330,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B2_-_401_-_1201.jpg?v=639062650608793597",
       "floorPlan": "B2 - 401 - 1201",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "W"
     },
     {
@@ -1442,8 +1442,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B4_-_508_-_1208.jpg?v=639062650931618651",
       "floorPlan": "B4 - 508 - 1208",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "NW"
     },
     {
@@ -1570,8 +1570,8 @@
       "outdoorSpace": "2 Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Available",
+      "availability": "Available",
       "orientation": "SW"
     },
     {
@@ -1746,8 +1746,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_B7_-_1406_-_1806.jpg?v=639062651280232282",
       "floorPlan": "B7 - 1406 - 1806",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "W"
     },
     {
@@ -1858,8 +1858,8 @@
       "outdoorSpace": "2 Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "SW"
     },
     {
@@ -1954,8 +1954,8 @@
       "outdoorSpace": "2 Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C1_-_1401_-_1801.jpg?v=639062651966160800",
       "floorPlan": "C1 - 1401 - 1801",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "SW"
     },
     {
@@ -2130,8 +2130,8 @@
       "outdoorSpace": "Balcony",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_C3_-1901_-2001.jpg?v=639062652070714865",
       "floorPlan": "C3 -1901 -2001",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "SW"
     },
     {
@@ -2242,8 +2242,8 @@
       "outdoorSpace": "2 Deck",
       "floorPlanImage": "https://yongleprodcanada.blob.core.windows.net/plans/ParkRowBellevue_Plan_PH2_-_2103_-_2203.jpg?v=639062652387199584",
       "floorPlan": "PH2 - 2103 - 2203",
-      "status": "Executed",
-      "availability": "Pending",
+      "status": "Sold Firm",
+      "availability": "Sold Firm",
       "orientation": "NW"
     },
     {
