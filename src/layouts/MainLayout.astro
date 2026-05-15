@@ -16,6 +16,7 @@
 		toEnglishPathname,
 	} from "@/lib/seo";
 	import {
+		STAGING_CACHE_CONTROL,
 		STAGING_ROBOTS_TAG,
 		isStagingSiteEnv,
 	} from "@/lib/deploy-env.js";
@@ -300,7 +301,11 @@
 		.join(" ");
 
 
-	const cacheControl = cacheControlProp || "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000";
+	const cacheControl =
+		cacheControlProp ||
+		(stagingNoIndex
+			? STAGING_CACHE_CONTROL
+			: "public, max-age=2700, s-maxage=2700, stale-while-revalidate=12000");
 	Astro.response.headers.set("Cache-Control", cacheControl);
 	Astro.response.headers.set("Netlify-CDN-Cache-Control", cacheControl);
 	if (effectiveNoIndex) {

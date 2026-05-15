@@ -2,7 +2,7 @@
    CONFIGURATION
 ========================================================== */
 const CONFIG = {
-  CACHE_VERSION: "prefetch-v3",
+  CACHE_VERSION: "prefetch-v4",
   DEBUG: false,
   PREFETCH_CONCURRENCY: 3, // Parallel requests to avoid bandwidth saturation
   FETCH_TIMEOUT: 10000, // 10s timeout for prefetch requests
@@ -56,6 +56,10 @@ function isStaticAssetRequest(url) {
 }
 
 function shouldBypassRequest(request, url) {
+  if (url.pathname.startsWith("/_astro/")) {
+    return true;
+  }
+
   if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
     return true;
   }

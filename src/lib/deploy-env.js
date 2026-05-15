@@ -1,5 +1,6 @@
 export const STAGING_SITE_URL = "https://parkrowstaging.netlify.app/";
 export const STAGING_BASIC_AUTH = "demo:demo";
+export const STAGING_CACHE_CONTROL = "no-store, max-age=0, must-revalidate";
 export const STAGING_ROBOTS_TAG = "noindex, nofollow";
 
 const SITE_URL_ENV_KEYS = [
