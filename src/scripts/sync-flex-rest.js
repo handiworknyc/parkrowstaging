@@ -1201,9 +1201,11 @@ function normalizeGFForm(form) {
     title: form.title,
     description: form.description || "",
     fields: (form.fields || [])
-      .filter(f => !f.isHidden)
+      .filter(f => !f.isHidden || f.type === "hidden")
       .map(f => ({
+        adminLabel: f.adminLabel || "",
         id: f.id,
+        inputName: f.inputName || "",
         type: f.type,
         label: f.label || "",
         isRequired: !!f.isRequired,

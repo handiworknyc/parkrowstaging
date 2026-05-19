@@ -37,13 +37,23 @@ type GFConditionalLogic = {
   rules?: GFConditionalRule[];
 };
 
-type GFFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox' | 'radio' | 'select';
+type GFFieldType =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'textarea'
+  | 'checkbox'
+  | 'radio'
+  | 'select'
+  | 'hidden';
 
 type GFField = {
   id: number;
   type: GFFieldType;
   label: string;
+  adminLabel?: string;
   description?: string;
+  inputName?: string;
   isRequired?: boolean;
   placeholder?: string;
   choices?: GFChoice[];
@@ -71,6 +81,7 @@ const CONSTANTS = {
   ANIMATION_DURATION: 0.8,
   PHONE_DIGITS_REQUIRED: 10,
   EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  QUERY_STORAGE_KEY: 'parkrow-url-query',
   SMOOTH_EASE: [0.25, 0.1, 0.25, 1] as const,
 } as const;
 
@@ -135,6 +146,102 @@ function shouldLogEdgewiseLocally(): boolean {
     hostname === '::1' ||
     hostname === '[::1]'
   );
+}
+
+function normalizeQueryValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return normalizeQueryValue(value[value.length - 1]);
+  }
+
+  if (value === null || value === undefined) return '';
+
+  return String(value);
+}
+
+function readStoredQueryParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const stored = window.localStorage.getItem(CONSTANTS.QUERY_STORAGE_KEY);
+    if (!stored) return {};
+
+    const parsed = JSON.parse(stored);
+    const params =
+      parsed?.params && typeof parsed.params === 'object'
+        ? parsed.params
+        : {};
+
+    return Object.fromEntries(
+      Object.entries(params).map(([key, value]) => [
+        key,
+        normalizeQueryValue(value),
+      ])
+    );
+  } catch {
+    return {};
+  }
+}
+
+function readCurrentQueryParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+
+  const params: Record<string, string> = {};
+  const searchParams = new URLSearchParams(window.location.search);
+
+  searchParams.forEach((value, key) => {
+    if (!key || key === '__astro_chunk_reload__') return;
+    params[key] = value;
+  });
+
+  return params;
+}
+
+function readAvailableQueryParams(): Record<string, string> {
+  return {
+    ...readStoredQueryParams(),
+    ...readCurrentQueryParams(),
+  };
+}
+
+function normalizeHiddenFieldQueryName(field: GFField): string {
+  const candidate =
+    field.inputName || field.adminLabel || field.label || '';
+  const normalized = String(candidate).trim();
+
+  return /^utm_[a-z0-9_]+$/i.test(normalized)
+    ? normalized.toLowerCase()
+    : '';
+}
+
+function readQueryParam(
+  queryParams: Record<string, string>,
+  key: string
+): string | undefined {
+  if (queryParams[key] !== undefined) return queryParams[key];
+
+  const normalizedKey = key.toLowerCase();
+  const match = Object.entries(queryParams).find(
+    ([candidate]) => candidate.toLowerCase() === normalizedKey
+  );
+
+  return match?.[1];
+}
+
+function buildHiddenQueryValues(form: GFFormSchema): Record<string, string> {
+  const queryParams = readAvailableQueryParams();
+  const hiddenValues: Record<string, string> = {};
+
+  for (const field of form.fields) {
+    if (field.type !== 'hidden') continue;
+
+    const queryName = normalizeHiddenFieldQueryName(field);
+    const queryValue = queryName ? readQueryParam(queryParams, queryName) : undefined;
+    if (queryValue === undefined) continue;
+
+    hiddenValues[`input_${field.id}`] = queryValue;
+  }
+
+  return hiddenValues;
 }
 
 function warmSubmitApiRoutes() {
@@ -285,7 +392,10 @@ function buildInitialValues(form: GFFormSchema): Record<string, any> {
     }
   }
 
-  return initialValues;
+  return {
+    ...initialValues,
+    ...buildHiddenQueryValues(form),
+  };
 }
 
 /* =====================================================
@@ -324,6 +434,28 @@ export default function GravityForm({ form, onSuccess }: Props) {
   useEffect(() => {
     setValues(buildInitialValues(form));
     setFieldErrors({});
+  }, [form]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncHiddenQueryValues = () => {
+      const hiddenValues = buildHiddenQueryValues(form);
+      if (!Object.keys(hiddenValues).length) return;
+
+      setValues((current) => ({
+        ...current,
+        ...hiddenValues,
+      }));
+    };
+
+    syncHiddenQueryValues();
+
+    window.addEventListener('parkrow:url-query', syncHiddenQueryValues);
+
+    return () => {
+      window.removeEventListener('parkrow:url-query', syncHiddenQueryValues);
+    };
   }, [form]);
 
   useEffect(() => {
@@ -682,6 +814,18 @@ export default function GravityForm({ form, onSuccess }: Props) {
           const key = `input_${f.id}`;
           const value = values[key] ?? '';
           const error = fieldErrors[key];
+
+          if (f.type === 'hidden') {
+            return (
+              <input
+                key={f.id}
+                type="hidden"
+                name={key}
+                value={String(value ?? '')}
+                readOnly
+              />
+            );
+          }
 
           let field: React.ReactNode = null;
 

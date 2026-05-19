@@ -436,6 +436,109 @@
 				(() => {
 					if (typeof window === "undefined") return;
 
+					const existing = window.ParkRowQueryStorage;
+					if (existing?.initialized) {
+						existing.capture?.();
+						return;
+					}
+
+					const storageKey = "parkrow-url-query";
+					const eventName = "parkrow:url-query";
+					const ignoredKeys = new Set(["__astro_chunk_reload__"]);
+
+					const readStored = () => {
+						try {
+							const stored = window.localStorage.getItem(storageKey);
+							if (!stored) return {};
+
+							const parsed = JSON.parse(stored);
+							return parsed && typeof parsed === "object" ? parsed : {};
+						} catch {
+							return {};
+						}
+					};
+
+					const writeStored = (value) => {
+						try {
+							window.localStorage.setItem(storageKey, JSON.stringify(value));
+						} catch {}
+					};
+
+					const addParamValue = (params, key, value) => {
+						if (!key || ignoredKeys.has(key)) return;
+
+						if (params[key] === undefined) {
+							params[key] = value;
+							return;
+						}
+
+						params[key] = Array.isArray(params[key])
+							? [...params[key], value]
+							: [params[key], value];
+					};
+
+					const getCurrentParams = () => {
+						const searchParams = new URLSearchParams(window.location.search);
+						const params = {};
+
+						searchParams.forEach((value, key) => {
+							addParamValue(params, key, value);
+						});
+
+						return params;
+					};
+
+					const capture = () => {
+						const params = getCurrentParams();
+						const paramKeys = Object.keys(params);
+
+						if (!paramKeys.length) return readStored();
+
+						const stored = readStored();
+						const storedParams =
+							stored.params && typeof stored.params === "object"
+								? stored.params
+								: {};
+						const next = {
+							...stored,
+							href: window.location.href,
+							params: {
+								...storedParams,
+								...params,
+							},
+							path: window.location.pathname,
+							query: window.location.search,
+							updatedAt: new Date().toISOString(),
+						};
+
+						writeStored(next);
+
+						window.dispatchEvent(
+							new CustomEvent(eventName, {
+								detail: next,
+							})
+						);
+
+						return next;
+					};
+
+					window.ParkRowQueryStorage = {
+						capture,
+						eventName,
+						initialized: true,
+						read: readStored,
+						storageKey,
+					};
+
+					capture();
+					document.addEventListener("astro:page-load", capture);
+				})();
+			</script>
+
+			<script is:inline>
+				(() => {
+					if (typeof window === "undefined") return;
+
 					const sessionKey = "parkrow-chunk-reload-attempted";
 					const queryKey = "__astro_chunk_reload__";
 					const routeKey = `${window.location.pathname}${window.location.hash}`;

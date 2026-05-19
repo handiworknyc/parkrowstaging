@@ -1793,6 +1793,27 @@
           "isSelected": true
         }
       ]
+    },
+    {
+      "id": 23,
+      "type": "hidden",
+      "label": "utm_source",
+      "isRequired": false,
+      "placeholder": ""
+    },
+    {
+      "id": 24,
+      "type": "hidden",
+      "label": "utm_campaign",
+      "isRequired": false,
+      "placeholder": ""
+    },
+    {
+      "id": 25,
+      "type": "hidden",
+      "label": "utm_medium",
+      "isRequired": false,
+      "placeholder": ""
     }
   ]
 }

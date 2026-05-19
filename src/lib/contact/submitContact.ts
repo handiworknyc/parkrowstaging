@@ -1,4 +1,5 @@
 import { getEnv as getSharedEnv } from '../env.ts';
+import form1 from '../../content/wp/forms/form-1.json';
 
 const EDGEWISE_GRAPHQL_URL = 'https://api.edgewise.io/graphql';
 
@@ -70,6 +71,47 @@ type EdgewiseDebugInfo = {
 type EdgewiseLeadSource = {
   id: string;
   name: string;
+};
+
+type EdgewiseUtm = {
+  campaign?: string;
+  content?: string;
+  medium?: string;
+  source?: string;
+  term?: string;
+};
+
+type EdgewiseUtmKey = keyof EdgewiseUtm;
+
+type GFTrackingField = {
+  adminLabel?: unknown;
+  id?: unknown;
+  inputName?: unknown;
+  label?: unknown;
+  type?: unknown;
+};
+
+const EDGEWISE_FORM_SCHEMAS: Record<string, { fields?: GFTrackingField[] }> = {
+  '1': form1 as { fields?: GFTrackingField[] },
+};
+
+const EDGEWISE_UTM_FIELD_MAP: Record<string, EdgewiseUtmKey> = {
+  input_23: 'source',
+  input_24: 'campaign',
+  input_25: 'medium',
+  utm_campaign: 'campaign',
+  utm_content: 'content',
+  utm_medium: 'medium',
+  utm_source: 'source',
+  utm_term: 'term',
+};
+
+const EDGEWISE_UTM_KEY_MAP: Record<string, EdgewiseUtmKey> = {
+  utm_campaign: 'campaign',
+  utm_content: 'content',
+  utm_medium: 'medium',
+  utm_source: 'source',
+  utm_term: 'term',
 };
 
 const edgewiseLeadSourceCache = new Map<
@@ -194,6 +236,54 @@ function readYesNo(fields: SubmissionFields, key: string): boolean | undefined {
   return undefined;
 }
 
+function normalizeUtmFieldName(field: GFTrackingField): string {
+  const raw =
+    field.inputName ||
+    field.adminLabel ||
+    field.label ||
+    '';
+  const value = String(raw).trim().toLowerCase();
+
+  return EDGEWISE_UTM_KEY_MAP[value] ? value : '';
+}
+
+function getFormUtmFieldMap(formId: number | string): Record<string, EdgewiseUtmKey> {
+  const form = EDGEWISE_FORM_SCHEMAS[String(formId)];
+  const map: Record<string, EdgewiseUtmKey> = {};
+
+  form?.fields?.forEach((field) => {
+    const fieldId = Number(field.id || 0);
+    const utmName = normalizeUtmFieldName(field);
+
+    if (!fieldId || !utmName) return;
+
+    map[`input_${fieldId}`] = EDGEWISE_UTM_KEY_MAP[utmName];
+  });
+
+  return map;
+}
+
+function buildEdgewiseUtm(
+  fields: SubmissionFields,
+  formId: number | string
+): Partial<EdgewiseUtm> {
+  const utm: Partial<EdgewiseUtm> = {};
+  const fieldMap = {
+    ...EDGEWISE_UTM_FIELD_MAP,
+    ...getFormUtmFieldMap(formId),
+  };
+
+  Object.entries(fieldMap).forEach(([fieldKey, utmKey]) => {
+    const value = readField(fields, fieldKey);
+
+    if (value) {
+      utm[utmKey] = value;
+    }
+  });
+
+  return compact(utm);
+}
+
 function compact<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(value).filter(([, item]) => {
@@ -253,6 +343,7 @@ function summarizeDebugString(value: string, path: string[]): string {
     joined === 'metadata.workingWithAgent' ||
     key === 'countryCode' ||
     key === 'projectId' ||
+    joined.startsWith('utm.') ||
     key === 'source' ||
     key === 'sourceId'
   ) {
@@ -543,6 +634,7 @@ async function resolveEdgewiseSourceId({
 }
 
 function buildEdgewiseInput(
+  formId: number | string,
   fields: SubmissionFields,
   options?: {
     sourceId?: string;
@@ -561,6 +653,7 @@ function buildEdgewiseInput(
   const city = readField(fields, 'input_14');
   const state = readField(fields, 'input_17');
   const postalCode = readField(fields, 'input_15');
+  const utm = buildEdgewiseUtm(fields, formId);
   const isRepresented = isAgent ? false : isRepresentedAnswer;
   const agentName = [agentFirstName, agentLastName].filter(Boolean).join(' ');
   const edgewiseAddress = compact({
@@ -583,6 +676,7 @@ function buildEdgewiseInput(
     phone,
     address: edgewiseAddress,
     sourceId: options?.sourceId,
+    utm,
     company: company || undefined,
     agent,
     follow: readCheckbox(fields, 'input_13'),
@@ -671,6 +765,7 @@ async function submitToGravity({
 async function submitToEdgewise({
   debugEnabled,
   fields,
+  formId,
 }: SubmitArgs & {
   debugEnabled?: boolean;
 }): Promise<EdgewiseDebugInfo> {
@@ -693,7 +788,7 @@ async function submitToEdgewise({
     });
   }
 
-  const input = buildEdgewiseInput(fields, { sourceId });
+  const input = buildEdgewiseInput(formId, fields, { sourceId });
   const debug = buildEdgewiseDebugInfo(fields, input, {
     enabled: !!debugEnabled,
     projectIdConfigured: !!input.projectId,
@@ -957,7 +1052,7 @@ export async function submitContact(
   } else if (edgewiseDebugEnabled) {
     edgewiseDebug = buildEdgewiseDebugInfo(
       normalizedFields,
-      buildEdgewiseInput(normalizedFields),
+      buildEdgewiseInput(form_id, normalizedFields),
       {
         enabled: true,
         projectIdConfigured: !!getEdgewiseProjectId(),

@@ -83,9 +83,16 @@ html.hw-resizing .antiga {
 	height: 5.5rem;
 }
 
-html:not(.modal-opening):not(.modal-closing) {
+html:not(.modal-opening):not(.modal-closing),
+html.modal-closing {
 	#logo-svg path {
 		transition: fill 1s var(--cubicBez);
+	}
+}
+
+html.modal-closing {
+	#logo-svg #bofa {
+		transition: opacity 0.3s var(--cubicBez);
 	}
 }
 

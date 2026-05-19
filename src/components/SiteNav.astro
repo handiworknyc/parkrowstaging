@@ -317,6 +317,14 @@ const headerMenu = _cachedHeaderMenu;
     }
   }
 
+  function isFloorplansModalOpen() {
+    return (
+      document.querySelector(
+        "[data-floorplans-modal]:not([hidden]), [data-floorplans-panorama-modal]:not([hidden])"
+      ) instanceof HTMLElement
+    );
+  }
+
   function syncPersistentHeaderTheme(pathname = window.location.pathname) {
     const header = document.getElementById("header");
     const nextTheme = getHeaderThemeForPath(pathname);
@@ -426,18 +434,10 @@ const headerMenu = _cachedHeaderMenu;
 
       if (logoSvg) {
         cancelLogoAnimations();
-        if (instant) {
-          setClosedLogoState(pathname);
-        } else {
-          animate(
-            logoSvg,
-            { "--logo-fill": getClosedLogoFill(pathname), "--bofa-op": 1 },
-            { duration: 0.3 }
-          );
-        }
+        setClosedLogoState(pathname);
       }
 
-      if (typeof window.locoScroll !== "undefined") {
+      if (typeof window.locoScroll !== "undefined" && !isFloorplansModalOpen()) {
         window.locoScroll.start();
       }
     };
